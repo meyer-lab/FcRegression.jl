@@ -1,0 +1,14 @@
+FcgR,         IgG1, IgG2, IgG3, IgG4
+FcgRI,         6E7,    0,  6E7,  3E7
+FcgRIIA-131H,  5E6,  4E5,  9E5,  2E5
+FcgRIIA-131R,  3E6,  1E5,  9E5,  2E5
+FcgRIIB-232I,  1E5,  2E4,  2E5,  2E5
+FcgRIIB-232T,  1E5,  2E4,  2E5,  2E5
+FcgRIIC-13N,   1E5,  2E4,  2E5,  2E5
+FcgRIIIA-158V, 2E5,  7E4,  1E7,  2E5
+FcgRIIIA-158F, 1E5,  3E4,  8E6,  2E5
+FcgRIIIB,      2E5,    0,  1E6,    0
+TRIM21,        5E6,  5E6,  2E6,  5E6
+C1q,         1.2E7,5.2E6,1.1E7,4.5E6
+# Sourced from Guilliams, Nat Rev Immunology, 2014
+# Patel et al, Analytical Biochem, 2015
