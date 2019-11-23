@@ -12,3 +12,5 @@ using FcgR
 	fit3 = curve_fit(FcgR.reg_wL0f_expo, hcat(FcgR.IgGCs, FcgR.Rcpon), FcgR.Y_expo, [-10; 6; zeros(4);], lower=[-12; 1; zeros(4);]; autodiff=:finiteforward)
 	fit4 = curve_fit(FcgR.reg_wL0f_gomp, hcat(FcgR.IgGCs, FcgR.Rcpon), FcgR.Y_gomp, [-10; 6; 1; zeros(4);], lower=[-12; 1; 0; zeros(4);]; autodiff=:finiteforward)
 end
+
+include("testSynergy.jl")

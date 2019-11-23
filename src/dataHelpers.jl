@@ -28,3 +28,5 @@ function Rpho_mouse()
     df = unstack(df, :Receptor, :Cells, :Count_geocmean)
     return convert(Matrix{Float64}, df[!, cellTypes])
 end
+
+const KxConst = 6.31e-13 # 10^(-12.2)
