@@ -1,5 +1,6 @@
 using Test
 using Profile
+using LsqFit
 using FcgR
 
 @testset "Example of running regression." begin
