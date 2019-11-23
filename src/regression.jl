@@ -75,5 +75,5 @@ reg_wL0f_expo = (Xcond, ps) -> reg_wL0f(Xcond, ps; regMethod = exponential)
 reg_wL0f_gomp = (Xcond, ps) -> reg_wL0f(Xcond, ps; regMethod = gompertz)
 
 ## use LsqFit for parameters and L0, f
-fit3 = curve_fit(reg_wL0f_expo, hcat(IgGon, Rcpon), Y_expo, [-10; 6; zeros(4);], lower=[-12; 1; zeros(4);]; autodiff=:finiteforward)
-fit4 = curve_fit(reg_wL0f_gomp, hcat(IgGon, Rcpon), Y_gomp, [-10; 6; 1; zeros(4);], lower=[-12; 1; 0; zeros(4);]; autodiff=:finiteforward)
+fit3 = curve_fit(reg_wL0f_expo, hcat(IgGCs, Rcpon), Y_expo, [-10; 6; zeros(4);], lower=[-12; 1; zeros(4);]; autodiff=:finiteforward)
+fit4 = curve_fit(reg_wL0f_gomp, hcat(IgGCs, Rcpon), Y_gomp, [-10; 6; 1; zeros(4);], lower=[-12; 1; 0; zeros(4);]; autodiff=:finiteforward)
