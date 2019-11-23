@@ -1,6 +1,6 @@
 module FcgR
 
-include("fcBindingModel.jl")
+include("dataHelpers.jl")
 include("regression.jl")
 
 end # module
