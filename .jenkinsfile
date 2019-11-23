@@ -9,7 +9,13 @@ pipeline {
     stage('Test') {
       steps {
         sh 'julia --code-coverage=user -e \'using Pkg; Pkg.activate("."); Pkg.test("FcgR"; coverage=true)\''
-        sh 'ls -lah'
+      }
+    }
+    stage('Build Notebooks') {
+      steps {
+        sh 'julia -e \'using Pkg; Pkg.add("Weave"); using Weave; weave("./translation.jmd", out_path=:pwd, doctype="md2pdf")\''
+        sh 'julia -e \'using Pkg; Pkg.add("Weave"); using Weave; weave("./depletion.jmd", out_path=:pwd, doctype="md2pdf")\''
+        archiveArtifacts artifacts: 'reports/*.*', onlyIfSuccessful: true
       }
     }
   }
