@@ -1,3 +1,5 @@
+using FastGaussQuadrature
+using LinearAlgebra
 
 """ Calculates the isobologram between two IgGs under the defined conditions. """
 function calculateIsobologram(IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav; quantity=nothing, actV=nothing, nPoints=33)
@@ -22,4 +24,16 @@ function calculateIsobologram(IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav; qu
     end
 
     return output
+end
+
+
+""" Calculate the synergy index from an isobologram curve. """
+function calcSynergy(curve)
+	# TODO: This isn't _quite_ right as the edge points don't go to the end
+	nodes, weights = gausslegendre(length(curve))
+
+	synergy = dot(weights, curve) / 2.0
+	synergy -= (curve[1] + curve[end]) / 2.0
+
+	return synergy
 end
