@@ -15,6 +15,7 @@ pipeline {
       steps {
         sh 'julia -e \'using Pkg; Pkg.add("Weave"); using Weave; weave("./translation.jmd", out_path=:pwd, doctype="md2pdf")\''
         sh 'julia -e \'using Pkg; Pkg.add("Weave"); using Weave; weave("./depletion.jmd", out_path=:pwd, doctype="md2pdf")\''
+        archiveArtifacts artifacts: 'reports/*.*', onlyIfSuccessful: true
       }
     }
   }
