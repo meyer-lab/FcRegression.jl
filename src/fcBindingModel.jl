@@ -1,5 +1,3 @@
-module fcBindingModel
-
 using NLsolve
 import LinearAlgebra.diagind
 
@@ -66,5 +64,3 @@ function polyfc(L0, KxStar, f, Rtot::Vector, IgGC::Vector, Kav::AbstractMatrix, 
 end
 
 polyfcm = (KxStar, f, Rtot, IgG, Kav, ActI=nothing) -> polyfc(sum(IgG), KxStar, f, Rtot, IgG/sum(IgG), Kav, ActI)
-
-end # module

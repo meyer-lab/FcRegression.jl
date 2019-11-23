@@ -1,5 +1,6 @@
 module FcgR
 
-greet() = print("Hello World!")
+include("fcBindingModel.jl")
+include("regression.jl")
 
 end # module

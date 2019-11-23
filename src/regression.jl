@@ -1,5 +1,4 @@
 using LsqFit
-include("fcBindingModel.jl")
 
 exponential(t) = -expm1.(-t)
 gompertz(t::Real, shape) = -expm1.( -shape .* expm1.(t) )
@@ -36,7 +35,7 @@ function regGenX(IgGon, Rcpon;
         vals = []
         for ict in 1:nct
             Rtot = Rpho[ict, :]
-            X[xi, ict] = fcBindingModel.polyfc(L0, KxStar, f, Rtot, IgGC, Kav_n, ActI)["ActV"]
+            X[xi, ict] = polyfc(L0, KxStar, f, Rtot, IgGC, Kav_n, ActI)["ActV"]
         end
     end
     return X
