@@ -60,10 +60,6 @@ end
 Y_expo = regSimY(X, exponential, [80, 150, 230, 340])
 Y_gomp = regSimY(X, gompertz, [1.5, 80, 150, 130, 140])
 
-## fitting without L0 and f
-fit1 = curve_fit(exponential, X, Y_expo, [zeros(4);], lower=[zeros(4);]; autodiff=:forwarddiff)
-fit2 = curve_fit(gompertz, X, Y_gomp, [1; zeros(4);], lower=[zeros(5);]; autodiff=:forwarddiff)
-
 function reg_wL0f(Xcond, ps; regMethod::Function)
     L0 = 10^ps[1]
     f = ps[2]
@@ -74,7 +70,3 @@ end
 
 reg_wL0f_expo = (Xcond, ps) -> reg_wL0f(Xcond, ps; regMethod = exponential)
 reg_wL0f_gomp = (Xcond, ps) -> reg_wL0f(Xcond, ps; regMethod = gompertz)
-
-## use LsqFit for parameters and L0, f
-fit3 = curve_fit(reg_wL0f_expo, hcat(IgGon, Rcpon), Y_expo, [-10; 6; zeros(4);], lower=[-12; 1; zeros(4);]; autodiff=:finiteforward)
-fit4 = curve_fit(reg_wL0f_gomp, hcat(IgGon, Rcpon), Y_gomp, [-10; 6; 1; zeros(4);], lower=[-12; 1; 0; zeros(4);]; autodiff=:finiteforward)

@@ -1,0 +1,21 @@
+pipeline {
+  agent { label 'docker' }
+  options {
+    timeout(time: 1, unit: 'HOURS')
+    parallelsAlwaysFailFast()
+  }
+  stages {
+    stage('Clean') { steps { sh 'git reset --hard && git clean -ffdx' } }
+    stage('Test') {
+      steps {
+        sh 'julia --code-coverage=user -e \'using Pkg; Pkg.activate("."); Pkg.test("FcgR"; coverage=true)\''
+        sh 'ls -lah'
+      }
+    }
+  }
+  post {
+    always {
+      cleanWs cleanWhenFailure: false, cleanWhenNotBuilt: false, cleanWhenUnstable: false
+    }
+  }
+}
