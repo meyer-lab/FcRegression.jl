@@ -1,7 +1,7 @@
 using NLsolve
 import LinearAlgebra.diagind
 
-function Req_func!(F, J, x, L0, f, Rtot, Av, KxStar)
+function Req_func!(F, J, x, L0::Float64, f, Rtot, Av, KxStar::Float64)
     Phisum = sum(x .* Av)
     if !(F == nothing)
         F .= x + L0 * f / KxStar .* (x .* Av) .* (1 + Phisum)^(f-1) - vec(Rtot)
@@ -14,7 +14,7 @@ function Req_func!(F, J, x, L0, f, Rtot, Av, KxStar)
     end
 end
 
-function Req_Regression(L0, KxStar, f, Rtot, IgGC, Kav)
+function Req_Regression(L0::Float64, KxStar::Float64, f, Rtot, IgGC, Kav)
     Av = transpose(Kav) * IgGC * KxStar
     fj! = (F, J, x) -> Req_func!(F, J, x, L0, f, Rtot, Av, KxStar)
     solve_res = nlsolve(only_fj!( fj! ), Rtot)
@@ -26,7 +26,7 @@ function Req_Regression(L0, KxStar, f, Rtot, IgGC, Kav)
     return solve_res.zero
 end
 
-function polyfc(L0, KxStar, f, Rtot::Vector, IgGC::Vector, Kav::AbstractMatrix, ActI=nothing)
+function polyfc(L0::Float64, KxStar::Float64, f, Rtot::Vector, IgGC::Vector, Kav::AbstractMatrix, ActI=nothing)
     # Data consistency check
     (ni, nr) = size(Kav)
     @assert ni == length(IgGC)
@@ -36,7 +36,7 @@ function polyfc(L0, KxStar, f, Rtot::Vector, IgGC::Vector, Kav::AbstractMatrix, 
 
     Req = Req_Regression(L0, KxStar, f, Rtot, IgGC, Kav)
 
-    Phi = ones(Float64, ni, nr+1) .* IgGC
+    Phi = ones(Float64, ni, nr + 1) .* IgGC
     Phi[:, 1:nr] .*= Kav .* transpose(Rtot) .* KxStar
     Phisum = sum(Phi[:, 1:nr])
     Phisum_n = sum(Phi[:, 1:nr], dims=1)
