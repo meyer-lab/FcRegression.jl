@@ -302,3 +302,11 @@ uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
 [[Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+
+[[fcBindingModel]]
+deps = ["LinearAlgebra", "NLsolve", "Profile", "Test"]
+git-tree-sha1 = "82d8f9210ba2e246c1d58271248025c9580ab44c"
+repo-rev = "master"
+repo-url = "https://github.com/meyer-lab/fcBindingModel.jl"
+uuid = "d914b3ba-5e2f-423d-9492-fc7c599eeb12"
+version = "0.1.0"
