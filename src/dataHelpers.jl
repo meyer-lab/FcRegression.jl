@@ -29,4 +29,47 @@ function Rpho_mouse()
     return convert(Matrix{Float64}, df[!, cellTypes])
 end
 
+
+""" Import human or murine affinity data. """
+function importKav(; murine=true, c1q=false)
+    if murine
+        df = CSV.read("../data/murine-affinities.csv", comment="#")
+    else
+        df = CSV.read("../data/human-affinities.csv", comment="#")
+    end
+
+    if c1q == false
+        df = filter(row -> row[:FcgR] != "C1q", df)
+    end
+
+    df = melt(df; variable_name=:IgG, value_name=:Kav)
+    df = unstack(df, :FcgR, :Kav)
+
+    return df
+end
+
+
+""" Import cell depletion data. """
+function import_depletion(dataType; c1q=false)
+    if dataType == "melanoma"
+        df = CSV.read("../data/nimmerjahn-melanoma.csv", comment="#")
+    end
+
+    df[!, :Condition] = map(Symbol, df[!, :Condition])
+
+    affinityData = importKav(murine=true, c1q=c1q)
+
+    df = join(df, affinityData, on = :Condition => :IgG, kind = :outer)
+
+    df[df[:, :Background] .== "R1KO", :FcgRI] .= 0.0
+    df[df[:, :Background] .== "R2KO", :FcgRIIB] .= 0.0
+    df[df[:, :Background] .== "R3KO", :FcgRIII] .= 0.0
+    df[df[:, :Background] .== "R1/3KO", [:FcgRI, :FcgRIII]] .= 0.0
+    df[df[:, :Background] .== "R4block", :FcgRIV] .= 0.0
+    df[df[:, :Background] .== "gcKO", [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
+
+    return df
+end
+
+
 const KxConst = 6.31e-13 # 10^(-12.2)
