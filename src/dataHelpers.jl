@@ -32,11 +32,11 @@ end
 
 """ Import human or murine affinity data. """
 function importKav(; murine=true, c1q=false)
-	if murine
-		df = CSV.read("../data/murine-affinities.csv", comment="#")
-	else
-		df = CSV.read("../data/human-affinities.csv", comment="#")
-	end
+    if murine
+        df = CSV.read("../data/murine-affinities.csv", comment="#")
+    else
+        df = CSV.read("../data/human-affinities.csv", comment="#")
+    end
 
     if c1q == false
         df = filter(row -> row[:FcgR] != "C1q", df)
@@ -45,7 +45,7 @@ function importKav(; murine=true, c1q=false)
     df = melt(df; variable_name=:IgG, value_name=:Kav)
     df = unstack(df, :FcgR, :Kav)
 
-	return df
+    return df
 end
 
 
