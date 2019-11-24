@@ -13,6 +13,11 @@ options:
 
 
 
+# Summary points
+
+- One
+- Two
+- Three
 
 # Introduction
 
@@ -45,4 +50,13 @@ println("Insert julia code.")
 
 
 # Discussion
+
+
+
+
+
+# Acknowledgement
+
+
+# Author Contributions Statement
 
