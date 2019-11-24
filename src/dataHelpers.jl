@@ -29,4 +29,14 @@ function Rpho_mouse()
     return convert(Matrix{Float64}, df[!, cellTypes])
 end
 
+function importKav(; murine=true)
+	if murine
+		df = CSV.read("../data/murine-affinities.csv", comment="#")
+	else
+		df = CSV.read("../data/human-affinities.csv", comment="#")
+	end
+
+	return df
+end
+
 const KxConst = 6.31e-13 # 10^(-12.2)
