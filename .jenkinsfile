@@ -9,6 +9,8 @@ pipeline {
     stage('Test') {
       steps {
         sh 'julia --code-coverage=user -e \'using Pkg; Pkg.activate("."); Pkg.test("FcgR"; coverage=true)\''
+        sh 'julia -e \'using Pkg; Pkg.add("Coverage"); using Coverage; coverage = process_folder(); LCOV.writefile("coverage-lcov.info", coverage)\''
+        archiveArtifacts artifacts: 'coverage-lcov.info', onlyIfSuccessful: true
       }
     }
     stage('Build Notebooks') {
