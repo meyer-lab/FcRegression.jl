@@ -10,7 +10,9 @@ pipeline {
       steps {
         sh 'julia --code-coverage=user -e \'using Pkg; Pkg.activate("."); Pkg.test("FcgR"; coverage=true)\''
         sh 'julia -e \'using Pkg; Pkg.add("Coverage"); using Coverage; coverage = process_folder(); LCOV.writefile("coverage-lcov.info", coverage)\''
-        archiveArtifacts artifacts: 'coverage-lcov.info', onlyIfSuccessful: true
+        sh 'pip3 install lcov_cobertura'
+        sh 'lcov_cobertura coverage-lcov.info -o coverage.cob'
+        publishCoverage adapters: [coberturaAdapter('coverage.cob')], sourceFileResolver: sourceFiles('NEVER_STORE')
       }
     }
     stage('Build Notebooks') {
