@@ -22,8 +22,10 @@ end
 
 cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]
 
-function Rpho_mouse()
-    df = CSV.read("../data/murine-FcgR-abundance.csv")
+function importRtot(; murine=true)
+    if murine
+        df = CSV.read("../data/murine-FcgR-abundance.csv")
+    end
     df = aggregate(df, [:Cells, :Receptor], geocmean)
     df = unstack(df, :Receptor, :Cells, :Count_geocmean)
     return convert(Matrix{Float64}, df[!, cellTypes])
