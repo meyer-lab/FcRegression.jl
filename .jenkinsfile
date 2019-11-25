@@ -12,7 +12,7 @@ pipeline {
         sh 'julia -e \'using Pkg; Pkg.add("Coverage"); using Coverage; coverage = process_folder(); LCOV.writefile("coverage-lcov.info", coverage)\''
         sh 'pip3 install --user lcov_cobertura'
         sh 'python3 ~/.local/lib/python3.7/site-packages/lcov_cobertura.py coverage-lcov.info -o coverage.cob'
-        publishCoverage adapters: [coberturaAdapter('coverage.cob')], sourceFileResolver: sourceFiles('STORE_LAST_BUILD')
+        cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: 'coverage.cob', enableNewApi: true, failUnhealthy: false, failUnstable: false, maxNumberOfBuilds: 0, onlyStable: false, sourceEncoding: 'ASCII', zoomCoverageChart: false
       }
     }
     stage('Build Notebooks') {
