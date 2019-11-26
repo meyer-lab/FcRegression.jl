@@ -50,34 +50,12 @@ function importKav(; murine=true, c1q=false)
 
     df = melt(df; variable_name=:IgG, value_name=:Kav)
     df = unstack(df, :FcgR, :Kav)
-
     return df
 end
 
 
-""" Import cell depletion data. """
-function import_depletion(dataType; c1q=false)
-    if dataType == "melanoma"
-        df = CSV.read("../data/nimmerjahn-melanoma.csv", comment="#")
-    end
-
-    df[!, :Condition] = map(Symbol, df[!, :Condition])
-
-    affinityData = importKav(murine=true, c1q=c1q)
-
-    df = join(df, affinityData, on = :Condition => :IgG, kind = :outer)
-
-    df[df[:, :Background] .== "R1KO", :FcgRI] .= 0.0
-    df[df[:, :Background] .== "R2KO", :FcgRIIB] .= 0.0
-    df[df[:, :Background] .== "R3KO", :FcgRIII] .= 0.0
-    df[df[:, :Background] .== "R1/3KO", [:FcgRI, :FcgRIII]] .= 0.0
-    df[df[:, :Background] .== "R4block", :FcgRIV] .= 0.0
-    df[df[:, :Background] .== "gcKO", [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
-
-    return df
-end
-
-function import_data(dataType)
+function depletion_data1(dataType)
+    """ Deal with {Condition := IgGx-xxKO} case """
     if dataType == "ITP"
         filename = "../data/nimmerjahn-ITP.csv"
     elseif dataType == "cancer"
@@ -86,10 +64,8 @@ function import_data(dataType)
         filename = "../data/nimmerjahn-CD20-blood.csv"
     elseif dataType == "bone"
         filename = "../data/nimmerjahn-CD20-bone.csv"
-    else
-        @error "Data type not found"
     end
-    
+
     df = CSV.read(filename, delim=",", comment="#")
     df1 = DataFrame([(Condition=a,Background=b) for (a,b) in split.(df[!, :Condition], "-")])
     df[!, :Condition] .= map(Symbol, df1[!, :Condition])
@@ -97,10 +73,21 @@ function import_data(dataType)
     return df
 end
 
+function depletion_data2(dataType)
+    """ Deal with {Condition := IgGx, Background := xxKO} case """
+    if dataType == "melanoma"
+        df = CSV.read("../data/nimmerjahn-melanoma.csv", comment="#")
+    end
+    df[!, :Condition] = map(Symbol, df[!, :Condition])
+    return df
+end
 
-function depletion_data(dataType; c1q=false)
+""" Import cell depletion data. """
+function importDepletion(dataType; c1q=false)
     if dataType in ["ITP", "cancer", "blood", "bone"]
-        df = import_data(dataType)
+        df = depletion_data1(dataType)
+    elseif dataType in ["melanoma"]
+        df = depletion_data2(dataType)
     else
         @error "Data type not found"
     end
@@ -116,4 +103,3 @@ function depletion_data(dataType; c1q=false)
     df[df[:, :Background] .== "gcKO", [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
     return df
 end
-
