@@ -1,0 +1,17 @@
+Condition,Target
+IgG1-wt, 95.0
+IgG2a-wt, 5.0
+IgG2b-wt, 80.0
+IgG3-wt, 100.0
+IgG1-R2KO, 30.0
+IgG2a-R2KO, 2.0
+IgG2b-R2KO, 25.0
+IgG3-R2KO, 100.0
+IgG2a-R1KO, 20.0
+IgG2a-R3KO, 7.0
+IgG2a-R1/4KO, 65.0
+IgG2bFucose-wt, 30.0
+IgG2a-NeuKO, 5.0
+IgG2a-ncMOKO, 10.0
+# Binding data from Nimmerjahn and Ravetch, Science, 2005
+# ncMOKO is Nr4a1 from Sci Immunol
