@@ -14,9 +14,11 @@ Guidance on DataFrame handling:
 using DataFrames
 using CSV
 
+const KxConst = 6.31e-13 # 10^(-12.2)
+
 function geocmean(x)
     x = convert(Vector, x)
-    @. x[x <= 1.0] = 1.0
+    x[x .<= 1.0] .= 1.0
     return exp( sum(log.(x))/length(x) )
 end
 
@@ -25,6 +27,8 @@ cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]
 function importRtot(; murine=true)
     if murine
         df = CSV.read("../data/murine-FcgR-abundance.csv")
+    else
+        df = CSV.read("../data/human-FcgR-abundance.csv")
     end
     df = aggregate(df, [:Cells, :Receptor], geocmean)
     df = unstack(df, :Receptor, :Cells, :Count_geocmean)
@@ -73,5 +77,43 @@ function import_depletion(dataType; c1q=false)
     return df
 end
 
+function import_data(dataType)
+    if dataType == "ITP"
+        filename = "../data/nimmerjahn-ITP.csv"
+    elseif dataType == "cancer"
+        filename = "../data/nimmerjahn-cancer.csv"
+    elseif dataType == "blood"
+        filename = "../data/nimmerjahn-CD20-blood.csv"
+    elseif dataType == "bone"
+        filename = "../data/nimmerjahn-CD20-bone.csv"
+    else
+        @error "Data type not found"
+    end
+    
+    df = CSV.read(filename, delim=",", comment="#")
+    df1 = DataFrame([(Condition=a,Background=b) for (a,b) in split.(df[!, :Condition], "-")])
+    df[!, :Condition] .= map(Symbol, df1[!, :Condition])
+    insertcols!(df, 2, :Background => map(String, df1[!, :Background]))
+    return df
+end
 
-const KxConst = 6.31e-13 # 10^(-12.2)
+
+function depletion_data(dataType; c1q=false)
+    if dataType in ["ITP", "cancer", "blood", "bone"]
+        df = import_data(dataType)
+    else
+        @error "Data type not found"
+    end
+
+    affinityData = importKav(murine=true, c1q=c1q)
+    df = join(df, affinityData, on = :Condition => :IgG, kind = :inner)
+
+    df[df[:, :Background] .== "R1KO", :FcgRI] .= 0.0
+    df[df[:, :Background] .== "R2KO", :FcgRIIB] .= 0.0
+    df[df[:, :Background] .== "R3KO", :FcgRIII] .= 0.0
+    df[df[:, :Background] .== "R1/3KO", [:FcgRI, :FcgRIII]] .= 0.0
+    df[df[:, :Background] .== "R4block", :FcgRIV] .= 0.0
+    df[df[:, :Background] .== "gcKO", [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
+    return df
+end
+
