@@ -23,6 +23,7 @@ function geocmean(x)
 end
 
 cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]
+murine_FcgR = [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]
 
 function importRtot(; murine=true)
     if murine
