@@ -54,43 +54,22 @@ function importKav(; murine=true, c1q=false)
 end
 
 
-function depletion_data1(dataType)
-    """ Deal with {Condition := IgGx-xxKO} case """
+""" Import cell depletion data. """
+function importDepletion(dataType; c1q=false)
     if dataType == "ITP"
         filename = "../data/nimmerjahn-ITP.csv"
-    elseif dataType == "cancer"
-        filename = "../data/nimmerjahn-cancer.csv"
     elseif dataType == "blood"
         filename = "../data/nimmerjahn-CD20-blood.csv"
     elseif dataType == "bone"
         filename = "../data/nimmerjahn-CD20-bone.csv"
-    end
-
-    df = CSV.read(filename, delim=",", comment="#")
-    df1 = DataFrame([(Condition=a,Background=b) for (a,b) in split.(df[!, :Condition], "-")])
-    df[!, :Condition] .= map(Symbol, df1[!, :Condition])
-    insertcols!(df, 2, :Background => map(String, df1[!, :Background]))
-    return df
-end
-
-function depletion_data2(dataType)
-    """ Deal with {Condition := IgGx, Background := xxKO} case """
-    if dataType == "melanoma"
-        df = CSV.read("../data/nimmerjahn-melanoma.csv", comment="#")
-    end
-    df[!, :Condition] = map(Symbol, df[!, :Condition])
-    return df
-end
-
-""" Import cell depletion data. """
-function importDepletion(dataType; c1q=false)
-    if dataType in ["ITP", "cancer", "blood", "bone"]
-        df = depletion_data1(dataType)
-    elseif dataType in ["melanoma"]
-        df = depletion_data2(dataType)
+    elseif dataType == "melanoma"
+        filename = "../data/nimmerjahn-melanoma.csv"
     else
         @error "Data type not found"
     end
+
+    df = CSV.read(filename, delim=",", comment="#")
+    df[!, :Condition] = map(Symbol, df[!, :Condition])
 
     affinityData = importKav(murine=true, c1q=c1q)
     df = join(df, affinityData, on = :Condition => :IgG, kind = :inner)
