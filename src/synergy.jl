@@ -38,6 +38,7 @@ function calcSynergy(curve)
 	return synergy
 end
 
+
 """Calculate the IgG mixture at the point of maximum synergy or antagonism for a pair of IgGs"""
 function maxSynergy(IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav; quantity=nothing, actV=nothing)
 	curve = calculateIsobologram(IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav, quantity, actV)
@@ -48,4 +49,20 @@ function maxSynergy(IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav; quantity=not
 	maxValue, maxIndex = findmax(abs.(diff))
 
 	return 1 - sampleAxis[maxIndex], sampleAxis[maxIndex], diff[maxIndex]
+end
+
+
+""" Calculate the synergy metric for all pairs of IgG. """
+function synergyGrid(valency, ICconc, FcExpr, Kav; quantity=nothing, actV=nothing)
+	M = zeros(size(Kav)[1], size(Kav)[1])
+
+	for i in 1:size(Kav)[1]
+		for j in 1:i
+			I = calculateIsobologram(i, j, valency, ICconc, FcExpr, Kav, quantity, actV, nPoints=17)
+			M[i,j] = calcSynergy(I)
+			M[j,i] = M[i,j]
+		end
+	end
+
+	return M 
 end
