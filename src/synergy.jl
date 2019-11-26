@@ -39,12 +39,13 @@ function calcSynergy(curve)
 end
 
 """Calculate the IgG mixture at the point of maximum synergy or antagonism for a pair of IgGs"""
-function maxSynergy(IgGXidx, IgGYidx, valency, ICconc, FcExpr, mouse=False, quantity=None, actV=None, nPoints=33)
-    curve = calculateIsobologram(IgGXidx, IgGYidx, valency, ICconc, FcExpr, mouse, quantity, actV, nPoints)
-    line = range(curve[1],stop=curve[end],length=nPoints)
-    sampleAxis = range(0,stop=1,length=nPoints)
-    diff = curve - line
-    maxIndex = maximum(abs.(diff))
-    percentageIgGY = sampleAxis[maxIndex]
-    return 1 - percentageIgGY, percentageIgGY, diff[maxIndex]
+function maxSynergy(IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav; quantity=nothing, actV=nothing)
+	curve = calculateIsobologram(IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav, quantity, actV)
+	sampleAxis = range(0, stop=1, length=length(curve))
+
+	# Subtract a line
+	diff = curve - range(curve[1], stop=curve[end], length=length(curve))
+	maxValue, maxIndex = findmax(abs.(diff))
+
+	return 1 - sampleAxis[maxIndex], sampleAxis[maxIndex], diff[maxIndex]
 end
