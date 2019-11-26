@@ -39,20 +39,16 @@ function calcSynergy(curve)
 end
 
 """ Calculate the synergy metric for all pairs of IgG. """
-function synergyGrid(valency, ICconc, FcExpr, mouse=false, quantity=nothing, actV=nothing)
-    if mouse
-        Kav = murine_affinities()
-    else
-        Kav = human_affinities()
-    end
+function synergyGrid(valency, ICconc, FcExpr, Kav; quantity=nothing, actV=nothing)
+	M = zeros(size(Kav)[1], size(Kav)[1])
 
-    M = zeros(size(Kav)[1],size(Kav)[1])
-    for i in 1:size(Kav)[1]
-        for j in 1:i
-            I = calculateIsobologram(i, j, valency, ICconc, FcExpr, mouse, quantity, actV, nPoints=17)
-            M[i,j] = calcSynergy(I)
-            M[j,i] = M[i,j]
-        end
-    end
-    return M 
+	for i in 1:size(Kav)[1]
+		for j in 1:i
+			I = calculateIsobologram(i, j, valency, ICconc, FcExpr, Kav, quantity, actV, nPoints=17)
+			M[i,j] = calcSynergy(I)
+			M[j,i] = M[i,j]
+		end
+	end
+
+	return M 
 end
