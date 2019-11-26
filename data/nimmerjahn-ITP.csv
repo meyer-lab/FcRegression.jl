@@ -1,23 +1,23 @@
-Condition,Target
-IgG1-wt, 53.1
-IgG2a-wt, 11.1
-IgG2b-wt, 16.9
-IgG1-gcKO, 92.9
-IgG2a-gcKO, 78.9
-IgG2b-gcKO, 93.7
-IgG1-R1KO, 46.8
-IgG2a-R1KO, 14.7
-IgG2b-R1KO, 28.0
-IgG1-R3KO, 84.0
-IgG2a-R3KO, 9.1
-IgG2b-R3KO, 14.7
-IgG1-R1/3KO, 93.7
-IgG2a-R1/3KO, 21.0
-IgG2b-R1/3KO, 10.6
-IgG1-R4block, 51.6
-IgG2a-R4block, 45.6
-IgG2b-R4block, 79.7
-IgG1-R2KO, 15.9
-IgG2a-R2KO, 7.8
-IgG2b-R2KO, 11.8
+Condition,Background,Target
+IgG1,wt,53.1
+IgG2a,wt,11.1
+IgG2b,wt,16.9
+IgG1,gcKO,92.9
+IgG2a,gcKO,78.9
+IgG2b,gcKO,93.7
+IgG1,R1KO,46.8
+IgG2a,R1KO,14.7
+IgG2b,R1KO,28.0
+IgG1,R3KO,84.0
+IgG2a,R3KO,9.1
+IgG2b,R3KO,14.7
+IgG1,R1/3KO,93.7
+IgG2a,R1/3KO,21.0
+IgG2b,R1/3KO,10.6
+IgG1,R4block,51.6
+IgG2a,R4block,45.6
+IgG2b,R4block,79.7
+IgG1,R2KO,15.9
+IgG2a,R2KO,7.8
+IgG2b,R2KO,11.8
 # R2KO cases are approximate. From Nimmerjahn, Science, 2005
