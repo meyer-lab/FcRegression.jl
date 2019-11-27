@@ -6,6 +6,78 @@ gompertz(t::Real, shape) = -expm1.( -shape .* expm1.(t) )
 exponential(X, p) = -expm1.( -X * p )
 gompertz(X::Array, p) = -expm1.( -p[1] .* expm1.(X * p[2:end]) )
 
+function regGenData(dataType;
+    L0 = 1e-9,
+    f = 4,
+    KxStar = KxConst,
+    Rtot = importRtot(),
+    ActI = murineActI)
+
+    df = importDepletion(dataType)
+    ndpt = size(df,1)
+    if :Concentration in names(df)
+        df[!, :Concentration] .*= L0
+    else
+        insertcols!(df, 3, :Concentration => L0)
+    end
+
+    resX = Matrix{Float64}(undef, ndpt, size(Rtot,2))
+    for i in 1:ndpt
+        row = df[i, :]
+        Kav = convert(Vector{Float64}, row[murineFcgR])
+        Kav = reshape(Kav, 1, :)
+        subActV = fcBindingModel.polyfc_ActV(row[:Concentration], KxStar, f, Rtot, [1.], Kav, ActI)
+        resX[i, :] = subActV
+    end
+
+    resX[ df[:, :Background].=="NeuKO", cellTypes .== :Neu ] .= 0.0
+    resX[ df[:, :Background].=="ncMOKO", cellTypes .== :ncMO ] .= 0.0
+    return (resX, df[!, :Target])
+end
+
+
+function reg_wL0f(Xcond, ps, regMethod::Function, dataType)
+    L0 = 10^ps[1]
+    f = ps[2]
+    p = ps[3:end]
+    (X, Y) = regGenData(dataType; L0 = L0, f = f)
+    return regMethod(X, p)
+end
+
+function fitRegression(dataType, regMethod::Function; wL0f=false)
+    (X, Y) = regGenData(dataType)
+    if regMethod == exponential
+        p_init = [ones(Float64, size(X,2));]
+        p_lower = [zeros(size(X,2));]
+        p_upper = [ones(Float64, size(X,2)) .* 1e5;]
+    elseif regMethod == gompertz
+        p_init = [ones(Float64, size(X,2)+1);]
+        p_lower = [zeros(size(X,2)+1);]
+        p_upper = [100; ones(Float64, size(X,2)) .* 1e5;]
+    end
+
+    # to fit L0 and f
+    if wL0f
+        fitMethod = (Xcond, ps) -> reg_wL0f(Xcond, ps, regMethod = regMethod, dataType = dataType)
+        p_init = vcat(-9, 4, p_init)
+        p_lower = vcat(-16, 2, p_lower)
+        p_upper = vcat(-6, 12, p_upper)
+        diff_method = :finiteforward
+    else
+        fitMethod = regMethod
+        diff_method = :forwarddiff
+    end
+
+    fit = curve_fit(fitMethod, X, Y, p_init; lower=p_lower, upper=p_upper, autodiff=diff_method)
+    if !fit.converged
+        @warn "Fitting does not converge"
+    end
+    return fit.param
+end
+
+
+""" The following are some test code for regression method """
+
 function regGenX(IgGCs, Rcpon;
     L0 = 1e-9,
     f = 4,
