@@ -62,13 +62,11 @@ function fitRegression(dataType, regMethod::Function; wL0f=false)
         p_init = vcat(-9, 4, p_init)
         p_lower = vcat(-16, 2, p_lower)
         p_upper = vcat(-6, 12, p_upper)
-        diff_method = :finiteforward
     else
         fitMethod = regMethod
-        diff_method = :forwarddiff
     end
 
-    fit = curve_fit(fitMethod, X, Y, p_init; lower=p_lower, upper=p_upper, autodiff=diff_method)
+    fit = curve_fit(fitMethod, X, Y, p_init; lower=p_lower, upper=p_upper, autodiff=:forwarddiff)
     if !fit.converged
         @warn "Fitting does not converge"
     end
@@ -77,7 +75,6 @@ end
 
 
 """ The following are some test code for regression method """
-
 function regGenX(IgGCs, Rcpon;
     L0 = 1e-9,
     f = 4,
