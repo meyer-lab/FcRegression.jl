@@ -24,6 +24,7 @@ end
 
 cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]
 murine_FcgR = [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]
+murineActI = [1, -1, 1, 1]
 
 function importRtot(; murine=true)
     if murine
