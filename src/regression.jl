@@ -11,19 +11,27 @@ function regGenData(dataType;
     f = 4,
     KxStar = KxConst,
     Rtot = importRtot(),
-    ActI = importActI())
+    ActI = murineActI)
 
     df = importDepletion(dataType)
-    ## Concentration from df??
+    ndpt = size(df,1)
+    if :Concentration in names(df)
+        df[!, :Concentration] .*= L0
+    else
+        insertcols!(df, 3, :Concentration => L0)
+    end
 
-    resX = Matrix{Float64}(undef, size(df,1), size(Rtot,2))
-    for i in 1:size(resX,1)
+    resX = Matrix{Float64}(undef, ndpt, size(Rtot,2))
+    for i in 1:ndpt
         row = df[i, :]
-        Kav = convert(Vector{Float64}, row[murine_FcgR])
+        Kav = convert(Vector{Float64}, row[murineFcgR])
         Kav = reshape(Kav, 1, :)
-        subActV = fcBindingModel.polyfc_ActV(L0, KxStar, f, Rtot, [1.], Kav, ActI)
+        subActV = fcBindingModel.polyfc_ActV(row[:Concentration], KxStar, f, Rtot, [1.], Kav, ActI)
         resX[i, :] = subActV
     end
+
+    resX[ df[:, :Background].=="NeuKO", cellTypes .== :Neu ] .= 0.0
+    resX[ df[:, :Background].=="ncMOKO", cellTypes .== :ncMO ] .= 0.0
     return (resX, df[!, :Target])
 end
 
