@@ -74,7 +74,7 @@ function fitRegression(dataType, regMethod::Function; wL0f=false)
 end
 
 
-""" The following are some test code for regression method """
+""" Build the input data matrix based on the binding parameters. """
 function regGenX(IgGCs, Rcpon;
     L0 = 1e-9,
     f = 4,
@@ -110,24 +110,6 @@ function regGenX(IgGCs, Rcpon;
     return X
 end
 
-IgGCs = [1 1; 1 0; 0 1; 1 1; 1 0; 0 1; 1 1; 1 0; 0 1; 1 1; 1 0; 0 1]
-Rcpon = [1 1 1; 1 1 1; 1 1 1; 1 1 0; 1 1 0; 1 1 0; 1 0 1; 1 0 1; 1 0 1; 0 1 1; 0 1 1; 0 1 1]
-X = regGenX(IgGCs, Rcpon)
-
-function regSimY(X, regMethod::Function, p; randr=0.05)
-    """ Generate simulated Y given X and parameters """
-    N = size(X)[1]
-    Y = regMethod(X, p) .+ randr * randn(N)
-    if sum(Y.>=0.99) + sum(Y.<=0.01) > 0.2 * N
-        @warn "Too many y's out of range (0 to 1)!"
-    end
-    Y[Y.>=0.99] .= 0.99
-    Y[Y.<=0.01] .= 0.01
-    return Y
-end
-
-Y_expo = regSimY(X, exponential, [80, 150, 230, 340])
-Y_gomp = regSimY(X, gompertz, [1.5, 80, 150, 130, 140])
 
 function reg_wL0f(Xcond, ps; regMethod::Function)
     L0 = 10^ps[1]
