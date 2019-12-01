@@ -22,4 +22,15 @@
 		# Line should have zero synergy
 		@test abs(FcgR.calcSynergy(range(0.0, stop=1.0, length=7))) < 1e-14
 	end
+    
+    @testset "test synergyGrid" begin
+        Kav = ones(6, 5) * 1e9
+        FcExpr = ones(5) * 1e3
+
+        #the grid should be 6x6
+        grid = FcgR.synergyGrid(4, 1.2e-9, FcExpr, Kav)
+
+        @test all(size(grid) .== size(Kav)[1])
+        @test all(grid .== transpose(grid))
+    end
 end

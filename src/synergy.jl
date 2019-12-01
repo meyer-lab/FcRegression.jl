@@ -2,7 +2,7 @@ using FastGaussQuadrature
 using LinearAlgebra
 
 """ Calculates the isobologram between two IgGs under the defined conditions. """
-function calculateIsobologram(IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav; quantity=nothing, actV=nothing, nPoints=33)
+function calculateIsobologram(IgGXidx::Int64, IgGYidx::Int64, valency, ICconc::Float64, FcExpr, Kav; quantity=nothing, actV=nothing, nPoints=33)
     @assert length(FcExpr) == size(Kav, 2)
 
     if actV != nothing
@@ -17,8 +17,8 @@ function calculateIsobologram(IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav; qu
 
     for idx in 1:length(IgGYconc)
         IgGC = zeros(size(Kav, 1))
-        IgGC[IgGYidx] = IgGYconc[idx]
-        IgGC[IgGXidx] = 1 - IgGYconc[idx]
+        IgGC[IgGYidx] += IgGYconc[idx]
+        IgGC[IgGXidx] += 1.0 - IgGYconc[idx]
 
         output[idx] = fcBindingModel.polyfc(ICconc, KxConst, valency, FcExpr, IgGC, Kav, actV)[quantity]
     end
@@ -57,8 +57,8 @@ function synergyGrid(valency, ICconc, FcExpr, Kav; quantity=nothing, actV=nothin
 	M = zeros(size(Kav)[1], size(Kav)[1])
 
 	for i in 1:size(Kav)[1]
-		for j in 1:i
-			I = calculateIsobologram(i, j, valency, ICconc, FcExpr, Kav, quantity, actV, nPoints=17)
+		for j in 1:(i - 1)
+			I = calculateIsobologram(i, j, valency, ICconc, FcExpr, Kav, quantity=quantity, actV=actV, nPoints=17)
 			M[i,j] = calcSynergy(I)
 			M[j,i] = M[i,j]
 		end
