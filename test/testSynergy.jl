@@ -26,10 +26,11 @@
     @testset "test synergyGrid" begin
         Kav = ones(6, 5) * 1e9
         FcExpr = ones(5) * 1e3
+
         #the grid should be 6x6
-        grid = synergyGrid(4, 1.2e-9, FcExpr, Kav) #not sure if want to keep random functionality
-        shape = (size(Kav)[1], size(Kav)[1])
-        @test size(grid) == shape
-        @test grid == transpose(grid)
+        grid = FcgR.synergyGrid(4, 1.2e-9, FcExpr, Kav)
+
+        @test all(size(grid) .== size(Kav)[1])
+        @test all(grid .== transpose(grid))
     end
 end
