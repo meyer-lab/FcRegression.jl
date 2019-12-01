@@ -29,7 +29,7 @@
         #the grid should be 6x6
         grid = synergyGrid(4, 1.2e-9, FcExpr, Kav) #not sure if want to keep random functionality
         shape = (size(Kav)[1], size(Kav)[1])
-        @test size(grid) = shape
-        @test grid = transpose(grid)
+        @test size(grid) == shape
+        @test grid == transpose(grid)
     end
 end
