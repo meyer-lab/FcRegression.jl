@@ -58,15 +58,17 @@ function fitRegression(dataType, regMethod::Function; wL0f=false)
 
     # to fit L0 and f
     if wL0f
-        fitMethod = (Xcond, ps) -> reg_wL0f(Xcond, ps, regMethod = regMethod, dataType = dataType)
+        fitMethod = (Xcond, ps) -> reg_wL0f(Xcond, ps, regMethod=regMethod)
         p_init = vcat(-9, 4, p_init)
         p_lower = vcat(-16, 2, p_lower)
         p_upper = vcat(-6, 12, p_upper)
+        diff_method = :finiteforward
     else
         fitMethod = regMethod
+        diff_method = :forwarddiff
     end
 
-    fit = curve_fit(fitMethod, X, Y, p_init; lower=p_lower, upper=p_upper, autodiff=:forwarddiff)
+    fit = curve_fit(fitMethod, X, Y, p_init; lower=p_lower, upper=p_upper, autodiff=diff_method)
     if !fit.converged
         @warn "Fitting does not converge"
     end
@@ -119,5 +121,5 @@ function reg_wL0f(Xcond, ps; regMethod::Function)
     return regMethod(X, p)
 end
 
-reg_wL0f_expo = (Xcond, ps) -> reg_wL0f(Xcond, ps; regMethod = exponential)
-reg_wL0f_gomp = (Xcond, ps) -> reg_wL0f(Xcond, ps; regMethod = gompertz)
+reg_wL0f_expo = (Xcond, ps) -> reg_wL0f(Xcond, ps; regMethod=exponential)
+reg_wL0f_gomp = (Xcond, ps) -> reg_wL0f(Xcond, ps; regMethod=gompertz)
