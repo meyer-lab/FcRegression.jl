@@ -58,7 +58,7 @@ function fitRegression(dataType, regMethod::Function; wL0f=false)
 
     # to fit L0 and f
     if wL0f
-        fitMethod = (Xcond, ps) -> reg_wL0f(Xcond, ps, regMethod = regMethod, dataType = dataType)
+        fitMethod = (Xcond, ps) -> reg_wL0f(Xcond, ps, regMethod=regMethod)
         p_init = vcat(-9, 4, p_init)
         p_lower = vcat(-16, 2, p_lower)
         p_upper = vcat(-6, 12, p_upper)
@@ -76,8 +76,7 @@ function fitRegression(dataType, regMethod::Function; wL0f=false)
 end
 
 
-""" The following are some test code for regression method """
-
+""" Build the input data matrix based on the binding parameters. """
 function regGenX(IgGCs, Rcpon;
     L0 = 1e-9,
     f = 4,
@@ -113,24 +112,6 @@ function regGenX(IgGCs, Rcpon;
     return X
 end
 
-IgGCs = [1 1; 1 0; 0 1; 1 1; 1 0; 0 1; 1 1; 1 0; 0 1; 1 1; 1 0; 0 1]
-Rcpon = [1 1 1; 1 1 1; 1 1 1; 1 1 0; 1 1 0; 1 1 0; 1 0 1; 1 0 1; 1 0 1; 0 1 1; 0 1 1; 0 1 1]
-X = regGenX(IgGCs, Rcpon)
-
-function regSimY(X, regMethod::Function, p; randr=0.05)
-    """ Generate simulated Y given X and parameters """
-    N = size(X)[1]
-    Y = regMethod(X, p) .+ randr * randn(N)
-    if sum(Y.>=0.99) + sum(Y.<=0.01) > 0.2 * N
-        @warn "Too many y's out of range (0 to 1)!"
-    end
-    Y[Y.>=0.99] .= 0.99
-    Y[Y.<=0.01] .= 0.01
-    return Y
-end
-
-Y_expo = regSimY(X, exponential, [80, 150, 230, 340])
-Y_gomp = regSimY(X, gompertz, [1.5, 80, 150, 130, 140])
 
 function reg_wL0f(Xcond, ps; regMethod::Function)
     L0 = 10^ps[1]
@@ -140,5 +121,5 @@ function reg_wL0f(Xcond, ps; regMethod::Function)
     return regMethod(X, p)
 end
 
-reg_wL0f_expo = (Xcond, ps) -> reg_wL0f(Xcond, ps; regMethod = exponential)
-reg_wL0f_gomp = (Xcond, ps) -> reg_wL0f(Xcond, ps; regMethod = gompertz)
+reg_wL0f_expo = (Xcond, ps) -> reg_wL0f(Xcond, ps; regMethod=exponential)
+reg_wL0f_gomp = (Xcond, ps) -> reg_wL0f(Xcond, ps; regMethod=gompertz)

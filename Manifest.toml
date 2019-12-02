@@ -123,9 +123,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[Distributions]]
 deps = ["LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns"]
-git-tree-sha1 = "ce189b71fac635d6ec9582dc0f208887db25e6d3"
+git-tree-sha1 = "51d184211a807ddba5f48d06098e93986759ec43"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.21.8"
+version = "0.21.9"
 
 [[FastGaussQuadrature]]
 deps = ["LinearAlgebra", "SpecialFunctions"]
@@ -285,7 +285,7 @@ uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
 version = "0.3.10"
 
 [[Pkg]]
-deps = ["Dates", "LibGit2", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
+deps = ["Dates", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
 [[PooledArrays]]
@@ -425,7 +425,7 @@ version = "0.6.1"
 
 [[fcBindingModel]]
 deps = ["LinearAlgebra", "NLsolve", "Profile", "Test"]
-git-tree-sha1 = "82d8f9210ba2e246c1d58271248025c9580ab44c"
+git-tree-sha1 = "90bd311b434fa51aba798f9714274d8b1d4cb98b"
 repo-rev = "master"
 repo-url = "https://github.com/meyer-lab/fcBindingModel.jl"
 uuid = "d914b3ba-5e2f-423d-9492-fc7c599eeb12"
