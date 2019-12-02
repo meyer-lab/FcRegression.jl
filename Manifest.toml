@@ -8,9 +8,9 @@ version = "0.3.1"
 
 [[ArrayInterface]]
 deps = ["LinearAlgebra", "Requires", "SparseArrays"]
-git-tree-sha1 = "981354dab938901c2b607a213e62d9defa50b698"
+git-tree-sha1 = "487fc79b7b77cef8391675c0000ccd8e933e3533"
 uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
-version = "1.2.1"
+version = "2.0.0"
 
 [[ArrayLayouts]]
 deps = ["FillArrays", "LinearAlgebra"]
@@ -95,9 +95,9 @@ uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
 [[DiffEqDiffTools]]
 deps = ["ArrayInterface", "LinearAlgebra", "Requires", "SparseArrays", "StaticArrays"]
-git-tree-sha1 = "81edfb3a8b55154772bb6080b5db40868e1778ed"
+git-tree-sha1 = "6d83f9b2c2a552bf5ce29c20a526c0cbfd9e5270"
 uuid = "01453d9d-ee7c-5054-8395-0335cb756afa"
-version = "1.4.0"
+version = "1.5.0"
 
 [[DiffResults]]
 deps = ["Compat", "StaticArrays"]
@@ -129,9 +129,9 @@ version = "0.21.9"
 
 [[FastGaussQuadrature]]
 deps = ["LinearAlgebra", "SpecialFunctions"]
-git-tree-sha1 = "af35c193d743c674a25c384a9b673299a179cc2b"
+git-tree-sha1 = "f876f7c548fdb5e23eda8da29222f5f0eb604166"
 uuid = "442a2c76-b920-505d-bb47-c5924d526838"
-version = "0.4.0"
+version = "0.4.1"
 
 [[FilePathsBase]]
 deps = ["Dates", "LinearAlgebra", "Printf", "Test", "UUIDs"]
@@ -147,9 +147,9 @@ version = "0.8.2"
 
 [[ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "NaNMath", "Random", "SpecialFunctions", "StaticArrays"]
-git-tree-sha1 = "4407e7b76999eca2646abdb68203bd4302476168"
+git-tree-sha1 = "da46ac97b17793eba44ff366dc6cb70f1238a738"
 uuid = "f6369f11-7733-5829-9624-2563aa707210"
-version = "0.10.6"
+version = "0.10.7"
 
 [[Future]]
 deps = ["Random"]
@@ -183,9 +183,9 @@ version = "0.21.0"
 
 [[LazyArrays]]
 deps = ["ArrayLayouts", "FillArrays", "LinearAlgebra", "MacroTools", "StaticArrays"]
-git-tree-sha1 = "cc98c58f97eda8f710dcf5bbf9f28c1d960ca0ee"
+git-tree-sha1 = "f787fc888b28b83ae32863f2ae54f47e8ca40eaf"
 uuid = "5078a376-72f3-5289-bfd5-ec5146d43c02"
-version = "0.14.8"
+version = "0.14.10"
 
 [[LibGit2]]
 uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
@@ -424,9 +424,9 @@ uuid = "ea10d353-3f73-51f8-a26c-33c1cb351aa5"
 version = "0.6.1"
 
 [[fcBindingModel]]
-deps = ["LinearAlgebra", "NLsolve", "Profile", "Test"]
-git-tree-sha1 = "90bd311b434fa51aba798f9714274d8b1d4cb98b"
-repo-rev = "master"
-repo-url = "https://github.com/meyer-lab/fcBindingModel.jl"
+deps = ["ForwardDiff", "LinearAlgebra", "NLsolve", "Profile", "Test"]
+git-tree-sha1 = "1602759134c460463ba24c1e4b0d0316e83ee6a0"
+repo-rev = "fwd"
+repo-url = "git@github.com:meyer-lab/fcBindingModel.jl.git"
 uuid = "d914b3ba-5e2f-423d-9492-fc7c599eeb12"
 version = "0.1.0"
