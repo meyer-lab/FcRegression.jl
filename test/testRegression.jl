@@ -1,7 +1,7 @@
 """ Generate simulated Y given X and parameters. """
 function regSimY(X, regMethod::Function, p)
     N = size(X)[1]
-    Y = regMethod(X, p) .+ 0.05 * randn(N)
+    Y = regMethod(X, p) .+ 0.01 * randn(N)
 
     # Clip to be within a feasible range
     Y[Y.>=0.99] .= 0.99
