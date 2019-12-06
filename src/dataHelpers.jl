@@ -23,8 +23,13 @@ function geocmean(x)
 end
 
 cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]
+murineIgG = [:IgG1, :IgG2a, :IgG2b, :IgG3]
+humanIgG = [:IgG1, :IgG2, :IgG3, :IgG4]
 murineFcgR = [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]
+humanFcgR = [:FcgRI, :FcgRIIA, :FcgRIIB, :FcgRIIC, :FcgRIIIA, :FcgRIIIB]
+humanFcgR1 = [:FcgRI, Symbol("FcgRIIA-131H"), Symbol("FcgRIIB-232I"), Symbol("FcgRIIC-13N"), Symbol("FcgRIIIA-158F"), :FcgRIIIB]
 murineActI = [1, -1, 1, 1]
+humanActI = [1, 1, -1, 1, 1, 1]
 
 function importRtot(; murine=true)
     if murine
@@ -34,6 +39,8 @@ function importRtot(; murine=true)
     end
     df = aggregate(df, [:Cells, :Receptor], geocmean)
     df = unstack(df, :Receptor, :Cells, :Count_geocmean)
+    df[!, :Receptor] = map(Symbol, df[!, :Receptor])
+    df = df[in(murine ? murineFcgR : humanFcgR).(df.Receptor), :]
     return convert(Matrix{Float64}, df[!, cellTypes])
 end
 
@@ -52,7 +59,8 @@ function importKav(; murine=true, c1q=false)
 
     df = melt(df; variable_name=:IgG, value_name=:Kav)
     df = unstack(df, :FcgR, :Kav)
-    return df
+    df = df[in(murine ? murineIgG : humanIgG).(df.IgG), :]
+    return convert(Matrix{Float64}, df[!, murine ? murineFcgR : humanFcgR1])
 end
 
 
