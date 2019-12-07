@@ -15,6 +15,7 @@ pipeline {
     }
     stage('Build Notebooks') {
       steps {
+        sh 'tlmgr install infwarerr letltxmacro kvoptions stringenc listings'
         sh 'make all -j 2'
         archiveArtifacts artifacts: '*.pdf', onlyIfSuccessful: true
       }
