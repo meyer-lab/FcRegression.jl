@@ -6,6 +6,7 @@ date: TBD
 
 ```julia; echo=false, results="hidden"
 import Pkg; Pkg.add("Plots")
+ENV["GKSwstype"] = "null"
 using Plots
 ```
 
