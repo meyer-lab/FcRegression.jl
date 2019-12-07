@@ -2,9 +2,6 @@
 title : Weave example
 author : Cyrillus Tan, Robert Theisen, Aaron S. Meyer
 date: TBD
-options:
-  out_path : reports/translation.md
-  doctype :  github
 ---
 
 

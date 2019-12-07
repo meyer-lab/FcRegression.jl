@@ -2,9 +2,6 @@
 title : An immune complex binding model predicts effector cell response across diverse disease models
 author : TBD
 date: TBD
-options:
-  out_path : reports/depletion.md
-  doctype :  github
 ---
 
 
