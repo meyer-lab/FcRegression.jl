@@ -4,6 +4,10 @@ author : TBD
 date: TBD
 ---
 
+```julia; echo=false, results="hidden"
+import Pkg; Pkg.add("Plots")
+using Plots
+```
 
 # Abstract
 
@@ -26,20 +30,15 @@ date: TBD
 
 ## A multivalent binding model quantifies potential for synergy in immune complex binding
 
-```julia
-import Pkg; Pkg.add("Plots")
-using Plots
-
+```julia; echo=false
 l = @layout [a; b c]
 
 p1 = plot(rand(100,4))
 p2 = plot(rand(100,4))
 p3 = plot(rand(100,4))
-
-plot(p1, p2, p3, layout=l)
 ```
 
-A multivalent binding model quantifies potential for synergy in immune complex binding. A) Schematic of the multivalent binding model. B) Schematic of how synergy or antagonism is calculated from binding predictions. C) XXX. D) XXX. E) Grid of calculated synergy quantities for all pairs of IgG with murine cMO. F) Calculated synergy values with with changes in IC concentration. Each point represents an individual IgG pair. Receptor expression assumed to be that measured for murine cMO. G) Calculated synergy values with variation in IC valency. Conditions match those used in (F). H) Calculated synergy values with proportional variation in receptor expression. Conditions match those used in (F).
+![A multivalent binding model quantifies potential for synergy in immune complex binding. A) Schematic of the multivalent binding model. B) Schematic of how synergy or antagonism is calculated from binding predictions. C) XXX. D) XXX. E) Grid of calculated synergy quantities for all pairs of IgG with murine cMO. F) Calculated synergy values with with changes in IC concentration. Each point represents an individual IgG pair. Receptor expression assumed to be that measured for murine cMO. G) Calculated synergy values with variation in IC valency. Conditions match those used in (F). H) Calculated synergy values with proportional variation in receptor expression. Conditions match those used in (F).](`j plot(p1, p2, p3, layout=l)`)
 
 ## Synergy in effector response need not arise through synergy in binding
 
