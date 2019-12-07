@@ -4,12 +4,6 @@ author : TBD
 date: TBD
 ---
 
-```julia; echo=false, results="hidden"
-import Pkg; Pkg.add("Plots")
-ENV["GKSwstype"] = "null"
-using Plots
-```
-
 # Abstract
 
 
@@ -32,6 +26,7 @@ using Plots
 ## A multivalent binding model quantifies potential for synergy in immune complex binding
 
 ```julia; echo=false
+using Plots
 l = @layout [a; b c]
 
 p1 = plot(rand(100,4))

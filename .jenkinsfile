@@ -15,7 +15,7 @@ pipeline {
     }
     stage('Build Notebooks') {
       steps {
-        sh 'tlmgr install infwarerr letltxmacro kvoptions stringenc listings xcolor oberdiek'
+        sh 'julia -e \'import Pkg; Pkg.add("Plots")\''
         sh 'make all'
         archiveArtifacts artifacts: '*.pdf', onlyIfSuccessful: true
       }
