@@ -15,7 +15,7 @@ pipeline {
     }
     stage('Build Notebooks') {
       steps {
-        sh 'tlmgr install infwarerr letltxmacro kvoptions stringenc listings xcolor atbegshi oberdiek'
+        sh 'tlmgr install infwarerr letltxmacro kvoptions stringenc listings xcolor oberdiek'
         sh 'make all'
         archiveArtifacts artifacts: '*.pdf', onlyIfSuccessful: true
       }
