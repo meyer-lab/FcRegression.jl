@@ -1,4 +1,3 @@
-using fcBindingModel
 using Optim
 import Statistics.cor
 
