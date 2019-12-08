@@ -57,7 +57,7 @@ function importKav(; murine=true, c1q=false, retdf=false)
         df = filter(row -> row[:FcgR] != "C1q", df)
     end
 
-    df = melt(df; variable_name=:IgG, value_name=:Kav)
+    df = stack(df; variable_name=:IgG, value_name=:Kav)
     df = unstack(df, :FcgR, :Kav)
     df = df[in(murine ? murineIgG : humanIgG).(df.IgG), :]
 
