@@ -20,7 +20,7 @@ function calculateIsobologram(IgGXidx::Int64, IgGYidx::Int64, valency, ICconc::F
         IgGC[IgGYidx] += IgGYconc[idx]
         IgGC[IgGXidx] += 1.0 - IgGYconc[idx]
 
-        output[idx] = fcBindingModel.polyfc(ICconc, KxConst, valency, FcExpr, IgGC, Kav, actV)[quantity]
+        output[idx] = polyfc(ICconc, KxConst, valency, FcExpr, IgGC, Kav, actV)[quantity]
     end
 
     return output
