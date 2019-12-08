@@ -85,6 +85,7 @@ function importDepletion(dataType; c1q=false)
 
     df = CSV.read(filename, delim=",", comment="#")
     df[!, :Condition] = map(Symbol, df[!, :Condition])
+    df[!, :Target] = 1.0 .- df[!, :Target] ./ 100.0
 
     affinityData = importKav(murine=true, c1q=c1q, retdf=true)
     df = join(df, affinityData, on = :Condition => :IgG, kind = :inner)

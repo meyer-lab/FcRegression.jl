@@ -32,6 +32,7 @@ function regGenData(dataType;
     resX[ df[:, :Background].=="NeuKO", cellTypes .== :Neu ] .= 0.0
     resX[ df[:, :Background].=="ncMOKO", cellTypes .== :ncMO ] .= 0.0
 
+    @assert all(isfinite.(resX))
     return (resX, df[!, :Target])
 end
 
@@ -67,7 +68,7 @@ function fitRegression(dataType, regMethod::Function; wL0f=false)
     if !fit.converged
         @warn "Fitting did not converge"
     end
-    return fit.param
+    return fit
 end
 
 
@@ -99,11 +100,9 @@ function regGenX(IgGCs, Rcpon;
 
     for xi in 1:N
         Kav_n = Kav .* Rcpon[xi, :]'
-        IgGC = IgGCs[xi, :]
-        vals = []
         for ict in 1:nct
             Rtot = Rpho[ict, :]
-            X[xi, ict] = polyfc(L0, KxStar, f, Rtot, IgGC, Kav_n, ActI)["ActV"]
+            X[xi, ict] = polyfc(L0, KxStar, f, Rtot, IgGCs[xi, :], Kav_n, ActI)["ActV"]
         end
     end
     return X
@@ -111,11 +110,9 @@ end
 
 
 function reg_wL0f(Xcond, ps; regMethod::Function)
-    L0 = 10^ps[1]
-    f = ps[2]
-    p = ps[3:end]
-    X = regGenX(Xcond[:, 1:2], Xcond[:, 3:5]; L0 = L0, f = f)
-    return regMethod(X, p)
+    X = regGenX(Xcond[:, 1:2], Xcond[:, 3:5]; L0=10.0^ps[1], f=ps[2])
+    @assert all(isfinite.(X))
+    return regMethod(X, ps[3:end])
 end
 
 reg_wL0f_expo = (Xcond, ps) -> reg_wL0f(Xcond, ps; regMethod=exponential)
