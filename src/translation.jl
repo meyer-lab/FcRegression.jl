@@ -53,7 +53,12 @@ function brute_force_discrete(divisor=3)
     mKav = importKav(murine=true)
 
     Omegas = gen_discrete_Omega(4, divisor)
-    pcors = [J_pearson(Omegas[:,:,i], hR, hKav, mR, mKav) for i in 1:size(Omegas,3)]
+
+    pcors = zeros(size(Omegas,3))
+    Threads.@threads for i in 1:size(Omegas, 3)
+        pcors[i] = J_pearson(Omegas[:, :, i], hR, hKav, mR, mKav)
+    end
+
     mxval, mxind = findmax(pcors)
-    return (mxval, Omegas[:,:,mxind])
+    return (mxval, Omegas[:, :, mxind])
 end

@@ -8,7 +8,7 @@ pipeline {
     stage('Clean') { steps { sh 'git reset --hard && git clean -ffdx' } }
     stage('Test') {
       steps {
-        sh 'julia --code-coverage=user -e \'using Pkg; Pkg.activate("."); Pkg.test("FcgR"; coverage=true)\''
+        sh 'JULIA_NUM_THREADS=8 julia --code-coverage=user -e \'using Pkg; Pkg.activate("."); Pkg.test("FcgR"; coverage=true)\''
         sh 'make coverage.cob'
         cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: 'coverage.cob', enableNewApi: true, failUnhealthy: false, failUnstable: false, maxNumberOfBuilds: 0, onlyStable: false, sourceEncoding: 'ASCII', zoomCoverageChart: false
       }
