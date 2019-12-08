@@ -36,11 +36,7 @@ end
 	for data in ("ITP", "melanoma")
 		for method in (FcgR.exponential, FcgR.gompertz)
 			for L0f in (false)
-				println(data)
-				println(method)
-				println(L0f)
 				fit1 = FcgR.fitRegression(data, method; wL0f=L0f)
-				println(fit1)
 			end
 		end
 	end
