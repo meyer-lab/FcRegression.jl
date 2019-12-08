@@ -1,5 +1,4 @@
-using Optim
-import Statistics.cor
+import Statistics
 
 function vec_comb(length, rsum, resid)
     if length <= 1
@@ -37,24 +36,24 @@ function gen_discrete_Omega(side, divisor=3)
 end
 
 
-function J_pearson(Omega;
-    L0 = 1e-9,
-    KxStar = KxConst,
-    f = 4)
+function J_pearson(Omega, hR, hKav, mR, mKav; L0=1e-9, KxStar=KxConst, f=4)
     humanIgGC = gen_IgGC(4)
-    human = polyfc_ActV(L0, KxStar, f, importRtot(murine=false), humanIgGC,
-        importKav(murine=false), humanActI)
-    murine = polyfc_ActV(L0, KxStar, f, importRtot(murine=true), Omega * humanIgGC,
-        importKav(murine=true), murineActI)
-    pcor = [cor(human[i,:], murine[i,:]) for i in 1:size(human,1)]
+    human  = polyfc_ActV(L0, KxStar, f, hR,         humanIgGC, hKav, humanActI)
+    murine = polyfc_ActV(L0, KxStar, f, mR, Omega * humanIgGC, mKav, murineActI)
+    pcor = [Statistics.cor(human[i,:], murine[i,:]) for i in 1:size(human,1)]
     pcor[isnan.(pcor)] .= 0
-    return sum(pcor)/length(pcor)
+    return Statistics.mean(pcor)
 end
 
 
 function brute_force_discrete(divisor=3)
+    hR = importRtot(murine=false)
+    hKav = importKav(murine=false)
+    mR = importRtot(murine=true)
+    mKav = importKav(murine=true)
+
     Omegas = gen_discrete_Omega(4, divisor)
-    pcors = [J_pearson(Omegas[:,:,i]) for i in 1:size(Omegas,3)]
+    pcors = [J_pearson(Omegas[:,:,i], hR, hKav, mR, mKav) for i in 1:size(Omegas,3)]
     mxval, mxind = findmax(pcors)
     return (mxval, Omegas[:,:,mxind])
 end
