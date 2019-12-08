@@ -68,7 +68,7 @@ function fitRegression(dataType, regMethod::Function; wL0f=false)
 
     fit = curve_fit(fitMethod, X, Y, p_init; lower=p_lower, upper=p_upper, autodiff=:forwarddiff)
     if !fit.converged
-        @warn "Fitting does not converge"
+        @warn "Fitting did not converge"
     end
     return fit.param
 end
