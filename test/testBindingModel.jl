@@ -11,7 +11,7 @@
 	    polyfc(L0, KxStar, f, Rtot, IgGC, Kav, ActI)
 	    @time polyfc(L0, KxStar, f, Rtot, IgGC, Kav, ActI)
 	
-	    for i in 1:20
+	    for i in 1:5
 	    	@profile polyfc(L0, KxStar, f, Rtot, IgGC, Kav, ActI)
 	    end
 	
