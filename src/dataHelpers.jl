@@ -46,7 +46,7 @@ end
 
 
 """ Import human or murine affinity data. """
-function importKav(; murine=true, c1q=false)
+function importKav(; murine=true, c1q=false, retdf=false)
     if murine
         df = CSV.read("../data/murine-affinities.csv", comment="#")
     else
@@ -57,9 +57,14 @@ function importKav(; murine=true, c1q=false)
         df = filter(row -> row[:FcgR] != "C1q", df)
     end
 
-    df = melt(df; variable_name=:IgG, value_name=:Kav)
+    df = stack(df; variable_name=:IgG, value_name=:Kav)
     df = unstack(df, :FcgR, :Kav)
     df = df[in(murine ? murineIgG : humanIgG).(df.IgG), :]
+
+    if retdf
+        return df
+    end
+
     return convert(Matrix{Float64}, df[!, murine ? murineFcgR : humanFcgR1])
 end
 
@@ -81,7 +86,7 @@ function importDepletion(dataType; c1q=false)
     df = CSV.read(filename, delim=",", comment="#")
     df[!, :Condition] = map(Symbol, df[!, :Condition])
 
-    affinityData = importKav(murine=true, c1q=c1q)
+    affinityData = importKav(murine=true, c1q=c1q, retdf=true)
     df = join(df, affinityData, on = :Condition => :IgG, kind = :inner)
 
     df[df[:, :Background] .== "R1KO", :FcgRI] .= 0.0

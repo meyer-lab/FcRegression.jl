@@ -1,4 +1,3 @@
-
 @testset "synergy.jl tests" begin
 	@testset "test calculateIsobologram" begin
 		Kav = ones(6, 5) * 1e9

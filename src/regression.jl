@@ -1,5 +1,4 @@
 using LsqFit
-using fcBindingModel
 
 exponential(t) = -expm1.(-t)
 gompertz(t::Real, shape) = -expm1.( -shape .* expm1.(t) )
@@ -26,22 +25,20 @@ function regGenData(dataType;
         row = df[i, :]
         Kav = convert(Vector{Float64}, row[murineFcgR])
         Kav = reshape(Kav, 1, :)
-        subActV = fcBindingModel.polyfc_ActV(row[:Concentration], KxStar, f, Rtot, [1.], Kav, ActI)
+        subActV = polyfc_ActV(row[:Concentration], KxStar, f, Rtot, [1.], Kav, ActI)
         resX[i, :] = subActV
     end
 
     resX[ df[:, :Background].=="NeuKO", cellTypes .== :Neu ] .= 0.0
     resX[ df[:, :Background].=="ncMOKO", cellTypes .== :ncMO ] .= 0.0
+
     return (resX, df[!, :Target])
 end
 
 
 function reg_wL0f(Xcond, ps, regMethod::Function, dataType)
-    L0 = 10^ps[1]
-    f = ps[2]
-    p = ps[3:end]
-    (X, Y) = regGenData(dataType; L0 = L0, f = f)
-    return regMethod(X, p)
+    (X, Y) = regGenData(dataType; L0 = 10.0^ps[1], f = ps[2])
+    return regMethod(X, ps[3:end])
 end
 
 function fitRegression(dataType, regMethod::Function; wL0f=false)
@@ -68,7 +65,7 @@ function fitRegression(dataType, regMethod::Function; wL0f=false)
 
     fit = curve_fit(fitMethod, X, Y, p_init; lower=p_lower, upper=p_upper, autodiff=:forwarddiff)
     if !fit.converged
-        @warn "Fitting does not converge"
+        @warn "Fitting did not converge"
     end
     return fit.param
 end
@@ -106,7 +103,7 @@ function regGenX(IgGCs, Rcpon;
         vals = []
         for ict in 1:nct
             Rtot = Rpho[ict, :]
-            X[xi, ict] = fcBindingModel.polyfc(L0, KxStar, f, Rtot, IgGC, Kav_n, ActI)["ActV"]
+            X[xi, ict] = polyfc(L0, KxStar, f, Rtot, IgGC, Kav_n, ActI)["ActV"]
         end
     end
     return X
