@@ -9,19 +9,20 @@
 
 	@testset "Can successfully assemble the parameters." begin
 	    polyfc(L0, KxStar, f, Rtot, IgGC, Kav, ActI)
-	    @time polyfc(L0, KxStar, f, Rtot, IgGC, Kav, ActI)
+	    #@time polyfc(L0, KxStar, f, Rtot, IgGC, Kav, ActI)
 	
-	    for i in 1:5
-	    	@profile polyfc(L0, KxStar, f, Rtot, IgGC, Kav, ActI)
-	    end
+	    #for i in 1:5
+	    #	@profile polyfc(L0, KxStar, f, Rtot, IgGC, Kav, ActI)
+	    #end
 	
-	    Profile.print(noisefloor=2.0)
+	    #Profile.print(noisefloor=2.0)
 	end
 	
 	@testset "Can use forwardDiff on parameters." begin
 		func = x -> polyfc(L0, KxStar, f, x, IgGC, Kav, ActI)["ActV"]
 		out = ForwardDiff.gradient(func, Rtot)
 		@test eltype(out) == Float64
+		@test length(out) == length(Rtot)
 	
 		func = x -> polyfc(L0, KxStar, x, Rtot, IgGC, Kav, ActI)["ActV"]
 		out = ForwardDiff.derivative(func, Float64(f))
