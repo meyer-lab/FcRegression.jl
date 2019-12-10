@@ -24,7 +24,8 @@ function Req_Regression(L0, KxStar, f, Rtot, IgGC, Kav)
     if solve_res.f_converged == false
         @warn "Req_Regression fails to converge"
     end
-
+    
+    @assert all(solve_res.zero .<= Rtot)
     return solve_res.zero
 end
 
