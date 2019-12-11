@@ -1,5 +1,6 @@
 using NLsolve
 import LinearAlgebra.diagind
+import LinearAlgebra.dot
 
 function Req_func!(F, J, x, L0, f, Rtot, Av, KxStar)
     Phisum = sum(x .* Av)
@@ -61,7 +62,7 @@ function polyfc(L0, KxStar, f, Rtot::Vector, IgGC::Vector, Kav::AbstractMatrix, 
     if !(ActI == nothing)
         ActI = vec(ActI)
         @assert nr == length(ActI)
-        w["ActV"] = max((w["Rmulti_n"] * ActI)[1, 1], 0)
+        w["ActV"] = max(dot(w["Rmulti_n"], ActI), 0.0)
     end
     return w
 end
