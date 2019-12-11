@@ -76,7 +76,7 @@ end
 function regGenX(IgGCs, Rcpon;
     L0 = 1e-9,
     f = 4,
-    KxStar = 10^-12.2,
+    KxStar = KxConst,
     Rpho = [100 300 600; 400 300 0; 400 500 100; 1000 10 900],
     Kav = rand(2,3) .* 1e6 .* [1, 1.5, 0.8]',
     ActI = [ -1, 1, 1])
