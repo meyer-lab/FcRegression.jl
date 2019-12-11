@@ -35,13 +35,13 @@
 	end
 
 	@testset "Test monovalent case." begin
-		values = polyfc(L0, KxStar, 1, Rtot, [1], [[Kav]])
+		out = polyfc(L0, KxStar, 1, Rtot, [1], Kav)
 
 		# Note f is not used
-		comp = Kav .* L0 .* Rtot ./ (1 .+ (Kav .* L0))
+		comp = Kav .* L0 .* Rtot' ./ (1 .+ (Kav .* L0))
 
-		@test all(out["Lbound"] .≈ comp)
-		@test all(out["Rbound"] .≈ comp)
-		@test all(out["Rbound"] .+ out["Req"] .≈ Rtot)
+		@test all(out["Lbound"] .≈ sum(comp))
+		@test all(out["Rbound_n"] .≈ comp)
+		@test all(out["Rbound_n"]' .+ out["Req"] .≈ Rtot)
 	end
 end
