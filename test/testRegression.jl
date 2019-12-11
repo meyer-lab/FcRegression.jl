@@ -4,8 +4,8 @@ function regSimY(X, regMethod::Function, p)
     Y = regMethod(X, p) .+ 0.01 * randn(N)
 
     # Clip to be within a feasible range
-    Y[Y.>=0.99] .= 0.99
-    Y[Y.<=0.01] .= 0.01
+    Y[Y .>= 0.999] .= 0.999
+    Y[Y .<= 0.001] .= 0.001
     return Y
 end
 
