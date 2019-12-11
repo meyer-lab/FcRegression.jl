@@ -40,7 +40,7 @@ function polyfc(L0, KxStar, f, Rtot::Vector, IgGC::Vector, Kav::AbstractMatrix, 
 
     ansType = promote_type(typeof(L0), typeof(KxStar), typeof(f), eltype(Rtot), eltype(IgGC))
     Phi = ones(ansType, ni, nr+1) .* IgGC
-    Phi[:, 1:nr] .*= Kav .* transpose(Rtot) .* KxStar
+    Phi[:, 1:nr] .*= Kav .* transpose(Req) .* KxStar
     Phisum = sum(Phi[:, 1:nr])
     Phisum_n = sum(Phi[:, 1:nr], dims=1)
 
