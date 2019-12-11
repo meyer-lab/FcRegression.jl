@@ -19,13 +19,23 @@ function Req_Regression(L0, KxStar, f, Rtot, IgGC, Kav)
 
     Av = transpose(Kav) * IgGC * KxStar
     fj! = (F, J, x) -> Req_func!(F, J, x, L0, f, Rtot, Av, KxStar)
-    solve_res = nlsolve(only_fj!( fj! ), convert(Vector{ansType}, Rtot))
 
-    if solve_res.f_converged == false
-        @warn "Req_Regression fails to converge"
+    local solve_res
+    try
+        solve_res = nlsolve(only_fj!( fj! ), convert(Vector{ansType}, Rtot))
+        @assert solve_res.f_converged == true
+        @assert all(solve_res.zero .<= Rtot)
+    catch e
+        println("Req solving failed with the following arguments:")
+        println("L0: ", L0)
+        println("KxStar: ", KxStar)
+        println("f: ", f)
+        println("Rtot: ", Rtot)
+        println("IgGC: ", IgGC)
+        println("Kav: ", Kav)
+        rethrow(e)
     end
 
-    @assert all(solve_res.zero .<= Rtot)
     return solve_res.zero
 end
 
