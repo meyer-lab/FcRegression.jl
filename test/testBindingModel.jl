@@ -7,17 +7,14 @@
 	Kav = ones((1, 4))*1.0e6
 	ActI = [1.0, 1.0, -1.0, 0.0]
 
-	@testset "Can successfully assemble the parameters." begin
-	    polyfc(L0, KxStar, f, Rtot, IgGC, Kav, ActI)
-	    #@time polyfc(L0, KxStar, f, Rtot, IgGC, Kav, ActI)
-	
-	    #for i in 1:5
-	    #	@profile polyfc(L0, KxStar, f, Rtot, IgGC, Kav, ActI)
-	    #end
-	
-	    #Profile.print(noisefloor=2.0)
+	@testset "Can successfully assemble the parameters and get a sane result." begin
+		out = polyfc(L0, KxStar, f, Rtot, IgGC, Kav, ActI)
+		# Mass balance
+		@test all(transpose(out["Rbound_n"]) .<= Rtot)
+		@test all(out["Req"] .<= Rtot)
+		@test all(isapprox.(transpose(out["Rbound_n"]) .+ out["Req"], Rtot))
 	end
-	
+
 	@testset "Can use forwardDiff on parameters." begin
 		func = x -> polyfc(L0, KxStar, f, x, IgGC, Kav, ActI)["ActV"]
 		out = ForwardDiff.gradient(func, Rtot)
@@ -35,5 +32,16 @@
 		func = x -> polyfc(L0, x, f, Rtot, IgGC, Kav, ActI)["ActV"]
 		out = ForwardDiff.derivative(func, KxStar)
 		@test typeof(out) == Float64
+	end
+
+	@testset "Test monovalent case." begin
+		out = polyfc(L0, KxStar, 1, Rtot, [1], Kav)
+
+		# Note f is not used
+		comp = Kav .* L0 .* Rtot' ./ (1 .+ (Kav .* L0))
+
+		@test all(out["Lbound"] .≈ sum(comp))
+		@test all(out["Rbound_n"] .≈ comp)
+		@test all(out["Rbound_n"]' .+ out["Req"] .≈ Rtot)
 	end
 end
