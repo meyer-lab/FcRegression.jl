@@ -92,10 +92,10 @@ function regGenX(IgGCs, Rcpon;
     A N * nct size matrix. Each row is a condition, and entries are ActV
     """
 
-    N = size(IgGCs)[1]
-    @assert N == size(Rcpon)[1]
-    @assert size(Kav) == (size(IgGCs)[2], size(Rcpon)[2])
-    nct = size(Rpho)[1]
+    N = size(IgGCs, 1)
+    @assert N == size(Rcpon, 1)
+    @assert size(Kav) == (size(IgGCs, 2), size(Rcpon, 2))
+    nct = size(Rpho, 1)
 
     Xtype = promote_type(eltype(Rpho), typeof(L0), typeof(KxStar), typeof(f))
     X = Array{Xtype,2}(undef, N, nct)
