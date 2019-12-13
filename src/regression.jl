@@ -29,8 +29,8 @@ function regGenData(dataType;
         resX[i, :] = subActV
     end
 
-    resX[ df[:, :Background].=="NeuKO", cellTypes .== :Neu ] .= 0.0
-    resX[ df[:, :Background].=="ncMOKO", cellTypes .== :ncMO ] .= 0.0
+    resX[ df[:, :Background] .== "NeuKO", cellTypes .== :Neu ] .= 0.0
+    resX[ df[:, :Background] .== "ncMOKO", cellTypes .== :ncMO ] .= 0.0
 
     @assert all(isfinite.(resX))
     return (resX, df[!, :Target])
@@ -45,13 +45,15 @@ end
 function fitRegression(dataType, regMethod::Function; wL0f=false)
     (X, Y) = regGenData(dataType)
     if regMethod == exponential
-        p_init = [ones(Float64, size(X,2));]
-        p_lower = [zeros(size(X,2));]
-        p_upper = [ones(Float64, size(X,2)) .* 1e5;]
+        p_init = [ones(Float64, size(X, 2));]
+        p_lower = [zeros(size(X, 2)); ]
+        p_upper = [ones(Float64, size(X, 2)) .* 1e5;]
+        autod = :forwarddiff
     elseif regMethod == gompertz
-        p_init = [ones(Float64, size(X,2)+1);]
-        p_lower = [zeros(size(X,2)+1);]
-        p_upper = [100; ones(Float64, size(X,2)) .* 1e5;]
+        p_init = [ones(Float64, size(X,2) + 1);]
+        p_lower = [zeros(size(X,2) + 1);]
+        p_upper = [100; ones(Float64, size(X, 2)) .* 1e5;]
+        autod = :finiteforward
     end
 
     # to fit L0 and f
@@ -64,7 +66,7 @@ function fitRegression(dataType, regMethod::Function; wL0f=false)
         fitMethod = regMethod
     end
 
-    fit = curve_fit(fitMethod, X, Y, p_init; lower=p_lower, upper=p_upper, autodiff=:forwarddiff)
+    fit = curve_fit(fitMethod, X, Y, p_init; lower=p_lower, upper=p_upper, autodiff=autod)
     if !fit.converged
         @warn "Fitting did not converge"
     end
