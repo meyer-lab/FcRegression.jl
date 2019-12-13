@@ -35,8 +35,9 @@ end
 @testset "Check that all combinations of the actual regression converge." begin
 	for data in ("ITP", "melanoma")
 		for method in (FcgR.exponential, FcgR.gompertz)
-			for L0f in (false)
-				fit1 = FcgR.fitRegression(data, method; wL0f=L0f)
+			for L0f in (false, true)
+				fit = FcgR.fitRegression(data, method; wL0f=L0f)
+				@test fit.converged
 			end
 		end
 	end
