@@ -20,7 +20,7 @@ function regGenData(dataType;
         insertcols!(df, 3, :Concentration => L0)
     end
 
-    resX = Matrix{Float64}(undef, ndpt, size(Rtot,2))
+    resX = Matrix(undef, ndpt, size(Rtot,2))
     for i in 1:ndpt
         row = df[i, :]
         Kav = convert(Vector{Float64}, row[murineFcgR])
@@ -56,7 +56,7 @@ function fitRegression(dataType, regMethod::Function; wL0f=false)
 
     # to fit L0 and f
     if wL0f
-        fitMethod = (Xcond, ps) -> reg_wL0f(Xcond, ps, regMethod=regMethod)
+        fitMethod = (Xcond, ps) -> reg_wL0f(Xcond, ps, regMethod, dataType)
         p_init = vcat(-9, 4, p_init)
         p_lower = vcat(-16, 2, p_lower)
         p_upper = vcat(-6, 12, p_upper)
@@ -109,11 +109,11 @@ function regGenX(IgGCs, Rcpon;
 end
 
 
-function reg_wL0f(Xcond, ps; regMethod::Function)
+function reg_wL0f_GenX(Xcond, ps; regMethod::Function)
     X = regGenX(Xcond[:, 1:2], Xcond[:, 3:5]; L0=10.0^ps[1], f=ps[2])
     @assert all(isfinite.(X))
     return regMethod(X, ps[3:end])
 end
 
-reg_wL0f_expo = (Xcond, ps) -> reg_wL0f(Xcond, ps; regMethod=exponential)
-reg_wL0f_gomp = (Xcond, ps) -> reg_wL0f(Xcond, ps; regMethod=gompertz)
+reg_wL0f_expo = (Xcond, ps) -> reg_wL0f_GenX(Xcond, ps; regMethod=exponential)
+reg_wL0f_gomp = (Xcond, ps) -> reg_wL0f_GenX(Xcond, ps; regMethod=gompertz)
