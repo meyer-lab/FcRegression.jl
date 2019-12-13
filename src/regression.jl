@@ -29,8 +29,8 @@ function regGenData(dataType;
         resX[i, :] = subActV
     end
 
-    resX[ df[:, :Background].=="NeuKO", cellTypes .== :Neu ] .= 0.0
-    resX[ df[:, :Background].=="ncMOKO", cellTypes .== :ncMO ] .= 0.0
+    resX[ df[:, :Background] .== "NeuKO", cellTypes .== :Neu ] .= 0.0
+    resX[ df[:, :Background] .== "ncMOKO", cellTypes .== :ncMO ] .= 0.0
 
     @assert all(isfinite.(resX))
     return (resX, df[!, :Target])
@@ -45,13 +45,15 @@ end
 function fitRegression(dataType, regMethod::Function; wL0f=false)
     (X, Y) = regGenData(dataType)
     if regMethod == exponential
-        p_init = [ones(Float64, size(X,2));]
-        p_lower = [zeros(size(X,2));]
-        p_upper = [ones(Float64, size(X,2)) .* 1e5;]
+        p_init = [ones(Float64, size(X, 2));]
+        p_lower = [zeros(size(X, 2)); ]
+        p_upper = [ones(Float64, size(X, 2)) .* 1e5;]
+        autod = :forwarddiff
     elseif regMethod == gompertz
-        p_init = [ones(Float64, size(X,2)+1);]
-        p_lower = [zeros(size(X,2)+1);]
-        p_upper = [100; ones(Float64, size(X,2)) .* 1e5;]
+        p_init = [ones(Float64, size(X,2) + 1);]
+        p_lower = [zeros(size(X,2) + 1);]
+        p_upper = [100; ones(Float64, size(X, 2)) .* 1e5;]
+        autod = :finiteforward
     end
 
     # to fit L0 and f
@@ -64,7 +66,7 @@ function fitRegression(dataType, regMethod::Function; wL0f=false)
         fitMethod = regMethod
     end
 
-    fit = curve_fit(fitMethod, X, Y, p_init; lower=p_lower, upper=p_upper, autodiff=:forwarddiff)
+    fit = curve_fit(fitMethod, X, Y, p_init; lower=p_lower, upper=p_upper, autodiff=autod)
     if !fit.converged
         @warn "Fitting did not converge"
     end
@@ -90,10 +92,10 @@ function regGenX(IgGCs, Rcpon;
     A N * nct size matrix. Each row is a condition, and entries are ActV
     """
 
-    N = size(IgGCs)[1]
-    @assert N == size(Rcpon)[1]
-    @assert size(Kav) == (size(IgGCs)[2], size(Rcpon)[2])
-    nct = size(Rpho)[1]
+    N = size(IgGCs, 1)
+    @assert N == size(Rcpon, 1)
+    @assert size(Kav) == (size(IgGCs, 2), size(Rcpon, 2))
+    nct = size(Rpho, 1)
 
     Xtype = promote_type(eltype(Rpho), typeof(L0), typeof(KxStar), typeof(f))
     X = Array{Xtype,2}(undef, N, nct)
