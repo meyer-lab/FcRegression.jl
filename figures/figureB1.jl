@@ -24,7 +24,6 @@ function plotIsobologramTwo()
     """ Plot an example isobologram. """
     
     Kav = importKav(murine=true)
-    show(Kav)
     FcExpr = [2571.0, 12886.0, 12563.0, 2371.0]
     ActVIn = ones(4)
     ActVIn[2] = -1.0
@@ -40,4 +39,26 @@ function plotIsobologramTwo()
     ylabel!("?cMO? Predicted Activity")
     xlabel!("Percent mIgG2b")
     ylims!((-0.02, maximum(output) * 1.1))
+end
+
+function PlotSynGraph()
+    """Figure shows the affect of increasing immune complex concentration on synergies for each IgG combination"""
+    Kav = importKav(murine=true)
+    df = importRtot()
+    FcgR = df[:,2] #2 = mean cMO
+    IC = exp10.(range(-12, stop=-6, length=20))
+    S = zeros((length(IC), 10))
+
+    for (ii, value) in enumerate(IC)
+        A = synergyGrid(4, value, FcgR, Kav)
+        h = collect(Iterators.flatten(A))
+        S[ii, 1:4] = h[1:4]
+        S[ii, 5:7] = h[6:8]
+        S[ii, 8:9] = h[11:12]
+        S[ii, 10] = h[16]
+    end
+
+    plot(IC, S, xaxis=:log, title="Effect of Concentration on Synergy", label=["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG2a/2b" "IgG2a/3" "IgG2b/3"], legend=:topleft, dpi=72)
+    xlabel!("IC Concentration")
+    ylabel!("Synergy")
 end
