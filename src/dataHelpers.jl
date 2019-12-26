@@ -32,7 +32,7 @@ humanFcgR1 = [:FcgRI, Symbol("FcgRIIA-131H"), Symbol("FcgRIIB-232I"), Symbol("Fc
 murineActI = [1, -1, 1, 1]
 humanActI = [1, 1, -1, 1, 1, 1]
 
-function importRtot(; murine=true)
+function importRtot(; murine = true)
     if murine
         df = CSV.read("../data/murine-FcgR-abundance.csv")
     else
@@ -47,18 +47,18 @@ end
 
 
 """ Import human or murine affinity data. """
-function importKav(; murine=true, c1q=false, retdf=false)
+function importKav(; murine = true, c1q = false, retdf = false)
     if murine
-        df = CSV.read("../data/murine-affinities.csv", comment="#")
+        df = CSV.read("../data/murine-affinities.csv", comment = "#")
     else
-        df = CSV.read("../data/human-affinities.csv", comment="#")
+        df = CSV.read("../data/human-affinities.csv", comment = "#")
     end
 
     if c1q == false
         df = filter(row -> row[:FcgR] != "C1q", df)
     end
 
-    df = stack(df; variable_name=:IgG, value_name=:Kav)
+    df = stack(df; variable_name = :IgG, value_name = :Kav)
     df = unstack(df, :FcgR, :Kav)
     df = df[in(murine ? murineIgG : humanIgG).(df.IgG), :]
 
@@ -71,7 +71,7 @@ end
 
 
 """ Import cell depletion data. """
-function importDepletion(dataType; c1q=false)
+function importDepletion(dataType; c1q = false)
     if dataType == "ITP"
         filename = "../data/nimmerjahn-ITP.csv"
     elseif dataType == "blood"
@@ -84,11 +84,11 @@ function importDepletion(dataType; c1q=false)
         @error "Data type not found"
     end
 
-    df = CSV.read(filename, delim=",", comment="#")
+    df = CSV.read(filename, delim = ",", comment = "#")
     df[!, :Condition] = map(Symbol, df[!, :Condition])
     df[!, :Target] = 1.0 .- df[!, :Target] ./ 100.0
 
-    affinityData = importKav(murine=true, c1q=c1q, retdf=true)
+    affinityData = importKav(murine = true, c1q = c1q, retdf = true)
     df = join(df, affinityData, on = :Condition => :IgG, kind = :inner)
 
     df[df[:, :Background] .== "R1KO", :FcgRI] .= 0.0
