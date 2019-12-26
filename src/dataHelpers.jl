@@ -33,7 +33,7 @@ murineActI = [1, -1, 1, 1]
 humanActI = [1, 1, -1, 1, 1, 1]
 dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
 
-function importRtot(; murine=true)
+function importRtot(; murine = true)
     if murine
         df = CSV.read(joinpath(dataDir, "murine-FcgR-abundance.csv"))
     else
@@ -48,7 +48,7 @@ end
 
 
 """ Import human or murine affinity data. """
-function importKav(; murine=true, c1q=false, retdf=false)
+function importKav(; murine = true, c1q = false, retdf = false)
     if murine
         df = CSV.read(joinpath(dataDir, "murine-affinities.csv"), comment="#")
     else
@@ -59,7 +59,7 @@ function importKav(; murine=true, c1q=false, retdf=false)
         df = filter(row -> row[:FcgR] != "C1q", df)
     end
 
-    df = stack(df; variable_name=:IgG, value_name=:Kav)
+    df = stack(df; variable_name = :IgG, value_name = :Kav)
     df = unstack(df, :FcgR, :Kav)
     df = df[in(murine ? murineIgG : humanIgG).(df.IgG), :]
 
@@ -72,7 +72,7 @@ end
 
 
 """ Import cell depletion data. """
-function importDepletion(dataType; c1q=false)
+function importDepletion(dataType; c1q = false)
     if dataType == "ITP"
         filename = "nimmerjahn-ITP.csv"
     elseif dataType == "blood"
@@ -89,7 +89,7 @@ function importDepletion(dataType; c1q=false)
     df[!, :Condition] = map(Symbol, df[!, :Condition])
     df[!, :Target] = 1.0 .- df[!, :Target] ./ 100.0
 
-    affinityData = importKav(murine=true, c1q=c1q, retdf=true)
+    affinityData = importKav(murine = true, c1q = c1q, retdf = true)
     df = join(df, affinityData, on = :Condition => :IgG, kind = :inner)
 
     df[df[:, :Background] .== "R1KO", :FcgRI] .= 0.0

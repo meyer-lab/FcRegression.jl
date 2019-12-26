@@ -5,13 +5,13 @@ import LinearAlgebra.dot
 function Req_func!(F, J, x, L0, f, Rtot, Av, KxStar)
     Phisum = sum(x .* Av)
     if !(F == nothing)
-        F .= x + L0 * f / KxStar .* (x .* Av) .* (1 + Phisum)^(f-1) - vec(Rtot)
+        F .= x + L0 * f / KxStar .* (x .* Av) .* (1 + Phisum)^(f - 1) - vec(Rtot)
     end
     if !(J == nothing)
-        J .= L0 * f / KxStar * (f-1) * (1 + Phisum)^(f-2)
+        J .= L0 * f / KxStar * (f - 1) * (1 + Phisum)^(f - 2)
         J .*= x .* Av
         J .*= transpose(Av)
-        J[diagind(J)] .= 1 .+ L0 * f / KxStar .* Av * (1+Phisum)^(f-2) .* (1+Phisum .+ (f-1)*Av)
+        J[diagind(J)] .= 1 .+ L0 * f / KxStar .* Av * (1 + Phisum)^(f - 2) .* (1 + Phisum .+ (f - 1) * Av)
     end
 end
 
@@ -23,7 +23,7 @@ function Req_Regression(L0, KxStar, f, Rtot, IgGC, Kav)
 
     local solve_res
     try
-        solve_res = nlsolve(only_fj!( fj! ), convert(Vector{ansType}, Rtot))
+        solve_res = nlsolve(only_fj!(fj!), convert(Vector{ansType}, Rtot))
         @assert solve_res.f_converged == true
         @assert all(solve_res.zero .<= Rtot)
     catch e
@@ -40,7 +40,7 @@ function Req_Regression(L0, KxStar, f, Rtot, IgGC, Kav)
     return solve_res.zero
 end
 
-function polyfc(L0, KxStar, f, Rtot::Vector, IgGC::Vector, Kav::AbstractMatrix, ActI=nothing)
+function polyfc(L0, KxStar, f, Rtot::Vector, IgGC::Vector, Kav::AbstractMatrix, ActI = nothing)
     # Data consistency check
     (ni, nr) = size(Kav)
     @assert ni == length(IgGC)
@@ -50,10 +50,10 @@ function polyfc(L0, KxStar, f, Rtot::Vector, IgGC::Vector, Kav::AbstractMatrix, 
     Req = Req_Regression(L0, KxStar, f, Rtot, IgGC, Kav)
 
     ansType = promote_type(typeof(L0), typeof(KxStar), typeof(f), eltype(Rtot), eltype(IgGC))
-    Phi = ones(ansType, ni, nr+1) .* IgGC
+    Phi = ones(ansType, ni, nr + 1) .* IgGC
     Phi[:, 1:nr] .*= Kav .* transpose(Req) .* KxStar
     Phisum = sum(Phi[:, 1:nr])
-    Phisum_n = sum(Phi[:, 1:nr], dims=1)
+    Phisum_n = sum(Phi[:, 1:nr], dims = 1)
 
     w = Dict()
     w["Lbound"] = L0 / KxStar * ((1 + Phisum)^f - 1)
@@ -66,7 +66,7 @@ function polyfc(L0, KxStar, f, Rtot::Vector, IgGC::Vector, Kav::AbstractMatrix, 
     w["vtot"] = L0 / KxStar * (1 + Phisum)^f
 
     if typeof(f) == Int
-        w["vieq"] = L0 / KxStar .* [binomial(f,i) for i in 0:f] .* Phisum .^ (0:f)
+        w["vieq"] = L0 / KxStar .* [binomial(f, i) for i = 0:f] .* Phisum .^ (0:f)
     end
 
     if !(ActI == nothing)
@@ -77,7 +77,7 @@ function polyfc(L0, KxStar, f, Rtot::Vector, IgGC::Vector, Kav::AbstractMatrix, 
     return w
 end
 
-polyfcm = (KxStar, f, Rtot, IgG, Kav, ActI=nothing) -> polyfc(sum(IgG), KxStar, f, Rtot, IgG/sum(IgG), Kav, ActI)
+polyfcm = (KxStar, f, Rtot, IgG, Kav, ActI = nothing) -> polyfc(sum(IgG), KxStar, f, Rtot, IgG / sum(IgG), Kav, ActI)
 
 function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatrix, ActI::Vector)
     """
@@ -91,9 +91,9 @@ function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatri
     nset = size(IgGC, 2)
     ansType = promote_type(typeof(L0), typeof(KxStar), typeof(f), eltype(Rtot), eltype(IgGC))
     res = Matrix{ansType}(undef, nct, nset)
-    for ict in 1:nct
-        for iset in 1:nset
-            res[ict, iset] = polyfc(L0, KxStar, f, Rtot[:,ict], IgGC[:,iset], Kav, ActI)["ActV"]
+    for ict = 1:nct
+        for iset = 1:nset
+            res[ict, iset] = polyfc(L0, KxStar, f, Rtot[:, ict], IgGC[:, iset], Kav, ActI)["ActV"]
         end
     end
     return res
