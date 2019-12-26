@@ -11,11 +11,11 @@ function plotIsobologram()
     X = range(0, stop=1, length=length(output))
 
     pl = plot(X, output, title="Receptor Binding vs IgG Composition", xticks=false, legend=false, dpi=72)
-    plot!([0, 1], [output[1], output[33]])
-    annotate!([(0, 0, text("100% hIgG2",8,:right, rotation=45)),(1.0, 0, text("100% hIgG3",8,:right, rotation=45))])
-    ylabel!("hFcgRIIIA-158V Binding")
-    xlabel!("Percent hIgG3")
-    ylims!((-1, maximum(output) * 1.1))
+    plot!(pl, [0, 1], [output[1], output[33]])
+    annotate!(pl, [(0, 0, text("100% hIgG2",8,:right, rotation=45)),(1.0, 0, text("100% hIgG3",8,:right, rotation=45))])
+    ylabel!(pl, "hFcgRIIIA-158V Binding")
+    xlabel!(pl, "Percent hIgG3")
+    ylims!(pl, (-1, maximum(output) * 1.1))
 
     return pl
 end
@@ -32,11 +32,11 @@ function plotIsobologramTwo()
     X = range(0, stop=1, length=length(output))
 
     pl = plot(X, output, title="Activity vs IgG Composition", xticks=false, legend=false, dpi=72)
-    plot!([0, 1], [output[1], output[33]])
-    annotate!([(0, 0, text("100% mIgG2a",8,:right, rotation=45)),(1.0, 0, text("100% mIgG2b",8,:right, rotation=45))])
-    ylabel!("cMO Predicted Activity")
-    xlabel!("Percent mIgG2b")
-    ylims!((-0.02, maximum(output) * 1.1))
+    plot!(pl, [0, 1], [output[1], output[33]])
+    annotate!(pl, [(0, 0, text("100% mIgG2a",8,:right, rotation=45)),(1.0, 0, text("100% mIgG2b",8,:right, rotation=45))])
+    ylabel!(pl, "cMO Predicted Activity")
+    xlabel!(pl, "Percent mIgG2b")
+    ylims!(pl, (-0.02, maximum(output) * 1.1))
 
     return pl
 end
@@ -59,8 +59,8 @@ function PlotSynGraph()
     end
 
     pl = plot(IC, S, xaxis=:log, title="Effect of Concentration on Synergy", label=["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG2a/2b" "IgG2a/3" "IgG2b/3"], legend=:topleft, dpi=72)
-    xlabel!("IC Concentration")
-    ylabel!("Synergy")
+    xlabel!(pl, "IC Concentration")
+    ylabel!(pl, "Synergy")
 
     return pl
 end
