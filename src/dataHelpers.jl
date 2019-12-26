@@ -23,7 +23,7 @@ function geocmean(x)
 end
 
 cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]
-murineIgG = [:IgG1, :IgG2a, :IgG2b, :IgG3, :IgG2bFucose]
+murineIgG = [:IgG1, :IgG2a, :IgG2b, :IgG3]
 humanIgG = [:IgG1, :IgG2, :IgG3, :IgG4]
 murineFcgR = [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]
 humanFcgR = [:FcgRI, :FcgRIIA, :FcgRIIB, :FcgRIIC, :FcgRIIIA, :FcgRIIIB]
