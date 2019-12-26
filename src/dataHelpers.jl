@@ -13,13 +13,14 @@ Guidance on DataFrame handling:
 
 using DataFrames
 using CSV
+import StatsBase
 
 const KxConst = 6.31e-13 # 10^(-12.2)
 
 function geocmean(x)
     x = convert(Vector, x)
     x[x .<= 1.0] .= 1.0
-    return exp( sum(log.(x))/length(x) )
+    return StatsBase.geomean(x)
 end
 
 cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]

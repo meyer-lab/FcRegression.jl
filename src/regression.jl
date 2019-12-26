@@ -1,7 +1,5 @@
 using LsqFit
 
-exponential(t) = -expm1.(-t)
-gompertz(t::Real, shape) = -expm1.( -shape .* expm1.(t) )
 exponential(X, p) = -expm1.( -X * p )
 gompertz(X::Array, p) = -expm1.( -p[1] .* expm1.(X * p[2:end]) )
 
