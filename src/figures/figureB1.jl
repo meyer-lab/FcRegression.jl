@@ -58,9 +58,11 @@ function PlotSynGraph()
         S[ii, 10] = h[16]
     end
 
-    plot(IC, S, xaxis=:log, title="Effect of Concentration on Synergy", label=["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG2a/2b" "IgG2a/3" "IgG2b/3"], legend=:topleft, dpi=72)
+    pl = plot(IC, S, xaxis=:log, title="Effect of Concentration on Synergy", label=["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG2a/2b" "IgG2a/3" "IgG2b/3"], legend=:topleft, dpi=72)
     xlabel!("IC Concentration")
     ylabel!("Synergy")
+
+    return pl
 end
 
 function figureB1()
@@ -68,7 +70,7 @@ function figureB1()
 
     p1 = plotIsobologram()
     p2 = plotIsobologramTwo()
-    p3 = plot(rand(100, 4))
+    p3 = PlotSynGraph()
     p = plot(p1, p2, p3, layout=l)
 
     savefig(p, "figureB1.pdf")
