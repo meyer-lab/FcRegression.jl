@@ -1,9 +1,6 @@
-using FcgR
-using Plots
 
+""" Plot an example isobologram. """
 function plotIsobologram()
-    """ Plot an example isobologram. """
-    
     Kav = importKav(murine=false)
     FcExpr = zeros(6);
     FcExpr[5] = 1000.0;
@@ -20,9 +17,8 @@ function plotIsobologram()
     ylims!((-1, maximum(output) * 1.1))
 end
 
+""" Plot an example isobologram. """
 function plotIsobologramTwo()
-    """ Plot an example isobologram. """
-    
     Kav = importKav(murine=true)
     FcExpr = [2571.0, 12886.0, 12563.0, 2371.0]
     ActVIn = ones(4)
@@ -41,8 +37,8 @@ function plotIsobologramTwo()
     ylims!((-0.02, maximum(output) * 1.1))
 end
 
+"""Figure shows the affect of increasing immune complex concentration on synergies for each IgG combination"""
 function PlotSynGraph()
-    """Figure shows the affect of increasing immune complex concentration on synergies for each IgG combination"""
     Kav = importKav(murine=true)
     df = importRtot()
     FcgR = df[:,2] #2 = mean cMO
@@ -61,4 +57,15 @@ function PlotSynGraph()
     plot(IC, S, xaxis=:log, title="Effect of Concentration on Synergy", label=["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG2a/2b" "IgG2a/3" "IgG2b/3"], legend=:topleft, dpi=72)
     xlabel!("IC Concentration")
     ylabel!("Synergy")
+end
+
+function figureB1()
+    l = @layout [a; b c]
+
+    p1 = plot(rand(100, 4))
+    p2 = plot(rand(100, 4))
+    p3 = plot(rand(100, 4))
+    p = plot(p1, p2, p3, layout=l)
+
+    savefig(p, "figureB1.pdf")
 end
