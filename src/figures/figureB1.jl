@@ -2,6 +2,7 @@
 """ Plot an example isobologram. """
 function plotIsobologram()
     Kav = importKav(murine=false)
+    # TODO: Should import actual receptor abundance
     FcExpr = zeros(6);
     FcExpr[5] = 1000.0;
     
@@ -20,6 +21,7 @@ end
 """ Plot an example isobologram. """
 function plotIsobologramTwo()
     Kav = importKav(murine=true)
+    # TODO: Should import actual receptor abundance
     FcExpr = [2571.0, 12886.0, 12563.0, 2371.0]
     ActVIn = ones(4)
     ActVIn[2] = -1.0
