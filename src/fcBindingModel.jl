@@ -2,7 +2,7 @@ using NLsolve
 import LinearAlgebra.diagind
 import LinearAlgebra.dot
 
-function Req_func!(F, J, x, L0::Real, f, Rtot, Av, KxStar)
+function Req_func!(F, J, x, L0::Real, f::Number, Rtot, Av, KxStar::Real)
     Phisum = sum(x .* Av)
     if F != nothing
         F .= x + L0 * f / KxStar .* (x .* Av) .* (1 + Phisum)^(f - 1) - Rtot
