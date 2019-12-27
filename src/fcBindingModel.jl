@@ -2,12 +2,12 @@ using NLsolve
 import LinearAlgebra.diagind
 import LinearAlgebra.dot
 
-function Req_func!(F, J, x, L0, f, Rtot, Av, KxStar)
+function Req_func!(F, J, x, L0::Real, f::Number, Rtot, Av, KxStar::Real)
     Phisum = sum(x .* Av)
-    if !(F == nothing)
-        F .= x + L0 * f / KxStar .* (x .* Av) .* (1 + Phisum)^(f - 1) - vec(Rtot)
+    if F != nothing
+        F .= x + L0 * f / KxStar .* (x .* Av) .* (1 + Phisum)^(f - 1) - Rtot
     end
-    if !(J == nothing)
+    if J != nothing
         J .= L0 * f / KxStar * (f - 1) * (1 + Phisum)^(f - 2)
         J .*= x .* Av
         J .*= transpose(Av)
@@ -15,7 +15,7 @@ function Req_func!(F, J, x, L0, f, Rtot, Av, KxStar)
     end
 end
 
-function Req_Regression(L0, KxStar, f, Rtot, IgGC, Kav)
+function Req_Regression(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC, Kav)
     ansType = promote_type(typeof(L0), typeof(KxStar), typeof(f), eltype(Rtot), eltype(IgGC))
 
     Av = transpose(Kav) * IgGC * KxStar
@@ -40,7 +40,7 @@ function Req_Regression(L0, KxStar, f, Rtot, IgGC, Kav)
     return solve_res.zero
 end
 
-function polyfc(L0, KxStar, f, Rtot::Vector, IgGC::Vector, Kav::AbstractMatrix, ActI = nothing)
+function polyfc(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC::Vector, Kav::AbstractMatrix, ActI = nothing)
     # Data consistency check
     (ni, nr) = size(Kav)
     @assert ni == length(IgGC)
@@ -69,7 +69,7 @@ function polyfc(L0, KxStar, f, Rtot::Vector, IgGC::Vector, Kav::AbstractMatrix, 
         w["vieq"] = L0 / KxStar .* [binomial(f, i) for i = 0:f] .* Phisum .^ (0:f)
     end
 
-    if !(ActI == nothing)
+    if ActI != nothing
         ActI = vec(ActI)
         @assert nr == length(ActI)
         w["ActV"] = max(dot(w["Rmulti_n"], ActI), 0.0)
