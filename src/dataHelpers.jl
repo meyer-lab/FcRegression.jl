@@ -50,9 +50,9 @@ end
 """ Import human or murine affinity data. """
 function importKav(; murine = true, c1q = false, retdf = false)
     if murine
-        df = CSV.read(joinpath(dataDir, "murine-affinities.csv"), comment="#")
+        df = CSV.read(joinpath(dataDir, "murine-affinities.csv"), comment = "#")
     else
-        df = CSV.read(joinpath(dataDir, "human-affinities.csv"), comment="#")
+        df = CSV.read(joinpath(dataDir, "human-affinities.csv"), comment = "#")
     end
 
     if c1q == false
@@ -85,7 +85,7 @@ function importDepletion(dataType; c1q = false)
         @error "Data type not found"
     end
 
-    df = CSV.read(joinpath(dataDir, filename), delim=",", comment="#")
+    df = CSV.read(joinpath(dataDir, filename), delim = ",", comment = "#")
     df[!, :Condition] = map(Symbol, df[!, :Condition])
     df[!, :Target] = 1.0 .- df[!, :Target] ./ 100.0
 
