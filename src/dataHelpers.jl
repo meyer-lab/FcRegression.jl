@@ -31,12 +31,13 @@ humanFcgR = [:FcgRI, :FcgRIIA, :FcgRIIB, :FcgRIIC, :FcgRIIIA, :FcgRIIIB]
 humanFcgR1 = [:FcgRI, Symbol("FcgRIIA-131H"), Symbol("FcgRIIB-232I"), Symbol("FcgRIIC-13N"), Symbol("FcgRIIIA-158F"), :FcgRIIIB]
 murineActI = [1, -1, 1, 1]
 humanActI = [1, 1, -1, 1, 1, 1]
+dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
 
 function importRtot(; murine = true)
     if murine
-        df = CSV.read("../data/murine-FcgR-abundance.csv")
+        df = CSV.read(joinpath(dataDir, "murine-FcgR-abundance.csv"))
     else
-        df = CSV.read("../data/human-FcgR-abundance.csv")
+        df = CSV.read(joinpath(dataDir, "human-FcgR-abundance.csv"))
     end
     df = aggregate(df, [:Cells, :Receptor], geocmean)
     df = unstack(df, :Receptor, :Cells, :Count_geocmean)
@@ -49,9 +50,9 @@ end
 """ Import human or murine affinity data. """
 function importKav(; murine = true, c1q = false, retdf = false)
     if murine
-        df = CSV.read("../data/murine-affinities.csv", comment = "#")
+        df = CSV.read(joinpath(dataDir, "murine-affinities.csv"), comment="#")
     else
-        df = CSV.read("../data/human-affinities.csv", comment = "#")
+        df = CSV.read(joinpath(dataDir, "human-affinities.csv"), comment="#")
     end
 
     if c1q == false
@@ -73,18 +74,18 @@ end
 """ Import cell depletion data. """
 function importDepletion(dataType; c1q = false)
     if dataType == "ITP"
-        filename = "../data/nimmerjahn-ITP.csv"
+        filename = "nimmerjahn-ITP.csv"
     elseif dataType == "blood"
-        filename = "../data/nimmerjahn-CD20-blood.csv"
+        filename = "nimmerjahn-CD20-blood.csv"
     elseif dataType == "bone"
-        filename = "../data/nimmerjahn-CD20-bone.csv"
+        filename = "nimmerjahn-CD20-bone.csv"
     elseif dataType == "melanoma"
-        filename = "../data/nimmerjahn-melanoma.csv"
+        filename = "nimmerjahn-melanoma.csv"
     else
         @error "Data type not found"
     end
 
-    df = CSV.read(filename, delim = ",", comment = "#")
+    df = CSV.read(joinpath(dataDir, filename), delim=",", comment="#")
     df[!, :Condition] = map(Symbol, df[!, :Condition])
     df[!, :Target] = 1.0 .- df[!, :Target] ./ 100.0
 
