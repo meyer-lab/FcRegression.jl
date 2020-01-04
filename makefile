@@ -11,9 +11,10 @@ venv/bin/activate: requirements.txt
 figureB1.pdf:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB1()'
 
-coverage.cob: venv
+coverage.cob:
 	julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; coverage = process_folder(); LCOV.writefile("coverage-lcov.info", coverage)'
-	. venv/bin/activate && python3 ./venv/lib/python3.7/lcov_cobertura.py coverage-lcov.info -o coverage.cob
+	pip3 install --user lcov_cobertura
+	python3 ~/.local/lib/python3.7/site-packages/lcov_cobertura.py coverage-lcov.info -o coverage.cob
 
 clean:
 	rm -rf *.pdf venv
