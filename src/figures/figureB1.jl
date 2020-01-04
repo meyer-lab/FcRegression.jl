@@ -1,3 +1,4 @@
+""" This file builds the depletion manuscript, Figure 1. """
 
 """ Plot an example isobologram. """
 function plotIsobologram()
@@ -10,7 +11,7 @@ function plotIsobologram()
 
     X = range(0, stop = 1, length = length(output))
 
-    pl = plot(X, output, title = "Receptor Binding vs IgG Composition", xticks = false, legend = false, dpi = 72)
+    pl = plot(X, output, title = "Receptor Binding vs IgG Composition", xticks = false, legend = false)
     plot!(pl, [0, 1], [output[1], output[33]])
     annotate!(pl, [(0, 0, text("100% hIgG2", 8, :right, rotation = 45)), (1.0, 0, text("100% hIgG3", 8, :right, rotation = 45))])
     ylabel!(pl, "hFcgRIIIA-158V Binding")
@@ -31,7 +32,7 @@ function plotIsobologramTwo()
 
     X = range(0, stop = 1, length = length(output))
 
-    pl = plot(X, output, title = "Activity vs IgG Composition", xticks = false, legend = false, dpi = 72)
+    pl = plot(X, output, title = "Activity vs IgG Composition", xticks = false, legend = false)
     plot!(pl, [0, 1], [output[1], output[33]])
     annotate!(pl, [(0, 0, text("100% mIgG2a", 8, :right, rotation = 45)), (1.0, 0, text("100% mIgG2b", 8, :right, rotation = 45))])
     ylabel!(pl, "cMO Predicted Activity")
@@ -65,7 +66,6 @@ function PlotSynGraph()
         title = "Effect of Concentration on Synergy",
         label = ["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG2a/2b" "IgG2a/3" "IgG2b/3"],
         legend = :topleft,
-        dpi = 72,
     )
     xlabel!(pl, "IC Concentration")
     ylabel!(pl, "Synergy")
@@ -74,12 +74,10 @@ function PlotSynGraph()
 end
 
 function figureB1()
-    l = @layout [a; b c]
-
     p1 = plotIsobologram()
     p2 = plotIsobologramTwo()
     p3 = PlotSynGraph()
-    p = plot(p1, p2, p3, layout = l)
+    p = plot(p1, p1, p2, p3, layout = (2, 2), size=(2100, 1200), dpi=300)
 
     savefig(p, "figureB1.pdf")
 end

@@ -5,7 +5,7 @@ pipeline {
     parallelsAlwaysFailFast()
   }
   stages {
-    stage('Clean') { steps { sh 'git reset --hard && git clean -ffdx' } }
+    stage('Clean') { steps { sh 'make clean && git submodule update --init --recursive' } }
     stage('Test') {
       steps {
         sh 'julia -e \'using Pkg; Pkg.activate("."); Pkg.test("FcgR"; coverage=true)\''
@@ -13,11 +13,15 @@ pipeline {
         cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: 'coverage.cob', enableNewApi: true, failUnhealthy: false, failUnstable: false, maxNumberOfBuilds: 0, onlyStable: false, sourceEncoding: 'ASCII', zoomCoverageChart: false
       }
     }
-    stage('Build Notebooks') {
+    stage('Build Figures') {
       steps {
-        sh 'julia -e \'import Pkg; Pkg.add("Plots")\''
+        lock ('manubot') {
+          sh 'make output/depletion/manuscript.md output/translation/manuscript.md'
+        }
         sh 'make all'
         archiveArtifacts artifacts: '*.pdf', onlyIfSuccessful: true
+        publishHTML([allowMissing:false, alwaysLinkToLastBuild:false, keepAll:true, reportDir:'output/depletion', reportFiles:'manuscript.html', reportName:'Depletion Paper'])
+        publishHTML([allowMissing:false, alwaysLinkToLastBuild:false, keepAll:true, reportDir:'output/translation', reportFiles:'manuscript.html', reportName:'Translation Paper'])
       }
     }
   }
