@@ -13,9 +13,8 @@ pipeline {
         cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: 'coverage.cob', enableNewApi: true, failUnhealthy: false, failUnstable: false, maxNumberOfBuilds: 0, onlyStable: false, sourceEncoding: 'ASCII', zoomCoverageChart: false
       }
     }
-    stage('Build Notebooks') {
+    stage('Build Figures') {
       steps {
-        sh 'julia -e \'import Pkg; Pkg.add("Plots")\''
         sh 'make all'
         archiveArtifacts artifacts: '*.pdf', onlyIfSuccessful: true
       }

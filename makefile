@@ -1,8 +1,5 @@
 
-all: translation.pdf depletion.pdf figureB1.pdf
-
-%.pdf: %.jmd
-	julia -e 'using Pkg; Pkg.add("Weave"); using Weave; weave("$<", out_path=:pwd, throw_errors=true, doctype="md2pdf")'
+all: figureB1.pdf
 
 figureB1.pdf:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB1()'
