@@ -1,39 +1,25 @@
 using NLsolve
-import LinearAlgebra.diagind
-import LinearAlgebra.dot
+using LinearAlgebra
 
-function Req_func!(F, J, x, L0::Real, f::Number, Rtot, Av, KxStar::Real)
-    Phisum = sum(x .* Av)
-    if F != nothing
-        F .= x + L0 * f / KxStar .* (x .* Av) .* (1 + Phisum)^(f - 1) - Rtot
-    end
-    if J != nothing
-        J .= L0 * f / KxStar * (f - 1) * (1 + Phisum)^(f - 2)
-        J .*= x .* Av
-        J .*= transpose(Av)
-        J[diagind(J)] .= 1 .+ L0 * f / KxStar .* Av * (1 + Phisum)^(f - 2) .* (1 + Phisum .+ (f - 1) * Av)
-    end
-end
 
 function Req_Regression(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC, Kav)
     ansType = promote_type(typeof(L0), typeof(KxStar), typeof(f), eltype(Rtot), eltype(IgGC))
 
     Av = transpose(Kav) * IgGC * KxStar
-    fj! = (F, J, x) -> Req_func!(F, J, x, L0, f, Rtot, Av, KxStar)
+    f! = (F, x) -> F .= x + L0 * f / KxStar .* (x .* Av) .* (1 + sum(x .* Av))^(f - 1) - Rtot
+    j! = (J, x) -> J[diagind(J)] .= 1 .+ L0 * f / KxStar .* Av * (1 + sum(x .* Av))^(f - 2) .* (1 + sum(x .* Av) .+ (f - 1) * Av)
+
+    x0 = convert(Vector{ansType}, Rtot)
+    df = OnceDifferentiable(f!, j!, x0, copy(x0), Diagonal(x0))
 
     local solve_res
     try
-        solve_res = nlsolve(only_fj!(fj!), convert(Vector{ansType}, Rtot))
+        solve_res = nlsolve(df, x0, method = :newton)
         @assert solve_res.f_converged == true
         @assert all(solve_res.zero .<= Rtot)
     catch e
-        println("Req solving failed with the following arguments:")
-        println("L0: ", L0)
-        println("KxStar: ", KxStar)
-        println("f: ", f)
-        println("Rtot: ", Rtot)
-        println("IgGC: ", IgGC)
-        println("Kav: ", Kav)
+        println("Req solving failed")
+        show(Base.@locals); println()
         rethrow(e)
     end
 
