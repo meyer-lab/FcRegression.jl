@@ -1,5 +1,5 @@
 
-all: figureB1.pdf output/depletion/manuscript.md output/translation/manuscript.md
+all: figureB1.pdf output/depletion/manuscript.html output/translation/manuscript.html
 
 venv: venv/bin/activate
 
