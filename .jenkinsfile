@@ -17,6 +17,8 @@ pipeline {
       steps {
         sh 'make all'
         archiveArtifacts artifacts: '*.pdf', onlyIfSuccessful: true
+        publishHTML([allowMissing:false, alwaysLinkToLastBuild:false, keepAll:true, reportDir:'output/depletion', reportFiles:'manuscript.html', reportName:'Depletion Paper'])
+        publishHTML([allowMissing:false, alwaysLinkToLastBuild:false, keepAll:true, reportDir:'output/translation', reportFiles:'manuscript.html', reportName:'Translation Paper'])
       }
     }
   }
