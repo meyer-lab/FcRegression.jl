@@ -5,7 +5,7 @@ pipeline {
     parallelsAlwaysFailFast()
   }
   stages {
-    stage('Clean') { steps { sh 'git reset --hard && git clean -ffdx' } }
+    stage('Clean') { steps { sh 'make clean && git submodule update --init --recursive' } }
     stage('Test') {
       steps {
         sh 'julia -e \'using Pkg; Pkg.activate("."); Pkg.test("FcgR"; coverage=true)\''
