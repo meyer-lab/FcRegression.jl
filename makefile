@@ -13,7 +13,7 @@ figureB1.pdf:
 
 output/%/manuscript.md: venv manuscripts/%/*.md
 	mkdir -p ./output/%
-	. venv/bin/activate && manubot process --content-directory=.manuscripts/%/ --output-directory=./output/% --log-level=INFO
+	. venv/bin/activate && manubot process --content-directory=.manuscripts/$*/ --output-directory=./output/$*/ --log-level=INFO
 
 coverage.cob:
 	julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; coverage = process_folder(); LCOV.writefile("coverage-lcov.info", coverage)'
