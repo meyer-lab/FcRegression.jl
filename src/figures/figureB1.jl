@@ -1,3 +1,4 @@
+""" This file builds the depletion manuscript, Figure 1. """
 
 """ Plot an example isobologram. """
 function plotIsobologram()

@@ -8,7 +8,9 @@ include("translation.jl")
 
 using Plots
 
+include("figures/figure1.jl")
 include("figures/figureB1.jl")
+include("figures/figureB2.jl")
 
 export calculateIsobologram, polyfc, polyfc_ActV
 
