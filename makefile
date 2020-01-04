@@ -18,7 +18,7 @@ output/%/manuscript.md: venv manuscripts/%/*.md
 output/%/manuscript.html: venv output/%/manuscript.md
 	. venv/bin/activate && pandoc \
 		--from=markdown --to=html5 --filter=pandoc-fignos --filter=pandoc-eqnos --filter=pandoc-tablenos \
-		--bibliography=output/references.json \
+		--bibliography=output/$*/references.json \
 		--csl=common/templates/manubot/style.csl \
 		--metadata link-citations=true \
 		--include-after-body=common/templates/manubot/default.html \
