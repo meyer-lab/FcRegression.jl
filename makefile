@@ -13,7 +13,7 @@ figureB1.pdf:
 
 coverage.cob: venv
 	julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; coverage = process_folder(); LCOV.writefile("coverage-lcov.info", coverage)'
-	. venv/bin/activate && lcov_cobertura coverage-lcov.info -o coverage.cob
+	. venv/bin/activate && python3 ./venv/lib/python3.7/lcov_cobertura.py coverage-lcov.info -o coverage.cob
 
 clean:
 	rm -rf *.pdf venv
