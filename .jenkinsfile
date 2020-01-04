@@ -15,6 +15,9 @@ pipeline {
     }
     stage('Build Figures') {
       steps {
+        lock ('manubot') {
+          sh 'make output/depletion/manuscript.md output/translation/manuscript.md'
+        }
         sh 'make all'
         archiveArtifacts artifacts: '*.pdf', onlyIfSuccessful: true
         publishHTML([allowMissing:false, alwaysLinkToLastBuild:false, keepAll:true, reportDir:'output/depletion', reportFiles:'manuscript.html', reportName:'Depletion Paper'])
