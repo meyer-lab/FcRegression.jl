@@ -37,6 +37,30 @@ function importRtot(; murine=true)
     return convert(Matrix{Float64}, df[!, cellTypes])
 end
 
+"""Returns human FcgR expression matrix with a specific genotype"""
+function genotype_expression(gtype="RTF")
+    receps = Symbol.(["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158V", "FcgRIIIA-158F", "FcgRIIIB"])
+    df = DataFrame(transpose(importRtot(murine=false)))
+    df_renamed = names!(df, Symbol.(["FcgRI", "FcgRIIA-131", "FcgRIIB-232", "FcgRIIC-13N", "FcgRIIIA-158", "FcgRIIIB"]))
+    
+    ### Apply Genotyping to Small Subset
+    df_better = rename!(df_renamed, Symbol("FcgRIIA-131") => Symbol("FcgRIIA-131" * gtype[1]),
+                                    Symbol("FcgRIIB-232") => Symbol("FcgRIIB-232" * gtype[2]),
+                                    Symbol("FcgRIIIA-158") => Symbol("FcgRIIIA-158" * gtype[3]))
+    
+    ### Complete the Data Frame with all Receptors
+    dict = Dict('H'=>'R', 'R'=>'H', 'I'=>'T', 'T'=>'I', 'V'=>'F', 'F'=>'V')
+    anti_gtype = ["FcgRIIA-131" * dict[gtype[1]], "FcgRIIB-232" * dict[gtype[2]], "FcgRIIIA-158" * dict[gtype[3]]]
+    df_better[Symbol.(anti_gtype)] = [1.0, 1.0, 1.0, 1.0, 1.0]
+    
+    ### Correctly Order Columns
+    df_out = DataFrame()
+    for i in receps
+        df_out[i] = df_better[i]
+    end
+    return transpose(Matrix(df_out))
+end
+
 
 """ Import human or murine affinity data. """
 function importKav(; murine=true, c1q=false)
