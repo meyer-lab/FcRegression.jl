@@ -1,2 +1,4 @@
 # Specify filepatterns you want git to ignore.
 FcgR.sublime-workspace
+**.DS_Store
+venv

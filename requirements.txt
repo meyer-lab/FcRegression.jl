@@ -1,0 +1,5 @@
+manubot==0.2.4
+pandoc-fignos==2.2.0
+pandoc-eqnos==2.1.1
+pandoc-tablenos==2.1.1
+weasyprint==50
