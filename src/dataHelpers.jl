@@ -42,7 +42,7 @@ end
 
 
 """ Import human or murine affinity data. """
-function importKav(; murine = true, c1q = false, retdf = false, IgG2bFucose = false, genotype = "RTF")
+function importKav(; murine = true, genotype = "RTF", c1q = false, IgG2bFucose = false, retdf = false)
     if murine
         df = CSV.read(joinpath(dataDir, "murine-affinities.csv"), comment = "#")
     else
