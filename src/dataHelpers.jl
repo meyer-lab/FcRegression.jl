@@ -59,9 +59,9 @@ function importKav(; murine = true, c1q = false, retdf = false, IgG2bFucose = fa
         df = filter(row -> row[:FcgR] != "C1q", df)
     end
 
-    IgGlist = murine ? murineIgG : humanIgG
+    IgGlist = copy(murine ? murineIgG : humanIgG)
     if IgG2bFucose
-        append!(FcgR.murineIgG, [:IgG2bFucose])
+        append!(IgGlist, [:IgG2bFucose])
     end
     df = stack(df; variable_name = :IgG, value_name = :Kav)
     df = unstack(df, :FcgR, :Kav)
