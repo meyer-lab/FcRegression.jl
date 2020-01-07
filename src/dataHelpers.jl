@@ -13,14 +13,14 @@ Guidance on DataFrame handling:
 
 using DataFrames
 using CSV
-import StatsBase
+import StatsBase.geomean
 
 const KxConst = 6.31e-13 # 10^(-12.2)
 
 function geocmean(x)
     x = convert(Vector, x)
     x[x .<= 1.0] .= 1.0
-    return StatsBase.geomean(x)
+    return geomean(x)
 end
 
 cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]
@@ -48,7 +48,7 @@ end
 
 
 """ Import human or murine affinity data. """
-function importKav(; murine = true, c1q = false, retdf = false)
+function importKav(; murine = true, c1q = false, retdf = false, IgG2bFucose = false)
     if murine
         df = CSV.read(joinpath(dataDir, "murine-affinities.csv"), comment = "#")
     else
@@ -59,9 +59,13 @@ function importKav(; murine = true, c1q = false, retdf = false)
         df = filter(row -> row[:FcgR] != "C1q", df)
     end
 
+    IgGlist = copy(murine ? murineIgG : humanIgG)
+    if IgG2bFucose
+        append!(IgGlist, [:IgG2bFucose])
+    end
     df = stack(df; variable_name = :IgG, value_name = :Kav)
     df = unstack(df, :FcgR, :Kav)
-    df = df[in(murine ? murineIgG : humanIgG).(df.IgG), :]
+    df = df[in(IgGlist).(df.IgG), :]
 
     if retdf
         return df
