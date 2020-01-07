@@ -23,7 +23,7 @@ function humanFcgR_genotype(genotype)
     @assert length(genotype) == 3
     receps = Symbol.(["FcgRI", "FcgRIIC-13N", "FcgRIIIB"])
     append!(receps, Symbol.(["FcgRIIA-131" * genotype[1], "FcgRIIB-232" * genotype[2], "FcgRIIIA-158" * genotype[3]]))
-    return receps
+    return sort(receps)
 end
 
 function importRtot(; murine = true)
