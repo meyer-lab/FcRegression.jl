@@ -284,9 +284,9 @@ version = "0.3.3"
 
 [[OpenBLAS_jll]]
 deps = ["Libdl", "Pkg"]
-git-tree-sha1 = "cb0671dfcf4afbad1d3631079c58275b46a572b8"
+git-tree-sha1 = "27f7e3187464eef76b4b7784b79fe10cb302c75c"
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.7+2"
+version = "0.3.7+3"
 
 [[OpenSpecFun_jll]]
 deps = ["Libdl", "Pkg"]
