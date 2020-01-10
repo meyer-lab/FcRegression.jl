@@ -73,6 +73,37 @@ function PlotSynGraph()
     return pl
 end
 
+    """ Figure shows how immune complex valency affects synergy """
+function PlotSynValency()
+    Kav = importKav(murine = true)
+    df = importRtot()
+    FcgR = df[:, 2] #2 = mean cMO
+    IC = 10e-9
+    Valency = range(1, stop = 24)
+    S = zeros((length(Valency), 10))
+        
+    for (ii, value) in enumerate(Valency)
+        A = synergyGrid(value, IC, FcgR, Kav)
+        h = collect(Iterators.flatten(A))
+        S[ii, 1:4] = h[1:4]
+        S[ii, 5:7] = h[6:8]
+        S[ii, 8:9] = h[11:12]
+        S[ii, 10] = h[16]
+    end
+    
+    pl = plot(
+        Valency,
+        S,
+        title = "Effect of IC Valency on Synergy",
+        label = ["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG2a/2b" "IgG2a/3" "IgG2b/3"],
+        legend = :topleft,
+    )
+    xlabel!(pl, "IC Valency")
+    ylabel!(pl, "Synergy")
+    
+    return pl
+end
+
 function figureB1()
     p1 = plotIsobologram()
     p2 = plotIsobologramTwo()
