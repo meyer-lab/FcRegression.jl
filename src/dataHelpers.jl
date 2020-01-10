@@ -14,19 +14,12 @@ cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]
 murineIgG = [:IgG1, :IgG2a, :IgG2b, :IgG3]
 humanIgG = [:IgG1, :IgG2, :IgG3, :IgG4]
 murineFcgR = [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]
-humanFcgR = [:FcgRI, :FcgRIIA, :FcgRIIB, :FcgRIIC, :FcgRIIIA, :FcgRIIIB]
+humanFcgR = Symbol.(["FcgRI","FcgRIIA-131H","FcgRIIA-131R","FcgRIIB-232I","FcgRIIB-232T","FcgRIIC-13N","FcgRIIIA-158V","FcgRIIIA-158F","FcgRIIIB"])
 murineActI = [1, -1, 1, 1]
-humanActI = [1, 1, -1, 1, 1, 1]
+humanActI = [1, 1, 1, -1, -1, 1, 1, 1, 1]
 dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
 
-function humanFcgR_genotype(genotype)
-    @assert length(genotype) == 3
-    receps = Symbol.(["FcgRI", "FcgRIIC-13N", "FcgRIIIB"])
-    append!(receps, Symbol.(["FcgRIIA-131" * genotype[1], "FcgRIIB-232" * genotype[2], "FcgRIIIA-158" * genotype[3]]))
-    return sort(receps)
-end
-
-function importRtot(; murine = true)
+function importRtot(; murine = true, genotype = "HIV", retdf = false)
     if murine
         df = CSV.read(joinpath(dataDir, "murine-FcgR-abundance.csv"))
     else
@@ -35,14 +28,41 @@ function importRtot(; murine = true)
     df = aggregate(df, [:Cells, :Receptor], geocmean)
     df = unstack(df, :Receptor, :Cells, :Count_geocmean)
     df[!, :Receptor] = map(Symbol, df[!, :Receptor])
-    df = df[in(murine ? murineFcgR : humanFcgR).(df.Receptor), :]
-    return convert(Matrix{Float64}, df[!, cellTypes])
+    if murine
+        df = df[in(murineFcgR).(df.Receptor), :]
+    else
+        df[df[:, :Receptor] .== :FcgRIIC, :Receptor] .= Symbol("FcgRIIC-13N")
+
+        generic_type = Symbol.(["FcgRIIA", "FcgRIIB", "FcgRIIIA"])
+        prefixes = ["FcgRIIA-131", "FcgRIIB-232", "FcgRIIIA-158"]
+        options = [['H', 'R'], ['I', 'T'], ['V', 'F']]
+        for i = 1:3
+            rowidx = findfirst(df[:, :Receptor] .== generic_type[i])
+            if genotype[i] == options[i][1]
+                df[rowidx, :Receptor] = Symbol(prefixes[i] * options[i][1])
+                insert!.(eachcol(df, false), rowidx+1, [Symbol(prefixes[i] * options[i][2]); repeat([0.], 7)])
+            elseif genotype[i] == options[i][2]
+                df[rowidx, :Receptor] = Symbol(prefixes[i] * options[i][2])
+                insert!.(eachcol(df, false), rowidx, [Symbol(prefixes[i] * options[i][1]); repeat([0.], 7)])
+            else  # heterozygous
+                insert!.(eachcol(df, false), rowidx, [Symbol(prefixes[i] * options[i][1]); Array(df[rowidx, 2:end])./2])
+                insert!.(eachcol(df, false), rowidx+1, [Symbol(prefixes[i] * options[i][2]); Array(df[rowidx, 2:end])])
+                df = df[df[:, :Receptor] .!= generic_type[i], :]
+            end
+        end
+
+    end
+    @assert df.Receptor == (murine ? murineFcgR : humanFcgR)
+    if retdf
+        return df[!, [:Receptor; cellTypes]]
+    else
+        return convert(Matrix{Float64}, df[!, cellTypes])
+    end
 end
 
 
-
 """ Import human or murine affinity data. """
-function importKav(; murine = true, genotype = "RTF", c1q = false, IgG2bFucose = false, retdf = false)
+function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = false)
     if murine
         df = CSV.read(joinpath(dataDir, "murine-affinities.csv"), comment = "#")
     else
@@ -60,7 +80,7 @@ function importKav(; murine = true, genotype = "RTF", c1q = false, IgG2bFucose =
     df = stack(df; variable_name = :IgG, value_name = :Kav)
     df = unstack(df, :FcgR, :Kav)
     df = df[in(IgGlist).(df.IgG), :]
-    df = df[!, murine ? murineFcgR : humanFcgR_genotype(genotype)]
+    df = df[!, murine ? murineFcgR : humanFcgR]
 
     if retdf
         return df
