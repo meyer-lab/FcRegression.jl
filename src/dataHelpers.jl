@@ -80,12 +80,11 @@ function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = fa
     df = stack(df; variable_name = :IgG, value_name = :Kav)
     df = unstack(df, :FcgR, :Kav)
     df = df[in(IgGlist).(df.IgG), :]
-    df = df[!, murine ? murineFcgR : humanFcgR]
-
+    
     if retdf
         return df
     else
-        return convert(Matrix{Float64}, df)
+        return convert(Matrix{Float64}, df[!, murine ? murineFcgR : humanFcgR])
     end
 end
 
