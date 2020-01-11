@@ -5,7 +5,7 @@ function plotIsobologram()
     Kav = importKav(murine = false)
     # TODO: Should import actual receptor abundance
     FcExpr = zeros(length(humanFcgR))
-    FcExpr[7] = importRtot(murine = true)[7, 2]
+    FcExpr[7] = importRtot(murine = false)[7, 2]
 
     output = calculateIsobologram(2, 3, 24, 1.0e-8, FcExpr, Kav)
 
