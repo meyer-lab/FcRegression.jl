@@ -14,7 +14,8 @@ cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]
 murineIgG = [:IgG1, :IgG2a, :IgG2b, :IgG3]
 humanIgG = [:IgG1, :IgG2, :IgG3, :IgG4]
 murineFcgR = [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]
-humanFcgR = Symbol.(["FcgRI","FcgRIIA-131H","FcgRIIA-131R","FcgRIIB-232I","FcgRIIB-232T","FcgRIIC-13N","FcgRIIIA-158V","FcgRIIIA-158F","FcgRIIIB"])
+humanFcgR =
+    Symbol.(["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158V", "FcgRIIIA-158F", "FcgRIIIB"])
 murineActI = [1, -1, 1, 1]
 humanActI = [1, 1, 1, -1, -1, 1, 1, 1, 1]
 dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
@@ -40,13 +41,13 @@ function importRtot(; murine = true, genotype = "HIV", retdf = false)
             rowidx = findfirst(df[:, :Receptor] .== generic_type[i])
             if genotype[i] == options[i][1]
                 df[rowidx, :Receptor] = Symbol(prefixes[i] * options[i][1])
-                insert!.(eachcol(df, false), rowidx+1, [Symbol(prefixes[i] * options[i][2]); repeat([0.], 7)])
+                insert!.(eachcol(df, false), rowidx + 1, [Symbol(prefixes[i] * options[i][2]); repeat([0.0], 7)])
             elseif genotype[i] == options[i][2]
                 df[rowidx, :Receptor] = Symbol(prefixes[i] * options[i][2])
-                insert!.(eachcol(df, false), rowidx, [Symbol(prefixes[i] * options[i][1]); repeat([0.], 7)])
+                insert!.(eachcol(df, false), rowidx, [Symbol(prefixes[i] * options[i][1]); repeat([0.0], 7)])
             else  # heterozygous
-                insert!.(eachcol(df, false), rowidx, [Symbol(prefixes[i] * options[i][1]); Array(df[rowidx, 2:end])./2])
-                insert!.(eachcol(df, false), rowidx+1, [Symbol(prefixes[i] * options[i][2]); Array(df[rowidx, 2:end])])
+                insert!.(eachcol(df, false), rowidx, [Symbol(prefixes[i] * options[i][1]); Array(df[rowidx, 2:end]) ./ 2])
+                insert!.(eachcol(df, false), rowidx + 1, [Symbol(prefixes[i] * options[i][2]); Array(df[rowidx, 2:end])])
                 df = df[df[:, :Receptor] .!= generic_type[i], :]
             end
         end
@@ -80,7 +81,7 @@ function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = fa
     df = stack(df; variable_name = :IgG, value_name = :Kav)
     df = unstack(df, :FcgR, :Kav)
     df = df[in(IgGlist).(df.IgG), :]
-    
+
     if retdf
         return df
     else
