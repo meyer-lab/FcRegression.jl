@@ -13,7 +13,7 @@
         ## Assert correct assigning of the genotypes (can add reverse cases too)
         @test(arr_HIV[d["FcgRIIA-131H"], :] == arr_RTF[d["FcgRIIA-131R"], :] && arr_HIV[d["FcgRIIA-131R"], :] == arr_RTF[d["FcgRIIA-131H"], :])
         @test(arr_HIV[d["FcgRIIB-232I"], :] == arr_RTF[d["FcgRIIB-232T"], :] && arr_HIV[d["FcgRIIB-232T"], :] == arr_RTF[d["FcgRIIB-232I"], :])
-        @test(arr_HIV[d["FcgRIIIA-158V"], :] == arr_RTF[d["FcgRIIIA-158F"], :] && arr_HIV[["FcgRIIIA-158F"], :] == arr_RTF[d["FcgRIIIA-158V"], :])
+        @test(arr_HIV[d["FcgRIIIA-158V"], :] == arr_RTF[d["FcgRIIIA-158F"], :] && arr_HIV[d["FcgRIIIA-158F"], :] == arr_RTF[d["FcgRIIIA-158V"], :])
 
         ## Check Heterozygote Case
         @test(arr_RTF[d["FcgRIIA-131H"], :] == arr_heterozygote[d["FcgRIIA-131H"], :] .+ arr_heterozygote[d["FcgRIIA-131R"], :])
