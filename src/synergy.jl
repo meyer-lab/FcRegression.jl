@@ -33,9 +33,9 @@ function calcSynergy(curve)
     nodes, weights = gausslegendre(length(curve))
 
     synergy = dot(weights, curve) / 2.0
-    synergy -= (curve[1] + curve[end]) / 2.0
+    additive = (curve[1] + curve[end]) / 2.0
 
-    return synergy
+    return (synergy - additive) / additive
 end
 
 
