@@ -44,7 +44,7 @@ end
 
 """Figure shows the affect of increasing immune complex concentration on synergies for each IgG combination"""
 function PlotSynGraph()
-    Kav = importKav(murine = true)
+    Kav = importKav(murine = true, IgG2bFucose = true)
     df = importRtot()
     FcgR = df[:, 2] #2 = mean cMO
     IC = exp10.(range(-12, stop = -6, length = 20))
@@ -64,7 +64,7 @@ function PlotSynGraph()
         S,
         xaxis = :log,
         title = "Effect of Concentration on Synergy",
-        label = ["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG2a/2b" "IgG2a/3" "IgG2b/3"],
+        label = ["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG1/2b-Fucose" "IgG2a/2b" "IgG2a/3" "IgG2a/2b-Fucose" "IgG2b/3" "IgG2b/2b-Fucose" "IgG3/2b-Fucose"],
         legend = :topleft,
     )
     xlabel!(pl, "IC Concentration")
@@ -75,7 +75,7 @@ end
 
     """ Figure shows how immune complex valency affects synergy """
 function PlotSynValency()
-    Kav = importKav(murine = true)
+    Kav = importKav(murine = true, IgG2bFucose = true)
     df = importRtot()
     FcgR = df[:, 2] #2 = mean cMO
     IC = 10e-9
@@ -95,7 +95,7 @@ function PlotSynValency()
         Valency,
         S,
         title = "Effect of IC Valency on Synergy",
-        label = ["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG2a/2b" "IgG2a/3" "IgG2b/3"],
+        label = ["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG1/2b-Fucose" "IgG2a/2b" "IgG2a/3" "IgG2a/2b-Fucose" "IgG2b/3" "IgG2b/2b-Fucose" "IgG3/2b-Fucose"],
         legend = :topleft,
     )
     xlabel!(pl, "IC Valency")
