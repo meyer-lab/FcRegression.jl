@@ -44,18 +44,19 @@ end
 
 """Figure shows the affect of increasing immune complex concentration on synergies for each IgG combination"""
 function PlotSynGraph()
-    Kav = importKav(murine = true)
-    FcgR = importRtot(murine = true)[:, 2] #2 = mean cMO
+    Kav = importKav(murine = true, IgG2bFucose = true)
+    df = importRtot()
+    FcgR = df[:, 2] #2 = mean cMO
     IC = exp10.(range(-12, stop = -6, length = 20))
     S = zeros((length(IC), 10))
 
     for (ii, value) in enumerate(IC)
         A = synergyGrid(4, value, FcgR, Kav)
         h = collect(Iterators.flatten(A))
-        S[ii, 1:4] = h[1:4]
-        S[ii, 5:7] = h[6:8]
-        S[ii, 8:9] = h[11:12]
-        S[ii, 10] = h[16]
+        S[ii, 1:5] = h[2:6]
+        S[ii, 5:8] = h[8:11]
+        S[ii, 8:9] = h[14:15]
+        S[ii, 10] = h[20]
     end
 
     pl = plot(
@@ -84,10 +85,10 @@ function PlotSynValency()
     for (ii, value) in enumerate(Valency)
         A = synergyGrid(value, IC, FcgR, Kav)
         h = collect(Iterators.flatten(A))
-        S[ii, 1:4] = h[1:4]
-        S[ii, 5:7] = h[6:8]
-        S[ii, 8:9] = h[11:12]
-        S[ii, 10] = h[16]
+        S[ii, 1:5] = h[2:6]
+        S[ii, 5:8] = h[8:11]
+        S[ii, 8:9] = h[14:15]
+        S[ii, 10] = h[20]
     end
     
     pl = plot(
