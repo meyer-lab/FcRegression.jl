@@ -75,8 +75,7 @@ end
     """ Figure shows how immune complex valency affects synergy """
 function PlotSynValency()
     Kav = importKav(murine = true, IgG2bFucose = true)
-    df = importRtot()
-    FcgR = df[:, 2] #2 = mean cMO
+    FcgR = importRtot(murine = true)[:, 2] #2 = mean cMO
     IC = 10e-9
     Valency = range(1, stop = 24)
     S = zeros((length(Valency), 10))
