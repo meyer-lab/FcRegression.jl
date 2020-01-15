@@ -4,8 +4,8 @@
 function plotIsobologram()
     Kav = importKav(murine = false)
     # TODO: Should import actual receptor abundance
-    FcExpr = zeros(6)
-    FcExpr[5] = 1000.0
+    FcExpr = zeros(length(humanFcgR))
+    FcExpr[7] = importRtot(murine = false)[7, 2]
 
     output = calculateIsobologram(2, 3, 24, 1.0e-8, FcExpr, Kav)
 
@@ -25,7 +25,7 @@ end
 function plotIsobologramTwo()
     Kav = importKav(murine = true)
     # TODO: Should import actual receptor abundance
-    FcExpr = [2571.0, 12886.0, 12563.0, 2371.0]
+    FcExpr = importRtot(murine = true)[:, 2]
 
     output = calculateIsobologram(2, 3, 4, 1.0e-9, FcExpr, Kav, actV = murineActI)
     output /= maximum(output)
@@ -44,9 +44,8 @@ end
 
 """Figure shows the affect of increasing immune complex concentration on synergies for each IgG combination"""
 function PlotSynGraph()
-    Kav = importKav(murine = true, IgG2bFucose = true)
-    df = importRtot()
-    FcgR = df[:, 2] #2 = mean cMO
+    Kav = importKav(murine = true)
+    FcgR = importRtot(murine = true)[:, 2] #2 = mean cMO
     IC = exp10.(range(-12, stop = -6, length = 20))
     S = zeros((length(IC), 10))
 
