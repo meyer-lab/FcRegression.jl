@@ -23,20 +23,20 @@ end
 
 """ Plot an example isobologram. """
 function plotIsobologramTwo()
-    Kav = importKav(murine = true)
+    Kav = importKav(murine = true, IgG2bFucose = true)
     # TODO: Should import actual receptor abundance
     FcExpr = importRtot(murine = true)[:, 2]
 
-    output = calculateIsobologram(2, 3, 4, 1.0e-9, FcExpr, Kav, actV = murineActI)
+    output = calculateIsobologram(2, 5, 4, 1.0e-9, FcExpr, Kav, actV = murineActI)
     output /= maximum(output)
 
     X = range(0, stop = 1, length = length(output))
 
     pl = plot(X, output, title = "Activity vs IgG Composition", xticks = false, legend = false)
     plot!(pl, [0, 1], [output[1], output[33]])
-    annotate!(pl, [(0, 0, text("100% mIgG2a", 8, :right, rotation = 45)), (1.0, 0, text("100% mIgG2b", 8, :right, rotation = 45))])
+    annotate!(pl, [(0, 0, text("100% mIgG2a", 8, :right, rotation = 45)), (1.0, 0, text("100% mIgG2bFucose", 8, :right, rotation = 45))])
     ylabel!(pl, "cMO Predicted Activity")
-    xlabel!(pl, "Percent mIgG2b")
+    xlabel!(pl, "Percent mIgG2bFucose")
     ylims!(pl, (-0.02, maximum(output) * 1.1))
 
     return pl
