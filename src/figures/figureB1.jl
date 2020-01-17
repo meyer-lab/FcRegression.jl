@@ -44,7 +44,7 @@ end
 
 """Figure shows the affect of increasing immune complex concentration on synergies for each IgG combination"""
 function PlotSynGraph()
-    Kav = importKav(murine = true)
+    Kav = importKav(murine = true, IgG2bFucose = true)
     FcgR = importRtot(murine = true)[:, 2] #2 = mean cMO
     IC = exp10.(range(-12, stop = -6, length = 20))
     S = zeros((length(IC), 10))
