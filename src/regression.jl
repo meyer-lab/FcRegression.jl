@@ -37,15 +37,17 @@ end
 
 function fitRegression(dataType, regMethod::Function; wL0f = false)
     (X, Y) = regGenData(dataType)
-    if regMethod == exponential
-        p_init = [ones(Float64, size(X, 2));]
-        p_lower = [zeros(size(X, 2));]
-        p_upper = [ones(Float64, size(X, 2)) .* 1e5;]
-        autod = :forwarddiff
-    elseif regMethod == gompertz
-        p_init = [ones(Float64, size(X, 2) + 1);]
-        p_lower = [zeros(size(X, 2) + 1);]
-        p_upper = [100; ones(Float64, size(X, 2)) .* 1e5]
+    Np = size(X, 2)
+
+    p_init = 0.1*ones(Float64, Np)
+    p_lower = zeros(Float64, Np)
+    p_upper = ones(Float64, Np)
+    autod = :forwarddiff
+
+    if regMethod == gompertz
+        p_init = [1.0; p_init]
+        p_lower = [0.1; p_lower]
+        p_upper = [10; p_upper]
         autod = :finiteforward
     end
 
