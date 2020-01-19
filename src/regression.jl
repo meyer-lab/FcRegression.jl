@@ -35,6 +35,7 @@ function reg_wL0f(Xcond, ps, regMethod::Function, dataType)
     return regMethod(X, ps[3:end])
 end
 
+
 function fitRegression(dataType, regMethod::Function; wL0f = false)
     (X, Y) = regGenData(dataType)
     if regMethod == exponential
@@ -65,53 +66,3 @@ function fitRegression(dataType, regMethod::Function; wL0f = false)
     end
     return fit
 end
-
-
-""" Build the input data matrix based on the binding parameters. """
-function regGenX(
-    IgGCs,
-    Rcpon;
-    L0 = 1e-9,
-    f = 4,
-    KxStar = KxConst,
-    Rpho = [100 300 600; 400 300 0; 400 500 100; 1000 10 900],
-    Kav = rand(2, 3) .* 1e6 .* [1, 1.5, 0.8]',
-    ActI = [-1, 1, 1],
-)
-    """
-    Input:
-    IgGCs is a N * ni size matrix. Each row is a vec of IgG composition
-    Rcpon is a N * nr size matrix. Each row is a binary vec for existing receps
-    Default kw_input:
-    Rpho is a nct * nr size matrix, the abundance matrix
-    Output:
-    A N * nct size matrix. Each row is a condition, and entries are ActV
-    """
-
-    N = size(IgGCs, 1)
-    @assert N == size(Rcpon, 1)
-    @assert size(Kav) == (size(IgGCs, 2), size(Rcpon, 2))
-    nct = size(Rpho, 1)
-
-    Xtype = promote_type(eltype(Rpho), typeof(L0), typeof(KxStar), typeof(f))
-    X = Array{Xtype, 2}(undef, N, nct)
-
-    for xi = 1:N
-        Kav_n = Kav .* Rcpon[xi, :]'
-        for ict = 1:nct
-            Rtot = Rpho[ict, :]
-            X[xi, ict] = polyfc(L0, KxStar, f, Rtot, IgGCs[xi, :], Kav_n, ActI)["ActV"]
-        end
-    end
-    return X
-end
-
-
-function reg_wL0f_GenX(Xcond, ps; regMethod::Function)
-    X = regGenX(Xcond[:, 1:2], Xcond[:, 3:5]; L0 = 10.0^ps[1], f = ps[2])
-    @assert all(isfinite.(X))
-    return regMethod(X, ps[3:end])
-end
-
-reg_wL0f_expo = (Xcond, ps) -> reg_wL0f_GenX(Xcond, ps; regMethod = exponential)
-reg_wL0f_gomp = (Xcond, ps) -> reg_wL0f_GenX(Xcond, ps; regMethod = gompertz)
