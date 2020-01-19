@@ -4,22 +4,19 @@ exponential(X, p) = -expm1.(-X * p)
 gompertz(X::Array, p) = -expm1.(-p[1] .* expm1.(X * p[2:end]))
 
 function regGenData(dataType; L0 = 1e-9, f = 4, KxStar = KxConst, Rtot = importRtot(), ActI = murineActI)
-
     df = importDepletion(dataType)
-    ndpt = size(df, 1)
+
     if :Concentration in names(df)
         df[!, :Concentration] .*= L0
     else
         insertcols!(df, 3, :Concentration => L0)
     end
 
-    resX = Matrix(undef, ndpt, size(Rtot, 2))
-    for i = 1:ndpt
-        row = df[i, :]
-        Kav = convert(Vector{Float64}, row[murineFcgR])
+    resX = Matrix(undef, size(df, 1), size(Rtot, 2))
+    for i = 1:size(df, 1)
+        Kav = convert(Vector{Float64}, df[i, murineFcgR])
         Kav = reshape(Kav, 1, :)
-        subActV = polyfc_ActV(row[:Concentration], KxStar, f, Rtot, [1.0], Kav, ActI)
-        resX[i, :] = subActV
+        resX[i, :] = polyfc_ActV(df[i, :Concentration], KxStar, f, Rtot, [1.0], Kav, ActI)
     end
 
     resX[df[:, :Background] .== "NeuKO", cellTypes .== :Neu] .= 0.0
@@ -54,8 +51,8 @@ function fitRegression(dataType, regMethod::Function; wL0f = false)
     if wL0f
         fitMethod = (Xcond, ps) -> reg_wL0f(Xcond, ps, regMethod, dataType)
         p_init = vcat(-9, 4, p_init)
-        p_lower = vcat(-16, 2, p_lower)
-        p_upper = vcat(-6, 12, p_upper)
+        p_lower = vcat(-16, 1, p_lower)
+        p_upper = vcat(-7, 6, p_upper)
     else
         fitMethod = regMethod
     end
