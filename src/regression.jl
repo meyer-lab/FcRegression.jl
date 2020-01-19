@@ -21,9 +21,11 @@ function regGenData(dataType; L0 = 1e-9, f = 4, KxStar = KxConst, Rtot = importR
 
     resX[df[:, :Background] .== "NeuKO", cellTypes .== :Neu] .= 0.0
     resX[df[:, :Background] .== "ncMOKO", cellTypes .== :ncMO] .= 0.0
+    Y = df[!, :Target]
 
     @assert all(isfinite.(resX))
-    return (resX, df[!, :Target])
+    @assert all(isfinite.(Y))
+    return (resX, Y)
 end
 
 

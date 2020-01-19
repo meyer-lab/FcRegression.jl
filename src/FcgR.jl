@@ -1,4 +1,5 @@
 module FcgR
+using LinearAlgebra
 
 include("fcBindingModel.jl")
 include("dataHelpers.jl")
