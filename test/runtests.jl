@@ -1,6 +1,5 @@
 using Test
 using Profile
-using LsqFit
 using FcgR
 using ForwardDiff
 
