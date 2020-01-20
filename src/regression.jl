@@ -35,6 +35,7 @@ end
 
 
 function fitRegression(dataType, regMethod::Function)
+    (X, Y) = regGenData(dataType; L0 = 1.0e-9, f = 4)
     Np = size(X, 2)
 
     p_init = 0.1*ones(Float64, Np)
@@ -53,8 +54,8 @@ function fitRegression(dataType, regMethod::Function)
     p_lower = vcat(-16, 1, p_lower)
     p_upper = vcat(-7, 6, p_upper)
 
-    fit = optimize(fitMethod, g!, p_lower, p_upper, p_init, Fminbox(GradientDescent()))
-    if !fit.converged
+    fit = optimize(fitMethod, g!, p_lower, p_upper, p_init, Fminbox(GradientDescent()), show_trace=true)
+    if !Optim.converged(fit)
         @warn "Fitting did not converge"
     end
     return fit
