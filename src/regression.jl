@@ -1,6 +1,6 @@
 
-exponential(X, p) = -expm1.(-X * p)
-gompertz(X::Array, p) = -expm1.(-p[1] .* expm1.(X * p[2:end]))
+exponential(X::Matrix, p::Vector) = Distributions.cdf.(Distributions.Exponential(), X * p)
+weibull(X::Matrix, p::Vector) = Distributions.cdf.(Distributions.Weibull(p[1]), X * p[2:end])
 
 function regGenData(df; L0, f, KxStar = KxConst, murine = true)
     df = copy(df)
@@ -35,9 +35,9 @@ function regGenData(df; L0, f, KxStar = KxConst, murine = true)
 end
 
 
-function reg_wL0f(ps, regMethod::Function, df)
+function reg_wL0f(ps::Vector{T}, regMethod::Function, df)::T  where {T<:Real}
     (X, Y) = regGenData(df; L0 = 10.0^ps[1], f = ps[2])
-    return norm(regMethod(X, ps[3:end]) - Y)
+    return Distances.sqeuclidean(regMethod(X, ps[3:end]), Y)
 end
 
 
@@ -47,17 +47,16 @@ function fitRegression(dataType, regMethod::Function)
     Np = size(X, 2)
 
     fitMethod = (ps) -> reg_wL0f(ps, regMethod, df)
+    g! = (G, ps) -> ForwardDiff.gradient!(G, fitMethod, ps)
 
     p_init = 0.1*ones(Float64, Np)
     p_lower = zeros(Float64, Np)
     p_upper = ones(Float64, Np)
-    g! = (G, ps) -> ForwardDiff.gradient!(G, fitMethod, ps)
 
-    if regMethod == gompertz
+    if regMethod == weibull
         p_init = [1.0; p_init]
         p_lower = [0.1; p_lower]
         p_upper = [10; p_upper]
-        g! = (G, ps) -> Calculus.finite_difference!(fitMethod, ps, G, :central)
     end
     
     p_init = vcat(-9, 4, p_init)
