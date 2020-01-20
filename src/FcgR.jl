@@ -1,6 +1,7 @@
 module FcgR
 using LinearAlgebra
 using ForwardDiff
+using Calculus
 
 include("fcBindingModel.jl")
 include("dataHelpers.jl")
