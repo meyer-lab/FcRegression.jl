@@ -276,12 +276,6 @@ git-tree-sha1 = "08d87fec43e7d335811dfae5b55dbfc5690e915b"
 uuid = "30fc2ffe-d236-52d8-8643-a9d8f7c094a7"
 version = "0.5.1"
 
-[[LsqFit]]
-deps = ["Distributions", "ForwardDiff", "LinearAlgebra", "NLSolversBase", "OptimBase", "Random", "StatsBase"]
-git-tree-sha1 = "65c0b7f181561cc8b535dd81ac4f78561b8e5e63"
-uuid = "2fda8390-95c7-5789-9bda-21331edee243"
-version = "0.10.0"
-
 [[MLBase]]
 deps = ["IterTools", "Random", "Reexport", "StatsBase", "Test"]
 git-tree-sha1 = "f63a8d37429568b8c4384d76c4a96fc2897d6ddf"
@@ -359,11 +353,11 @@ git-tree-sha1 = "65f672edebf3f4e613ddf37db9dcbd7a407e5e90"
 uuid = "efe28fd5-8261-553b-a9e1-b2916fc3738e"
 version = "0.5.3+1"
 
-[[OptimBase]]
-deps = ["Compat", "NLSolversBase", "Printf", "Reexport", "Test"]
-git-tree-sha1 = "92667ab46a66ad502ec3044f65c41ea68b2e0e9c"
-uuid = "87e2bd06-a317-5318-96d9-3ecbac512eee"
-version = "2.0.0"
+[[Optim]]
+deps = ["Calculus", "DiffEqDiffTools", "FillArrays", "ForwardDiff", "LineSearches", "LinearAlgebra", "NLSolversBase", "NaNMath", "Parameters", "PositiveFactorizations", "Printf", "Random", "SparseArrays", "StatsBase"]
+git-tree-sha1 = "5155996f5e1954aadcc10a51d4660a9d23225aa3"
+uuid = "429524aa-4258-5aef-a3af-852621145aeb"
+version = "0.19.7"
 
 [[OrderedCollections]]
 deps = ["Random", "Serialization", "Test"]
@@ -390,7 +384,7 @@ uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
 version = "0.3.10"
 
 [[Pkg]]
-deps = ["Dates", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
+deps = ["Dates", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Test", "UUIDs"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
 [[PlotThemes]]
@@ -416,6 +410,12 @@ deps = ["DataAPI"]
 git-tree-sha1 = "b1333d4eced1826e15adbdf01a4ecaccca9d353c"
 uuid = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
 version = "0.5.3"
+
+[[PositiveFactorizations]]
+deps = ["LinearAlgebra", "Test"]
+git-tree-sha1 = "127c47b91990c101ee3752291c4f45640eeb03d1"
+uuid = "85a6dd25-e78a-55b7-8502-1745935b8125"
+version = "0.2.3"
 
 [[PrettyTables]]
 deps = ["Crayons", "Formatting", "Parameters", "Reexport", "Tables"]

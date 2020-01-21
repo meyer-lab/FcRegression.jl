@@ -1,5 +1,4 @@
 using FastGaussQuadrature
-using LinearAlgebra
 
 """ Calculates the isobologram between two IgGs under the defined conditions. """
 function calculateIsobologram(IgGXidx::Int64, IgGYidx::Int64, valency, ICconc::Float64, FcExpr, Kav; quantity = nothing, actV = nothing, nPoints = 33)

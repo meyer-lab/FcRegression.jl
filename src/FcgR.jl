@@ -1,4 +1,8 @@
 module FcgR
+using LinearAlgebra
+using ForwardDiff
+import Distributions
+import Distances
 
 include("fcBindingModel.jl")
 include("dataHelpers.jl")
