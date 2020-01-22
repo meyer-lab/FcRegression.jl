@@ -35,7 +35,7 @@ function regGenData(df; L0, f, KxStar = KxConst, murine = true)
 end
 
 
-function loss_wL0f(df, ps::Vector{T}, regMethod::Function)::T  where {T<:Real}
+function loss_wL0f(df, ps::Vector{T}, regMethod::Function)::T where {T <: Real}
     (X, Y) = regGenData(df; L0 = 10.0^ps[1], f = ps[2])
     return Distances.sqeuclidean(regMethod(X, ps[3:end]), Y)
 end
@@ -49,7 +49,7 @@ function fitRegression(dataType, regMethod::Function)
     fitMethod = (ps) -> loss_wL0f(df, ps, regMethod)
     g! = (G, ps) -> ForwardDiff.gradient!(G, fitMethod, ps)
 
-    p_init = 0.1*ones(Float64, Np)
+    p_init = 0.1 * ones(Float64, Np)
     p_lower = zeros(Float64, Np)
     p_upper = ones(Float64, Np)
 
@@ -58,7 +58,7 @@ function fitRegression(dataType, regMethod::Function)
         p_lower = [0.1; p_lower]
         p_upper = [10; p_upper]
     end
-    
+
     p_init = vcat(-9, 4, p_init)
     p_lower = vcat(-16, 1, p_lower)
     p_upper = vcat(-7, 6, p_upper)
