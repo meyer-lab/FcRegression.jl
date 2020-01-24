@@ -27,7 +27,7 @@ function plotIsobologramTwo()
     # TODO: Should import actual receptor abundance
     FcExpr = importRtot(murine = true)[:, 2]
 
-    output = calculateIsobologram(2, 5, 4, 1.0e-9, FcExpr, Kav, actV = murineActI)
+    output = calculateIsobologram(2, 4, 4, 1.0e-9, FcExpr, Kav, actV = murineActI)
     output /= maximum(output)
 
     X = range(0, stop = 1, length = length(output))
