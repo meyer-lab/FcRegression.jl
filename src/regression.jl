@@ -1,4 +1,4 @@
-import MLBase
+import MLBase.LOOCV
 import StatsBase.sample
 
 exponential(X::Matrix, p::Vector) = Distributions.cdf.(Distributions.Exponential(), X * p)
@@ -90,7 +90,7 @@ function LOOCrossVal(dataType, lossFunction::Function)
     df = importDepletion(dataType)
     n = size(df, 1)
     fitResults = Vector(undef, n)
-    LOOindex = MLBase.LOOCV(n)
+    LOOindex = LOOCV(n)
     for (i, idx) in enumerate(LOOindex)
         fitResults[i] = fitRegression(df[idx, :], lossFunction)
     end
