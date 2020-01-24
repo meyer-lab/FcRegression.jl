@@ -50,11 +50,11 @@ function proportion_loss(X::Matrix, w::Vector, Y::Vector)
     return sum((Y.-p).^2 ./ (p.*(1 .-p)))
 end
 
+
 function loss_wL0f(df, ps::Vector{T}, lossFunction::Function)::T  where {T<:Real}
     (X, Y) = regGenData(df; L0 = 10.0^ps[1], f = ps[2])
     return lossFunction(X, ps[3:end], Y)
 end
-
 
 
 function fitRegression(df, lossFunction::Function; wL0f = false)
