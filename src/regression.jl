@@ -46,7 +46,7 @@ function proportion_loss(X::Matrix, w::Vector, Y::Vector)
     log(λ_i) = w'* x_i
     T ~ exp(λ_i)
     """
-    p = exponential(X, w)
+    p = -expm1.(-exp.(X * w))
     return sum((Y.-p).^2 ./ (p.*(1 .-p)))
 end
 
@@ -70,8 +70,8 @@ function fitRegression(df, lossFunction::Function; wL0f = false)
     g! = (G, ps) -> ForwardDiff.gradient!(G, fitMethod, ps)
 
     p_init = zeros(Float64, Np)
-    p_lower = zeros(Float64, Np)
-    p_upper = ones(Float64, Np)
+    p_lower = -10.0 * ones(Float64, Np)
+    p_upper = 10.0 * ones(Float64, Np)
 
     if wL0f
         p_init = vcat(-9, 4, p_init)
