@@ -47,11 +47,11 @@ function proportion_loss(X::Matrix, w::Vector, Y::Vector)
     T ~ exp(λ_i)
     """
     p = -expm1.(-exp.(X * w))
-    return sum((Y.-p).^2 ./ (p.*(1 .-p)))
+    return sum((Y .- p) .^ 2 ./ (p .* (1 .- p)))
 end
 
 
-function loss_wL0f(df, ps::Vector{T}, lossFunction::Function)::T  where {T<:Real}
+function loss_wL0f(df, ps::Vector{T}, lossFunction::Function)::T where {T <: Real}
     (X, Y) = regGenData(df; L0 = 10.0^ps[1], f = ps[2])
     return lossFunction(X, ps[3:end], Y)
 end
@@ -103,7 +103,7 @@ function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false
     df = importDepletion(dataType)
     n = size(df, 1)
     fitResults = Vector(undef, nsample)
-    for i in 1:nsample
+    for i = 1:nsample
         fitResults[i] = fitRegression(df[sample(1:n, n, replace = true), :], lossFunction, wL0f = wL0f)
     end
     return fitResults
