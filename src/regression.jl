@@ -2,7 +2,6 @@ import MLBase.LOOCV
 import StatsBase.sample
 
 exponential(X::Matrix, p::Vector) = Distributions.cdf.(Distributions.Exponential(), X * p)
-weibull(X::Matrix, p::Vector) = Distributions.cdf.(Distributions.Weibull(p[1]), X * p[2:end])
 
 function regGenData(df; L0, f, KxStar = KxConst, murine = true)
     df = copy(df)
@@ -41,6 +40,7 @@ function quadratic_loss(X::Matrix, w::Vector, Y::Vector)
     return Distances.sqeuclidean(exponential(X, w), Y)
 end
 
+
 function proportion_loss(X::Matrix, w::Vector, Y::Vector)
     """
     log(λ_i) = w'* x_i
@@ -70,8 +70,8 @@ function fitRegression(df, lossFunction::Function; wL0f = false)
     g! = (G, ps) -> ForwardDiff.gradient!(G, fitMethod, ps)
 
     p_init = zeros(Float64, Np)
-    p_lower = -100 .* ones(Float64, Np)
-    p_upper = 100 .* ones(Float64, Np)
+    p_lower = -10.0 * ones(Float64, Np)
+    p_upper = 10.0 * ones(Float64, Np)
 
     if wL0f
         p_init = vcat(-9, 4, p_init)
@@ -86,24 +86,25 @@ function fitRegression(df, lossFunction::Function; wL0f = false)
     return fit
 end
 
-function LOOCrossVal(dataType, lossFunction::Function)
+
+function LOOCrossVal(dataType, lossFunction::Function; wL0f = false)
     df = importDepletion(dataType)
     n = size(df, 1)
     fitResults = Vector(undef, n)
     LOOindex = LOOCV(n)
     for (i, idx) in enumerate(LOOindex)
-        fitResults[i] = fitRegression(df[idx, :], lossFunction)
+        fitResults[i] = fitRegression(df[idx, :], lossFunction, wL0f = wL0f)
     end
     return fitResults
 end
 
 
-function bootstrap(dataType, lossFunction::Function; nsample = 100)
+function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false)
     df = importDepletion(dataType)
     n = size(df, 1)
     fitResults = Vector(undef, nsample)
     for i = 1:nsample
-        fitResults[i] = fitRegression(df[sample(1:n, n, replace = true), :], lossFunction)
+        fitResults[i] = fitRegression(df[sample(1:n, n, replace = true), :], lossFunction, wL0f = wL0f)
     end
     return fitResults
 end
