@@ -86,24 +86,24 @@ function fitRegression(df, lossFunction::Function; wL0f = false)
     return fit
 end
 
-function LOOCrossVal(dataType, lossFunction::Function)
+function LOOCrossVal(dataType, lossFunction::Function; wL0f = false)
     df = importDepletion(dataType)
     n = size(df, 1)
     fitResults = Vector(undef, n)
     LOOindex = LOOCV(n)
     for (i, idx) in enumerate(LOOindex)
-        fitResults[i] = fitRegression(df[idx, :], lossFunction)
+        fitResults[i] = fitRegression(df[idx, :], lossFunction, wL0f = wL0f)
     end
     return fitResults
 end
 
 
-function bootstrap(dataType, lossFunction::Function; nsample = 100)
+function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false)
     df = importDepletion(dataType)
     n = size(df, 1)
     fitResults = Vector(undef, nsample)
     for i in 1:nsample
-        fitResults[i] = fitRegression(df[sample(1:n, n, replace = true), :], lossFunction)
+        fitResults[i] = fitRegression(df[sample(1:n, n, replace = true), :], lossFunction, wL0f = wL0f)
     end
     return fitResults
 end
