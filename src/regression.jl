@@ -2,7 +2,6 @@ import MLBase.LOOCV
 import StatsBase.sample
 
 exponential(X::Matrix, p::Vector) = Distributions.cdf.(Distributions.Exponential(), X * p)
-weibull(X::Matrix, p::Vector) = Distributions.cdf.(Distributions.Weibull(p[1]), X * p[2:end])
 
 function regGenData(df; L0, f, KxStar = KxConst, murine = true)
     df = copy(df)
@@ -41,12 +40,13 @@ function quadratic_loss(X::Matrix, w::Vector, Y::Vector)
     return Distances.sqeuclidean(exponential(X, w), Y)
 end
 
+
 function proportion_loss(X::Matrix, w::Vector, Y::Vector)
     """
     log(λ_i) = w'* x_i
     T ~ exp(λ_i)
     """
-    p = -expm1.(-exp.(X * w))
+    p = exponential(X, w)
     return sum((Y.-p).^2 ./ (p.*(1 .-p)))
 end
 
@@ -70,8 +70,8 @@ function fitRegression(df, lossFunction::Function; wL0f = false)
     g! = (G, ps) -> ForwardDiff.gradient!(G, fitMethod, ps)
 
     p_init = zeros(Float64, Np)
-    p_lower = - 100 .* ones(Float64, Np)
-    p_upper = 100 .* ones(Float64, Np)
+    p_lower = zeros(Float64, Np)
+    p_upper = ones(Float64, Np)
 
     if wL0f
         p_init = vcat(-9, 4, p_init)
@@ -85,6 +85,7 @@ function fitRegression(df, lossFunction::Function; wL0f = false)
     end
     return fit
 end
+
 
 function LOOCrossVal(dataType, lossFunction::Function; wL0f = false)
     df = importDepletion(dataType)
