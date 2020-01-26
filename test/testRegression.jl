@@ -18,9 +18,6 @@ end
 	dataA = FcgR.importDepletion("ITP")
 	dataB = dataA[shuffle(1:size(dataA, 1)), :]
 
-	println(dataA)
-	println(dataB)
-
 	fitA = FcgR.fitRegression(dataA, FcgR.proportion_loss)
 	fitB = FcgR.fitRegression(dataB, FcgR.proportion_loss)
 
