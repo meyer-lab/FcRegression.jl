@@ -24,5 +24,4 @@ end
 	@test Optim.converged(fitA)
 	@test Optim.converged(fitB)
 	@test Optim.minimum(fitA) ≈ Optim.minimum(fitB)
-	@test Optim.iterations(fitA) == Optim.iterations(fitB)
 end
