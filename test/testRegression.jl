@@ -23,5 +23,5 @@ end
 
     @test Optim.converged(fitA)
     @test Optim.converged(fitB)
-    @test Optim.minimum(fitA) ≈ Optim.minimum(fitB)
+    @test isapprox(Optim.minimum(fitA), Optim.minimum(fitB), rtol=1.0e-3)
 end
