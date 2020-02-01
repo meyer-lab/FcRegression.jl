@@ -137,7 +137,9 @@ function figureB1()
     p1 = plotIsobologram()
     p2 = plotIsobologramTwo()
     p3 = PlotSynGraph()
-    p = plot(p1, p1, p2, p3, layout = (2, 2), size = (2100, 1200), dpi = 300)
+    p4 = PlotSynValency()
+    p5 = PlotSynvFcrExpr()
+    p = plot(p1, p1, p2, p3, p4, p5, layout = (3, 2), size = (2100, 1200), dpi = 300)
 
     savefig(p, "figureB1.pdf")
 end
