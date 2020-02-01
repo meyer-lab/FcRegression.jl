@@ -72,14 +72,14 @@ function PlotSynGraph()
     return pl
 end
 
-    """ Figure shows how immune complex valency affects synergy """
+""" Figure shows how immune complex valency affects synergy """
 function PlotSynValency()
     Kav = importKav(murine = true, IgG2bFucose = true)
     FcgR = importRtot(murine = true)[:, 2] #2 = mean cMO
     IC = 10e-9
     Valency = range(1, stop = 24)
     S = zeros((length(Valency), 10))
-        
+
     for (ii, value) in enumerate(Valency)
         A = synergyGrid(value, IC, FcgR, Kav)
         h = collect(Iterators.flatten(A))
@@ -88,7 +88,7 @@ function PlotSynValency()
         S[ii, 8:9] = h[14:15]
         S[ii, 10] = h[20]
     end
-    
+
     pl = plot(
         Valency,
         S,
@@ -98,7 +98,7 @@ function PlotSynValency()
     )
     xlabel!(pl, "IC Valency")
     ylabel!(pl, "Synergy")
-    
+
     return pl
 end
 

@@ -1,10 +1,17 @@
-using LsqFit
+import MLBase.LOOCV
+import StatsBase.sample
 
-exponential(X, p) = -expm1.(-X * p)
-gompertz(X::Array, p) = -expm1.(-p[1] .* expm1.(X * p[2:end]))
+exponential(X::Matrix, p::Vector) = Distributions.cdf.(Distributions.Exponential(), X * p)
 
-function regGenData(dataType; L0 = 1e-9, f = 4, KxStar = KxConst, Rtot = importRtot(), ActI = murineActI)
-    df = importDepletion(dataType)
+function regGenData(df; L0, f, KxStar = KxConst, murine = true)
+    df = copy(df)
+    Rtot = importRtot(murine = murine)
+
+    if murine
+        ActI = murineActI
+    else
+        ActI = humanActI
+    end
 
     if :Concentration in names(df)
         df[!, :Concentration] .*= L0
@@ -21,45 +28,83 @@ function regGenData(dataType; L0 = 1e-9, f = 4, KxStar = KxConst, Rtot = importR
 
     resX[df[:, :Background] .== "NeuKO", cellTypes .== :Neu] .= 0.0
     resX[df[:, :Background] .== "ncMOKO", cellTypes .== :ncMO] .= 0.0
+    Y = df[!, :Target]
 
     @assert all(isfinite.(resX))
-    return (resX, df[!, :Target])
+    @assert all(isfinite.(Y))
+    return (resX, Y)
 end
 
 
-function reg_wL0f(Xcond, ps, regMethod::Function, dataType)
-    (X, Y) = regGenData(dataType; L0 = 10.0^ps[1], f = ps[2])
-    return regMethod(X, ps[3:end])
+function quadratic_loss(X::Matrix, w::Vector, Y::Vector)
+    return Distances.sqeuclidean(exponential(X, w), Y)
 end
 
 
-function fitRegression(dataType, regMethod::Function; wL0f = false)
-    (X, Y) = regGenData(dataType)
-    if regMethod == exponential
-        p_init = [ones(Float64, size(X, 2));]
-        p_lower = [zeros(size(X, 2));]
-        p_upper = [ones(Float64, size(X, 2)) .* 1e5;]
-        autod = :forwarddiff
-    elseif regMethod == gompertz
-        p_init = [ones(Float64, size(X, 2) + 1);]
-        p_lower = [zeros(size(X, 2) + 1);]
-        p_upper = [100; ones(Float64, size(X, 2)) .* 1e5]
-        autod = :finiteforward
-    end
+function proportion_loss(X::Matrix, w::Vector, Y::Vector)
+    """
+    log(λ_i) = w'* x_i
+    T ~ exp(λ_i)
+    """
+    p = -expm1.(-exp.(X * w))
+    return sum((Y .- p) .^ 2 ./ (p .* (1 .- p)))
+end
 
-    # to fit L0 and f
+
+function loss_wL0f(df, ps::Vector{T}, lossFunction::Function)::T where {T <: Real}
+    (X, Y) = regGenData(df; L0 = 10.0^ps[1], f = ps[2])
+    return lossFunction(X, ps[3:end], Y)
+end
+
+
+function fitRegression(df, lossFunction::Function; wL0f = false)
+    ## this method only supports expoential distribution due to param choice
+
+    (X, Y) = regGenData(df; L0 = 1.0e-9, f = 4)
+    Np = size(X, 2)
     if wL0f
-        fitMethod = (Xcond, ps) -> reg_wL0f(Xcond, ps, regMethod, dataType)
+        fitMethod = (ps) -> loss_wL0f(df, ps, lossFunction)
+    else
+        fitMethod = (ps) -> proportion_loss(X, ps, Y)
+    end
+    g! = (G, ps) -> ForwardDiff.gradient!(G, fitMethod, ps)
+
+    p_init = zeros(Float64, Np)
+    p_lower = -10.0 * ones(Float64, Np)
+    p_upper = 10.0 * ones(Float64, Np)
+
+    if wL0f
         p_init = vcat(-9, 4, p_init)
         p_lower = vcat(-16, 1, p_lower)
         p_upper = vcat(-7, 6, p_upper)
-    else
-        fitMethod = regMethod
     end
 
-    fit = curve_fit(fitMethod, X, Y, p_init; lower = p_lower, upper = p_upper, autodiff = autod)
-    if !fit.converged
+    fit = optimize(fitMethod, g!, p_lower, p_upper, p_init, Fminbox())
+    if !Optim.converged(fit)
         @warn "Fitting did not converge"
     end
     return fit
+end
+
+
+function LOOCrossVal(dataType, lossFunction::Function; wL0f = false)
+    df = importDepletion(dataType)
+    n = size(df, 1)
+    fitResults = Vector(undef, n)
+    LOOindex = LOOCV(n)
+    for (i, idx) in enumerate(LOOindex)
+        fitResults[i] = fitRegression(df[idx, :], lossFunction, wL0f = wL0f)
+    end
+    return fitResults
+end
+
+
+function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false)
+    df = importDepletion(dataType)
+    n = size(df, 1)
+    fitResults = Vector(undef, nsample)
+    for i = 1:nsample
+        fitResults[i] = fitRegression(df[sample(1:n, n, replace = true), :], lossFunction, wL0f = wL0f)
+    end
+    return fitResults
 end

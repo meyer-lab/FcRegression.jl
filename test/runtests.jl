@@ -1,8 +1,9 @@
 using Test
 using Profile
-using LsqFit
 using FcgR
 using ForwardDiff
+using Optim
+using Random
 
 include("testBindingModel.jl")
 include("testSynergy.jl")
