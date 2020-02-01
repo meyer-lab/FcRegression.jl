@@ -27,7 +27,7 @@ function plotIsobologramTwo()
     # TODO: Should import actual receptor abundance
     FcExpr = importRtot(murine = true)[:, 2]
 
-    output = calculateIsobologram(2, 5, 4, 1.0e-9, FcExpr, Kav, actV = murineActI)
+    output = calculateIsobologram(2, 4, 4, 1.0e-9, FcExpr, Kav, actV = murineActI)
     output /= maximum(output)
 
     X = range(0, stop = 1, length = length(output))
@@ -102,11 +102,44 @@ function PlotSynValency()
     return pl
 end
 
+function PlotSynvFcrExpr()
+    """ Figure shows how Fc receptor expression affects synergy """
+    Kav = importKav(murine = true, IgG2bFucose = true)
+    FcgR = importRtot(murine = true)[:, 2] #2 = mean cMO
+    IC = 1e-9
+    multiplier = exp10.(range(-2, stop = 0, length = 50))
+    S = zeros((50, 10))
+    
+    for (ii, value) in enumerate(multiplier)
+        A = synergyGrid(4, IC, (FcgR*value), Kav)
+        h = collect(Iterators.flatten(A))
+        S[ii, 1:5] = h[2:6]
+        S[ii, 5:8] = h[8:11]
+        S[ii, 8:9] = h[14:15]
+        S[ii, 10] = h[20]
+    end
+    
+    pl = plot(
+        multiplier,
+        S,
+        xaxis = :log,
+        title = "Effect of Fc Expression on Synergy",
+        label = ["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG1/2b-Fucose" "IgG2a/2b" "IgG2a/3" "IgG2a/2b-Fucose" "IgG2b/3" "IgG2b/2b-Fucose" "IgG3/2b-Fucose"],
+        legend = :topleft,
+    )
+    xlabel!(pl, "Fcr Expression")
+    ylabel!(pl, "Synergy")
+    
+    return pl
+end
+
 function figureB1()
     p1 = plotIsobologram()
     p2 = plotIsobologramTwo()
     p3 = PlotSynGraph()
-    p = plot(p1, p1, p2, p3, layout = (2, 2), size = (2100, 1200), dpi = 300)
+    p4 = PlotSynValency()
+    p5 = PlotSynvFcrExpr()
+    p = plot(p1, p1, p2, p3, p4, p5, layout = (3, 2), size = (2100, 1200), dpi = 300)
 
     savefig(p, "figureB1.pdf")
 end
