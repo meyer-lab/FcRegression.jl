@@ -8,20 +8,19 @@ function Req_Regression(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC, K
 
     Av = transpose(Kav) * IgGC * KxStar
     f! = (F, x) -> F .= x + L0 * f / KxStar .* (x .* Av) .* (1 + sum(x .* Av))^(f - 1) - Rtot
-    j! = (J, x) -> J[diagind(J)] .= 1 .+ L0 * f / KxStar .* Av * (1 + sum(x .* Av))^(f - 2) .* (1 + sum(x .* Av) .+ (f - 1) * Av)
 
     x0 = convert(Vector{ansType}, Rtot)
-    df = OnceDifferentiable(f!, j!, x0, copy(x0), Diagonal(x0))
 
     local solve_res
     try
-        solve_res = nlsolve(df, x0, method = :newton)
+        solve_res = nlsolve(f!, x0, method = :newton, autodiff = :forward, iterations = 5000)
         @assert solve_res.f_converged == true
-        @assert all(solve_res.zero .<= Rtot)
+        @assert all(solve_res.zero .<= Rtot .+ 1.0e-12)
+        @assert all(-1.0e-12 .<= solve_res.zero)
     catch e
         println("Req solving failed")
-        show(Base.@locals)
-        println()
+        println("solve_res")
+        show(solve_res)
         rethrow(e)
     end
 
