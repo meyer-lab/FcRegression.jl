@@ -28,6 +28,8 @@ function Req_Regression(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC, K
         println(IgGC)
         println("Kav")
         println(Kav)
+        println("diff")
+        println(solve_res.zero .- Rtot)
         println("solve_res")
         show(solve_res)
         rethrow(e)
