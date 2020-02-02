@@ -109,16 +109,16 @@ function PlotSynvFcrExpr()
     IC = 1e-9
     multiplier = exp10.(range(-2, stop = 0, length = 50))
     S = zeros((50, 10))
-    
+
     for (ii, value) in enumerate(multiplier)
-        A = synergyGrid(4, IC, (FcgR*value), Kav)
+        A = synergyGrid(4, IC, (FcgR * value), Kav)
         h = collect(Iterators.flatten(A))
         S[ii, 1:5] = h[2:6]
         S[ii, 5:8] = h[8:11]
         S[ii, 8:9] = h[14:15]
         S[ii, 10] = h[20]
     end
-    
+
     pl = plot(
         multiplier,
         S,
@@ -129,7 +129,7 @@ function PlotSynvFcrExpr()
     )
     xlabel!(pl, "Fcr Expression")
     ylabel!(pl, "Synergy")
-    
+
     return pl
 end
 
