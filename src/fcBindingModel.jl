@@ -20,8 +20,16 @@ function Req_Regression(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC, K
         @assert all(solve_res.zero .<= Rtot)
     catch e
         println("Req solving failed")
-        show(Base.@locals)
-        println()
+        println("L0")
+        println(L0)
+        println("Rtot")
+        println(Rtot)
+        println("f")
+        println(f)
+        println("IgGC")
+        println(IgGC)
+        println("Kav")
+        println(Kav)
         rethrow(e)
     end
 
