@@ -16,7 +16,7 @@ function Req_Regression(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC, K
         solve_res = nlsolve(f!, x0, method = :newton, autodiff = :forward, iterations = 5000)
         @assert solve_res.f_converged == true
         @assert all(solve_res.zero .<= Rtot .+ 1.0e-12)
-        @assert all(0.0 .<= solve_res.zero)
+        @assert all(-1.0e-12 .<= solve_res.zero)
     catch e
         println("Req solving failed")
         println("solve_res")
