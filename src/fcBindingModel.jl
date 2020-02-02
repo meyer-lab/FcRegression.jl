@@ -15,7 +15,7 @@ function Req_Regression(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC, K
 
     local solve_res
     try
-        solve_res = nlsolve(df, x0, method = :newton)
+        solve_res = nlsolve(df, x0, method = :newton, iterations = 5000)
         @assert solve_res.f_converged == true
         @assert all(solve_res.zero .<= Rtot)
     catch e
