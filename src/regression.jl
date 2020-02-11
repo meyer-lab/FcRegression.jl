@@ -43,11 +43,13 @@ end
 
 function proportion_loss(X::Matrix, w::Vector, Y::Vector)
     """
-    log(λ_i) = w'* x_i
+    λ_i = w'* x_i
     T ~ exp(λ_i)
     """
-    p = -expm1.(-exp.(X * w))
-    return sum((Y .- p) .^ 2 ./ (p .* (1 .- p)))
+    p = -expm1.(-X * w)
+    res = sum((Y .- p) .^ 2 ./ (p .* (1 .- p) .+ 0.01))
+    @assert all(isfinite.(res))
+    return res
 end
 
 
@@ -69,8 +71,8 @@ function fitRegression(df, lossFunction::Function; wL0f = false)
     end
     g! = (G, ps) -> ForwardDiff.gradient!(G, fitMethod, ps)
 
-    p_init = zeros(Float64, Np)
-    p_lower = -10.0 * ones(Float64, Np)
+    p_init = 1.0 * ones(Float64, Np)
+    p_lower = zeros(Float64, Np)
     p_upper = 10.0 * ones(Float64, Np)
 
     if wL0f
