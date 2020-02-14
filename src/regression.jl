@@ -3,6 +3,8 @@ import StatsBase.sample
 
 exponential(X::Matrix, p::Vector) = Distributions.cdf.(Distributions.Exponential(), X * p)
 
+
+
 function regGenData(df; L0, f, KxStar = KxConst, murine = true)
     df = copy(df)
     Rtot = importRtot(murine = murine)
@@ -36,18 +38,13 @@ function regGenData(df; L0, f, KxStar = KxConst, murine = true)
 end
 
 
-function quadratic_loss(X::Matrix, w::Vector, Y::Vector)
-    return Distances.sqeuclidean(exponential(X, w), Y)
+function quadratic_loss(Y0::Vector, Y::Vector)
+    return Distances.sqeuclidean(Y0, Y)
 end
 
 
-function proportion_loss(X::Matrix, w::Vector, Y::Vector)
-    """
-    λ_i = w'* x_i
-    T ~ exp(λ_i)
-    """
-    p = -expm1.(-X * w)
-    res = sum((Y .- p) .^ 2 ./ (p .* (1 .- p) .+ 0.01))
+function proportion_loss(p::Vector, Y::Vector)
+    res = sum( (Y .- p) .^ 2 ./ (p .* (1 .- p) .+ 0.25) )
     @assert all(isfinite.(res))
     return res
 end
@@ -55,7 +52,8 @@ end
 
 function loss_wL0f(df, ps::Vector{T}, lossFunction::Function)::T where {T <: Real}
     (X, Y) = regGenData(df; L0 = 10.0^ps[1], f = ps[2])
-    return lossFunction(X, ps[3:end], Y)
+    Y0 = exponential(X, ps[3:end])
+    return lossFunction(Y0, Y)
 end
 
 
@@ -67,7 +65,7 @@ function fitRegression(df, lossFunction::Function; wL0f = false)
     if wL0f
         fitMethod = (ps) -> loss_wL0f(df, ps, lossFunction)
     else
-        fitMethod = (ps) -> proportion_loss(X, ps, Y)
+        fitMethod = (ps) -> lossFunction(exponential(X, ps), Y)
     end
     g! = (G, ps) -> ForwardDiff.gradient!(G, fitMethod, ps)
 
@@ -109,4 +107,25 @@ function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false
         fitResults[i] = fitRegression(df[sample(1:n, n, replace = true), :], lossFunction, wL0f = wL0f)
     end
     return fitResults
+end
+
+
+function CrossPredPredict(dataType)
+    """ wL0f = true  #not available """
+    df = importDepletion(dataType)
+    ordres = fitRegression(df, proportion_loss)
+    loores = LOOCrossVal(dataType, proportion_loss)
+    btpres = bootstrap(dataType, proportion_loss)
+    btpPred = Vector(undef, length(btpres))
+
+    (X, Y) = regGenData(df; L0 = 1.0e-9, f = 4)
+    ordPred = exponential(X, ordres.:minimizer)
+    ordResid = ordres.:minimum
+    looPred = reduce(hcat, [exponential(X, a.:minimizer) for a in loores])
+    looResid = [a.:minimum for a in loores]
+    btpPred = reduce(hcat, [exponential(X, a.:minimizer) for a in btpres])
+    btpResid = [a.:minimum for a in btpres]
+
+    return (ordPred, ordResid, looPred, looResid, btpPred, btpResid)
+
 end
