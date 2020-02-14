@@ -110,7 +110,7 @@ function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false
 end
 
 
-function CrossPredPredict(dataType)
+function CrossValPredict(dataType)
     """ wL0f = true  #not available """
     df = importDepletion(dataType)
     ordres = fitRegression(df, proportion_loss)
@@ -119,13 +119,13 @@ function CrossPredPredict(dataType)
     btpPred = Vector(undef, length(btpres))
 
     (X, Y) = regGenData(df; L0 = 1.0e-9, f = 4)
-    ordPred = exponential(X, ordres.:minimizer)
+    ordWeights = ordres.:minimizer
+    ordPred = exponential(X, ordWeights)
     ordResid = ordres.:minimum
     looPred = reduce(hcat, [exponential(X, a.:minimizer) for a in loores])
     looResid = [a.:minimum for a in loores]
-    btpPred = reduce(hcat, [exponential(X, a.:minimizer) for a in btpres])
-    btpResid = [a.:minimum for a in btpres]
+    btpWeights = reduce(hcat, [a.:minimizer for a in btpres])
 
-    return (ordPred, ordResid, looPred, looResid, btpPred, btpResid)
+    return (X, Y, ordWeights, ordPred, ordResid, looPred, looResid, btpWeights)
 
 end
