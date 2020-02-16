@@ -4,7 +4,6 @@ import StatsBase.sample
 exponential(X::Matrix, p::Vector) = Distributions.cdf.(Distributions.Exponential(), X * p)
 
 
-
 function regGenData(df; L0, f, KxStar = KxConst, murine = true)
     df = copy(df)
     Rtot = importRtot(murine = murine)
@@ -127,5 +126,4 @@ function CrossValPredict(dataType)
     btpWeights = reduce(hcat, [a.:minimizer for a in btpres])
 
     return (X, Y, ordWeights, ordPred, ordResid, looPred, looResid, btpWeights)
-
 end
