@@ -1,5 +1,7 @@
 import MLBase.LOOCV
 import StatsBase.sample
+import Statistics.std
+import Distributions: cdf, Exponential
 
 exponential(X::Matrix, p::Vector) = Distributions.cdf.(Distributions.Exponential(), X * p)
 
@@ -109,23 +111,23 @@ function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false
     return fitResults
 end
 
-
-function CrossPredPredict(dataType)
-    """ wL0f = true  #not available """
+function CVResults(dataType, lossFunction::Function = proportion_loss)
     df = importDepletion(dataType)
-    ordres = fitRegression(df, proportion_loss)
-    loores = LOOCrossVal(dataType, proportion_loss)
-    btpres = bootstrap(dataType, proportion_loss)
-    btpPred = Vector(undef, length(btpres))
+    fit_out = fitRegression(df, lossFunction)
+    loo_out = LOOCrossVal(dataType, lossFunction)
+    btp_out = bootstrap(dataType, lossFunction)
 
     (X, Y) = regGenData(df; L0 = 1.0e-9, f = 4)
-    ordPred = exponential(X, ordres.:minimizer)
-    ordResid = ordres.:minimum
-    looPred = reduce(hcat, [exponential(X, a.:minimizer) for a in loores])
-    looResid = [a.:minimum for a in loores]
-    btpPred = reduce(hcat, [exponential(X, a.:minimizer) for a in btpres])
-    btpResid = [a.:minimum for a in btpres]
+    fit_w = fit_out.:minimizer
 
-    return (ordPred, ordResid, looPred, looResid, btpPred, btpResid)
+    odf = df[!, [:Condition, :Background]]
+    odf[!, :Y] = Y
+    odf[!, :Fitted] = exponential(X, fit_w)
+    odf[!, :LOOPredict] = vcat([exponential(X[[i], :], loo_out[i].:minimizer) for i in 1:length(loo_out)]...)
 
+    effects = X .* fit_w'
+    btp_ws = cat([X .* (a.:minimizer)' for a in btp_out]..., dims=(3))
+    btp_std = std(btp_ws; dims=3)
+
+    return (odf, effects, btp_std)
 end
