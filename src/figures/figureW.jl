@@ -8,6 +8,7 @@ function plotActualvFit(odf, dataType)
     return pl
 end
 
+
 function plotActualvPredict(odf, dataType)
     pl = plot(odf[!, :Y], odf[!, :LOOPredict], seriestype=:scatter, smooth = true, legend = false)
     xlabel!(pl, "Actual effect")
@@ -16,10 +17,8 @@ function plotActualvPredict(odf, dataType)
     return pl
 end
 
+
 function plotCellTypeEffects(dataType)
-    if dataType in ["blood", "bone"]
-        dataType = "ITP"
-    end
     ## blood data has different concentration and can't use this
     (fit_w, odf, effects, btp_std) = CVResults(dataType)
     wtLineNo = odf[!, :Background] .== "wt"
