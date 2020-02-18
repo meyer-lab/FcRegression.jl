@@ -44,7 +44,7 @@ end
 
 
 function proportion_loss(p::Vector, Y::Vector)
-    res = sum( (Y .- p) .^ 2 ./ (p .* (1 .- p) .+ 0.25) )
+    res = sum((Y .- p) .^ 2 ./ (p .* (1 .- p) .+ 0.25))
     @assert all(isfinite.(res))
     return res
 end
@@ -122,11 +122,11 @@ function CVResults(dataType, lossFunction::Function = proportion_loss)
     odf = df[!, [:Condition, :Background]]
     odf[!, :Y] = Y
     odf[!, :Fitted] = exponential(X, fit_w)
-    odf[!, :LOOPredict] = vcat([exponential(X[[i], :], loo_out[i].:minimizer) for i in 1:length(loo_out)]...)
+    odf[!, :LOOPredict] = vcat([exponential(X[[i], :], loo_out[i].:minimizer) for i = 1:length(loo_out)]...)
 
     effects = X .* fit_w'
-    btp_ws = cat([X .* (a.:minimizer)' for a in btp_out]..., dims=(3))
-    btp_std = std(btp_ws; dims=3)
+    btp_ws = cat([X .* (a.:minimizer)' for a in btp_out]..., dims = (3))
+    btp_std = std(btp_ws; dims = 3)
 
     return (fit_w, odf, effects, btp_std)
 end
