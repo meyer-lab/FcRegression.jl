@@ -1,5 +1,4 @@
 """ This file builds the depletion manuscript, Figure B2. """
-using Plots
 
 function plotActualvFit("ITP")
     (odf, effects, btp_std) = CVResults(dataType)
