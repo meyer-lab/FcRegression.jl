@@ -12,7 +12,7 @@ figureB1.pdf:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB1()'
     
 figureB2.pdf:
-    julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB2()'
+	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB2()'
 
 output/%/manuscript.md: venv manuscripts/%/*.md
 	mkdir -p ./output/%
