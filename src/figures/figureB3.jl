@@ -35,6 +35,6 @@ function figureB3()
     p1 = plotActualvFit()
     p2 = plotActualvPredict()
     p3 = plotCellTypeEffects()
-    p = plot(p1, p2, p3, layout = (2, 2), size = (1200, 1200), dpi = 300)
+    p = plot(p1, p2, p3, p3, layout = (2, 2), size = (1200, 1200), dpi = 300)
     savefig(p, "figureB3.pdf")
 end

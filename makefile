@@ -17,6 +17,9 @@ figureB2.pdf:
 figureB3.pdf:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB3()'
 
+figureB4.pdf:
+	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB4()'
+
 output/%/manuscript.md: venv manuscripts/%/*.md
 	mkdir -p ./output/%
 	. venv/bin/activate && manubot process --content-directory=manuscripts/$*/ --output-directory=output/$*/ --log-level=WARNING
