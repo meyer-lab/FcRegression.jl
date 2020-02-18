@@ -15,6 +15,10 @@ using Plots
 include("figures/figure1.jl")
 include("figures/figureB1.jl")
 include("figures/figureB2.jl")
+include("figures/figureB3.jl")
+include("figures/figureB4.jl")
+include("figures/figureB5.jl")
+
 
 export calculateIsobologram, polyfc, polyfc_ActV
 
