@@ -1,7 +1,9 @@
 import MLBase.LOOCV
 import StatsBase.sample
+import Statistics.std
+import Distributions: cdf, Exponential
 
-exponential(X::Matrix, p::Vector) = Distributions.cdf.(Distributions.Exponential(), X * p)
+exponential(X::Matrix, p::Vector) = cdf.(Exponential(), X * p)
 
 function regGenData(df; L0, f, KxStar = KxConst, murine = true)
     df = copy(df)
@@ -19,7 +21,7 @@ function regGenData(df; L0, f, KxStar = KxConst, murine = true)
         insertcols!(df, 3, :Concentration => L0)
     end
 
-    resX = Matrix(undef, size(df, 1), size(Rtot, 2))
+    resX = Matrix{Number}(undef, size(df, 1), size(Rtot, 2))
     for i = 1:size(df, 1)
         Kav = convert(Vector{Float64}, df[i, murineFcgR])
         Kav = reshape(Kav, 1, :)
@@ -36,18 +38,13 @@ function regGenData(df; L0, f, KxStar = KxConst, murine = true)
 end
 
 
-function quadratic_loss(X::Matrix, w::Vector, Y::Vector)
-    return Distances.sqeuclidean(exponential(X, w), Y)
+function quadratic_loss(Y0::Vector, Y::Vector)
+    return Distances.sqeuclidean(Y0, Y)
 end
 
 
-function proportion_loss(X::Matrix, w::Vector, Y::Vector)
-    """
-    λ_i = w'* x_i
-    T ~ exp(λ_i)
-    """
-    p = -expm1.(-X * w)
-    res = sum((Y .- p) .^ 2 ./ (p .* (1 .- p) .+ 0.01))
+function proportion_loss(p::Vector, Y::Vector)
+    res = sum( (Y .- p) .^ 2 ./ (p .* (1 .- p) .+ 0.25) )
     @assert all(isfinite.(res))
     return res
 end
@@ -55,7 +52,8 @@ end
 
 function loss_wL0f(df, ps::Vector{T}, lossFunction::Function)::T where {T <: Real}
     (X, Y) = regGenData(df; L0 = 10.0^ps[1], f = ps[2])
-    return lossFunction(X, ps[3:end], Y)
+    Y0 = exponential(X, ps[3:end])
+    return lossFunction(Y0, Y)
 end
 
 
@@ -67,7 +65,7 @@ function fitRegression(df, lossFunction::Function; wL0f = false)
     if wL0f
         fitMethod = (ps) -> loss_wL0f(df, ps, lossFunction)
     else
-        fitMethod = (ps) -> proportion_loss(X, ps, Y)
+        fitMethod = (ps) -> lossFunction(exponential(X, ps), Y)
     end
     g! = (G, ps) -> ForwardDiff.gradient!(G, fitMethod, ps)
 
@@ -109,4 +107,26 @@ function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false
         fitResults[i] = fitRegression(df[sample(1:n, n, replace = true), :], lossFunction, wL0f = wL0f)
     end
     return fitResults
+end
+
+
+function CVResults(dataType, lossFunction::Function = proportion_loss)
+    df = importDepletion(dataType)
+    fit_out = fitRegression(df, lossFunction)
+    loo_out = LOOCrossVal(dataType, lossFunction)
+    btp_out = bootstrap(dataType, lossFunction)
+
+    (X, Y) = regGenData(df; L0 = 1.0e-9, f = 4)
+    fit_w = fit_out.:minimizer
+
+    odf = df[!, [:Condition, :Background]]
+    odf[!, :Y] = Y
+    odf[!, :Fitted] = exponential(X, fit_w)
+    odf[!, :LOOPredict] = vcat([exponential(X[[i], :], loo_out[i].:minimizer) for i in 1:length(loo_out)]...)
+
+    effects = X .* fit_w'
+    btp_ws = cat([X .* (a.:minimizer)' for a in btp_out]..., dims=(3))
+    btp_std = std(btp_ws; dims=3)
+
+    return (fit_w, odf, effects, btp_std)
 end
