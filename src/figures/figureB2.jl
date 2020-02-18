@@ -1,7 +1,7 @@
 """ This file builds the depletion manuscript, Figure B2. """
 
-function plotActualvFit("ITP")
-    (odf, effects, btp_std) = CVResults(dataType)
+function plotActualvFit()
+    (odf, effects, btp_std) = CVResults("ITP")
     pl = plot(odf[!, :Y], odf[!, :Fitted], seriestype=:scatter, smooth = true, legend = false)
     xlabel!(pl, "Actual effect")
     ylabel!(pl, "Fitted effect")
@@ -9,8 +9,8 @@ function plotActualvFit("ITP")
     return pl
 end
 
-function plotActualvPredict("ITP")
-    (odf, effects, btp_std) = CVResults(dataType)
+function plotActualvPredict()
+    (odf, effects, btp_std) = CVResults("ITP")
     pl = plot(odf[!, :Y], odf[!, :LOOPredict], seriestype=:scatter, smooth = true, legend = false)
     xlabel!(pl, "Actual effect")
     ylabel!(pl, "LOO predicted effect")
@@ -18,10 +18,10 @@ function plotActualvPredict("ITP")
     return pl
 end
 
-function plotCellTypeEffects("ITP")
+function plotCellTypeEffects()
     dataType = "ITP"
     ## blood data has different concentration and can't use this
-    (odf, effects, btp_std) = CVResults(dataType)
+    (odf, effects, btp_std) = CVResults("ITP")
     wtLineNo = odf[!, :Background] .== "wt"
     IgGcategory = odf[wtLineNo, :Condition]
     itemName = [String(i) * "_" * String(c) for c in cellTypes for i in IgGcategory]
