@@ -1,5 +1,5 @@
 
-all: figureB1.pdf figureB2.pdf figureB3.pdf output/depletion/manuscript.html output/translation/manuscript.html
+all: figureB1.pdf figureB2.pdf figureB3.pdf figureB4.pdf figureB5.pdf output/depletion/manuscript.html output/translation/manuscript.html
 
 venv: venv/bin/activate
 
@@ -10,15 +10,18 @@ venv/bin/activate: requirements.txt
 
 figureB1.pdf:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB1()'
-    
+
 figureB2.pdf:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB2()'
-    
+
 figureB3.pdf:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB3()'
 
 figureB4.pdf:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB4()'
+
+figureB5.pdf:
+	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB5()'
 
 output/%/manuscript.md: venv manuscripts/%/*.md
 	mkdir -p ./output/%
