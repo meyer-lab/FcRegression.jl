@@ -34,9 +34,9 @@ function plotCellTypeEffects()
 end
 
 function figureB2()
-    p1 = plotActualvFit(dataType)
-    p2 = plotActualvPredict(dataType)
-    p3 = plotCellTypeEffects(dataType)
+    p1 = plotActualvFit()
+    p2 = plotActualvPredict()
+    p3 = plotCellTypeEffects()
     p = plot(p1, p2, p3, p3, layout = (2, 2), size = (1200, 1200), dpi = 300)
     savefig(p, "figureB2.pdf")
 end
