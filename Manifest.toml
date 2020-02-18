@@ -283,15 +283,15 @@ version = "0.9.1"
 
 [[MLJBase]]
 deps = ["CategoricalArrays", "ComputationalResources", "DelimitedFiles", "Distributed", "Distributions", "HTTP", "InteractiveUtils", "InvertedIndices", "JSON", "LinearAlgebra", "LossFunctions", "MLJModelInterface", "MLJScientificTypes", "Missings", "OrderedCollections", "Parameters", "PrettyTables", "ProgressMeter", "Random", "ScientificTypes", "Statistics", "StatsBase", "Tables"]
-git-tree-sha1 = "ff69334913bce56630cca8802fc03a73e4c1d8ec"
+git-tree-sha1 = "ed05279907e55b52755ad831d5a12dcf072395e3"
 uuid = "a7f614a8-145f-11e9-1d2a-a57a1082229d"
-version = "0.11.5"
+version = "0.11.7"
 
 [[MLJModelInterface]]
 deps = ["ScientificTypes"]
-git-tree-sha1 = "269deeabed43d68656c80fa57a83fb53ad202728"
+git-tree-sha1 = "44ffc7bfa874bbbb4d59be104631b3f6aa1f425d"
 uuid = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
-version = "0.1.5"
+version = "0.1.7"
 
 [[MLJModels]]
 deps = ["CategoricalArrays", "Compat", "Distances", "Distributions", "InteractiveUtils", "LinearAlgebra", "MLJBase", "MLJModelInterface", "MultivariateStats", "OrderedCollections", "Parameters", "Pkg", "Random", "Requires", "ScientificTypes", "Statistics", "StatsBase", "Tables"]
@@ -436,9 +436,9 @@ version = "0.2.3"
 
 [[PrettyTables]]
 deps = ["Crayons", "Formatting", "Parameters", "Reexport", "Tables"]
-git-tree-sha1 = "a857e385fc4be7c6c849ecd452b5859cb158b9e8"
+git-tree-sha1 = "204c3f0942610a65eabdda0ce2b631d481d78c60"
 uuid = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
-version = "0.8.2"
+version = "0.8.3"
 
 [[Printf]]
 deps = ["Unicode"]
@@ -543,9 +543,9 @@ uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [[StatsBase]]
 deps = ["DataAPI", "DataStructures", "LinearAlgebra", "Missings", "Printf", "Random", "SortingAlgorithms", "SparseArrays", "Statistics"]
-git-tree-sha1 = "c53e809e63fe5cf5de13632090bc3520649c9950"
+git-tree-sha1 = "be5c7d45daa449d12868f4466dbf5882242cf2d9"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
-version = "0.32.0"
+version = "0.32.1"
 
 [[StatsFuns]]
 deps = ["Rmath", "SpecialFunctions"]
