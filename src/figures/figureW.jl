@@ -1,6 +1,6 @@
 using Plots
 
-function ActualvFit(dataType)
+function plotActualvFit(dataType)
     (odf, effects, btp_std) = CVResults(dataType)
     pl = plot(odf[!, :Y], odf[!, :Fitted], seriestype=:scatter, smooth = true, legend = false)
     xlabel!(pl, "Actual effect")
@@ -9,7 +9,7 @@ function ActualvFit(dataType)
     return pl
 end
 
-function ActualvPredict(dataType)
+function plotActualvPredict(dataType)
     (odf, effects, btp_std) = CVResults(dataType)
     pl = plot(odf[!, :Y], odf[!, :LOOPredict], seriestype=:scatter, smooth = true, legend = false)
     xlabel!(pl, "Actual effect")
@@ -18,7 +18,7 @@ function ActualvPredict(dataType)
     return pl
 end
 
-function CellTypeEffects(dataType)
+function plotCellTypeEffects(dataType)
     dataType = "ITP"
     ## blood data has different concentration and can't use this
     (odf, effects, btp_std) = CVResults(dataType)
@@ -35,9 +35,9 @@ end
 
 
 function figureW(dataType)
-    p1 = ActualvFit(dataType)
-    p2 = ActualvPredict(dataType)
-    p3 = CellTypeEffects(dataType)
+    p1 = plotActualvFit(dataType)
+    p2 = plotActualvPredict(dataType)
+    p3 = plotCellTypeEffects(dataType)
     p = plot(p1, p2, p3, p3, layout = (2, 2), size = (1200, 1200), dpi = 300)
-    savefig(p, "figureW$(dataType).pdf")
+    savefig(p, "figureW_$(dataType).pdf")
 end
