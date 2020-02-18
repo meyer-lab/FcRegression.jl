@@ -1,7 +1,6 @@
 module FcgR
 using LinearAlgebra
 using ForwardDiff
-import Distributions
 import Distances
 
 include("fcBindingModel.jl")
@@ -15,6 +14,7 @@ using Plots
 include("figures/figure1.jl")
 include("figures/figureB1.jl")
 include("figures/figureB2.jl")
+include("figures/figureW.jl")
 
 export calculateIsobologram, polyfc, polyfc_ActV
 

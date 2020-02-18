@@ -1,9 +1,9 @@
 import MLBase.LOOCV
 import StatsBase.sample
+import Statistics.std
+import Distributions: cdf, Exponential
 
-exponential(X::Matrix, p::Vector) = Distributions.cdf.(Distributions.Exponential(), X * p)
-
-
+exponential(X::Matrix, p::Vector) = cdf.(Exponential(), X * p)
 
 function regGenData(df; L0, f, KxStar = KxConst, murine = true)
     df = copy(df)
@@ -21,7 +21,7 @@ function regGenData(df; L0, f, KxStar = KxConst, murine = true)
         insertcols!(df, 3, :Concentration => L0)
     end
 
-    resX = Matrix(undef, size(df, 1), size(Rtot, 2))
+    resX = Matrix{Number}(undef, size(df, 1), size(Rtot, 2))
     for i = 1:size(df, 1)
         Kav = convert(Vector{Float64}, df[i, murineFcgR])
         Kav = reshape(Kav, 1, :)
@@ -110,22 +110,23 @@ function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false
 end
 
 
-function CrossValPredict(dataType)
-    """ wL0f = true  #not available """
+function CVResults(dataType, lossFunction::Function = proportion_loss)
     df = importDepletion(dataType)
-    ordres = fitRegression(df, proportion_loss)
-    loores = LOOCrossVal(dataType, proportion_loss)
-    btpres = bootstrap(dataType, proportion_loss)
-    btpPred = Vector(undef, length(btpres))
+    fit_out = fitRegression(df, lossFunction)
+    loo_out = LOOCrossVal(dataType, lossFunction)
+    btp_out = bootstrap(dataType, lossFunction)
 
     (X, Y) = regGenData(df; L0 = 1.0e-9, f = 4)
-    ordWeights = ordres.:minimizer
-    ordPred = exponential(X, ordWeights)
-    ordResid = ordres.:minimum
-    looPred = reduce(hcat, [exponential(X, a.:minimizer) for a in loores])
-    looResid = [a.:minimum for a in loores]
-    btpWeights = reduce(hcat, [a.:minimizer for a in btpres])
+    fit_w = fit_out.:minimizer
 
-    return (X, Y, ordWeights, ordPred, ordResid, looPred, looResid, btpWeights)
+    odf = df[!, [:Condition, :Background]]
+    odf[!, :Y] = Y
+    odf[!, :Fitted] = exponential(X, fit_w)
+    odf[!, :LOOPredict] = vcat([exponential(X[[i], :], loo_out[i].:minimizer) for i in 1:length(loo_out)]...)
 
+    effects = X .* fit_w'
+    btp_ws = cat([X .* (a.:minimizer)' for a in btp_out]..., dims=(3))
+    btp_std = std(btp_ws; dims=3)
+
+    return (odf, effects, btp_std)
 end
