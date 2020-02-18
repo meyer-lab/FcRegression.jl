@@ -128,5 +128,5 @@ function CVResults(dataType, lossFunction::Function = proportion_loss)
     btp_ws = cat([X .* (a.:minimizer)' for a in btp_out]..., dims=(3))
     btp_std = std(btp_ws; dims=3)
 
-    return (odf, effects, btp_std)
+    return (fit_w, odf, effects, btp_std)
 end
