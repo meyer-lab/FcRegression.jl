@@ -47,11 +47,12 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, weights::Ve
     IgGC[IgGYidx, :] = range(1.0, 0.0; length = nPoints)
     @assert size(FcExpr, 2) == length(weights)
     X = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI) # size: celltype * nPoints
-    output = X' * weights
+    output = exponential(Matrix(X'), weights)
 
     pl = plot(IgGC[IgGXidx, :], output, xticks = false, legend = false)
     plot!(pl, [0, 1], [output[1], output[end]])
-    annotate!(pl, [(0, minimum(output), text("100% $Xname", 12, :right)), (1.0, minimum(output), text("100% $Yname", 12, :right))])
+    ylims!(pl, (0.0, 1.0))
+    annotate!(pl, [(0.0, 0.0, text("100% $Xname", 12, :right)), (1.0, 0.0, text("100% $Yname", 12, :right))])
     title!(pl, "Total predicted effects vs IgG Composition")
     return pl
 end
