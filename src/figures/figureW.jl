@@ -1,7 +1,7 @@
 using Plots
 
 function plotActualvFit(odf, dataType)
-    pl = plot(odf[!, :Y], odf[!, :Fitted], seriestype=:scatter, smooth = true, legend = false)
+    pl = plot(odf[!, :Y], odf[!, :Fitted], seriestype = :scatter, smooth = true, legend = false)
     xlabel!(pl, "Actual effect")
     ylabel!(pl, "Fitted effect")
     title!(pl, "Actual effect vs fitted effect for $dataType")
@@ -10,7 +10,7 @@ end
 
 
 function plotActualvPredict(odf, dataType)
-    pl = plot(odf[!, :Y], odf[!, :LOOPredict], seriestype=:scatter, smooth = true, legend = false)
+    pl = plot(odf[!, :Y], odf[!, :LOOPredict], seriestype = :scatter, smooth = true, legend = false)
     xlabel!(pl, "Actual effect")
     ylabel!(pl, "LOO predicted effect")
     title!(pl, "Actual effect vs LOO predicted for $dataType")
@@ -27,15 +27,14 @@ function plotCellTypeEffects(dataType)
     values = effects[wtLineNo, :]
     stdevs = btp_std[wtLineNo, :]
 
-    pl = bar(itemName, vec(values), xrotation=40, yerr = vec(stdevs), legend = false)
+    pl = bar(itemName, vec(values), xrotation = 40, yerr = vec(stdevs), legend = false)
     ylabel!(pl, "Regressed effect")
     title!(pl, "Weights of IgGx + celltype in wt for $dataType")
     return pl
 end
 
 
-function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, weights::Vector;
-                                murine = true, nPoints = 40)
+function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, weights::Vector; murine = true, nPoints = 40)
 
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
