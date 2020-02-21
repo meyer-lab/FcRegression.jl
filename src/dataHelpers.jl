@@ -3,6 +3,7 @@ using CSV
 import StatsBase.geomean
 
 const KxConst = 6.31e-13 # 10^(-12.2)
+const C1qConc = 10  # placeholder
 
 function geocmean(x)
     x = convert(Vector, x)
