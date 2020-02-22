@@ -1,4 +1,5 @@
 using Plots
+import StatsBase.mode
 
 function plotActualvFit(odf, dataType)
     pl = plot(odf[!, :Y], odf[!, :Fitted], seriestype = :scatter, smooth = true, legend = false)
@@ -8,7 +9,6 @@ function plotActualvFit(odf, dataType)
     return pl
 end
 
-
 function plotActualvPredict(odf, dataType)
     pl = plot(odf[!, :Y], odf[!, :LOOPredict], seriestype = :scatter, smooth = true, legend = false)
     xlabel!(pl, "Actual effect")
@@ -17,11 +17,11 @@ function plotActualvPredict(odf, dataType)
     return pl
 end
 
-
 function plotCellTypeEffects(dataType; c1q=false)
     ## blood data has different concentration and can't use this
     (fit_w, odf, effects, btp_std) = CVResults(dataType; c1q=c1q)
-    wtLineNo = odf[!, :Background] .== "wt"
+    modeConc =  mode(odf[!, :Concentration])
+    wtLineNo = (odf[!, :Background] .== "wt") .& (odf[!, :Concentration] .== modeConc)
     IgGcategory = odf[wtLineNo, :Condition]
 
     itemName = [String(i) * "_" * String(c)
@@ -34,16 +34,15 @@ function plotCellTypeEffects(dataType; c1q=false)
 
     pl = bar(itemName, vec(values), xrotation = 40, yerr = vec(stdevs), legend = false)
     ylabel!(pl, "Regressed effect")
-    title!(pl, "Weights of IgGx + celltype in wt for $dataType")
+    title!(pl, "Weights of IgGx + CellType in wt for $dataType with L0 = $modeConc")
     return pl
 end
-
 
 function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, weights::Vector;
         murine = true, nPoints = 40, c1q = false)
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
-    Kav_df = importKav(; murine = murine, c1q = c1q, retdf=true)
+    Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     FcExpr = importRtot(; murine = murine)
     ActI = murine ? murineActI : humanActI
@@ -51,11 +50,9 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, weights::Ve
     IgGC = zeros(Float64, size(Kav, 1), nPoints)
     IgGC[IgGXidx, :] = range(0.0, 1.0; length = nPoints)
     IgGC[IgGYidx, :] = range(1.0, 0.0; length = nPoints)
-    X = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI) # size: celltype * nPoints
+    X = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI)  # size: celltype * nPoints
     if c1q
-        Kav_C1q = Matrix{Float64}(Kav_df[!, [:C1q]])
-        C1qv = [polyfc(L0, KxConst, 1, [C1qConc], Vector(i), Kav_C1q)["Lbound"] for i in eachcol(IgGC)]
-        X = vcat(X, reshape(C1qv, 1, :))
+        X = vcat(X, Kav_df[!, :C1q]' * IgGC)
     end
     @assert size(X, 1) == length(weights)
     output = exponential(Matrix(X'), weights)

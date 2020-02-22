@@ -7,8 +7,13 @@ exponential(X::Matrix, p::Vector) = cdf.(Exponential(), X * p)
 
 function regGenData(df; L0, f, KxStar = KxConst, murine = true, c1q = false)
     df = copy(df)
-    Rtot = importRtot(murine = murine)
+    Rtot = importRtot(; murine = murine)
     ActI = murine ? murineActI : humanActI
+
+    if c1q
+        Kav = importKav(; murine = murine, c1q = true, retdf = true)
+        C1qKav = Dict(Kav[!, :IgG] .=> Kav[!, :C1q])
+    end
 
     if :Concentration in names(df)
         df[!, :Concentration] .*= L0
@@ -23,7 +28,7 @@ function regGenData(df; L0, f, KxStar = KxConst, murine = true, c1q = false)
         Kav = reshape(Kav, 1, :)
         resX[i, 1:nct] = polyfc_ActV(df[i, :Concentration], KxStar, f, Rtot, [1.0], Kav, ActI)
         if c1q
-            resX[i, nct+1] = polyfc(df[i, :Concentration], KxStar, 1, [C1qConc], [1.0], hcat(df[i, :C1q]))["Lbound"]
+            resX[i, nct+1] = C1qKav[df[i, :Condition]]
         end
     end
 
@@ -42,20 +47,17 @@ function quadratic_loss(Y0::Vector, Y::Vector)
     return Distances.sqeuclidean(Y0, Y)
 end
 
-
 function proportion_loss(p::Vector, Y::Vector)
     res = sum((Y .- p) .^ 2 ./ (p .* (1 .- p) .+ 0.25))
     @assert all(isfinite.(res))
     return res
 end
 
-
 function loss_wL0f(df, ps::Vector{T}, lossFunction::Function; c1q = false)::T where {T <: Real}
     (X, Y) = regGenData(df; L0 = 10.0^ps[1], f = ps[2], c1q = c1q)
     Y0 = exponential(X, ps[3:end])
     return lossFunction(Y0, Y)
 end
-
 
 function fitRegression(df, lossFunction::Function; wL0f = false, c1q = false)
     ## this method only supports expoential distribution due to param choice
@@ -86,7 +88,6 @@ function fitRegression(df, lossFunction::Function; wL0f = false, c1q = false)
     return fit
 end
 
-
 function LOOCrossVal(dataType, lossFunction::Function; wL0f = false, c1q = false)
     df = importDepletion(dataType; c1q = c1q)
     n = size(df, 1)
@@ -97,7 +98,6 @@ function LOOCrossVal(dataType, lossFunction::Function; wL0f = false, c1q = false
     end
     return fitResults
 end
-
 
 function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false, c1q = false)
     df = importDepletion(dataType; c1q = c1q)
@@ -122,16 +122,18 @@ function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false
 end
 
 
-function CVResults(dataType, lossFunction::Function = proportion_loss; c1q = false)
+function CVResults(dataType, lossFunction::Function = proportion_loss;
+        L0 = 1e-9, f = 4, c1q = false)
     df = importDepletion(dataType; c1q = c1q)
     fit_out = fitRegression(df, lossFunction; c1q = c1q)
     loo_out = LOOCrossVal(dataType, lossFunction; c1q = c1q)
     btp_out = bootstrap(dataType, lossFunction; c1q = c1q)
 
-    (X, Y) = regGenData(df; L0 = 1.0e-9, f = 4, c1q = c1q)
+    (X, Y) = regGenData(df; L0 = L0, f = f, c1q = c1q)
     fit_w = fit_out.:minimizer
 
     odf = df[!, [:Condition, :Background]]
+    odf[!, :Concentration] .= (:Concentration in names(df)) ? (df[!, :Concentration] .* L0) : L0
     odf[!, :Y] = Y
     odf[!, :Fitted] = exponential(X, fit_w)
     odf[!, :LOOPredict] = vcat([exponential(X[[i], :], loo_out[i].:minimizer) for i = 1:length(loo_out)]...)
