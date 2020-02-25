@@ -116,6 +116,7 @@ function importDepletion(dataType; c1q = false)
     df[df[:, :Background] .== "R2KO", :FcgRIIB] .= 0.0
     df[df[:, :Background] .== "R3KO", :FcgRIII] .= 0.0
     df[df[:, :Background] .== "R1/3KO", [:FcgRI, :FcgRIII]] .= 0.0
+    df[df[:, :Background] .== "R1/4KO", [:FcgRI, :FcgRIV]] .= 0.0
     df[df[:, :Background] .== "R4block", :FcgRIV] .= 0.0
     df[df[:, :Background] .== "gcKO", [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
     return df
