@@ -109,7 +109,7 @@ function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false
     for i = 1:nsample
         for j = 1:5
             fit = try
-                fitRegression(df[sample(1:n, n, replace = true), :], lossFunction; wL0f = wL0f, c1q = c1q)
+                fitRegression(df[sample(1:n, n, replace = true), :], lossFunction; wL0f = wL0f)
             catch e
                 @warn "This bootstrapping set failed at fitRegression"
                 nothing
