@@ -1,19 +1,17 @@
 import MLBase.LOOCV
-import StatsBase.sample
-import Statistics.std
+import Statistics: mean, std
 import Distributions: cdf, Exponential
+import StatsBase: sample, mode
+using GLM
 
 exponential(X::Matrix, p::Vector) = cdf.(Exponential(), X * p)
+inv_exponential(y::Real) = -log(1-y)
 
-function regGenData(df; L0, f, KxStar = KxConst, murine = true, c1q = false)
+function regGenData(df; L0, f, KxStar = KxConst, murine = true, retdf = false)
     df = copy(df)
     Rtot = importRtot(; murine = murine)
+    FcRecep = murine ? murineFcgR : humanFcgR
     ActI = murine ? murineActI : humanActI
-
-    if c1q
-        Kav = importKav(; murine = murine, c1q = true, retdf = true)
-        C1qKav = Dict(Kav[!, :IgG] .=> Kav[!, :C1q])
-    end
 
     if :Concentration in names(df)
         df[!, :Concentration] .*= L0
@@ -21,25 +19,30 @@ function regGenData(df; L0, f, KxStar = KxConst, murine = true, c1q = false)
         insertcols!(df, 3, :Concentration => L0)
     end
 
-    nct = size(Rtot, 2)
-    resX = Matrix{Number}(undef, size(df, 1), (c1q ? nct+1 : nct))
+    X = DataFrame(repeat([Float64], length(cellTypes)), cellTypes)
     for i = 1:size(df, 1)
-        Kav = convert(Vector{Float64}, df[i, murineFcgR])
+        Kav = convert(Vector{Float64}, df[i, FcRecep])
         Kav = reshape(Kav, 1, :)
-        resX[i, 1:nct] = polyfc_ActV(df[i, :Concentration], KxStar, f, Rtot, [1.0], Kav, ActI)
-        if c1q
-            resX[i, nct+1] = C1qKav[df[i, :Condition]]
-        end
+        push!(X, polyfc_ActV(df[i, :Concentration], KxStar, f, Rtot, [1.0], Kav, ActI))
     end
 
-    components = c1q ? [cellTypes; :C1q] : cellTypes
-    resX[df[:, :Background] .== "NeuKO", components .== :Neu] .= 0.0
-    resX[df[:, :Background] .== "ncMOKO", components .== :ncMO] .= 0.0
+    # any extra column (C1q or Neutralization) will be taken directly as an extra term in regression
+    for extra_col in setdiff(names(df), [:Condition; :Background; :Concentration; :Target; FcRecep])
+        X[!, extra_col] = df[!, extra_col]
+    end
+
+    X[df[:, :Background] .== "NeuKO", :Neu] .= 0.0
+    X[df[:, :Background] .== "ncMOKO", :ncMO] .= 0.0
     Y = df[!, :Target]
 
-    @assert all(isfinite.(resX))
+    @assert all(isfinite.(Matrix(X)))
     @assert all(isfinite.(Y))
-    return (resX, Y)
+
+    if retdf
+        return (X, Y)
+    else
+        return (Matrix{Float64}(X), Y)
+    end
 end
 
 
@@ -53,19 +56,19 @@ function proportion_loss(p::Vector, Y::Vector)
     return res
 end
 
-function loss_wL0f(df, ps::Vector{T}, lossFunction::Function; c1q = false)::T where {T <: Real}
-    (X, Y) = regGenData(df; L0 = 10.0^ps[1], f = ps[2], c1q = c1q)
+function loss_wL0f(df, ps::Vector{T}, lossFunction::Function)::T where {T <: Real}
+    (X, Y) = regGenData(df; L0 = 10.0^ps[1], f = ps[2])
     Y0 = exponential(X, ps[3:end])
     return lossFunction(Y0, Y)
 end
 
-function fitRegression(df, lossFunction::Function; wL0f = false, c1q = false)
+function fitRegression(df, lossFunction::Function = proportion_loss; wL0f = false)
     ## this method only supports expoential distribution due to param choice
 
-    (X, Y) = regGenData(df; L0 = 1.0e-9, f = 4, c1q = c1q)
+    (X, Y) = regGenData(df; L0 = 1.0e-9, f = 4, retdf = false)
     Np = size(X, 2)
     if wL0f
-        fitMethod = (ps) -> loss_wL0f(df, ps, lossFunction; c1q = c1q)
+        fitMethod = (ps) -> loss_wL0f(df, ps, lossFunction)
     else
         fitMethod = (ps) -> lossFunction(exponential(X, ps), Y)
     end
@@ -88,19 +91,19 @@ function fitRegression(df, lossFunction::Function; wL0f = false, c1q = false)
     return fit
 end
 
-function LOOCrossVal(dataType, lossFunction::Function; wL0f = false, c1q = false)
-    df = importDepletion(dataType; c1q = c1q)
+function LOOCrossVal(dataType, lossFunction::Function; wL0f = false)
+    df = importDepletion(dataType)
     n = size(df, 1)
     fitResults = Vector(undef, n)
     LOOindex = LOOCV(n)
     for (i, idx) in enumerate(LOOindex)
-        fitResults[i] = fitRegression(df[idx, :], lossFunction; wL0f = wL0f, c1q = c1q)
+        fitResults[i] = fitRegression(df[idx, :], lossFunction; wL0f = wL0f)
     end
     return fitResults
 end
 
-function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false, c1q = false)
-    df = importDepletion(dataType; c1q = c1q)
+function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false)
+    df = importDepletion(dataType)
     n = size(df, 1)
     fitResults = Vector(undef, nsample)
     for i = 1:nsample
@@ -123,25 +126,35 @@ end
 
 
 function CVResults(dataType, lossFunction::Function = proportion_loss;
-        L0 = 1e-9, f = 4, c1q = false)
-    df = importDepletion(dataType; c1q = c1q)
-    fit_out = fitRegression(df, lossFunction; c1q = c1q)
-    loo_out = LOOCrossVal(dataType, lossFunction; c1q = c1q)
-    btp_out = bootstrap(dataType, lossFunction; c1q = c1q)
+        L0 = 1e-9, f = 4)
+    df = importDepletion(dataType)
+    fit_out = fitRegression(df, lossFunction)
+    loo_out = LOOCrossVal(dataType, lossFunction)
+    btp_out = bootstrap(dataType, lossFunction)
 
-    (X, Y) = regGenData(df; L0 = L0, f = f, c1q = c1q)
+    (X, Y) = regGenData(df; L0 = L0, f = f, retdf = true)
     fit_w = fit_out.:minimizer
+    components = names(X)
+    @assert length(fit_w) == length(components)
 
     odf = df[!, [:Condition, :Background]]
     odf[!, :Concentration] .= (:Concentration in names(df)) ? (df[!, :Concentration] .* L0) : L0
     odf[!, :Y] = Y
-    odf[!, :Fitted] = exponential(X, fit_w)
-    odf[!, :LOOPredict] = vcat([exponential(X[[i], :], loo_out[i].:minimizer) for i = 1:length(loo_out)]...)
+    odf[!, :Fitted] = exponential(Matrix(X), fit_w)
+    odf[!, :LOOPredict] = vcat([exponential(Matrix(X[[i], :]), loo_out[i].:minimizer) for i = 1:length(loo_out)]...)
+
+    selected = (odf[!, :Background] .== "wt") .& (odf[!, :Concentration] .== mode(odf[!, :Concentration]))
+    X = Matrix(X[selected, :])
 
     effects = X .* fit_w'
     btp_ws = cat([X .* (a.:minimizer)' for a in btp_out]..., dims = (3))
     btp_std = dropdims(std(btp_ws; dims = 3), dims = 3)
     @assert size(effects) == size(btp_std)
 
-    return (fit_w, odf, effects, btp_std)
+    wdf = DataFrame(Weight = vec(effects), BtpStdev = vec(btp_std))
+    wdf[!, :Condition] = vec(repeat(odf[selected, :Condition], 1, length(fit_w)))
+    wdf[!, :Component] = vec(repeat(reshape(components, 1, :), size(effects, 1), 1))
+    @assert size(wdf, 1) == size(X, 1) * length(fit_w)
+
+    return (fit_w, odf, wdf)
 end

@@ -92,13 +92,16 @@ end
 
 
 """ Import cell depletion data. """
-function importDepletion(dataType; c1q = false)
+function importDepletion(dataType)
+    c1q = false
     if dataType == "ITP"
         filename = "nimmerjahn-ITP.csv"
     elseif dataType == "blood"
         filename = "nimmerjahn-CD20-blood.csv"
+        c1q = true
     elseif dataType == "bone"
         filename = "nimmerjahn-CD20-bone.csv"
+        c1q = true
     elseif dataType == "melanoma"
         filename = "nimmerjahn-melanoma.csv"
     else
