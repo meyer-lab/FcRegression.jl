@@ -1,4 +1,4 @@
-Condition,Background,Target,Neutralization(IC50 ug/ml)
+Condition,Background,Target,Neutralization
 IgG1,3BNC117,21.0,0.02
 IgG1D265A,3BNC117,21.0,0.02
 IgG2a,3BNC117,7.1,0.02
@@ -24,3 +24,4 @@ IgG1,mG053,98.0,0.00
 IgG1D265A,mG053,84.8,0.00
 IgG2a,mG053,99.5,0.00
 # From Elsevier,Cell,2014
+# Neutralization,IC50,(ug/ml)
