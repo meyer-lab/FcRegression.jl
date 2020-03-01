@@ -3,6 +3,7 @@ using CSV
 import StatsBase.geomean
 
 const KxConst = 6.31e-13 # 10^(-12.2)
+const C1qConc = 2.39e-7  # in mol/L, assume conc 113 μg/mL and mw 472 kDa
 
 function geocmean(x)
     x = convert(Vector, x)
@@ -91,13 +92,16 @@ end
 
 
 """ Import cell depletion data. """
-function importDepletion(dataType; c1q = false)
+function importDepletion(dataType)
+    c1q = false
     if dataType == "ITP"
         filename = "nimmerjahn-ITP.csv"
     elseif dataType == "blood"
         filename = "nimmerjahn-CD20-blood.csv"
+        c1q = true
     elseif dataType == "bone"
         filename = "nimmerjahn-CD20-bone.csv"
+        c1q = true
     elseif dataType == "melanoma"
         filename = "nimmerjahn-melanoma.csv"
     else
@@ -115,6 +119,7 @@ function importDepletion(dataType; c1q = false)
     df[df[:, :Background] .== "R2KO", :FcgRIIB] .= 0.0
     df[df[:, :Background] .== "R3KO", :FcgRIII] .= 0.0
     df[df[:, :Background] .== "R1/3KO", [:FcgRI, :FcgRIII]] .= 0.0
+    df[df[:, :Background] .== "R1/4KO", [:FcgRI, :FcgRIV]] .= 0.0
     df[df[:, :Background] .== "R4block", :FcgRIV] .= 0.0
     df[df[:, :Background] .== "gcKO", [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
     return df
