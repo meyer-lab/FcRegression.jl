@@ -5,7 +5,7 @@ import StatsBase: sample, mode
 using GLM
 
 exponential(X::Matrix, p::Vector) = cdf.(Exponential(), X * p)
-inv_exponential(y::Real) = -log(1-y)
+inv_exponential(y::Real) = -log(1 - y)
 
 function regGenData(df; L0, f, KxStar = KxConst, murine = true, retdf = false)
     df = copy(df)
@@ -125,8 +125,7 @@ function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false
 end
 
 
-function CVResults(dataType, lossFunction::Function = proportion_loss;
-        L0 = 1e-9, f = 4)
+function CVResults(dataType, lossFunction::Function = proportion_loss; L0 = 1e-9, f = 4)
     df = importDepletion(dataType)
     fit_out = fitRegression(df, lossFunction)
     loo_out = LOOCrossVal(dataType, lossFunction)
