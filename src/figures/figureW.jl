@@ -1,8 +1,3 @@
-using Gadfly
-using GLM
-using Compose
-import Cairo
-
 function plotActualvFit(odf, dataType)
     fit_res = lm(@formula(Fitted ~ Y), odf)
     intercept, slope = coef(fit_res)
@@ -113,5 +108,6 @@ function figureW(dataType; L0 = 1e-9, f = 4)
     p2 = plotActualvPredict(odf, dataType)
     p3 = plotCellTypeEffects(wdf, dataType)
     p4 = plotDepletionSynergy(2, 3, fit_w, 1e-9, 4; c1q = (:C1q in unique(wdf.Component)))
-    draw(PDF("figureW_$(dataType).pdf", 1000px, 800px), gridstack([p1 p2; p3 p4]))
+    
+    return p1, p2, p3, p4
 end
