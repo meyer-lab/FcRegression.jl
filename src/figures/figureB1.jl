@@ -24,7 +24,6 @@ end
 """ Plot an example isobologram. """
 function plotIsobologramTwo()
     Kav = importKav(murine = true, IgG2bFucose = true)
-    # TODO: Should import actual receptor abundance
     FcExpr = importRtot(murine = true)[:, 2]
 
     output = calculateIsobologram(2, 4, 4, 1.0e-9, FcExpr, Kav, actV = murineActI)
