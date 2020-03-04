@@ -1,8 +1,3 @@
-using Gadfly
-using GLM
-using Compose
-import Cairo
-
 function plotActualvFit(odf, dataType)
     fit_res = lm(@formula(Fitted ~ Y), odf)
     intercept, slope = coef(fit_res)

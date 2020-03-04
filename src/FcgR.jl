@@ -2,6 +2,10 @@ module FcgR
 using LinearAlgebra
 using ForwardDiff
 import Distances
+using Gadfly
+using GLM
+using Compose
+import Cairo
 
 include("fcBindingModel.jl")
 include("dataHelpers.jl")
