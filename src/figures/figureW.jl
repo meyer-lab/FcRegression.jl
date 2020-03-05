@@ -108,6 +108,6 @@ function figureW(dataType; L0 = 1e-9, f = 4)
     p2 = plotActualvPredict(odf, dataType)
     p3 = plotCellTypeEffects(wdf, dataType)
     p4 = plotDepletionSynergy(2, 3, fit_w, 1e-9, 4; c1q = (:C1q in unique(wdf.Component)))
-    
+
     return p1, p2, p3, p4
 end
