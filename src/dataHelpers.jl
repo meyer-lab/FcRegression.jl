@@ -93,28 +93,13 @@ end
 
 """ Humanized mice data from Lux 2014 """
 function importHumanized(dataType)
-    df = CSV.read(joinpath(dataDir, "lux_humanized_CD20.csv"), delim = ",", comment = "#", type = String)
-
-    RIIA = Dict("R/R" => 'R', "H/H" => 'H', "H/R" => 'Z')
-    RIIIA = Dict("F/F" => 'F', "V/V" => 'V', "F/V" => 'Z')
-    df[!, :Genotype] = map(x -> RIIA[x], df[!, Symbol("FcgRIIA-131H/R")]) .*
-                    'I' .*
-                    map(x -> RIIIA[x], df[!, Symbol("FcgRIIIA-158F/V")])
-    treatment = Dict("PBS" => 0.0, "1µg 1F5 hIgG1" => 1.0, "10µg 1F5 hIgG1" => 10.0, "100µg 1F5 hIgG1" => 100.0)
-    df[!, :Concentration] .= map(x -> treatment[x], df[!, :treatment])
-
+    df = CSV.read(joinpath(dataDir, "lux_humanized_CD19.csv"), delim = ",", comment = "#")
     @assert dataType in ["blood", "spleen", "bone marrow"] "Data type not found"
-    df = df[!, [:Genotype, :Concentration, Symbol(dataType)]]
     df = dropmissing(df, Symbol(dataType), disallowmissing=true)
-    df[df[!, Symbol(dataType)] .== "n.d.", Symbol(dataType)] .= "0.0"
-    df[!, :Target] = 1.0 .- parse.(Float64, df[!, Symbol(dataType)]) ./ 100.0
-
-    df = df[!, [:Genotype, :Concentration, :Target]]
-    df[!, :Condition] .= :IgG1
-
+    df[!, :Target] = 1.0 .- df[!, Symbol(dataType)] ./ 100.0
+    df = df[!, [:Genotype, :Concentration, :Condition, :Target]]
     return df
 end
-
 
 
 """ Import cell depletion data. """
