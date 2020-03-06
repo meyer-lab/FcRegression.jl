@@ -91,6 +91,17 @@ function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = fa
 end
 
 
+""" Humanized mice data from Lux 2014 """
+function importHumanized(dataType)
+    df = CSV.read(joinpath(dataDir, "lux_humanized_CD19.csv"), delim = ",", comment = "#")
+    @assert dataType in ["blood", "spleen", "bone marrow"] "Data type not found"
+    df = dropmissing(df, Symbol(dataType), disallowmissing=true)
+    df[!, :Target] = 1.0 .- df[!, Symbol(dataType)] ./ 100.0
+    df = df[!, [:Genotype, :Concentration, :Condition, :Target]]
+    return df
+end
+
+
 """ Import cell depletion data. """
 function importDepletion(dataType)
     c1q = false
