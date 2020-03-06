@@ -11,13 +11,19 @@ function plotIsobologram()
 
     X = range(0, stop = 1, length = length(output))
 
-    pl = plot(X, output, title = "Receptor Binding vs IgG Composition", xticks = false, legend = false)
-    plot!(pl, [0, 1], [output[1], output[33]])
-    annotate!(pl, [(0, 0, text("100% hIgG2", 8, :right, rotation = 45)), (1.0, 0, text("100% hIgG3", 8, :right, rotation = 45))])
-    ylabel!(pl, "hFcgRIIIA-158V Binding")
-    xlabel!(pl, "Percent hIgG3")
-    ylims!(pl, (-1, maximum(output) * 1.1))
-
+    pl = plot(
+        x = X, 
+        y = output, 
+        Geom.line,
+        layer(x = [0, 1], y = [output[1], output[33]], Geom.line),
+        Scale.y_continuous(minvalue = -1, maxvalue = maximum(output) * 1.1),
+        #Guide.annotation()
+        Guide.xlabel("Percent hIgG3"),
+        Guide.ylabel("hFcgRIIIA-158V Binding"),
+        Guide.title("Receptor Binding vs IgG Composition"),
+        Guide.xticks(),
+        Guide.annotation(compose(context(), text(0, -1000, "100% hIgG2"), text(.8, -1000, "100% hIgG3"))),
+    )
     return pl
 end
 
@@ -31,13 +37,18 @@ function plotIsobologramTwo()
 
     X = range(0, stop = 1, length = length(output))
 
-    pl = plot(X, output, title = "Activity vs IgG Composition", xticks = false, legend = false)
-    plot!(pl, [0, 1], [output[1], output[33]])
-    annotate!(pl, [(0, 0, text("100% mIgG2a", 8, :right, rotation = 45)), (1.0, 0, text("100% mIgG2bFucose", 8, :right, rotation = 45))])
-    ylabel!(pl, "cMO Predicted Activity")
-    xlabel!(pl, "Percent mIgG2bFucose")
-    ylims!(pl, (-0.02, maximum(output) * 1.1))
-
+    pl = plot(
+        x = X,
+        y = output,
+        Geom.line,
+        layer(x = [0, 1], y = [output[1], output[33]], Geom.line),
+        Scale.y_continuous(minvalue = -0.02, maxvalue = maximum(output) * 1.1),
+        Guide.xlabel("Percent mIgG2bFucose"),
+        Guide.ylabel("cMO Predicted Activity"),
+        Guide.title("Activity vs IgG Composition"),
+        Guide.xticks(),
+        Guide.annotation(compose(context(), text(0, -.1, "100% mIgG2a"), text(.65, -.1, "100% mIgG2bFucose"))),
+    )
     return pl
 end
 
@@ -58,16 +69,17 @@ function PlotSynGraph()
     end
 
     pl = plot(
-        IC,
-        S,
-        xaxis = :log,
-        title = "Effect of Concentration on Synergy",
-        label = ["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG1/2b-Fucose" "IgG2a/2b" "IgG2a/3" "IgG2a/2b-Fucose" "IgG2b/3" "IgG2b/2b-Fucose" "IgG3/2b-Fucose"],
-        legend = :topleft,
+        x = IC,
+        y = S,
+        Geom.point,
+        color = ["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG1/2b-Fucose" "IgG2a/2b" "IgG2a/3" "IgG2a/2b-Fucose" "IgG2b/3" "IgG2b/2b-Fucose" "IgG3/2b-Fucose"],
+        Guide.colorkey(title = "IgG Combination"),
+        Scale.x_log10,
+        Guide.xlabel("Percent mIgG2bFucose"),
+        Guide.ylabel("Synergy"),
+        Guide.title("IC Concentration"),
+        Guide.xticks(),
     )
-    xlabel!(pl, "IC Concentration")
-    ylabel!(pl, "Synergy")
-
     return pl
 end
 
@@ -89,14 +101,14 @@ function PlotSynValency()
     end
 
     pl = plot(
-        Valency,
-        S,
-        title = "Effect of IC Valency on Synergy",
-        label = ["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG1/2b-Fucose" "IgG2a/2b" "IgG2a/3" "IgG2a/2b-Fucose" "IgG2b/3" "IgG2b/2b-Fucose" "IgG3/2b-Fucose"],
-        legend = :topleft,
+        x = Valency,
+        y = S,
+        color = ["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG1/2b-Fucose" "IgG2a/2b" "IgG2a/3" "IgG2a/2b-Fucose" "IgG2b/3" "IgG2b/2b-Fucose" "IgG3/2b-Fucose"],
+        Guide.colorkey(title = "IgG Combination"),
+        Guide.xlabel("IC Valency"),
+        Guide.ylabel("Synergy"),
+        Guide.title("Effect of IC Valency on Synergy"),
     )
-    xlabel!(pl, "IC Valency")
-    ylabel!(pl, "Synergy")
 
     return pl
 end
@@ -119,16 +131,15 @@ function PlotSynvFcrExpr()
     end
 
     pl = plot(
-        multiplier,
-        S,
-        xaxis = :log,
-        title = "Effect of Fc Expression on Synergy",
-        label = ["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG1/2b-Fucose" "IgG2a/2b" "IgG2a/3" "IgG2a/2b-Fucose" "IgG2b/3" "IgG2b/2b-Fucose" "IgG3/2b-Fucose"],
-        legend = :topleft,
+        x = multiplier,
+        y = S,
+        Scale.x_log10,
+        color = ["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG1/2b-Fucose" "IgG2a/2b" "IgG2a/3" "IgG2a/2b-Fucose" "IgG2b/3" "IgG2b/2b-Fucose" "IgG3/2b-Fucose"],
+        Guide.colorkey(title = "IgG Combination"),
+        Guide.xlabel("Fcr Expression"),
+        Guide.ylabel("Synergy"),
+        Guide.title("Effect of Fc Expression on Synergy"),
     )
-    xlabel!(pl, "Fcr Expression")
-    ylabel!(pl, "Synergy")
-
     return pl
 end
 
