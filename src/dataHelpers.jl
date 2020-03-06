@@ -119,3 +119,29 @@ function importDepletion(dataType; c1q = false)
     df[df[:, :Background] .== "gcKO", [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
     return df
 end
+
+function importAlterMSG()
+    dataDir = joinpath(dirname(pathof(FcgR)), "..", "data", "alter-MSB")
+    
+    dfF = CSV.read(joinpath(dataDir, "data-function.csv"))
+    dfGP = CSV.read(joinpath(dataDir, "data-glycan-gp120.csv"))
+    dfIGG = CSV.read(joinpath(dataDir, "data-luminex-igg.csv"))
+    dfL = CSV.read(joinpath(dataDir, "data-luminex.csv"))
+    dfMA = CSV.read(joinpath(dataDir, "meta-antigens.csv"))
+    dfMD = CSV.read(joinpath(dataDir, "meta-detections.csv"))
+    dfMG = CSV.read(joinpath(dataDir, "meta-glycans.csv"))
+    dfMS = CSV.read(joinpath(dataDir, "meta-subjects.csv"))
+    
+    df = meltdf(dfL, view = true)
+    newdfL = DataFrame(Rec = String[], Vir = String[], Sig = String[], Value = Float64[], Subject = Int64[])    
+for i in 1:88871
+    Ar = split(string(df.variable[i]), "."; limit = 3)
+    if length(Ar) == 3
+        push!(newdfL, [Ar[1], Ar[2], Ar[3], df.value[i], df.Column1[i]])
+    else
+        push!(newdfL, [Ar[1], Ar[2], "N/A", df.value[i], df.Column1[i]])
+    end
+    end 
+    
+    return dfF, dfGP, dfIGG, newdfL, dfMA, dfMD, dfMG, dfMS
+end
