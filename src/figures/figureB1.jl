@@ -24,7 +24,6 @@ end
 """ Plot an example isobologram. """
 function plotIsobologramTwo()
     Kav = importKav(murine = true, IgG2bFucose = true)
-    # TODO: Should import actual receptor abundance
     FcExpr = importRtot(murine = true)[:, 2]
 
     output = calculateIsobologram(2, 4, 4, 1.0e-9, FcExpr, Kav, actV = murineActI)
@@ -139,7 +138,6 @@ function figureB1()
     p3 = PlotSynGraph()
     p4 = PlotSynValency()
     p5 = PlotSynvFcrExpr()
-    p = plot(p1, p1, p2, p3, p4, p5, layout = (3, 2), size = (2100, 1200), dpi = 300)
 
-    savefig(p, "figureB1.pdf")
+    draw(PDF("figureB1.pdf", 1000px, 800px), gridstack([p1 p2 p3 p4 p5]))
 end
