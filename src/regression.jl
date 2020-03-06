@@ -3,6 +3,7 @@ import Statistics: mean, std
 import Distributions: cdf, Exponential
 import StatsBase: sample, mode
 using GLM
+using NNLS
 
 exponential(X::Matrix, p::Vector) = cdf.(Exponential(), X * p)
 inv_exponential(y::Real) = -log(1 - y)
@@ -74,9 +75,9 @@ function fitRegression(df, lossFunction::Function = proportion_loss; wL0f = fals
     end
     g! = (G, ps) -> ForwardDiff.gradient!(G, fitMethod, ps)
 
-    p_init = 1.0 * ones(Float64, Np)
+    p_init = nnls(X, inv_exponential.(Y))
     p_lower = zeros(Float64, Np)
-    p_upper = 10.0 * ones(Float64, Np)
+    p_upper = maximum(p_init) .* ones(Float64, Np)
 
     if wL0f
         p_init = vcat(-9, 4, p_init)
@@ -88,7 +89,7 @@ function fitRegression(df, lossFunction::Function = proportion_loss; wL0f = fals
     if !Optim.converged(fit)
         @warn "Fitting did not converge"
     end
-    return fit
+    return p_init
 end
 
 function LOOCrossVal(dataType, lossFunction::Function; wL0f = false)
@@ -120,19 +121,18 @@ function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false
             end
         end
     end
-    @assert all(isa.(fitResults, Optim.MultivariateOptimizationResults))
+    @assert all(isa.(fitResults, Array{<:Real}))
     return fitResults
 end
 
 
 function CVResults(dataType, lossFunction::Function = proportion_loss; L0 = 1e-9, f = 4)
     df = importDepletion(dataType)
-    fit_out = fitRegression(df, lossFunction)
+    fit_w = fitRegression(df, lossFunction)
     loo_out = LOOCrossVal(dataType, lossFunction)
     btp_out = bootstrap(dataType, lossFunction)
 
     (X, Y) = regGenData(df; L0 = L0, f = f, retdf = true)
-    fit_w = fit_out.:minimizer
     components = names(X)
     @assert length(fit_w) == length(components)
 
@@ -140,13 +140,13 @@ function CVResults(dataType, lossFunction::Function = proportion_loss; L0 = 1e-9
     odf[!, :Concentration] .= (:Concentration in names(df)) ? (df[!, :Concentration] .* L0) : L0
     odf[!, :Y] = Y
     odf[!, :Fitted] = exponential(Matrix(X), fit_w)
-    odf[!, :LOOPredict] = vcat([exponential(Matrix(X[[i], :]), loo_out[i].:minimizer) for i = 1:length(loo_out)]...)
+    odf[!, :LOOPredict] = vcat([exponential(Matrix(X[[i], :]), loo_out[i]) for i = 1:length(loo_out)]...)
 
     selected = (odf[!, :Background] .== "wt") .& (odf[!, :Concentration] .== mode(odf[!, :Concentration]))
     X = Matrix(X[selected, :])
 
     effects = X .* fit_w'
-    btp_ws = cat([X .* (a.:minimizer)' for a in btp_out]..., dims = (3))
+    btp_ws = cat([X .* a' for a in btp_out]..., dims = (3))
     btp_std = dropdims(std(btp_ws; dims = 3), dims = 3)
     @assert size(effects) == size(btp_std)
 
