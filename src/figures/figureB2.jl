@@ -1,5 +1,7 @@
-""" This file builds the depletion manuscript, Figure 2. """
+""" This file builds the depletion manuscript, Figure 2 (ITP). """
 
 function figureB2()
-    println("Nothing here yet.")
+    p1, p2, p3, p4 = figureW("ITP"; L0 = 1e-9, f = 4)
+
+    draw(PDF("figureB2.pdf", 1000px, 800px), gridstack([p1 p2; p3 p4]))
 end
