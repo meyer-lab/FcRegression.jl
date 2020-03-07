@@ -135,21 +135,22 @@ function importDepletion(dataType)
     return df
 end
 
+""" Import systems serology dataset. """
 function importAlterMSG()
-    dataDir = joinpath(dirname(pathof(FcgR)), "..", "data", "alter-MSB")
-
-    dfF = CSV.read(joinpath(dataDir, "data-function.csv"))
-    dfGP = CSV.read(joinpath(dataDir, "data-glycan-gp120.csv"))
-    dfIGG = CSV.read(joinpath(dataDir, "data-luminex-igg.csv"))
-    dfL = CSV.read(joinpath(dataDir, "data-luminex.csv"))
-    dfMA = CSV.read(joinpath(dataDir, "meta-antigens.csv"))
-    dfMD = CSV.read(joinpath(dataDir, "meta-detections.csv"))
-    dfMG = CSV.read(joinpath(dataDir, "meta-glycans.csv"))
-    dfMS = CSV.read(joinpath(dataDir, "meta-subjects.csv"))
+    dfF = CSV.read(joinpath(dataDir, "alter-MSB", "data-function.csv"))
+    dfGP = CSV.read(joinpath(dataDir, "alter-MSB", "data-glycan-gp120.csv"))
+    dfIGG = CSV.read(joinpath(dataDir, "alter-MSB", "data-luminex-igg.csv"))
+    dfL = CSV.read(joinpath(dataDir, "alter-MSB", "data-luminex.csv"))
+    dfMA = CSV.read(joinpath(dataDir, "alter-MSB", "meta-antigens.csv"))
+    dfMD = CSV.read(joinpath(dataDir, "alter-MSB", "meta-detections.csv"))
+    dfMG = CSV.read(joinpath(dataDir, "alter-MSB", "meta-glycans.csv"))
+    dfMS = CSV.read(joinpath(dataDir, "alter-MSB", "meta-subjects.csv"))
 
     df = meltdf(dfL, view = true)
     newdfL = DataFrame(Rec = String[], Vir = String[], Sig = String[], Value = Float64[], Subject = Int64[])
-    for i = 1:88871
+
+    # Split column name into constituent parts
+    for i = 1:size(df, 1)
         Ar = split(string(df.variable[i]), "."; limit = 3)
         if length(Ar) == 3
             push!(newdfL, [Ar[1], Ar[2], Ar[3], df.value[i], df.Column1[i]])
