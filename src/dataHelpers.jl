@@ -94,7 +94,7 @@ end
 function importHumanized(dataType)
     df = CSV.read(joinpath(dataDir, "lux_humanized_CD19.csv"), delim = ",", comment = "#")
     @assert dataType in ["blood", "spleen", "bone marrow"] "Data type not found"
-    df = dropmissing(df, Symbol(dataType), disallowmissing=true)
+    df = dropmissing(df, Symbol(dataType), disallowmissing = true)
     df[!, :Target] = 1.0 .- df[!, Symbol(dataType)] ./ 100.0
     df = df[!, [:Genotype, :Concentration, :Condition, :Target]]
     return df
@@ -137,7 +137,7 @@ end
 
 function importAlterMSG()
     dataDir = joinpath(dirname(pathof(FcgR)), "..", "data", "alter-MSB")
-    
+
     dfF = CSV.read(joinpath(dataDir, "data-function.csv"))
     dfGP = CSV.read(joinpath(dataDir, "data-glycan-gp120.csv"))
     dfIGG = CSV.read(joinpath(dataDir, "data-luminex-igg.csv"))
@@ -146,17 +146,17 @@ function importAlterMSG()
     dfMD = CSV.read(joinpath(dataDir, "meta-detections.csv"))
     dfMG = CSV.read(joinpath(dataDir, "meta-glycans.csv"))
     dfMS = CSV.read(joinpath(dataDir, "meta-subjects.csv"))
-    
+
     df = meltdf(dfL, view = true)
-    newdfL = DataFrame(Rec = String[], Vir = String[], Sig = String[], Value = Float64[], Subject = Int64[])    
-for i in 1:88871
-    Ar = split(string(df.variable[i]), "."; limit = 3)
-    if length(Ar) == 3
-        push!(newdfL, [Ar[1], Ar[2], Ar[3], df.value[i], df.Column1[i]])
-    else
-        push!(newdfL, [Ar[1], Ar[2], "N/A", df.value[i], df.Column1[i]])
+    newdfL = DataFrame(Rec = String[], Vir = String[], Sig = String[], Value = Float64[], Subject = Int64[])
+    for i = 1:88871
+        Ar = split(string(df.variable[i]), "."; limit = 3)
+        if length(Ar) == 3
+            push!(newdfL, [Ar[1], Ar[2], Ar[3], df.value[i], df.Column1[i]])
+        else
+            push!(newdfL, [Ar[1], Ar[2], "N/A", df.value[i], df.Column1[i]])
+        end
     end
-    end 
-    
+
     return dfF, dfGP, dfIGG, newdfL, dfMA, dfMD, dfMG, dfMS
 end
