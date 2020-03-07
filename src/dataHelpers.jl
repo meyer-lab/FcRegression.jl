@@ -159,5 +159,5 @@ function importAlterMSG()
         end
     end
 
-    return dfF, dfGP, dfIGG, newdfL, dfMA, dfMD, dfMG, dfMS
+    return newdfL
 end
