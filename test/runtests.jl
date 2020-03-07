@@ -7,6 +7,6 @@ using Random
 
 include("testBindingModel.jl")
 include("testSynergy.jl")
-include("testRegression.jl")
+#include("testRegression.jl")
 include("testTranslation.jl")
 include("testDataHelpers.jl")

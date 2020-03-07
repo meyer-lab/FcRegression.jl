@@ -3,7 +3,6 @@ using CSV
 import StatsBase.geomean
 
 const KxConst = 6.31e-13 # 10^(-12.2)
-const C1qConc = 2.39e-7  # in mol/L, assume conc 113 μg/mL and mw 472 kDa
 
 function geocmean(x)
     x = convert(Vector, x)
@@ -11,15 +10,15 @@ function geocmean(x)
     return geomean(x)
 end
 
-cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]
-murineIgG = [:IgG1, :IgG2a, :IgG2b, :IgG3]
-humanIgG = [:IgG1, :IgG2, :IgG3, :IgG4]
-murineFcgR = [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]
-humanFcgR =
+const cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]
+const murineIgG = [:IgG1, :IgG2a, :IgG2b, :IgG3]
+const humanIgG = [:IgG1, :IgG2, :IgG3, :IgG4]
+const murineFcgR = [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]
+const humanFcgR =
     Symbol.(["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158V", "FcgRIIIA-158F", "FcgRIIIB"])
-murineActI = [1, -1, 1, 1]
-humanActI = [1, 1, 1, -1, -1, 1, 1, 1, 1]
-dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
+const murineActI = [1, -1, 1, 1]
+const humanActI = [1, 1, 1, -1, -1, 1, 1, 1, 1]
+const dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
 
 function importRtot(; murine = true, genotype = "HIV", retdf = false)
     if murine
