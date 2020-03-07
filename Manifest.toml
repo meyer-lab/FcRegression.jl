@@ -106,10 +106,10 @@ uuid = "a81c6b42-2e10-5240-aca2-a61377ecd94b"
 version = "0.8.1"
 
 [[Contour]]
-deps = ["LinearAlgebra", "StaticArrays", "Test"]
-git-tree-sha1 = "b974e164358fea753ef853ce7bad97afec15bb80"
+deps = ["StaticArrays"]
+git-tree-sha1 = "6d56f927b33d3820561b8f89d7de311718683846"
 uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
-version = "0.5.1"
+version = "0.5.2"
 
 [[CoupledFields]]
 deps = ["Compat", "StatsBase"]
@@ -345,6 +345,7 @@ git-tree-sha1 = "fb8e1c7a5594ba56f9011310790e03b5384998d6"
 uuid = "1d5cc7b8-4909-519e-a0f8-d0f5ad9712d0"
 version = "2018.0.3+0"
 
+
 [[InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
@@ -473,6 +474,7 @@ deps = ["IterTools", "Random", "Reexport", "StatsBase", "Test"]
 git-tree-sha1 = "f63a8d37429568b8c4384d76c4a96fc2897d6ddf"
 uuid = "f0e99cf1-93fa-52ec-9ecc-5026115318e0"
 version = "0.8.0"
+
 
 [[MacroTools]]
 deps = ["DataStructures", "Markdown", "Random"]
@@ -617,6 +619,7 @@ deps = ["Libdl", "Pkg"]
 git-tree-sha1 = "cdddc5aab6ae8e3034dbf3c264e636fbf19fdee0"
 uuid = "30392449-352a-5448-841d-b1acce4e97dc"
 version = "0.38.4+1"
+
 
 [[Pkg]]
 deps = ["Dates", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Test", "UUIDs"]
