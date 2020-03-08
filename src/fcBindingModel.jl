@@ -3,6 +3,16 @@ using Optim
 using LinearAlgebra
 
 
+mutable struct fcOutput{T}
+    Lbound::T
+    Rbound::T
+    Rmulti::T
+    ActV::T
+    Req::Vector{T}
+    Rbound_n::Vector{T}
+end
+
+
 function Req_Regression(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC, Kav)
     ansType = promote_type(typeof(L0), typeof(KxStar), typeof(f), eltype(Rtot), eltype(IgGC))
 
@@ -42,24 +52,18 @@ function polyfc(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC::Vector, K
     Phisum = sum(Phi[:, 1:nr])
     Phisum_n = sum(Phi[:, 1:nr], dims = 1)
 
-    w = Dict()
-    w["Lbound"] = L0 / KxStar * ((1 + Phisum)^f - 1)
-    w["Rbound"] = L0 / KxStar * f * Phisum * (1 + Phisum)^(f - 1)
-    w["Rbound_n"] = L0 / KxStar * f .* Phisum_n * (1 + Phisum)^(f - 1)
-    w["Rmulti"] = L0 / KxStar * f * Phisum * ((1 + Phisum)^(f - 1) - 1)
-    w["Rmulti_n"] = L0 / KxStar * f .* Phisum_n * ((1 + Phisum)^(f - 1) - 1)
-    w["nXlink"] = L0 / KxStar * (1 + (1 + Phisum)^(f - 1) * ((f - 1) * Phisum - 1))
-    w["Req"] = Req
-    w["vtot"] = L0 / KxStar * (1 + Phisum)^f
-
-    if typeof(f) == Int
-        w["vieq"] = L0 / KxStar .* [binomial(f, i) for i = 0:f] .* Phisum .^ (0:f)
-    end
+    w = fcOutput{ansType}
+    w.Lbound = L0 / KxStar * ((1 + Phisum)^f - 1)
+    w.Rbound = L0 / KxStar * f * Phisum * (1 + Phisum)^(f - 1)
+    w.Rbound_n = L0 / KxStar * f .* Phisum_n * (1 + Phisum)^(f - 1)
+    w.Rmulti = L0 / KxStar * f * Phisum * ((1 + Phisum)^(f - 1) - 1)
+    Rmulti_n = L0 / KxStar * f .* Phisum_n * ((1 + Phisum)^(f - 1) - 1)
+    w.Req = Req
 
     if ActI != nothing
         ActI = vec(ActI)
         @assert nr == length(ActI)
-        w["ActV"] = max(dot(w["Rmulti_n"], ActI), 0.0)
+        w.ActV = max(dot(Rmulti_n, ActI), 0.0)
     end
     return w
 end
