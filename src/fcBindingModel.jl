@@ -10,7 +10,7 @@ mutable struct fcOutput{T}
     ActV::T
     Req::Vector{T}
     Rbound_n::Vector{T}
-    fcOutput() = new()
+    fcOutput() = new{T}()
 end
 
 
