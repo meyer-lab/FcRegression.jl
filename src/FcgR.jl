@@ -17,7 +17,6 @@ include("figures/figureW.jl")
 include("figures/figure1.jl")
 include("figures/figureB1.jl")
 include("figures/figureB2.jl")
-include("figures/figureB3.jl")
 
 export polyfc, polyfc_ActV
 
