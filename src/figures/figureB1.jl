@@ -168,5 +168,10 @@ function figureB1()
     p4 = PlotSynValency()
     p5 = PlotSynvFcrExpr()
 
+<<<<<<< HEAD
     draw(PDF("figureB1.pdf", 1000px, 800px), gridstack([p1 p2 p3 p4 p5]))
 end
+=======
+    draw(SVG("figureB1.svg", 1000px, 800px), gridstack([p1 p2 p3 p4 p5]))
+end
+>>>>>>> 691be877790e15aed05bd7c0df433d21749eb1e7

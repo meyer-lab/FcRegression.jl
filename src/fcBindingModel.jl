@@ -1,6 +1,15 @@
 using NLsolve
-using Optim
 using LinearAlgebra
+
+
+mutable struct fcOutput{T}
+    Lbound::T
+    Rbound::T
+    Rmulti::T
+    ActV::T
+    Req::Vector{T}
+    Rbound_n::Vector{T}
+end
 
 
 function Req_Regression(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC, Kav)
@@ -42,24 +51,20 @@ function polyfc(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC::Vector, K
     Phisum = sum(Phi[:, 1:nr])
     Phisum_n = sum(Phi[:, 1:nr], dims = 1)
 
-    w = Dict()
-    w["Lbound"] = L0 / KxStar * ((1 + Phisum)^f - 1)
-    w["Rbound"] = L0 / KxStar * f * Phisum * (1 + Phisum)^(f - 1)
-    w["Rbound_n"] = L0 / KxStar * f .* Phisum_n * (1 + Phisum)^(f - 1)
-    w["Rmulti"] = L0 / KxStar * f * Phisum * ((1 + Phisum)^(f - 1) - 1)
-    w["Rmulti_n"] = L0 / KxStar * f .* Phisum_n * ((1 + Phisum)^(f - 1) - 1)
-    w["nXlink"] = L0 / KxStar * (1 + (1 + Phisum)^(f - 1) * ((f - 1) * Phisum - 1))
-    w["Req"] = Req
-    w["vtot"] = L0 / KxStar * (1 + Phisum)^f
-
-    if typeof(f) == Int
-        w["vieq"] = L0 / KxStar .* [binomial(f, i) for i = 0:f] .* Phisum .^ (0:f)
-    end
+    w = fcOutput{ansType}(
+        L0 / KxStar * ((1 + Phisum)^f - 1),
+        L0 / KxStar * f * Phisum * (1 + Phisum)^(f - 1),
+        L0 / KxStar * f * Phisum * ((1 + Phisum)^(f - 1) - 1),
+        NaN,
+        Req,
+        vec(L0 / KxStar * f .* Phisum_n * (1 + Phisum)^(f - 1)),
+    )
 
     if ActI != nothing
         ActI = vec(ActI)
         @assert nr == length(ActI)
-        w["ActV"] = max(dot(w["Rmulti_n"], ActI), 0.0)
+        Rmulti_n = L0 / KxStar * f .* Phisum_n * ((1 + Phisum)^(f - 1) - 1)
+        w.ActV = max(dot(Rmulti_n, ActI), 0.0)
     end
     return w
 end
@@ -74,13 +79,11 @@ function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatri
     Output:
     Matrix of size nct * nset filled with ActV
     """
-    nct = size(Rtot, 2)
-    nset = size(IgGC, 2)
     ansType = promote_type(typeof(L0), typeof(KxStar), typeof(f), eltype(Rtot), eltype(IgGC))
-    res = Matrix{ansType}(undef, nct, nset)
-    for ict = 1:nct
-        for iset = 1:nset
-            res[ict, iset] = polyfc(L0, KxStar, f, Rtot[:, ict], IgGC[:, iset], Kav, ActI)["ActV"]
+    res = Matrix{ansType}(undef, size(Rtot, 2), size(IgGC, 2))
+    for ict = 1:size(res, 1)
+        for iset = 1:size(res, 2)
+            res[ict, iset] = polyfc(L0, KxStar, f, Rtot[:, ict], IgGC[:, iset], Kav, ActI).ActV
         end
     end
     return res

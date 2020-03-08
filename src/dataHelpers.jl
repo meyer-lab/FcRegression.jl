@@ -3,7 +3,6 @@ using CSV
 import StatsBase.geomean
 
 const KxConst = 6.31e-13 # 10^(-12.2)
-const C1qConc = 2.39e-7  # in mol/L, assume conc 113 μg/mL and mw 472 kDa
 
 function geocmean(x)
     x = convert(Vector, x)
@@ -11,15 +10,15 @@ function geocmean(x)
     return geomean(x)
 end
 
-cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]
-murineIgG = [:IgG1, :IgG2a, :IgG2b, :IgG3]
-humanIgG = [:IgG1, :IgG2, :IgG3, :IgG4]
-murineFcgR = [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]
-humanFcgR =
+const cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]
+const murineIgG = [:IgG1, :IgG2a, :IgG2b, :IgG3]
+const humanIgG = [:IgG1, :IgG2, :IgG3, :IgG4]
+const murineFcgR = [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]
+const humanFcgR =
     Symbol.(["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158V", "FcgRIIIA-158F", "FcgRIIIB"])
-murineActI = [1, -1, 1, 1]
-humanActI = [1, 1, 1, -1, -1, 1, 1, 1, 1]
-dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
+const murineActI = [1, -1, 1, 1]
+const humanActI = [1, 1, 1, -1, -1, 1, 1, 1, 1]
+const dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
 
 function importRtot(; murine = true, genotype = "HIV", retdf = false)
     if murine
@@ -91,6 +90,17 @@ function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = fa
 end
 
 
+""" Humanized mice data from Lux 2014 """
+function importHumanized(dataType)
+    df = CSV.read(joinpath(dataDir, "lux_humanized_CD19.csv"), delim = ",", comment = "#")
+    @assert dataType in ["blood", "spleen", "bone marrow"] "Data type not found"
+    df = dropmissing(df, Symbol(dataType), disallowmissing = true)
+    df[!, :Target] = 1.0 .- df[!, Symbol(dataType)] ./ 100.0
+    df = df[!, [:Genotype, :Concentration, :Condition, :Target]]
+    return df
+end
+
+
 """ Import cell depletion data. """
 function importDepletion(dataType)
     c1q = false
@@ -123,4 +133,31 @@ function importDepletion(dataType)
     df[df[:, :Background] .== "R4block", :FcgRIV] .= 0.0
     df[df[:, :Background] .== "gcKO", [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
     return df
+end
+
+""" Import systems serology dataset. """
+function importAlterMSG()
+    dfF = CSV.read(joinpath(dataDir, "alter-MSB", "data-function.csv"))
+    dfGP = CSV.read(joinpath(dataDir, "alter-MSB", "data-glycan-gp120.csv"))
+    dfIGG = CSV.read(joinpath(dataDir, "alter-MSB", "data-luminex-igg.csv"))
+    dfL = CSV.read(joinpath(dataDir, "alter-MSB", "data-luminex.csv"))
+    dfMA = CSV.read(joinpath(dataDir, "alter-MSB", "meta-antigens.csv"))
+    dfMD = CSV.read(joinpath(dataDir, "alter-MSB", "meta-detections.csv"))
+    dfMG = CSV.read(joinpath(dataDir, "alter-MSB", "meta-glycans.csv"))
+    dfMS = CSV.read(joinpath(dataDir, "alter-MSB", "meta-subjects.csv"))
+
+    df = meltdf(dfL, view = true)
+    newdfL = DataFrame(Rec = String[], Vir = String[], Sig = String[], Value = Float64[], Subject = Int64[])
+
+    # Split column name into constituent parts
+    for i = 1:size(df, 1)
+        Ar = split(string(df.variable[i]), "."; limit = 3)
+        if length(Ar) == 3
+            push!(newdfL, [Ar[1], Ar[2], Ar[3], df.value[i], df.Column1[i]])
+        else
+            push!(newdfL, [Ar[1], Ar[2], "N/A", df.value[i], df.Column1[i]])
+        end
+    end
+
+    return newdfL
 end
