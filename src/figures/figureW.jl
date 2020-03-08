@@ -1,8 +1,4 @@
 function plotActualvFit(odf, dataType)
-    fit_res = lm(@formula(Fitted ~ Y), odf)
-    intercept, slope = coef(fit_res)
-    r_sq = r2(fit_res)
-
     pl = plot(
         odf,
         x = :Y,
@@ -12,8 +8,8 @@ function plotActualvFit(odf, dataType)
         shape = :Condition,
         Guide.colorkey(pos = [0.05w, -0.28h]),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
-        slope = [slope],
-        intercept = [intercept],
+        slope = [1.0],
+        intercept = [0.0],
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
         Guide.ylabel("Fitted effect"),
@@ -25,10 +21,6 @@ end
 
 
 function plotActualvPredict(odf, dataType)
-    fit_res = lm(@formula(Fitted ~ Y), odf)
-    intercept, slope = coef(fit_res)
-    r_sq = r2(fit_res)
-
     pl = plot(
         odf,
         x = :Y,
@@ -37,8 +29,8 @@ function plotActualvPredict(odf, dataType)
         color = :Background,
         shape = :Condition,
         Guide.colorkey(pos = [0.05w, -0.28h]),
-        slope = [slope],
-        intercept = [intercept],
+        slope = [1.0],
+        intercept = [0.0],
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
         Guide.ylabel("LOO predicted effect"),
