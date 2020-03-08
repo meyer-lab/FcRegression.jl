@@ -10,7 +10,6 @@ mutable struct fcOutput{T}
     ActV::T
     Req::Vector{T}
     Rbound_n::Vector{T}
-    fcOutput() = new{T}()
 end
 
 
@@ -53,12 +52,12 @@ function polyfc(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC::Vector, K
     Phisum = sum(Phi[:, 1:nr])
     Phisum_n = sum(Phi[:, 1:nr], dims = 1)
 
-    w = fcOutput{ansType}
-    w.Lbound = L0 / KxStar * ((1 + Phisum)^f - 1)
-    w.Rbound = L0 / KxStar * f * Phisum * (1 + Phisum)^(f - 1)
-    w.Rbound_n = L0 / KxStar * f .* Phisum_n * (1 + Phisum)^(f - 1)
-    w.Rmulti = L0 / KxStar * f * Phisum * ((1 + Phisum)^(f - 1) - 1)
-    w.Req = Req
+    w = fcOutput{ansType}(L0 / KxStar * ((1 + Phisum)^f - 1),
+                          L0 / KxStar * f * Phisum * (1 + Phisum)^(f - 1),
+                          L0 / KxStar * f * Phisum * ((1 + Phisum)^(f - 1) - 1),
+                          NaN,
+                          Req,
+                          L0 / KxStar * f .* Phisum_n * (1 + Phisum)^(f - 1))
 
     if ActI != nothing
         ActI = vec(ActI)
