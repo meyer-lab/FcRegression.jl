@@ -12,6 +12,7 @@ figure%.svg:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figure$*()'
 
 output/depletion/figure%.svg: figure%.svg
+	mkdir -p ./output/depletion
 	cp figure$*.svg output/depletion/figure$*.svg
 
 output/%/manuscript.md: venv manuscripts/%/*.md
