@@ -56,7 +56,7 @@ function polyfc(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC::Vector, K
                           L0 / KxStar * f * Phisum * (1 + Phisum)^(f - 1),
                           L0 / KxStar * f * Phisum * ((1 + Phisum)^(f - 1) - 1),
                           NaN,
-                          vec(Req),
+                          Req,
                           vec(L0 / KxStar * f .* Phisum_n * (1 + Phisum)^(f - 1)))
 
     if ActI != nothing

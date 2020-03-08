@@ -10,9 +10,9 @@
     @testset "Can successfully assemble the parameters and get a sane result." begin
         out = polyfc(L0, KxStar, f, Rtot, IgGC, Kav, ActI)
         # Mass balance
-        @test all(transpose(out.Rbound_n) .<= Rtot)
+        @test all(out.Rbound_n .<= Rtot)
         @test all(out.Req .<= Rtot)
-        @test all(isapprox.(transpose(out.Rbound_n) .+ out.Req, Rtot))
+        @test all(isapprox.(out.Rbound_n .+ out.Req, Rtot))
     end
 
     @testset "Can use forwardDiff on parameters." begin
