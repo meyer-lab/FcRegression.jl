@@ -6,7 +6,7 @@ keywords:
   - antibodies
   - effector function
 lang: en-US
-author_info:
+authors:
   -
     github: cyrillustan
     name: Cyrillus Tan
@@ -23,7 +23,6 @@ author_info:
     initials: FN
     affiliations:
       - Friedrich-Alexander-University of Erlangen-Nürnberg
-    funders: Grant NIH U01-AI-148119
   -
     github: aarmey
     name: Aaron S. Meyer
@@ -36,4 +35,3 @@ author_info:
       - Department of Bioinformatics, University of California, Los Angeles
       - Jonsson Comprehensive Cancer Center, University of California, Los Angeles
       - Eli and Edythe Broad Center of Regenerative Medicine and Stem Cell Research, University of California, Los Angeles
-    funders: Grant NIH U01-AI-148119
