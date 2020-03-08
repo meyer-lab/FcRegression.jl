@@ -5,10 +5,10 @@ function calculateIsobologram(IgGXidx::Int64, IgGYidx::Int64, valency, ICconc::F
     @assert length(FcExpr) == size(Kav, 2)
 
     if actV != nothing
-        quantity = "ActV"
+        quantity = :ActV
         @assert length(actV) == length(FcExpr)
     elseif quantity == nothing
-        quantity = "Lbound"
+        quantity = :Lbound
     end
 
     IgGYconc = range(0.0, stop = 1.0, length = nPoints)
@@ -19,7 +19,9 @@ function calculateIsobologram(IgGXidx::Int64, IgGYidx::Int64, valency, ICconc::F
         IgGC[IgGYidx] += IgGYconc[idx]
         IgGC[IgGXidx] += 1.0 - IgGYconc[idx]
 
-        output[idx] = polyfc(ICconc, KxConst, valency, FcExpr, IgGC, Kav, actV)[quantity]
+        w = polyfc(ICconc, KxConst, valency, FcExpr, IgGC, Kav, actV)
+
+        output[idx] = getproperty(w, quantity)
     end
 
     return output
@@ -59,8 +61,9 @@ function synergyGrid(valency, ICconc, FcExpr, Kav; quantity = nothing, actV = no
         for j = 1:(i - 1)
             I = calculateIsobologram(i, j, valency, ICconc, FcExpr, Kav, quantity = quantity, actV = actV, nPoints = 17)
             M[i, j] = calcSynergy(I)
-            M[j, i] = M[i, j]
         end
+
+        M[:, i] = M[i, :]
     end
 
     return M

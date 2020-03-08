@@ -1,3 +1,4 @@
+using Optim
 import MLBase.LOOCV
 import Statistics: mean, std
 import Distributions: cdf, Exponential
