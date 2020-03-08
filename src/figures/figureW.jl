@@ -38,7 +38,7 @@ end
 
 
 function plotCellTypeEffects(wdf, dataType)
-    wdf.ymin = 0.0
+    wdf.ymin = wdf.Weight .- wdf.BtpStdev
     wdf.ymax = wdf.Weight .+ wdf.BtpStdev
 
     pl = plot(
@@ -49,6 +49,7 @@ function plotCellTypeEffects(wdf, dataType)
         Guide.colorkey(pos = [0.05w, -0.28h]),
         Geom.bar(position = :dodge),
         Scale.x_discrete(levels = unique(wdf.Condition)),
+        Scale.y_continuous(minvalue = 0.0),
         Scale.color_discrete(levels = unique(wdf.Component)),
         ymin = :ymin,
         ymax = :ymax,
