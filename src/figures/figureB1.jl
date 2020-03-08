@@ -67,10 +67,16 @@ function PlotSynGraph()
         S[ii, 8:9] = h[14:15]
         S[ii, 10] = h[20]
     end
+    
+    names = ["IgG1/2a", "IgG1/2b", "IgG1/3", "IgG1/2b-Fucose", "IgG2a/2b", "IgG2a/3", "IgG2a/2b-Fucose", "IgG2b/3", "IgG2b/2b-Fucose", "IgG3/2b-Fucose"]
+    S = convert(DataFrame, S)
+    rename!(S, Symbol.(names))
+    S = stack(S)
 
     pl = plot(
-        x = IC,
-        y = S,
+        S,
+        x = repeat(IC; outer=[10]),
+        y = :variable,
         Geom.point,
         color = ["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG1/2b-Fucose" "IgG2a/2b" "IgG2a/3" "IgG2a/2b-Fucose" "IgG2b/3" "IgG2b/2b-Fucose" "IgG3/2b-Fucose"],
         Guide.colorkey(title = "IgG Combination"),
@@ -99,10 +105,17 @@ function PlotSynValency()
         S[ii, 8:9] = h[14:15]
         S[ii, 10] = h[20]
     end
+    
+    names = ["IgG1/2a", "IgG1/2b", "IgG1/3", "IgG1/2b-Fucose", "IgG2a/2b", "IgG2a/3", "IgG2a/2b-Fucose", "IgG2b/3", "IgG2b/2b-Fucose", "IgG3/2b-Fucose"]
+    S = convert(DataFrame, S)
+    rename!(S, Symbol.(names))
+    S = stack(S)
+    display(S)
 
     pl = plot(
-        x = Valency,
-        y = S,
+        S,
+        x = repeat(Valency; outer=[10]),
+        y = :variable,
         color = ["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG1/2b-Fucose" "IgG2a/2b" "IgG2a/3" "IgG2a/2b-Fucose" "IgG2b/3" "IgG2b/2b-Fucose" "IgG3/2b-Fucose"],
         Guide.colorkey(title = "IgG Combination"),
         Guide.xlabel("IC Valency"),
@@ -129,10 +142,16 @@ function PlotSynvFcrExpr()
         S[ii, 8:9] = h[14:15]
         S[ii, 10] = h[20]
     end
+    
+    names = ["IgG1/2a", "IgG1/2b", "IgG1/3", "IgG1/2b-Fucose", "IgG2a/2b", "IgG2a/3", "IgG2a/2b-Fucose", "IgG2b/3", "IgG2b/2b-Fucose", "IgG3/2b-Fucose"]
+    S = convert(DataFrame, S)
+    rename!(S, Symbol.(names))
+    S = stack(S)
 
     pl = plot(
-        x = multiplier,
-        y = S,
+        S,
+        x = repeat(multiplier; outer=[10]),
+        y = :variable,
         Scale.x_log10,
         color = ["IgG1/2a" "IgG1/2b" "IgG1/3" "IgG1/2b-Fucose" "IgG2a/2b" "IgG2a/3" "IgG2a/2b-Fucose" "IgG2b/3" "IgG2b/2b-Fucose" "IgG3/2b-Fucose"],
         Guide.colorkey(title = "IgG Combination"),
