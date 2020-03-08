@@ -1,5 +1,5 @@
 
-all: figureB2.svg figureB3.svg output/depletion/manuscript.html output/translation/manuscript.html
+all: output/depletion/manuscript.html output/translation/manuscript.html
 
 venv: venv/bin/activate
 
@@ -11,15 +11,12 @@ venv/bin/activate: requirements.txt
 figure%.svg:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figure$*()'
 
-output/depletion/%.svg: %.svg
-	mkdir -p ./output/depletion
-	cp $< $@
-
 output/%/manuscript.md: venv manuscripts/%/*.md
-	mkdir -p ./output/%
+	mkdir -p ./output/$*
 	. venv/bin/activate && manubot process --content-directory=manuscripts/$*/ --output-directory=output/$*/ --log-level=WARNING
 
-output/%/manuscript.html: venv output/%/manuscript.md output/depletion/figureB2.svg output/depletion/figureB3.svg
+output/%/manuscript.html: venv output/%/manuscript.md figureB2.svg figureB3.svg
+	cp *.svg output/$*/
 	. venv/bin/activate && pandoc \
 		--from=markdown --to=html5 --filter=pandoc-fignos --filter=pandoc-eqnos --filter=pandoc-tablenos \
 		--bibliography=output/$*/references.json \
