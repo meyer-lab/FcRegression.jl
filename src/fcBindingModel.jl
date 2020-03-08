@@ -84,7 +84,7 @@ function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatri
     res = Matrix{ansType}(undef, nct, nset)
     for ict = 1:nct
         for iset = 1:nset
-            res[ict, iset] = polyfc(L0, KxStar, f, Rtot[:, ict], IgGC[:, iset], Kav, ActI)["ActV"]
+            res[ict, iset] = polyfc(L0, KxStar, f, Rtot[:, ict], IgGC[:, iset], Kav, ActI).ActV
         end
     end
     return res
