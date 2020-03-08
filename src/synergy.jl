@@ -61,8 +61,9 @@ function synergyGrid(valency, ICconc, FcExpr, Kav; quantity = nothing, actV = no
         for j = 1:(i - 1)
             I = calculateIsobologram(i, j, valency, ICconc, FcExpr, Kav, quantity = quantity, actV = actV, nPoints = 17)
             M[i, j] = calcSynergy(I)
-            M[j, i] = M[i, j]
         end
+
+        M[:, i] = M[i, :]
     end
 
     return M
