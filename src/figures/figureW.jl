@@ -87,7 +87,6 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector, L
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
         Guide.ylabel("Predicted Depletion"),
         Guide.manual_color_key("", ["Predicted", "Linear Addition"], ["green", "red"]),
-        Guide.colorkey(pos = [0.05w, -0.28h]),
         Guide.title("Total predicted effects vs $Xname-$Yname Composition"),
         Theme(key_position = :inside),
     )
