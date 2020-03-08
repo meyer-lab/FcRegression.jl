@@ -50,7 +50,7 @@ end
 
 
 function plotCellTypeEffects(wdf, dataType)
-    wdf.ymin = wdf.Weight .- wdf.BtpStdev
+    wdf.ymin = 0.0
     wdf.ymax = wdf.Weight .+ wdf.BtpStdev
 
     pl = plot(
@@ -72,7 +72,7 @@ function plotCellTypeEffects(wdf, dataType)
 end
 
 
-function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector, L0, f; murine = true, nPoints = 40, c1q = false)
+function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector, L0, f; murine = true, c1q = false)
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
     Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
@@ -80,6 +80,7 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector, L
     FcExpr = importRtot(; murine = murine)
     ActI = murine ? murineActI : humanActI
 
+    nPoints = 50
     IgGC = zeros(Float64, size(Kav, 1), nPoints)
     IgGC[IgGXidx, :] = range(0.0, 1.0; length = nPoints)
     IgGC[IgGYidx, :] = range(1.0, 0.0; length = nPoints)
@@ -95,7 +96,9 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector, L
         layer(x = [0, 1], y = [output[1], output[end]], Geom.line, Theme(default_color = colorant"red")),
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
+        Guide.ylabel("Predicted Depletion"),
         Guide.manual_color_key("", ["Predicted", "Linear Addition"], ["green", "red"]),
+        Guide.colorkey(pos = [0.05w, -0.28h]),
         Guide.title("Total predicted effects vs $Xname-$Yname Composition"),
         Theme(key_position = :inside),
     )
