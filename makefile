@@ -34,8 +34,7 @@ output/%/manuscript.html: venv output/%/manuscript.md output/depletion/figureB2.
 		--include-after-body=common/templates/manubot/plugins/link-highlight.html \
 		--include-after-body=common/templates/manubot/plugins/table-of-contents.html \
 		--include-after-body=common/templates/manubot/plugins/lightbox.html \
-		--mathjax \
-		--variable math="" \
+		--mathjax --variable math="" \
 		--include-after-body=common/templates/manubot/plugins/math.html \
 		--include-after-body=common/templates/manubot/plugins/hypothesis.html \
 		--output=output/$*/manuscript.html output/$*/manuscript.md
