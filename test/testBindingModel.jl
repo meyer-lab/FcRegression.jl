@@ -39,7 +39,7 @@
         out = polyfc(L0, KxStar, 1, Rtot, [1], Kav, ActI)
 
         # Note f is not used
-        comp = Kav .* L0 .* Rtot' ./ (1 .+ (Kav .* L0))
+        comp = vec(Kav .* L0 .* Rtot' ./ (1 .+ (Kav .* L0)))
 
         @test all(out.Lbound .≈ sum(comp))
         @test all(out.Rbound_n .≈ comp)
