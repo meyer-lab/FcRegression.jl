@@ -11,9 +11,9 @@ venv/bin/activate: requirements.txt
 figure%.svg:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figure$*()'
 
-output/depletion/figure%.svg: figure%.svg
+output/depletion/%.svg: %.svg
 	mkdir -p ./output/depletion
-	cp figure$*.svg output/depletion/figure$*.svg
+	cp $< $@
 
 output/%/manuscript.md: venv manuscripts/%/*.md
 	mkdir -p ./output/%
