@@ -8,14 +8,8 @@ venv/bin/activate: requirements.txt
 	. venv/bin/activate && pip install -Uqr requirements.txt
 	touch venv/bin/activate
 
-figureB1.pdf:
-	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB1()'
-
-figureB2.pdf:
-	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB2()'
-
-figureB3.pdf:
-	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB3()'
+figure%.pdf:
+	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figure$*()'
 
 output/%/manuscript.md: venv manuscripts/%/*.md
 	mkdir -p ./output/%
