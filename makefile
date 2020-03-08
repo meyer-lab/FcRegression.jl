@@ -11,6 +11,9 @@ venv/bin/activate: requirements.txt
 figure%.svg:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figure$*()'
 
+output/depletion/figure%.svg: figure%.svg
+	cp figure$*.svg output/depletion/figure$*.svg
+
 output/%/manuscript.md: venv manuscripts/%/*.md
 	mkdir -p ./output/%
 	. venv/bin/activate && manubot process --content-directory=manuscripts/$*/ --output-directory=output/$*/ --log-level=WARNING
