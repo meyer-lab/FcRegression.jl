@@ -110,7 +110,6 @@ function PlotSynValency()
     S = convert(DataFrame, S)
     rename!(S, Symbol.(names))
     S = stack(S)
-    display(S)
 
     pl = plot(
         S,
