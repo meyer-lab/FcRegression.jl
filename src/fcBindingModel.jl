@@ -48,13 +48,8 @@ function polyfc(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC::Vector, K
     w["Rbound_n"] = L0 / KxStar * f .* Phisum_n * (1 + Phisum)^(f - 1)
     w["Rmulti"] = L0 / KxStar * f * Phisum * ((1 + Phisum)^(f - 1) - 1)
     w["Rmulti_n"] = L0 / KxStar * f .* Phisum_n * ((1 + Phisum)^(f - 1) - 1)
-    w["nXlink"] = L0 / KxStar * (1 + (1 + Phisum)^(f - 1) * ((f - 1) * Phisum - 1))
     w["Req"] = Req
     w["vtot"] = L0 / KxStar * (1 + Phisum)^f
-
-    if typeof(f) == Int
-        w["vieq"] = L0 / KxStar .* [binomial(f, i) for i = 0:f] .* Phisum .^ (0:f)
-    end
 
     if ActI != nothing
         ActI = vec(ActI)
