@@ -45,7 +45,6 @@
         @test all(out["Rbound_n"] .≈ comp)
         @test all(out["Rbound_n"]' .+ out["Req"] .≈ Rtot)
         @test out["Rmulti"]' == 0.0
-        @test out["nXlink"]' == 0.0
         @test out["ActV"]' == 0.0
     end
 end
