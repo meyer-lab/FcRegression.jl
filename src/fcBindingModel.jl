@@ -58,12 +58,12 @@ function polyfc(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC::Vector, K
     w.Rbound = L0 / KxStar * f * Phisum * (1 + Phisum)^(f - 1)
     w.Rbound_n = L0 / KxStar * f .* Phisum_n * (1 + Phisum)^(f - 1)
     w.Rmulti = L0 / KxStar * f * Phisum * ((1 + Phisum)^(f - 1) - 1)
-    Rmulti_n = L0 / KxStar * f .* Phisum_n * ((1 + Phisum)^(f - 1) - 1)
     w.Req = Req
 
     if ActI != nothing
         ActI = vec(ActI)
         @assert nr == length(ActI)
+        Rmulti_n = L0 / KxStar * f .* Phisum_n * ((1 + Phisum)^(f - 1) - 1)
         w.ActV = max(dot(Rmulti_n, ActI), 0.0)
     end
     return w
@@ -79,12 +79,10 @@ function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatri
     Output:
     Matrix of size nct * nset filled with ActV
     """
-    nct = size(Rtot, 2)
-    nset = size(IgGC, 2)
     ansType = promote_type(typeof(L0), typeof(KxStar), typeof(f), eltype(Rtot), eltype(IgGC))
-    res = Matrix{ansType}(undef, nct, nset)
-    for ict = 1:nct
-        for iset = 1:nset
+    res = Matrix{ansType}(undef, size(Rtot, 2), size(IgGC, 2))
+    for ict = 1:size(res, 1)
+        for iset = 1:size(res, 2)
             res[ict, iset] = polyfc(L0, KxStar, f, Rtot[:, ict], IgGC[:, iset], Kav, ActI).ActV
         end
     end
