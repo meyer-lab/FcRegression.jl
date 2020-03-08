@@ -1,5 +1,5 @@
 
-all: output/depletion/manuscript.html output/translation/manuscript.html
+all: figureB2.svg figureB3.svg output/depletion/manuscript.html output/translation/manuscript.html
 
 venv: venv/bin/activate
 
