@@ -1,5 +1,5 @@
 
-all: figureB2.pdf figureB3.pdf output/depletion/manuscript.html output/translation/manuscript.html
+all: figureB2.svg figureB3.svg output/depletion/manuscript.html output/translation/manuscript.html
 
 venv: venv/bin/activate
 
@@ -8,7 +8,7 @@ venv/bin/activate: requirements.txt
 	. venv/bin/activate && pip install -Uqr requirements.txt
 	touch venv/bin/activate
 
-figure%.pdf:
+figure%.svg:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figure$*()'
 
 output/%/manuscript.md: venv manuscripts/%/*.md
@@ -42,4 +42,4 @@ coverage.cob:
 	python3 ~/.local/lib/python3.7/site-packages/lcov_cobertura.py coverage-lcov.info -o coverage.cob
 
 clean:
-	rm -rf *.pdf venv output
+	rm -rf *.svg venv output
