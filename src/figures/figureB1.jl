@@ -168,5 +168,5 @@ function figureB1()
     p4 = PlotSynValency()
     p5 = PlotSynvFcrExpr()
 
-    draw(SVG("figureB1.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p5 Compose.context()]))
+    draw(SVG("figureB1.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p5 p5]))
 end
