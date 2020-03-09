@@ -18,7 +18,7 @@ pipeline {
         lock ('manubot') {
           sh 'make output/depletion/manuscript.md output/translation/manuscript.md'
         }
-        sh 'make all'
+        sh 'make -3 all'
         archiveArtifacts artifacts: '*.svg', onlyIfSuccessful: true
         publishHTML([allowMissing:false, alwaysLinkToLastBuild:false, keepAll:true, reportDir:'output/depletion', reportFiles:'manuscript.html', reportName:'Depletion Paper'])
         publishHTML([allowMissing:false, alwaysLinkToLastBuild:false, keepAll:true, reportDir:'output/translation', reportFiles:'manuscript.html', reportName:'Translation Paper'])
