@@ -1,8 +1,11 @@
 """ This file builds the depletion manuscript, Figure 1. """
 
 """ Plot an example isobologram. """
-function plotIsobologram()
-    Kav = importKav(murine = false)
+function plotIsobologram(IgGXidx::Int64, IgGYidx::Int64, murine = true, c1q = false)
+    Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
+    Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
+    Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
+    Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     # TODO: Should import actual receptor abundance
     FcExpr = zeros(length(humanFcgR))
     FcExpr[7] = importRtot(murine = false)[7, 2]
@@ -12,24 +15,26 @@ function plotIsobologram()
     X = range(0, stop = 1, length = length(output))
 
     pl = plot(
-        x = X, 
-        y = output, 
-        Geom.line,
-        layer(x = [0, 1], y = [output[1], output[33]], Geom.line),
-        Scale.y_continuous(minvalue = -1, maxvalue = maximum(output) * 1.1),
-        #Guide.annotation()
+        layer(x = IgGC[IgGXidx, :], y = output, Geom.line, Theme(default_color = colorant"green")),
+        layer(x = [0, 1], y = [output[1], output[end]], Geom.line, Theme(default_color = colorant"red")),
+        Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
+        Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
         Guide.xlabel("Percent hIgG3"),
         Guide.ylabel("hFcgRIIIA-158V Binding"),
-        Guide.title("Receptor Binding vs IgG Composition"),
+        Guide.manual_color_key("", ["Predicted", "Linear Addition"], ["green", "red"]),
+        Guide.title("Total predicted effects vs $Xname-$Yname Composition"),
         Guide.xticks(),
-        Guide.annotation(compose(context(), text(0, -1000, "100% hIgG2"), text(.8, -1000, "100% hIgG3"))),
+        Theme(key_position = :inside),
     )
     return pl
 end
 
 """ Plot an example isobologram. """
-function plotIsobologramTwo()
-    Kav = importKav(murine = true, IgG2bFucose = true)
+function plotIsobologramTwo(IgGXidx::Int64, IgGYidx::Int64, murine = true, c1q = false)
+    Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
+    Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
+    Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
+    Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     FcExpr = importRtot(murine = true)[:, 2]
 
     output = calculateIsobologram(2, 4, 4, 1.0e-9, FcExpr, Kav, actV = murineActI)
@@ -38,16 +43,16 @@ function plotIsobologramTwo()
     X = range(0, stop = 1, length = length(output))
 
     pl = plot(
-        x = X,
-        y = output,
-        Geom.line,
-        layer(x = [0, 1], y = [output[1], output[33]], Geom.line),
-        Scale.y_continuous(minvalue = -0.02, maxvalue = maximum(output) * 1.1),
+        layer(x = IgGC[IgGXidx, :], y = output, Geom.line, Theme(default_color = colorant"green")),
+        layer(x = [0, 1], y = [output[1], output[end]], Geom.line, Theme(default_color = colorant"red")),
+        Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
+        Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
         Guide.xlabel("Percent mIgG2bFucose"),
         Guide.ylabel("cMO Predicted Activity"),
-        Guide.title("Activity vs IgG Composition"),
+        Guide.manual_color_key("", ["Predicted", "Linear Addition"], ["green", "red"]),
+        Guide.title("Total predicted effects vs $Xname-$Yname Composition"),
         Guide.xticks(),
-        Guide.annotation(compose(context(), text(0, -.1, "100% mIgG2a"), text(.65, -.1, "100% mIgG2bFucose"))),
+        Theme(key_position = :inside),
     )
     return pl
 end
@@ -162,8 +167,8 @@ function PlotSynvFcrExpr()
 end
 
 function figureB1()
-    p1 = plotIsobologram()
-    p2 = plotIsobologramTwo()
+    p1 = plotIsobologram(2,3, murine = false)
+    p2 = plotIsobologramTwo(2,3)
     p3 = PlotSynGraph()
     p4 = PlotSynValency()
     p5 = PlotSynvFcrExpr()
