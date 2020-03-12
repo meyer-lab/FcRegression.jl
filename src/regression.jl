@@ -9,7 +9,7 @@ using NNLS
 exponential(X::Matrix, p::Vector) = cdf.(Exponential(), X * p)
 inv_exponential(y::Real) = -log(1 - y)
 
-function regGenData(df; L0, f, KxStar = KxConst, murine = true, retdf = false)
+function regGenData(df; L0, f, murine = true, retdf = false, component = cellTypes)
     df = copy(df)
     Rtot = importRtot(; murine = murine)
     FcRecep = murine ? murineFcgR : humanFcgR
@@ -25,7 +25,7 @@ function regGenData(df; L0, f, KxStar = KxConst, murine = true, retdf = false)
     for i = 1:size(df, 1)
         Kav = convert(Vector{Float64}, df[i, FcRecep])
         Kav = reshape(Kav, 1, :)
-        push!(X, polyfc_ActV(df[i, :Concentration], KxStar, f, Rtot, [1.0], Kav, ActI))
+        push!(X, polyfc_ActV(df[i, :Concentration], KxConst, f, Rtot, [1.0], Kav, ActI))
     end
 
     # any extra column (C1q or Neutralization) will be taken directly as an extra term in regression
@@ -157,4 +157,34 @@ function CVResults(dataType, lossFunction::Function = proportion_loss; L0 = 1e-9
     @assert size(wdf, 1) == size(X, 1) * length(fit_w)
 
     return (fit_w, odf, wdf)
+end
+
+
+
+function regGenHumanized(df; L0 = 1e-9, f = 4, murine = false)
+    X = []
+    for dfr in eachrow(df)
+        genotype = :Genotype in names(dfr) ? dfr.:Genotype : "HIV"
+        Lconc = :Concentration in names(dfr) ? dfr.:Concentration * L0 : L0
+
+        IgGnames = murine ? murineIgG : humanIgG
+        IgGC = zeros(length(IgGnames))
+        IgGC[IgGnames .== dfr.:Condition] .= 1
+        @assert sum(IgGC) == 1
+
+        Rtot = importRtot(; murine = murine, genotype = genotype)
+        Kav = importKav(; murine = murine, c1q = true, retdf = true)
+        FcRecep = murine ? murineFcgR : humanFcgR
+        ActI = murine ? murineActI : humanActI
+
+        res = polyfc_ActV(Lconc, KxConst, f, Rtot, IgGC, Matrix(Kav[!, FcRecep]), ActI)
+        effects = Dict(cellTypes .=> res)
+        effects[:C1q] = Kav[!, :C1q]' * IgGC .* Lconc
+        push!(X, effects)
+    end
+
+    X = DataFrame(X)
+    Y = df[!, :Target]
+
+    return (X, Y)
 end

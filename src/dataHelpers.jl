@@ -1,6 +1,7 @@
 using DataFrames
 using CSV
 import StatsBase.geomean
+using Memoize
 
 const KxConst = 6.31e-13 # 10^(-12.2)
 
@@ -20,7 +21,7 @@ const murineActI = [1, -1, 1, 1]
 const humanActI = [1, 1, 1, -1, -1, 1, 1, 1, 1]
 const dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
 
-function importRtot(; murine = true, genotype = "HIV", retdf = false)
+@memoize function importRtot(; murine = true, genotype = "HIV", retdf = false)
     if murine
         df = CSV.read(joinpath(dataDir, "murine-FcgR-abundance.csv"))
     else
@@ -63,29 +64,29 @@ end
 
 
 """ Import human or murine affinity data. """
-function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = false)
+@memoize function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = false)
     if murine
         df = CSV.read(joinpath(dataDir, "murine-affinities.csv"), comment = "#")
     else
         df = CSV.read(joinpath(dataDir, "human-affinities.csv"), comment = "#")
     end
 
-    if c1q == false
-        df = filter(row -> row[:FcgR] != "C1q", df)
-    end
-
     IgGlist = copy(murine ? murineIgG : humanIgG)
+    FcRecep = copy(murine ? murineFcgR : humanFcgR)
     if IgG2bFucose
         append!(IgGlist, [:IgG2bFucose])
+    end
+    if c1q
+        append!(FcRecep, [:C1q])
     end
     df = stack(df; variable_name = :IgG, value_name = :Kav)
     df = unstack(df, :FcgR, :Kav)
     df = df[in(IgGlist).(df.IgG), :]
 
     if retdf
-        return df
+        return df[!, [:IgG; FcRecep]]
     else
-        return convert(Matrix{Float64}, df[!, murine ? murineFcgR : humanFcgR])
+        return convert(Matrix{Float64}, df[!, FcRecep])
     end
 end
 
@@ -96,6 +97,7 @@ function importHumanized(dataType)
     @assert dataType in ["blood", "spleen", "bone marrow"] "Data type not found"
     df = dropmissing(df, Symbol(dataType), disallowmissing = true)
     df[!, :Target] = 1.0 .- df[!, Symbol(dataType)] ./ 100.0
+    df[!, :Condition] .= :IgG1
     df = df[!, [:Genotype, :Concentration, :Condition, :Target]]
     return df
 end
@@ -160,4 +162,13 @@ function importAlterMSG()
     end
 
     return newdfL
+end
+
+
+function importHIV()
+    df = CSV.read(joinpath(dataDir, "elsevier-HIV.csv"), delim = ",", comment = "#")
+    df[!, :Condition] .= Symbol.(df[!, :Condition])
+    df[!, :Target] .= 1 .- df[!, :Target] ./ 100.0
+    df[!, :Neutralization] .= replace!(1 ./ df[!, :Neutralization], Inf => 0.0)
+    return df
 end
