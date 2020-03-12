@@ -1,10 +1,6 @@
-using Pkg
-Pkg.add("DataFrames")
 using DataFrames
-Pkg.add("CSV")
 using CSV
-Pkg.instantiate()
-using FcgR
+using StatsPlots
 
 """ Subset systems serology dataset for HIV1.p66 """
 function HIV1p66sub()
@@ -26,10 +22,6 @@ function HIV1p66sub()
         #issues with accessing the strings using df[!, :Sig] and other column syntaxes. This might be an easier way to
         #make this function, but I'm not sure how to access the strings in each row for column Sig without manually iterating through.
 end   
-
-Pkg.add("Plots")
-Pkg.add("StatsPlots")
-using StatsPlots
 
 
 """ Plot HIV1.p66 data in terms of FcgRIIIa vs. ADCC data"""
@@ -91,4 +83,3 @@ function plotHIV1p66()
     #using StatsPlots
     @df final scatter([:F158 :V158], :ADCC, xlabel = "FcgRIIIA Value", ylabel = "ADCC", title = "HIV1.p66")
 end
-
