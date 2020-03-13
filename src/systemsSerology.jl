@@ -5,22 +5,10 @@ using StatsPlots
 """ Subset systems serology dataset for HIV1.p66 """
 function HIV1p66sub()
     df = FcgR.importAlterMSG()
-    
-    A = Int64[]
-    #find all rows that contain data for HIV1.p66
-    for i = 1:size(df, 1)
-        if (occursin("HIV1.p66", df.Sig[i]) == true)
-            push!(A, i)
-        end
-    end
-    
+
+    # Find all rows that contain data for HIV1.p66
     #create a subsetted dataframe for HIV1.p66 data
-    newdf = df[A, :]
-    return newdf
-    
-    #Note: tried using "newdf = df[in.(df.Sig, occursin("HIV1.p66", df[!, :Sig]), :)]" but has 
-        #issues with accessing the strings using df[!, :Sig] and other column syntaxes. This might be an easier way to
-        #make this function, but I'm not sure how to access the strings in each row for column Sig without manually iterating through.
+    return df[occursin.("HIV1.p66", df.Sig), :]
 end   
 
 
@@ -30,13 +18,13 @@ function plotHIV1p66()
     dfF = CSV.read(joinpath(dataDir, "alter-MSB", "data-function.csv"))
     dfL = HIV1p66sub()
     
-    #Gather all of the ADCC data from "data-function.csv"
+    # Gather all of the ADCC data from "data-function.csv"
     newdfF = dfF[dfF[!, :ADCC].!= "NA", :]
-    ADCClist = [parse(Float64,x) for x in newdfF[!, :ADCC]] #all ADCC data in one array of ints
+    ADCClist = [parse(Float64,x) for x in newdfF[!, :ADCC]] # All ADCC data in one array of ints
     dfADCC = newdfF[:, [:Column1, :ADCC]]
     rename!(dfADCC, [:Subject, :ADCC])
     
-    #note what subjects correspond to the ADCC data
+    # Note what subjects correspond to the ADCC data
     Subjects = dfADCC[!, :Subject]
     
     #Find corresponding data for FcgRIIIa...HIV1.p66:
@@ -61,21 +49,6 @@ function plotHIV1p66()
     #do not use subjects in FcgrIIIa table who had no corresponding ADCC data
     F = newdfLF[(newdfLF.Subject .!= 615167) .& (newdfLF.Subject .!= 930173), :]
     V = newdfLV[(newdfLV.Subject .!= 615167) .& (newdfLV.Subject .!= 930173), :]
-    
-    #check that all of the subject data lines up
-    # can be deleted, but good for a sanity check
-    a = 0
-    b = 0
-    for i = 1:size(Subjects, 1)
-        if (Subjects[i] == V.Subject[i])
-            a += 1
-        end
-        if (Subjects[i] == F.Subject[i])
-            b += 1
-        end 
-    end
-    @assert a == 179
-    @assert b == 179
     
     #Create combined dataframe
     final = DataFrame(Subject = Subjects, ADCC = ADCClist, F158 = F[!, :Value], V158 = V[!, :Value])
