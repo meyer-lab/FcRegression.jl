@@ -2,21 +2,14 @@ using DataFrames
 using CSV
 using StatsPlots
 
-""" Subset systems serology dataset for HIV1.p66 """
-function HIV1p66sub()
-    df = FcgR.importAlterMSG()
-
-    # Find all rows that contain data for HIV1.p66
-    #create a subsetted dataframe for HIV1.p66 data
-    return df[occursin.("HIV1.p66", df.Sig), :]
-end   
-
 
 """ Plot HIV1.p66 data in terms of FcgRIIIa vs. ADCC data"""
 function plotHIV1p66()
     dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
     dfF = CSV.read(joinpath(dataDir, "alter-MSB", "data-function.csv"))
-    dfL = HIV1p66sub()
+
+    df = FcgR.importAlterMSG()
+    dfL = df[occursin.("HIV1.p66", df.Sig), :]
     
     # Gather all of the ADCC data from "data-function.csv"
     newdfF = dfF[dfF[!, :ADCC].!= "NA", :]
