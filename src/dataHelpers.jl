@@ -91,18 +91,6 @@ end
 end
 
 
-""" Humanized mice data from Lux 2014 """
-function importHumanized(dataType)
-    df = CSV.read(joinpath(dataDir, "lux_humanized_CD19.csv"), delim = ",", comment = "#")
-    @assert dataType in ["blood", "spleen", "bone marrow"] "Data type not found"
-    df = dropmissing(df, Symbol(dataType), disallowmissing = true)
-    df[!, :Target] = 1.0 .- df[!, Symbol(dataType)] ./ 100.0
-    df[!, :Condition] .= :IgG1
-    df = df[!, [:Genotype, :Concentration, :Condition, :Target]]
-    return df
-end
-
-
 """ Import cell depletion data. """
 function importDepletion(dataType)
     c1q = false
@@ -116,16 +104,21 @@ function importDepletion(dataType)
         c1q = true
     elseif dataType == "melanoma"
         filename = "nimmerjahn-melanoma.csv"
+    elseif dataType == "HIV"
+        filename = "elsevier-HIV.csv"
     else
         @error "Data type not found"
     end
 
     df = CSV.read(joinpath(dataDir, filename), delim = ",", comment = "#")
-    df[!, :Condition] = map(Symbol, df[!, :Condition])
+    df[!, :Condition] .= Symbol.(df[!, :Condition])
     df[!, :Target] = 1.0 .- df[!, :Target] ./ 100.0
 
-    affinityData = importKav(murine = true, c1q = c1q, retdf = true)
-    df = join(df, affinityData, on = :Condition => :IgG, kind = :inner)
+    affinity = importKav(murine = true, c1q = c1q, IgG2bFucose = true, retdf = true)
+    if :Neutralization in names(df)
+        df[!, :Neutralization] .= replace!(1 ./ df[!, :Neutralization], Inf => 0.01)
+    end
+    df = join(df, affinity, on = :Condition => :IgG, kind = :left)
 
     df[df[:, :Background] .== "R1KO", :FcgRI] .= 0.0
     df[df[:, :Background] .== "R2KO", :FcgRIIB] .= 0.0
@@ -134,8 +127,26 @@ function importDepletion(dataType)
     df[df[:, :Background] .== "R1/4KO", [:FcgRI, :FcgRIV]] .= 0.0
     df[df[:, :Background] .== "R4block", :FcgRIV] .= 0.0
     df[df[:, :Background] .== "gcKO", [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
+    df[df[:, :Condition] .== :IgG1D265A, [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
     return df
 end
+
+
+""" Humanized mice data from Lux 2014 """
+function importHumanized(dataType)
+    df = CSV.read(joinpath(dataDir, "lux_humanized_CD19.csv"), delim = ",", comment = "#")
+    @assert dataType in ["blood", "spleen", "bone marrow"] "Data type not found"
+    df = dropmissing(df, Symbol(dataType), disallowmissing = true)
+    df[!, :Target] = 1.0 .- df[!, Symbol(dataType)] ./ 100.0
+    df[!, :Condition] .= :IgG1
+    df = df[!, [:Genotype, :Concentration, :Condition, :Target]]
+
+    affinity = importKav(murine = false, c1q = true, retdf = true)
+    df = join(df, affinity, on = :Condition => :IgG, kind = :left)
+    return df
+end
+
+
 
 """ Import systems serology dataset. """
 function importAlterMSG()
@@ -162,13 +173,4 @@ function importAlterMSG()
     end
 
     return newdfL
-end
-
-
-function importHIV()
-    df = CSV.read(joinpath(dataDir, "elsevier-HIV.csv"), delim = ",", comment = "#")
-    df[!, :Condition] .= Symbol.(df[!, :Condition])
-    df[!, :Target] .= 1 .- df[!, :Target] ./ 100.0
-    df[!, :Neutralization] .= replace!(1 ./ df[!, :Neutralization], Inf => 0.0)
-    return df
 end

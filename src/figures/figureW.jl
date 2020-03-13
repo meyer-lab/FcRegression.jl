@@ -61,7 +61,8 @@ function plotCellTypeEffects(wdf, dataType)
 end
 
 
-function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector, L0, f; murine = true, c1q = false)
+function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector;
+        L0, f, murine::Bool, c1q = false)
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
     Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
@@ -94,12 +95,15 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector, L
 end
 
 
-function figureW(dataType; L0 = 1e-9, f = 4)
-    (fit_w, odf, wdf) = CVResults(dataType; L0 = L0, f = f)
+function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool)
+    df = importDepletion(dataType)
+    fit_w, odf, wdf = CVResults(df; L0 = L0, f = f, murine = murine)
     p1 = plotActualvFit(odf, dataType)
     p2 = plotActualvPredict(odf, dataType)
     p3 = plotCellTypeEffects(wdf, dataType)
-    p4 = plotDepletionSynergy(2, 3, fit_w, 1e-9, 4; c1q = (:C1q in unique(wdf.Component)))
+    p4 = plotDepletionSynergy(2, 3, fit_w;
+        L0 = L0, f = f, murine = murine, c1q = (:C1q in unique(wdf.Component)))
 
+    draw(PDF("figureBx.svg", 1000px, 800px), gridstack([p1 p2; p3 p4]))
     return p1, p2, p3, p4
 end
