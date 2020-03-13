@@ -36,5 +36,5 @@ function plotHIV1p66()
     final = DataFrame(Subject = Subjects, ADCC = ADCClist, F158 = F[!, :Value], V158 = V[!, :Value])
     
     #using StatsPlots
-    @df StatsPlots.final StatsPlots.scatter([:F158 :V158], :ADCC, xlabel = "FcgRIIIA Value", ylabel = "ADCC", title = "HIV1.p66")
+    @StatsPlots.df StatsPlots.final StatsPlots.scatter([:F158 :V158], :ADCC, xlabel = "FcgRIIIA Value", ylabel = "ADCC", title = "HIV1.p66")
 end
