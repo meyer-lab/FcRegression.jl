@@ -95,7 +95,7 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector;
 end
 
 
-function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool)
+function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool = true)
     df = importDepletion(dataType)
     fit_w, odf, wdf = CVResults(df; L0 = L0, f = f, murine = murine)
     p1 = plotActualvFit(odf, dataType)
