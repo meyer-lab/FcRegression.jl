@@ -30,21 +30,10 @@ function plotHIV1p66()
     #Find corresponding data for FcgRIIIa...HIV1.p66:
   
     #find all rows that contain data for FcgRIIIa.F158.6H.HIV1.p66 & FcgR.IIIa.V158.6H.HIV1.p66, 
-    #and create new subsetted dataframes
-    A = Int64[]
-    B = Int64[]
-    
-    for i = 1:size(dfL, 1)
-        if (occursin("FcgRIIIa", dfL.Rec[i]) == true)
-            if (occursin("F158", dfL.Vir[i]) == true)
-                push!(A, i)
-            elseif (occursin("V158", dfL.Vir[i]) == true)
-                push!(B, i)
-            end
-        end
-    end
-    newdfLF = dfL[A, :]
-    newdfLV = dfL[B, :]
+    #and create new subsetted dataframes    
+    newdfL = dfL[occursin.("FcgRIIIa", dfL.Rec), :]
+    newdfLF = newdfL[occursin.("F158", newdfL.Vir), :]
+    newdfLV = newdfL[occursin.("V158", newdfL.Vir), :]
     
     #do not use subjects in FcgrIIIa table who had no corresponding ADCC data
     F = newdfLF[(newdfLF.Subject .!= 615167) .& (newdfLF.Subject .!= 930173), :]
