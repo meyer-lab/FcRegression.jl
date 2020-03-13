@@ -1,6 +1,6 @@
 using DataFrames
 using CSV
-using StatsPlots
+import StatsPlots
 
 
 """ Plot HIV1.p66 data in terms of FcgRIIIa vs. ADCC data"""
@@ -36,5 +36,5 @@ function plotHIV1p66()
     final = DataFrame(Subject = Subjects, ADCC = ADCClist, F158 = F[!, :Value], V158 = V[!, :Value])
     
     #using StatsPlots
-    @df final scatter([:F158 :V158], :ADCC, xlabel = "FcgRIIIA Value", ylabel = "ADCC", title = "HIV1.p66")
+    @df StatsPlots.final StatsPlots.scatter([:F158 :V158], :ADCC, xlabel = "FcgRIIIA Value", ylabel = "ADCC", title = "HIV1.p66")
 end
