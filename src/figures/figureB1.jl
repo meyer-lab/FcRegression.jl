@@ -1,7 +1,7 @@
 """ This file builds the depletion manuscript, Figure 1. """
 
 """ Plot an example isobologram. """
-function plotIsobologram(IgGXidx::Int64, IgGYidx::Int64, murine = false, c1q = false)
+function plotIsobologram(IgGXidx::Int64, IgGYidx::Int64; murine = false, c1q = false)
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
     Kav = importKav(murine = false)
@@ -28,7 +28,7 @@ function plotIsobologram(IgGXidx::Int64, IgGYidx::Int64, murine = false, c1q = f
 end
 
 """ Plot an example isobologram. """
-function plotIsobologramTwo(IgGXidx::Int64, IgGYidx::Int64, murine = true, c1q = false)
+function plotIsobologramTwo(IgGXidx::Int64, IgGYidx::Int64; murine = true, c1q = false)
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
     Kav = importKav(murine = true, IgG2bFucose = true)
