@@ -66,8 +66,7 @@ function loss_wL0f(df, ps::Vector{T}, lossFunc::Function; murine::Bool)::T where
     return lossFunc(Y0, Y)
 end
 
-function fitRegression(df, lossFunc::Function = proportion_loss;
-        L0, f, murine::Bool, wL0f = false)
+function fitRegression(df, lossFunc::Function = proportion_loss; L0, f, murine::Bool, wL0f = false)
     ## this method only supports expoential distribution due to param choice
 
     (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine)
