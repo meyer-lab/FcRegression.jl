@@ -14,8 +14,13 @@ function plotIsobologram(IgGXidx::Int64, IgGYidx::Int64; murine = false, c1q = f
     X = range(0, stop = 1, length = length(output))
 
     pl = plot(
-        layer(x = X, y = output, Geom.line,Theme(default_color = colorant"green")
-        layer(x = [0, 1], y = [output[1], output[end]], Geom.line, Theme(default_color = colorant"red")),
+        layer(x = X, y = output, Geom.line, Theme(default_color = colorant"green")),
+        layer(
+            x = [0, 1],
+            y = [output[1], output[end]],
+            Geom.line,
+            Theme(default_color = colorant"red"),
+        ),
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
         Guide.xlabel("Percent hIgG3"),
@@ -40,8 +45,13 @@ function plotIsobologramTwo(IgGXidx::Int64, IgGYidx::Int64; murine = true, c1q =
     X = range(0, stop = 1, length = length(output))
 
     pl = plot(
-        layer(x = X, y = output, Geom.line,Theme(default_color = colorant"green")
-        layer(x = [0, 1], y = [output[1], output[end]], Geom.line, Theme(default_color = colorant"red")),
+        layer(x = X, y = output, Geom.line, Theme(default_color = colorant"green")),
+        layer(
+            x = [0, 1],
+            y = [output[1], output[end]],
+            Geom.line,
+            Theme(default_color = colorant"red"),
+        ),
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
         Guide.xlabel("Percent mIgG2bFucose"),
@@ -52,6 +62,23 @@ function plotIsobologramTwo(IgGXidx::Int64, IgGYidx::Int64; murine = true, c1q =
     )
     return pl
 end
+
+
+function receptorNamesB1()
+    return [
+        "IgG1/2a",
+        "IgG1/2b",
+        "IgG1/3",
+        "IgG1/2b-Fucose",
+        "IgG2a/2b",
+        "IgG2a/3",
+        "IgG2a/2b-Fucose",
+        "IgG2b/3",
+        "IgG2b/2b-Fucose",
+        "IgG3/2b-Fucose",
+    ]
+end
+
 
 """Figure shows the affect of increasing immune complex concentration on synergies for each IgG combination"""
 function PlotSynGraph()
@@ -68,15 +95,14 @@ function PlotSynGraph()
         S[ii, 8:9] = h[14:15]
         S[ii, 10] = h[20]
     end
-    
-    names = ["IgG1/2a", "IgG1/2b", "IgG1/3", "IgG1/2b-Fucose", "IgG2a/2b", "IgG2a/3", "IgG2a/2b-Fucose", "IgG2b/3", "IgG2b/2b-Fucose", "IgG3/2b-Fucose"]
+
     S = convert(DataFrame, S)
-    rename!(S, Symbol.(names))
+    rename!(S, Symbol.(receptorNamesB1()))
     S = stack(S)
 
     pl = plot(
         S,
-        x = repeat(IC; outer=[10]),
+        x = repeat(IC; outer = [10]),
         y = :value,
         Geom.point,
         color = :variable,
@@ -106,15 +132,14 @@ function PlotSynValency()
         S[ii, 8:9] = h[14:15]
         S[ii, 10] = h[20]
     end
-    
-    names = ["IgG1/2a", "IgG1/2b", "IgG1/3", "IgG1/2b-Fucose", "IgG2a/2b", "IgG2a/3", "IgG2a/2b-Fucose", "IgG2b/3", "IgG2b/2b-Fucose", "IgG3/2b-Fucose"]
+
     S = convert(DataFrame, S)
-    rename!(S, Symbol.(names))
+    rename!(S, Symbol.(receptorNamesB1()))
     S = stack(S)
 
     pl = plot(
         S,
-        x = repeat(Valency; outer=[10]),
+        x = repeat(Valency; outer = [10]),
         y = :value,
         color = :variable,
         Guide.colorkey(title = "IgG Combination"),
@@ -142,15 +167,14 @@ function PlotSynvFcrExpr()
         S[ii, 8:9] = h[14:15]
         S[ii, 10] = h[20]
     end
-    
-    names = ["IgG1/2a", "IgG1/2b", "IgG1/3", "IgG1/2b-Fucose", "IgG2a/2b", "IgG2a/3", "IgG2a/2b-Fucose", "IgG2b/3", "IgG2b/2b-Fucose", "IgG3/2b-Fucose"]
+
     S = convert(DataFrame, S)
-    rename!(S, Symbol.(names))
+    rename!(S, Symbol.(receptorNamesB1()))
     S = stack(S)
 
     pl = plot(
         S,
-        x = repeat(multiplier; outer=[10]),
+        x = repeat(multiplier; outer = [10]),
         y = :value,
         Scale.x_log10,
         color = :variable,
@@ -163,8 +187,8 @@ function PlotSynvFcrExpr()
 end
 
 function figureB1()
-    p1 = plotIsobologram(2,3)
-    p2 = plotIsobologramTwo(2,4)
+    p1 = plotIsobologram(2, 3)
+    p2 = plotIsobologramTwo(2, 4)
     p3 = PlotSynGraph()
     p4 = PlotSynValency()
     p5 = PlotSynvFcrExpr()
