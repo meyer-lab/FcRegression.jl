@@ -3,15 +3,13 @@ import MLBase.LOOCV
 import Statistics: mean, std
 import Distributions: cdf, Exponential
 import StatsBase: sample, mode
-using GLM
 using NNLS
 
 exponential(X::Matrix, p::Vector) = cdf.(Exponential(), X * p)
 inv_exponential(y::Real) = -log(1 - y)
 
-function regGenData(df; L0, f, KxStar = KxConst, murine = true, retdf = false)
+function regGenData(df; L0, f, murine::Bool, retdf = false)
     df = copy(df)
-    Rtot = importRtot(; murine = murine)
     FcRecep = murine ? murineFcgR : humanFcgR
     ActI = murine ? murineActI : humanActI
 
@@ -25,21 +23,25 @@ function regGenData(df; L0, f, KxStar = KxConst, murine = true, retdf = false)
     for i = 1:size(df, 1)
         Kav = convert(Vector{Float64}, df[i, FcRecep])
         Kav = reshape(Kav, 1, :)
-        push!(X, polyfc_ActV(df[i, :Concentration], KxStar, f, Rtot, [1.0], Kav, ActI))
+        Rtot = importRtot(; murine = murine, genotype = murine ? "NA" : df[i, :Genotype])
+        push!(X, polyfc_ActV(df[i, :Concentration], KxConst, f, Rtot, [1.0], Kav, ActI))
     end
 
-    # any extra column (C1q or Neutralization) will be taken directly as an extra term in regression
-    for extra_col in setdiff(names(df), [:Condition; :Background; :Concentration; :Target; FcRecep])
-        X[!, extra_col] = df[!, extra_col]
+    if :C1q in names(df)
+        X[!, :C1q] = df[!, :C1q] .* df[!, :Concentration]
+    end
+    if :Neutralization in names(df)
+        X[!, :Neutralization] = df[!, :Neutralization]
     end
 
-    X[df[:, :Background] .== "NeuKO", :Neu] .= 0.0
-    X[df[:, :Background] .== "ncMOKO", :ncMO] .= 0.0
+    if :Background in names(df)
+        X[df[:, :Background] .== "NeuKO", :Neu] .= 0.0
+        X[df[:, :Background] .== "ncMOKO", :ncMO] .= 0.0
+    end
     Y = df[!, :Target]
 
     @assert all(isfinite.(Matrix(X)))
     @assert all(isfinite.(Y))
-
     if retdf
         return (X, Y)
     else
@@ -58,21 +60,22 @@ function proportion_loss(p::Vector, Y::Vector)
     return res
 end
 
-function loss_wL0f(df, ps::Vector{T}, lossFunction::Function)::T where {T <: Real}
-    (X, Y) = regGenData(df; L0 = 10.0^ps[1], f = ps[2])
+function loss_wL0f(df, ps::Vector{T}, lossFunc::Function; murine::Bool)::T where {T <: Real}
+    (X, Y) = regGenData(df; L0 = 10.0^ps[1], f = ps[2], murine = murine)
     Y0 = exponential(X, ps[3:end])
-    return lossFunction(Y0, Y)
+    return lossFunc(Y0, Y)
 end
 
-function fitRegression(df, lossFunction::Function = proportion_loss; wL0f = false)
+function fitRegression(df, lossFunc::Function = proportion_loss;
+        L0, f, murine::Bool, wL0f = false)
     ## this method only supports expoential distribution due to param choice
 
-    (X, Y) = regGenData(df; L0 = 1.0e-9, f = 4, retdf = false)
+    (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine)
     Np = size(X, 2)
     if wL0f
-        fitMethod = (ps) -> loss_wL0f(df, ps, lossFunction)
+        fitMethod = (ps) -> loss_wL0f(df, ps, lossFunc)
     else
-        fitMethod = (ps) -> lossFunction(exponential(X, ps), Y)
+        fitMethod = (ps) -> lossFunc(exponential(X, ps), Y)
     end
     g! = (G, ps) -> ForwardDiff.gradient!(G, fitMethod, ps)
 
@@ -86,32 +89,31 @@ function fitRegression(df, lossFunction::Function = proportion_loss; wL0f = fals
         p_upper = vcat(-7, 6, p_upper)
     end
 
-    fit = optimize(fitMethod, g!, p_lower, p_upper, p_init, Fminbox())
-    if !Optim.converged(fit)
-        @warn "Fitting did not converge"
-    end
+    # TODO: fix optimization
+    #fit = optimize(fitMethod, g!, p_lower, p_upper, p_init, Fminbox())
+    #if !Optim.converged(fit)
+    #    @warn "Fitting did not converge"
+    #end
     return p_init
 end
 
-function LOOCrossVal(dataType, lossFunction::Function; wL0f = false)
-    df = importDepletion(dataType)
+function LOOCrossVal(df, lossFunc::Function; L0, f, murine, wL0f = false)
     n = size(df, 1)
     fitResults = Vector(undef, n)
     LOOindex = LOOCV(n)
     for (i, idx) in enumerate(LOOindex)
-        fitResults[i] = fitRegression(df[idx, :], lossFunction; wL0f = wL0f)
+        fitResults[i] = fitRegression(df[idx, :], lossFunc; L0 = L0, f = f, murine = murine, wL0f = wL0f)
     end
     return fitResults
 end
 
-function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false)
-    df = importDepletion(dataType)
+function bootstrap(df, lossFunc::Function; nsample = 100, L0, f, murine, wL0f = false)
     n = size(df, 1)
     fitResults = Vector(undef, nsample)
     for i = 1:nsample
         for j = 1:5
             fit = try
-                fitRegression(df[sample(1:n, n, replace = true), :], lossFunction; wL0f = wL0f)
+                fitRegression(df[sample(1:n, n, replace = true), :], lossFunc; L0 = L0, f = f, murine = murine, wL0f = wL0f)
             catch e
                 @warn "This bootstrapping set failed at fitRegression"
                 nothing
@@ -127,13 +129,12 @@ function bootstrap(dataType, lossFunction::Function; nsample = 100, wL0f = false
 end
 
 
-function CVResults(dataType, lossFunction::Function = proportion_loss; L0 = 1e-9, f = 4)
-    df = importDepletion(dataType)
-    fit_w = fitRegression(df, lossFunction)
-    loo_out = LOOCrossVal(dataType, lossFunction)
-    btp_out = bootstrap(dataType, lossFunction)
+function CVResults(df, lossFunc::Function = proportion_loss; L0, f, murine::Bool)
+    fit_w = fitRegression(df, lossFunc; L0 = L0, f = f, murine = murine)
+    loo_out = LOOCrossVal(df, lossFunc; L0 = L0, f = f, murine = murine)
+    btp_out = bootstrap(df, lossFunc; L0 = L0, f = f, murine = murine)
 
-    (X, Y) = regGenData(df; L0 = L0, f = f, retdf = true)
+    (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine, retdf = true)
     components = names(X)
     @assert length(fit_w) == length(components)
 
@@ -156,5 +157,5 @@ function CVResults(dataType, lossFunction::Function = proportion_loss; L0 = 1e-9
     wdf[!, :Component] = vec(repeat(reshape(components, 1, :), size(effects, 1), 1))
     @assert size(wdf, 1) == size(X, 1) * length(fit_w)
 
-    return (fit_w, odf, wdf)
+    return fit_w, odf, wdf
 end
