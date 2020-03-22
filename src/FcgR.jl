@@ -8,6 +8,7 @@ using Compose
 import Cairo
 
 include("fcBindingModel.jl")
+include("complexBinding.jl")
 include("dataHelpers.jl")
 include("regression.jl")
 include("synergy.jl")
