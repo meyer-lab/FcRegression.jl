@@ -1,7 +1,7 @@
 """ This file builds the depletion manuscript, Figure 1. """
 
 """ Plot an example isobologram. """
-function plotIsobologram(IgGXidx::Int64, IgGYidx::Int64; murine = false, c1q = false)
+function plotIsobologram(IgGXidx::Int64, IgGYidx::Int64; L0, f, murine = false, c1q = false)
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
     Kav = importKav(murine = false)
@@ -9,7 +9,7 @@ function plotIsobologram(IgGXidx::Int64, IgGYidx::Int64; murine = false, c1q = f
     FcExpr = zeros(length(humanFcgR))
     FcExpr[7] = importRtot(murine = false)[7, 2]
 
-    output = calculateIsobologram(2, 3, 24, 1.0e-8, FcExpr, Kav)
+    output = calculateIsobologram(IgGXidx, IgGYidx, f, L0, FcExpr, Kav)
 
     X = range(0, stop = 1, length = length(output))
 
@@ -33,13 +33,13 @@ function plotIsobologram(IgGXidx::Int64, IgGYidx::Int64; murine = false, c1q = f
 end
 
 """ Plot an example isobologram. """
-function plotIsobologramTwo(IgGXidx::Int64, IgGYidx::Int64; murine = true, c1q = false)
+function plotIsobologramTwo(IgGXidx::Int64, IgGYidx::Int64; L0, f, murine = true, c1q = false)
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
     Kav = importKav(murine = true, IgG2bFucose = true)
     FcExpr = importRtot(murine = true)[:, 2]
 
-    output = calculateIsobologram(2, 4, 4, 1.0e-9, FcExpr, Kav, actV = murineActI)
+    output = calculateIsobologram(IgGXidx, IgGYidx, f, L0, FcExpr, Kav, actV = murineActI)
     output /= maximum(output)
 
     X = range(0, stop = 1, length = length(output))
@@ -104,13 +104,13 @@ function PlotSynGraph()
         S,
         x = repeat(IC; outer = [10]),
         y = :value,
-        Geom.point,
+        Geom.line,
         color = :variable,
         Guide.colorkey(title = "IgG Combination"),
         Scale.x_log10,
-        Guide.xlabel("Percent mIgG2bFucose"),
+        Guide.xlabel("IC Concentration"),
         Guide.ylabel("Synergy"),
-        Guide.title("IC Concentration"),
+        Guide.title("Effect of IC Concentration on Synergy"),
         Guide.xticks(),
     )
     return pl
@@ -141,6 +141,7 @@ function PlotSynValency()
         S,
         x = repeat(Valency; outer = [10]),
         y = :value,
+        Geom.point,
         color = :variable,
         Guide.colorkey(title = "IgG Combination"),
         Guide.xlabel("IC Valency"),
@@ -176,6 +177,7 @@ function PlotSynvFcrExpr()
         S,
         x = repeat(multiplier; outer = [10]),
         y = :value,
+        Geom.line,
         Scale.x_log10,
         color = :variable,
         Guide.colorkey(title = "IgG Combination"),
@@ -187,8 +189,8 @@ function PlotSynvFcrExpr()
 end
 
 function figureB1()
-    p1 = plotIsobologram(2, 3)
-    p2 = plotIsobologramTwo(2, 4)
+    p1 = plotIsobologram(2, 3, 1.0e-8, 24)
+    p2 = plotIsobologramTwo(2, 4, 1.0e-9, 4)
     p3 = PlotSynGraph()
     p4 = PlotSynValency()
     p5 = PlotSynvFcrExpr()
