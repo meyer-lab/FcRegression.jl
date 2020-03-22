@@ -1,5 +1,8 @@
 pipeline {
   agent { label 'docker' }
+  environment {
+    JULIA_NUM_THREADS = '12'
+  }
   options {
     timeout(time: 1, unit: 'HOURS')
     parallelsAlwaysFailFast()

@@ -3,7 +3,7 @@ import MLBase.LOOCV
 import Statistics: mean, std
 import Distributions: cdf, Exponential
 import StatsBase: sample, mode
-using NNLS
+using NonNegLeastSquares
 
 exponential(X::Matrix, p::Vector) = cdf.(Exponential(), X * p)
 inv_exponential(y::Real) = -log(1 - y)
@@ -78,7 +78,7 @@ function fitRegression(df, lossFunc::Function = proportion_loss; L0, f, murine::
     end
     g! = (G, ps) -> ForwardDiff.gradient!(G, fitMethod, ps)
 
-    p_init = nnls(X, inv_exponential.(Y))
+    p_init = nonneg_lsq(X, inv_exponential.(Y))
     p_lower = zeros(Float64, Np)
     p_upper = maximum(p_init) .* ones(Float64, Np)
 
