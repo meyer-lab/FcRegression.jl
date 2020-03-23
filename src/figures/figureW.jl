@@ -78,7 +78,7 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L
         X = vcat(X, Kav_df[!, :C1q]' * IgGC)
     end
     @assert size(X, 1) == length(weights)
-    output = exponential(Matrix(X'), vec(weights))
+    output = exponential(Matrix(X'), weights)
 
     pl = plot(
         layer(x = IgGC[IgGXidx, :], y = output, Geom.line, Theme(default_color = colorant"green")),
