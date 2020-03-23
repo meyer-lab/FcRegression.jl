@@ -102,6 +102,5 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool = true)
     p3 = plotCellTypeEffects(wdf, dataType)
     p4 = plotDepletionSynergy(2, 3, fit_w; L0 = L0, f = f, murine = murine, c1q = (:C1q in unique(wdf.Component)))
 
-    draw(PDF("figureBx.svg", 1000px, 800px), gridstack([p1 p2; p3 p4]))
     return p1, p2, p3, p4
 end
