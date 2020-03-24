@@ -1,15 +1,15 @@
 """ This file builds the depletion manuscript, Figure 1. """
 
 """ Plot an example isobologram. """
-function plotIsobologram(IgGXidx::Int64, IgGYidx::Int64; L0, f, murine = false, c1q = false)
+function plotIsobologram(IgGXidx::Int64, IgGYidx::Int64; murine = false, c1q = false)
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
-    Kav = importKav(murine = false)
+    Kav = importKav(murine = murine)
     # TODO: Should import actual receptor abundance
     FcExpr = zeros(length(humanFcgR))
-    FcExpr[7] = importRtot(murine = false)[7, 2]
+    FcExpr[7] = importRtot(murine = murine)[7, 2]
 
-    output = calculateIsobologram(IgGXidx, IgGYidx, f, L0, FcExpr, Kav)
+    output = calculateIsobologram(IgGXidx, IgGYidx, 24, 1.0e-8, FcExpr, Kav)
 
     X = range(0, stop = 1, length = length(output))
 
@@ -33,13 +33,13 @@ function plotIsobologram(IgGXidx::Int64, IgGYidx::Int64; L0, f, murine = false, 
 end
 
 """ Plot an example isobologram. """
-function plotIsobologramTwo(IgGXidx::Int64, IgGYidx::Int64; L0, f, murine = true, c1q = false)
+function plotIsobologramTwo(IgGXidx::Int64, IgGYidx::Int64; murine = true, c1q = false)
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
-    Kav = importKav(murine = true, IgG2bFucose = true)
-    FcExpr = importRtot(murine = true)[:, 2]
+    Kav = importKav(murine = murine, IgG2bFucose = true)
+    FcExpr = importRtot(murine = murine)[:, 2]
 
-    output = calculateIsobologram(IgGXidx, IgGYidx, f, L0, FcExpr, Kav, actV = murineActI)
+    output = calculateIsobologram(IgGXidx, IgGYidx, 4, 1.0e-9, FcExpr, Kav, actV = murineActI)
     output /= maximum(output)
 
     X = range(0, stop = 1, length = length(output))
@@ -189,8 +189,8 @@ function PlotSynvFcrExpr()
 end
 
 function figureB1()
-    p1 = plotIsobologram(2, 3, 1.0e-8, 24)
-    p2 = plotIsobologramTwo(2, 4, 1.0e-9, 4)
+    p1 = plotIsobologram(2, 3)
+    p2 = plotIsobologramTwo(2, 4)
     p3 = PlotSynGraph()
     p4 = PlotSynValency()
     p5 = PlotSynvFcrExpr()
