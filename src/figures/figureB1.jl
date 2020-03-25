@@ -15,12 +15,7 @@ function plotIsobologram(IgGXidx::Int64, IgGYidx::Int64; murine = false, c1q = f
 
     pl = plot(
         layer(x = X, y = output, Geom.line, Theme(default_color = colorant"green")),
-        layer(
-            x = [0, 1],
-            y = [output[1], output[end]],
-            Geom.line,
-            Theme(default_color = colorant"red"),
-        ),
+        layer(x = [0, 1], y = [output[1], output[end]], Geom.line, Theme(default_color = colorant"red")),
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
         Guide.xlabel("Percent hIgG3"),
@@ -46,12 +41,7 @@ function plotIsobologramTwo(IgGXidx::Int64, IgGYidx::Int64; murine = true, c1q =
 
     pl = plot(
         layer(x = X, y = output, Geom.line, Theme(default_color = colorant"green")),
-        layer(
-            x = [0, 1],
-            y = [output[1], output[end]],
-            Geom.line,
-            Theme(default_color = colorant"red"),
-        ),
+        layer(x = [0, 1], y = [output[1], output[end]], Geom.line, Theme(default_color = colorant"red")),
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
         Guide.xlabel("Percent mIgG2bFucose"),
