@@ -18,8 +18,12 @@ Memoize = "c03570c3-d221-55d1-a50c-7939bbd78826"
 NLsolve = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
 NonNegLeastSquares = "b7351bd1-99d9-5c5d-8786-f205a815c4d7"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
-Profile = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+
+[extras]
+Profile = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test", "Profile"]
