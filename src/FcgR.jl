@@ -3,7 +3,6 @@ using LinearAlgebra
 using ForwardDiff
 import Distances
 using Gadfly
-using GLM
 
 include("fcBindingModel.jl")
 include("dataHelpers.jl")
