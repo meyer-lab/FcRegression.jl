@@ -3,7 +3,6 @@ using Profile
 using FcgR
 using ForwardDiff
 using Optim
-using Random
 
 include("testBindingModel.jl")
 include("testComplexBinding.jl")
