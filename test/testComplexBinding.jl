@@ -1,4 +1,4 @@
-using Combinatorics
+import Combinatorics.multinomial
 
 function polyfc_via_polyc(L0::Real, KxStar::Real, f::Number, Rtot::Vector, LigC::Vector, Kav::Matrix)
     LigC /= sum(LigC)
