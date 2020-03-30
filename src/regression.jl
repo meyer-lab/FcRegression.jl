@@ -62,10 +62,10 @@ function loss_wL0f(df, ps::Vector{T}, lossFunction::Function)::T where {T <: Rea
     return lossFunction(Y0, Y)
 end
 
-function fitRegression(df, lossFunction::Function = proportion_loss; wL0f = false)
+function fitRegression(df, lossFunction::Function = proportion_loss; ligConc = 1.0e-9, val = 4, wL0f = false)
     ## this method only supports expoential distribution due to param choice
 
-    (X, Y) = regGenData(df; L0 = 1.0e-9, f = 4, retdf = false)
+    (X, Y) = regGenData(df; L0 = ligConc, f = val, retdf = false)
     Np = size(X, 2)
     if wL0f
         fitMethod = (ps) -> loss_wL0f(df, ps, lossFunction)

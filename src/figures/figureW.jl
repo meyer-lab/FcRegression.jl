@@ -101,6 +101,25 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector, L
     return pl
 end
 
+function createHeatmap(data="ITP")
+    df = FcgR.importDepletion(data)
+    ligand_concentrations = [1e-12, 1e-11, 1e-10, 1e-9, 1e-8, 1e-7, 1e-6]
+    valencies = [2, 4, 8, 12, 16, 24]
+    minimums = zeros(7, 6)
+    for (i, L0) in enumerate(ligand_concentrations)
+        for (j, v) in enumerate(valencies)
+            fit = FcgR.fitRegression(df, FcgR.quadratic_loss, ligConc = L0, val = v)
+            minimums[i, j] = fit.minimum
+        end
+    end
+    heatmap(minimums, 
+        xlabel = "Valencies", 
+        ylabel = "L0 Concentrations", 
+        title = "L0 and F Search", 
+        xticks = ([1:6;], string.(valencies)),
+        yticks = ([1:7;], string.(ligand_concentrations)))
+end
+
 
 function figureW(dataType; L0 = 1e-9, f = 4)
     (fit_w, odf, wdf) = CVResults(dataType; L0 = L0, f = f)
