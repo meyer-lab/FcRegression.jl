@@ -1,5 +1,4 @@
 using NLsolve
-using LinearAlgebra
 
 
 mutable struct fcOutput{T}
@@ -69,7 +68,7 @@ function polyfc(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC::Vector, K
     return w
 end
 
-polyfcm = (KxStar, f, Rtot, IgG, Kav, ActI = nothing) -> polyfc(sum(IgG), KxStar, f, Rtot, IgG / sum(IgG), Kav, ActI)
+polyfcm = (KxStar, f, Rtot, IgG, Kav, ActI = nothing) -> polyfc(sum(IgG) / f, KxStar, f, Rtot, IgG / sum(IgG), Kav, ActI)
 
 function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatrix, ActI::Vector)
     """
