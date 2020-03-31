@@ -69,7 +69,7 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L
     FcExpr = importRtot(; murine = murine)
     ActI = murine ? murineActI : humanActI
 
-    nPoints = 50
+    nPoints = 100
     IgGC = zeros(Float64, size(Kav, 1), nPoints)
     IgGC[IgGXidx, :] = range(0.0, 1.0; length = nPoints)
     IgGC[IgGYidx, :] = range(1.0, 0.0; length = nPoints)

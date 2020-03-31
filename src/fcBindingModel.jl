@@ -27,8 +27,6 @@ function Req_Regression(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC, K
         @assert all(-1.0e-12 .<= solve_res.zero)
     catch e
         println("Req solving failed")
-        println("solve_res")
-        show(solve_res)
         rethrow(e)
     end
 
