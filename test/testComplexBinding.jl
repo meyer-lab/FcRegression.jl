@@ -4,7 +4,7 @@ function polyfc_via_polyc(L0::Real, KxStar::Real, f::Number, Rtot::Vector, LigC:
     LigC /= sum(LigC)
     Cplx = FcgR.vec_comb(length(LigC), f, repeat([f], length(LigC)))'
     Ctheta = exp.(Cplx * log.(LigC)) .* [multinomial(x...) for x in eachrow(Cplx)]
-    @assert sum(Ctheta) ≈ 1.0   "Ctheta is $(Ctheta) with sum $(sum(Ctheta)) != 1.0"
+    @assert sum(Ctheta) ≈ 1.0 "Ctheta is $(Ctheta) with sum $(sum(Ctheta)) != 1.0"
 
     return FcgR.polyc(L0, KxStar, Rtot, Cplx, Ctheta, Kav)
 end
@@ -12,8 +12,8 @@ end
 
 @testset "complexBinding.jl tests" begin
     @testset "Give the same results as fcBindingModel" begin
-        for i in 1:10
-            L0  = rand() * 10.0^rand(-15:-5)
+        for i = 1:10
+            L0 = rand() * 10.0^rand(-15:-5)
             KxStar = rand() * 10.0^rand(-15:-5)
             f = rand(2:20)
             nl = rand(1:10)
