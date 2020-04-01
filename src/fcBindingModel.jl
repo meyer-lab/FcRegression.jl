@@ -1,5 +1,4 @@
 using NLsolve
-using LinearAlgebra
 
 
 mutable struct fcOutput{T}
@@ -18,7 +17,7 @@ function Req_Regression(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC, K
     Av = transpose(Kav) * IgGC * KxStar
     f! = (F, x) -> F .= x + L0 * f / KxStar .* (x .* Av) .* (1 + sum(x .* Av))^(f - 1) - Rtot
 
-    x0 = convert(Vector{ansType}, Rtot)
+    x0 = convert(Vector{ansType}, Rtot / 1.1)
 
     local solve_res
     try
@@ -28,8 +27,6 @@ function Req_Regression(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC, K
         @assert all(-1.0e-12 .<= solve_res.zero)
     catch e
         println("Req solving failed")
-        println("solve_res")
-        show(solve_res)
         rethrow(e)
     end
 
@@ -69,7 +66,7 @@ function polyfc(L0::Real, KxStar::Real, f::Number, Rtot::Vector, IgGC::Vector, K
     return w
 end
 
-polyfcm = (KxStar, f, Rtot, IgG, Kav, ActI = nothing) -> polyfc(sum(IgG), KxStar, f, Rtot, IgG / sum(IgG), Kav, ActI)
+polyfcm = (KxStar, f, Rtot, IgG, Kav, ActI = nothing) -> polyfc(sum(IgG) / f, KxStar, f, Rtot, IgG / sum(IgG), Kav, ActI)
 
 function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatrix, ActI::Vector)
     """

@@ -1,4 +1,3 @@
-using Optim
 import MLBase.LOOCV
 import Statistics: mean, std
 import Distributions: cdf, Exponential
@@ -88,11 +87,6 @@ function fitRegression(df, lossFunc::Function = proportion_loss; L0, f, murine::
         p_upper = vcat(-7, 6, p_upper)
     end
 
-    # TODO: fix optimization
-    #fit = optimize(fitMethod, g!, p_lower, p_upper, p_init, Fminbox())
-    #if !Optim.converged(fit)
-    #    @warn "Fitting did not converge"
-    #end
     return p_init
 end
 

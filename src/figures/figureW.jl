@@ -69,7 +69,7 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L
     FcExpr = importRtot(; murine = murine)
     ActI = murine ? murineActI : humanActI
 
-    nPoints = 50
+    nPoints = 100
     IgGC = zeros(Float64, size(Kav, 1), nPoints)
     IgGC[IgGXidx, :] = range(0.0, 1.0; length = nPoints)
     IgGC[IgGYidx, :] = range(1.0, 0.0; length = nPoints)
@@ -94,13 +94,13 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L
 end
 
 
-function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool = true)
+function figureW(dataType; IgGX = 2, IgGY = 3, L0 = 1e-9, f = 4, murine::Bool = true)
     df = importDepletion(dataType)
     fit_w, odf, wdf = CVResults(df; L0 = L0, f = f, murine = murine)
     p1 = plotActualvFit(odf, dataType)
     p2 = plotActualvPredict(odf, dataType)
     p3 = plotCellTypeEffects(wdf, dataType)
-    p4 = plotDepletionSynergy(2, 3, fit_w; L0 = L0, f = f, murine = murine, c1q = (:C1q in unique(wdf.Component)))
+    p4 = plotDepletionSynergy(IgGX, IgGY, fit_w; L0 = L0, f = f, murine = murine, c1q = (:C1q in unique(wdf.Component)))
 
     return p1, p2, p3, p4
 end
