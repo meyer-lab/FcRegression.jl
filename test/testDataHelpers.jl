@@ -26,16 +26,4 @@
         @test(arr_HZF[d["FcgRIIB-232I"], :] == arr_HZF[d["FcgRIIB-232T"], :])
         @test(arr_RTF[d["FcgRIIB-232T"], :] == arr_HZF[d["FcgRIIB-232I"], :] .+ arr_HZF[d["FcgRIIB-232T"], :])
     end
-
-    @testset "Depletion data can be imported" begin
-        for dataType in ["ITP", "blood", "bone", "melanoma", "HIV"]
-            df = FcgR.importDepletion(dataType)
-            @test eltype(names(df)) == Symbol
-        end
-        for dataType in ["blood", "spleen", "bone marrow"]
-            df = FcgR.importHumanized(dataType)
-            @test eltype(names(df)) == Symbol
-        end
-    end
-
 end
