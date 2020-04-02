@@ -22,9 +22,10 @@ end
             LigC = rand(nl) .* (10 .^ rand(1:2, nl))
             Kav = rand(nl, nr) .* (10 .^ rand(3:7, nl, nr))
 
-            old_res = FcgR.polyfc(L0, KxStar, f, Rtot, LigC, Kav).Lbound
+            old_res = FcgR.polyfc(L0, KxStar, f, Rtot, LigC, Kav)
             new_res = polyfc_via_polyc(L0, KxStar, f, Rtot, LigC, Kav)
-            @test old_res ≈ new_res
+            @test old_res.Lbound ≈ new_res[1]
+            @test old_res.Rbound ≈ new_res[2]
         end
     end
 

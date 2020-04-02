@@ -32,7 +32,8 @@ function polyc(L0::Real, KxStar::Real, Rtot::Vector, Cplx::AbstractMatrix, Cthet
     Psi = Kav .* transpose(Req) .* KxStar
     PsiRS = sum(Psi, dims = 2) .+ 1.0
     Lbound = L0 / KxStar * sum(Ctheta .* expm1.(Cplx * log1p.(PsiRS .- 1)))
-    return Lbound
+    Rbound = L0 / KxStar * sum(Ctheta .*  (Cplx * (1 .- 1 ./PsiRS)) .* exp.(Cplx * log.(PsiRS)))
+    return Lbound, Rbound
 end
 
 polycm = (KxStar, Rtot, Cplx, Ltheta, Kav) -> polyc(sum(Ltheta), KxStar, Rtot, Cplx, Ltheta / sum(Ltheta), Kav)
