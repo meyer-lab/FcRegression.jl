@@ -36,4 +36,4 @@ function polyc(L0::Real, KxStar::Real, Rtot::Vector, Cplx::AbstractMatrix, Cthet
     return Lbound, Rbound
 end
 
-polycm = (KxStar, Rtot, Cplx, Ltheta, Kav) -> polyc(sum(Ltheta), KxStar, Rtot, Cplx, Ltheta / sum(Ltheta), Kav)
+polycm = (KxStar, Rtot, Cplx, Ltheta, Kav) -> polyc(sum(Ltheta), KxStar, Rtot, Cplx, Ltheta ./ sum(Ltheta), Kav)

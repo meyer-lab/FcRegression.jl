@@ -39,27 +39,29 @@ end
         Kav = rand(3, 4) * 1.0e7
         Ltheta = L0 .* Ctheta
 
-        func = x -> FcgR.polyc(x, KxStar, Rtot, Cplx, Ctheta, Kav)
-        out = ForwardDiff.derivative(func, L0)
-        @test typeof(out) == Float64
+        for i = 1:2
+            func = x -> FcgR.polyc(x, KxStar, Rtot, Cplx, Ctheta, Kav)[i]
+            out = ForwardDiff.derivative(func, L0)
+            @test typeof(out) == Float64
 
-        func = x -> FcgR.polyc(L0, x, Rtot, Cplx, Ctheta, Kav)
-        out = ForwardDiff.derivative(func, KxStar)
-        @test typeof(out) == Float64
+            func = x -> FcgR.polyc(L0, x, Rtot, Cplx, Ctheta, Kav)[i]
+            out = ForwardDiff.derivative(func, KxStar)
+            @test typeof(out) == Float64
 
-        func = x -> FcgR.polyc(L0, KxStar, x, Cplx, Ctheta, Kav)
-        out = ForwardDiff.gradient(func, Rtot)
-        @test eltype(out) == Float64
-        @test length(out) == length(Rtot)
+            func = x -> FcgR.polyc(L0, KxStar, x, Cplx, Ctheta, Kav)[i]
+            out = ForwardDiff.gradient(func, Rtot)
+            @test eltype(out) == Float64
+            @test length(out) == length(Rtot)
 
-        func = x -> FcgR.polyc(L0, KxStar, Rtot, Cplx, x, Kav)
-        out = ForwardDiff.gradient(func, Ctheta)
-        @test eltype(out) == Float64
-        @test length(out) == length(Ctheta)
+            func = x -> FcgR.polyc(L0, KxStar, Rtot, Cplx, x, Kav)[i]
+            out = ForwardDiff.gradient(func, Ctheta)
+            @test eltype(out) == Float64
+            @test length(out) == length(Ctheta)
 
-        func = x -> FcgR.polycm(KxStar, Rtot, Cplx, x, Kav)
-        out = ForwardDiff.gradient(func, Ltheta)
-        @test eltype(out) == Float64
-        @test length(out) == length(Ltheta)
+            func = x -> FcgR.polycm(KxStar, Rtot, Cplx, x, Kav)[i]
+            out = ForwardDiff.gradient(func, Ltheta)
+            @test eltype(out) == Float64
+            @test length(out) == length(Ltheta)
+        end
     end
 end
