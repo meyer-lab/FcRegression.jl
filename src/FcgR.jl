@@ -6,7 +6,6 @@ using Gadfly
 using Compose
 
 include("fcBindingModel.jl")
-include("complexBinding.jl")
 include("dataHelpers.jl")
 include("regression.jl")
 include("synergy.jl")
