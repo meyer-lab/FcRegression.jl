@@ -23,6 +23,6 @@ IgG2a,PG16,19.4,0.97
 IgG1,mG053,98.0,0.00
 IgG1D265A,mG053,84.8,0.00
 IgG2a,mG053,99.5,0.00
-# From Elsevier,Cell,2014
-# Neutralization,IC50,(ug/ml)
-# wt = 3BNC117, ,
+# From Elsevier,Cell,2014,
+# Neutralization,IC50,(ug/ml),
+# wt = 3BNC117, , ,
