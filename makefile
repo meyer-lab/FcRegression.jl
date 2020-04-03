@@ -1,5 +1,5 @@
 
-all: figureB1.svg figureB2.svg figureB3.svg figureB4.svg figureB5.svg output/depletion/manuscript.html output/translation/manuscript.html
+all: figureB1.svg figureB2.svg figureB3.svg figureB4.svg figureB5.svg figureB6.svg output/depletion/manuscript.html output/translation/manuscript.html
 
 venv: venv/bin/activate
 
