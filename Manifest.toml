@@ -14,9 +14,9 @@ version = "0.4.0"
 
 [[Arpack_jll]]
 deps = ["Libdl", "OpenBLAS_jll", "Pkg"]
-git-tree-sha1 = "68a90a692ddc0eb72d69a6993ca26e2a923bf195"
+git-tree-sha1 = "e214a9b9bd1b4e1b4f15b22c0994862b66af7ff7"
 uuid = "68821587-b530-5797-8361-c406ea357684"
-version = "3.5.0+2"
+version = "3.5.0+3"
 
 [[ArrayInterface]]
 deps = ["LinearAlgebra", "Requires", "SparseArrays"]
@@ -612,3 +612,11 @@ deps = ["LinearAlgebra", "SparseArrays"]
 git-tree-sha1 = "28ffe06d28b1ba8fdb2f36ec7bb079fac81bac0d"
 uuid = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
 version = "0.5.2"
+
+[[polyBindingModel]]
+deps = ["LinearAlgebra", "NLsolve"]
+git-tree-sha1 = "2421cc68268401ad069e8458748c832459bbb5b4"
+repo-rev = "master"
+repo-url = "https://github.com/meyer-lab/polyBindingModel.jl.git"
+uuid = "d8b71a59-0ce5-46cb-870e-e9e7240c6f77"
+version = "0.1.0"
