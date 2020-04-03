@@ -1,7 +1,7 @@
 Condition,Background,Target,Neutralization
-IgG1,3BNC117,21.0,0.02
-IgG1D265A,3BNC117,21.0,0.02
-IgG2a,3BNC117,7.1,0.02
+IgG1,wt,21.0,0.02
+IgG1D265A,wt,21.0,0.02
+IgG2a,wt,7.1,0.02
 IgG1,1_74,76.5,48.5
 IgG1D265A,1_74,93.2,48.5
 IgG2a,1_74,30.0,48.5
@@ -25,3 +25,4 @@ IgG1D265A,mG053,84.8,0.00
 IgG2a,mG053,99.5,0.00
 # From Elsevier,Cell,2014
 # Neutralization,IC50,(ug/ml)
+# wt = 3BNC117, ,

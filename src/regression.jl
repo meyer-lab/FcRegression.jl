@@ -29,9 +29,9 @@ function regGenData(df; L0, f, murine::Bool, retdf = false)
     if :C1q in names(df)
         X[!, :C1q] = df[!, :C1q] .* df[!, :Concentration]
     end
-    if :Neutralization in names(df)
-        X[!, :Neutralization] = df[!, :Neutralization]
-    end
+    #if :Neutralization in names(df)
+        #X[!, :Neutralization] = df[!, :Neutralization]
+    #end
 
     if :Background in names(df)
         X[df[:, :Background] .== "NeuKO", :Neu] .= 0.0
@@ -128,7 +128,9 @@ function CVResults(df, lossFunc::Function = proportion_loss; L0, f, murine::Bool
     btp_out = bootstrap(df, lossFunc; L0 = L0, f = f, murine = murine)
 
     (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine, retdf = true)
+    display(X)
     components = names(X)
+    display(components)
     @assert length(fit_w) == length(components)
 
     odf = df[!, [:Condition, :Background]]
@@ -136,11 +138,15 @@ function CVResults(df, lossFunc::Function = proportion_loss; L0, f, murine::Bool
     odf[!, :Y] = Y
     odf[!, :Fitted] = exponential(Matrix(X), fit_w)
     odf[!, :LOOPredict] = vcat([exponential(Matrix(X[[i], :]), loo_out[i]) for i = 1:length(loo_out)]...)
+    display(odf)
 
     selected = (odf[!, :Background] .== "wt") .& (odf[!, :Concentration] .== mode(odf[!, :Concentration]))
+    display(selected)
     X = Matrix(X[selected, :])
+    display(X)
 
     effects = X .* fit_w'
+    display(effects)
     btp_ws = cat([X .* a' for a in btp_out]..., dims = (3))
     btp_std = dropdims(std(btp_ws; dims = 3), dims = 3)
     @assert size(effects) == size(btp_std)
