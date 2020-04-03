@@ -4,6 +4,7 @@ using ForwardDiff
 import Distances
 using Gadfly
 using Compose
+using polyBindingModel
 
 include("fcBindingModel.jl")
 include("dataHelpers.jl")
