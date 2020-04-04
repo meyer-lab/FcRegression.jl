@@ -94,6 +94,27 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L
 end
 
 
+function createHeatmap(vmax, clmin, clmax; data="ITP")
+    df = importDepletion(data)
+    concs = exp10.(range(clmin, stop=clmax, length=clmax-clmin+1))
+    valencies = [2:vmax;]
+    minimums = zeros(length(concs), length(valencies))
+    for (i, L0) in enumerate(concs)
+        for (j, v) in enumerate(valencies)
+            fit = fitRegression(df, FcgR.quadratic_loss, L0 = L0, f = v, murine=true)
+            minimums[i, j] = fit.r
+        end
+    end
+    p1 = spy(minimums,
+        Guide.xlabel("Valencies"),
+        Guide.ylabel("L0 Concentrations"),
+        Guide.title("ITP"),
+        Scale.x_discrete(labels = i -> valencies[i]),
+        Scale.y_discrete(labels = i -> concs[i])
+        )
+end
+
+
 function figureW(dataType; IgGX = 2, IgGY = 3, L0 = 1e-9, f = 4, murine::Bool = true)
     df = importDepletion(dataType)
     fit_w, odf, wdf = CVResults(df; L0 = L0, f = f, murine = murine)
