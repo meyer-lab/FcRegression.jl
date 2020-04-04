@@ -1,9 +1,9 @@
 using DataFrames
 using CSV
 import StatsBase.geomean
+using Memoize
 
 const KxConst = 6.31e-13 # 10^(-12.2)
-const C1qConc = 2.39e-7  # in mol/L, assume conc 113 μg/mL and mw 472 kDa
 
 function geocmean(x)
     x = convert(Vector, x)
@@ -11,17 +11,17 @@ function geocmean(x)
     return geomean(x)
 end
 
-cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]
-murineIgG = [:IgG1, :IgG2a, :IgG2b, :IgG3]
-humanIgG = [:IgG1, :IgG2, :IgG3, :IgG4]
-murineFcgR = [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]
-humanFcgR =
+const cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]
+const murineIgG = [:IgG1, :IgG2a, :IgG2b, :IgG3]
+const humanIgG = [:IgG1, :IgG2, :IgG3, :IgG4]
+const murineFcgR = [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]
+const humanFcgR =
     Symbol.(["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158V", "FcgRIIIA-158F", "FcgRIIIB"])
-murineActI = [1, -1, 1, 1]
-humanActI = [1, 1, 1, -1, -1, 1, 1, 1, 1]
-dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
+const murineActI = [1, -1, 1, 1]
+const humanActI = [1, 1, 1, -1, -1, 1, 1, 1, 1]
+const dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
 
-function importRtot(; murine = true, genotype = "HIV", retdf = false)
+@memoize function importRtot(; murine = true, genotype = "HIV", retdf = false)
     if murine
         df = CSV.read(joinpath(dataDir, "murine-FcgR-abundance.csv"))
     else
@@ -64,29 +64,29 @@ end
 
 
 """ Import human or murine affinity data. """
-function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = false)
+@memoize function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = false)
     if murine
         df = CSV.read(joinpath(dataDir, "murine-affinities.csv"), comment = "#")
     else
         df = CSV.read(joinpath(dataDir, "human-affinities.csv"), comment = "#")
     end
 
-    if c1q == false
-        df = filter(row -> row[:FcgR] != "C1q", df)
-    end
-
     IgGlist = copy(murine ? murineIgG : humanIgG)
+    FcRecep = copy(murine ? murineFcgR : humanFcgR)
     if IgG2bFucose
         append!(IgGlist, [:IgG2bFucose])
+    end
+    if c1q
+        append!(FcRecep, [:C1q])
     end
     df = stack(df; variable_name = :IgG, value_name = :Kav)
     df = unstack(df, :FcgR, :Kav)
     df = df[in(IgGlist).(df.IgG), :]
 
     if retdf
-        return df
+        return df[!, [:IgG; FcRecep]]
     else
-        return convert(Matrix{Float64}, df[!, murine ? murineFcgR : humanFcgR])
+        return convert(Matrix{Float64}, df[!, FcRecep])
     end
 end
 
@@ -104,16 +104,21 @@ function importDepletion(dataType)
         c1q = true
     elseif dataType == "melanoma"
         filename = "nimmerjahn-melanoma.csv"
+    elseif dataType == "HIV"
+        filename = "elsevier-HIV.csv"
     else
         @error "Data type not found"
     end
 
     df = CSV.read(joinpath(dataDir, filename), delim = ",", comment = "#")
-    df[!, :Condition] = map(Symbol, df[!, :Condition])
+    df[!, :Condition] .= Symbol.(df[!, :Condition])
     df[!, :Target] = 1.0 .- df[!, :Target] ./ 100.0
 
-    affinityData = importKav(murine = true, c1q = c1q, retdf = true)
-    df = join(df, affinityData, on = :Condition => :IgG, kind = :inner)
+    affinity = importKav(murine = true, c1q = c1q, IgG2bFucose = true, retdf = true)
+    if :Neutralization in names(df)
+        df[!, :Neutralization] .= replace!(1 ./ df[!, :Neutralization], Inf => 0.01)
+    end
+    df = join(df, affinity, on = :Condition => :IgG, kind = :left)
 
     df[df[:, :Background] .== "R1KO", :FcgRI] .= 0.0
     df[df[:, :Background] .== "R2KO", :FcgRIIB] .= 0.0
@@ -122,5 +127,50 @@ function importDepletion(dataType)
     df[df[:, :Background] .== "R1/4KO", [:FcgRI, :FcgRIV]] .= 0.0
     df[df[:, :Background] .== "R4block", :FcgRIV] .= 0.0
     df[df[:, :Background] .== "gcKO", [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
+    df[df[:, :Condition] .== :IgG1D265A, [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
     return df
+end
+
+
+""" Humanized mice data from Lux 2014 """
+function importHumanized(dataType)
+    df = CSV.read(joinpath(dataDir, "lux_humanized_CD19.csv"), delim = ",", comment = "#")
+    @assert dataType in ["blood", "spleen", "bone marrow"] "Data type not found"
+    df = dropmissing(df, Symbol(dataType), disallowmissing = true)
+    df[!, :Target] = 1.0 .- df[!, Symbol(dataType)] ./ 100.0
+    df[!, :Condition] .= :IgG1
+    df = df[!, [:Genotype, :Concentration, :Condition, :Target]]
+
+    affinity = importKav(murine = false, c1q = true, retdf = true)
+    df = join(df, affinity, on = :Condition => :IgG, kind = :left)
+    return df
+end
+
+
+
+""" Import systems serology dataset. """
+function importAlterMSG()
+    dfF = CSV.read(joinpath(dataDir, "alter-MSB", "data-function.csv"))
+    dfGP = CSV.read(joinpath(dataDir, "alter-MSB", "data-glycan-gp120.csv"))
+    dfIGG = CSV.read(joinpath(dataDir, "alter-MSB", "data-luminex-igg.csv"))
+    dfL = CSV.read(joinpath(dataDir, "alter-MSB", "data-luminex.csv"))
+    dfMA = CSV.read(joinpath(dataDir, "alter-MSB", "meta-antigens.csv"))
+    dfMD = CSV.read(joinpath(dataDir, "alter-MSB", "meta-detections.csv"))
+    dfMG = CSV.read(joinpath(dataDir, "alter-MSB", "meta-glycans.csv"))
+    dfMS = CSV.read(joinpath(dataDir, "alter-MSB", "meta-subjects.csv"))
+
+    df = meltdf(dfL, view = true)
+    newdfL = DataFrame(Rec = String[], Vir = String[], Sig = String[], Value = Float64[], Subject = Int64[])
+
+    # Split column name into constituent parts
+    for i = 1:size(df, 1)
+        Ar = split(string(df.variable[i]), "."; limit = 3)
+        if length(Ar) == 3
+            push!(newdfL, [Ar[1], Ar[2], Ar[3], df.value[i], df.Column1[i]])
+        else
+            push!(newdfL, [Ar[1], Ar[2], "N/A", df.value[i], df.Column1[i]])
+        end
+    end
+
+    return newdfL
 end

@@ -1,5 +1,5 @@
 
-all: figureB2.pdf figureB3.pdf output/depletion/manuscript.html output/translation/manuscript.html
+all: figureB1.svg figureB2.svg figureB3.svg figureB4.svg figureB5.svg output/depletion/manuscript.html output/translation/manuscript.html
 
 venv: venv/bin/activate
 
@@ -8,20 +8,15 @@ venv/bin/activate: requirements.txt
 	. venv/bin/activate && pip install -Uqr requirements.txt
 	touch venv/bin/activate
 
-figureB1.pdf:
-	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB1()'
-
-figureB2.pdf:
-	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB2()'
-
-figureB3.pdf:
-	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureB3()'
+figure%.svg:
+	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figure$*()'
 
 output/%/manuscript.md: venv manuscripts/%/*.md
-	mkdir -p ./output/%
+	mkdir -p ./output/$*
 	. venv/bin/activate && manubot process --content-directory=manuscripts/$*/ --output-directory=output/$*/ --log-level=WARNING
 
-output/%/manuscript.html: venv output/%/manuscript.md
+output/%/manuscript.html: venv output/%/manuscript.md figureB1.svg figureB2.svg figureB3.svg
+	cp *.svg output/$*/
 	. venv/bin/activate && pandoc \
 		--from=markdown --to=html5 --filter=pandoc-fignos --filter=pandoc-eqnos --filter=pandoc-tablenos \
 		--bibliography=output/$*/references.json \
@@ -36,8 +31,7 @@ output/%/manuscript.html: venv output/%/manuscript.md
 		--include-after-body=common/templates/manubot/plugins/link-highlight.html \
 		--include-after-body=common/templates/manubot/plugins/table-of-contents.html \
 		--include-after-body=common/templates/manubot/plugins/lightbox.html \
-		--mathjax \
-		--variable math="" \
+		--mathjax --variable math="" \
 		--include-after-body=common/templates/manubot/plugins/math.html \
 		--include-after-body=common/templates/manubot/plugins/hypothesis.html \
 		--output=output/$*/manuscript.html output/$*/manuscript.md
@@ -48,4 +42,4 @@ coverage.cob:
 	python3 ~/.local/lib/python3.7/site-packages/lcov_cobertura.py coverage-lcov.info -o coverage.cob
 
 clean:
-	rm -rf *.pdf venv output
+	rm -rf *.svg venv output

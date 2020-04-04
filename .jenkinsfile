@@ -1,5 +1,8 @@
 pipeline {
   agent { label 'docker' }
+  environment {
+    JULIA_NUM_THREADS = '12'
+  }
   options {
     timeout(time: 1, unit: 'HOURS')
     parallelsAlwaysFailFast()
@@ -19,7 +22,7 @@ pipeline {
           sh 'make output/depletion/manuscript.md output/translation/manuscript.md'
         }
         sh 'make all'
-        archiveArtifacts artifacts: '*.pdf', onlyIfSuccessful: true
+        archiveArtifacts artifacts: '*.svg', onlyIfSuccessful: true
         publishHTML([allowMissing:false, alwaysLinkToLastBuild:false, keepAll:true, reportDir:'output/depletion', reportFiles:'manuscript.html', reportName:'Depletion Paper'])
         publishHTML([allowMissing:false, alwaysLinkToLastBuild:false, keepAll:true, reportDir:'output/translation', reportFiles:'manuscript.html', reportName:'Translation Paper'])
       }

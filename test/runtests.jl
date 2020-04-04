@@ -1,11 +1,10 @@
 using Test
 using Profile
 using FcgR
-using ForwardDiff
-using Optim
 using Random
+using ForwardDiff
+using LinearAlgebra
 
-include("testBindingModel.jl")
 include("testSynergy.jl")
 include("testRegression.jl")
 include("testTranslation.jl")
