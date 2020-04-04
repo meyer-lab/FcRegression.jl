@@ -4,9 +4,9 @@ using ForwardDiff
 import Distances
 using Gadfly
 using Compose
+using polyBindingModel
 
 include("fcBindingModel.jl")
-include("complexBinding.jl")
 include("dataHelpers.jl")
 include("regression.jl")
 include("synergy.jl")
