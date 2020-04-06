@@ -113,11 +113,11 @@ function importDepletion(dataType)
     df = CSV.read(joinpath(dataDir, filename), delim = ",", comment = "#")
     df[!, :Condition] .= Symbol.(df[!, :Condition])
     df[!, :Target] = 1.0 .- df[!, :Target] ./ 100.0
-
-    affinity = importKav(murine = true, c1q = c1q, IgG2bFucose = true, retdf = true)
     if :Neutralization in names(df)
         df[!, :Neutralization] .= replace!(1 ./ df[!, :Neutralization], Inf => 0.01)
     end
+
+    affinity = importKav(murine = true, c1q = c1q, IgG2bFucose = true, retdf = true)
     df = join(df, affinity, on = :Condition => :IgG, kind = :left)
 
     df[df[:, :Background] .== "R1KO", :FcgRI] .= 0.0

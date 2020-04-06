@@ -61,7 +61,15 @@ function plotCellTypeEffects(wdf, dataType)
 end
 
 
-function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L0, f, murine::Bool, c1q = false)
+function plotHIVSynergy()
+end
+
+function plotHumanCTEff()
+end
+
+
+function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector;
+        L0, f, murine::Bool, c1q = false, background = nothing)
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
     Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
@@ -77,6 +85,14 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L
     if c1q
         X = vcat(X, Kav_df[!, :C1q]' * IgGC)
     end
+
+    # for HIV only: IgG1 and IgG2
+    if background != nothing    # for HIV
+        neut1 = df[df[!, :Condition] == :IgG1 .& df[!, :Background] == background, :Neutralization]
+        neut2a = df[df[!, :Condition] == :IgG2a .& df[!, :Background] == background, :Neutralization]
+        X = vcat(X, Kav_df[!, :C1q]' * IgGC[])
+    end
+
     @assert size(X, 1) == length(weights)
     output = exponential(Matrix(X'), weights)
 
@@ -93,10 +109,9 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L
     return pl
 end
 
-
-function figureW(dataType; IgGX = 2, IgGY = 3, L0 = 1e-9, f = 4, murine::Bool = true)
+function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool = true, background = nothing, IgGX = 2, IgGY = 3)
     df = importDepletion(dataType)
-    fit_w, odf, wdf = CVResults(df; L0 = L0, f = f, murine = murine)
+    fit_w, odf, wdf = CVResults(df; L0 = L0, f = f, murine = murine, background = background)
     p1 = plotActualvFit(odf, dataType)
     p2 = plotActualvPredict(odf, dataType)
     p3 = plotCellTypeEffects(wdf, dataType)

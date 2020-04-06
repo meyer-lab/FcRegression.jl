@@ -122,7 +122,8 @@ function bootstrap(df, lossFunc::Function; nsample = 100, L0, f, murine, wL0f = 
 end
 
 
-function CVResults(df, lossFunc::Function = proportion_loss; L0, f, murine::Bool)
+function CVResults(df, lossFunc::Function = proportion_loss;
+        L0, f, murine::Bool, background = nothing)
     fit_w = fitRegression(df, lossFunc; L0 = L0, f = f, murine = murine)
     loo_out = LOOCrossVal(df, lossFunc; L0 = L0, f = f, murine = murine)
     btp_out = bootstrap(df, lossFunc; L0 = L0, f = f, murine = murine)
@@ -137,7 +138,15 @@ function CVResults(df, lossFunc::Function = proportion_loss; L0, f, murine::Bool
     odf[!, :Fitted] = exponential(Matrix(X), fit_w)
     odf[!, :LOOPredict] = vcat([exponential(Matrix(X[[i], :]), loo_out[i]) for i = 1:length(loo_out)]...)
 
-    selected = (odf[!, :Background] .== "wt") .& (odf[!, :Concentration] .== mode(odf[!, :Concentration]))
+    selected = odf[!, :Concentration] .> 0.0
+    selected .&= odf[!, :Concentration] .== mode(odf[!, :Concentration])
+    if :Background in names(odf)
+        if background != nothing    # HIV case only
+            selected .&= odf[!, :Background] .== background
+        else
+            selected .&= odf[!, :Background] .== "wt"
+        end
+    end
     X = Matrix(X[selected, :])
 
     effects = X .* fit_w'
