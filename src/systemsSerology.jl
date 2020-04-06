@@ -1,6 +1,5 @@
 using DataFrames
 using CSV
-using StatsPlots
 
 """ Subset systems serology dataset for HIV1.p66 """
 function HIV1p66sub()
@@ -43,7 +42,8 @@ function plotHIV1p66()
     final = DataFrame(Subject = Subjects, ADCC = ADCClist, F158 = F[!, :Value], V158 = V[!, :Value])
     
     #using StatsPlots
-    @df final scatter([:F158 :V158], :ADCC, xlabel = "FcgRIIIA Value", ylabel = "ADCC", title = "HIV1.p66")
+    # Reimplement in Gadfly
+    # @df final scatter([:F158 :V158], :ADCC, xlabel = "FcgRIIIA Value", ylabel = "ADCC", title = "HIV1.p66")
 end
 
 
