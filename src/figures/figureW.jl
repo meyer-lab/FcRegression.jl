@@ -1,11 +1,11 @@
-function plotActualvFit(odf, dataType)
+function plotActualvFit(odf, dataType, colorL::Symbol, shapeL::Symbol)
     pl = plot(
         odf,
         x = :Y,
         y = :Fitted,
         Geom.point,
-        color = :Background,
-        shape = :Condition,
+        color = colorL,
+        shape = shapeL,
         Guide.colorkey(pos = [0.05w, -0.28h]),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
         Geom.abline(color = "red"),
@@ -18,14 +18,14 @@ function plotActualvFit(odf, dataType)
 end
 
 
-function plotActualvPredict(odf, dataType)
+function plotActualvPredict(odf, dataType, colorL::Symbol, shapeL::Symbol)
     pl = plot(
         odf,
         x = :Y,
         y = :LOOPredict,
         Geom.point,
-        color = :Background,
-        shape = :Condition,
+        color = colorL,
+        shape = shapeL,
         Guide.colorkey(pos = [0.05w, -0.28h]),
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
@@ -61,15 +61,8 @@ function plotCellTypeEffects(wdf, dataType)
 end
 
 
-function plotHIVSynergy()
-end
-
-function plotHumanCTEff()
-end
-
-
 function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector;
-        L0, f, murine::Bool, c1q = false, background = nothing)
+        L0, f, murine::Bool, c1q = false, neutralization = false)
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
     Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
@@ -85,12 +78,8 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector;
     if c1q
         X = vcat(X, Kav_df[!, :C1q]' * IgGC)
     end
-
-    # for HIV only: IgG1 and IgG2
-    if background != nothing    # for HIV
-        neut1 = df[df[!, :Condition] == :IgG1 .& df[!, :Background] == background, :Neutralization]
-        neut2a = df[df[!, :Condition] == :IgG2a .& df[!, :Background] == background, :Neutralization]
-        X = vcat(X, Kav_df[!, :C1q]' * IgGC[])
+    if neutralization
+        X = vcat(X, ones(size(X, 2))')
     end
 
     @assert size(X, 1) == length(weights)
@@ -109,13 +98,21 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector;
     return pl
 end
 
-function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool = true, background = nothing, IgGX = 2, IgGY = 3)
-    df = importDepletion(dataType)
-    fit_w, odf, wdf = CVResults(df; L0 = L0, f = f, murine = murine, background = background)
-    p1 = plotActualvFit(odf, dataType)
-    p2 = plotActualvPredict(odf, dataType)
+function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool = true, IgGX = 2, IgGY = 3)
+    if murine
+        df = importDepletion(dataType)
+        color, shape = :Background, :Condition
+    else
+        df = importHumanized(dataType)
+        color, shape = :Genotype, :Concentration
+    end
+    fit_w, odf, wdf = CVResults(df; L0 = L0, f = f, murine = murine)
+    @assert all(in(names(odf)).([color, shape]))
+    p1 = plotActualvFit(odf, dataType, color, shape)
+    p2 = plotActualvPredict(odf, dataType, color, shape)
     p3 = plotCellTypeEffects(wdf, dataType)
-    p4 = plotDepletionSynergy(IgGX, IgGY, fit_w; L0 = L0, f = f, murine = murine, c1q = (:C1q in unique(wdf.Component)))
+    p4 = plotDepletionSynergy(IgGX, IgGY, fit_w; L0 = L0, f = f, murine = murine,
+                                c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
 
     return p1, p2, p3, p4
 end
