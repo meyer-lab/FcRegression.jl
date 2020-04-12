@@ -108,7 +108,7 @@ function createHeatmap(vmax, clmin, clmax; data="ITP")
     p1 = spy(minimums,
         Guide.xlabel("Valencies"),
         Guide.ylabel("L0 Concentrations"),
-        Guide.title("ITP"),
+        Guide.title("$data"),
         Scale.x_discrete(labels = i -> valencies[i]),
         Scale.y_discrete(labels = i -> concs[i])
         )
