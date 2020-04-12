@@ -1,9 +1,9 @@
 function plotActualvFit(odf, dataType)
     
     if dataType == "HIV"
-        label = odf.Label
+        label = :Label
     else
-        label = odf.Background
+        label = :Background
     end
     
     pl = plot(
@@ -28,9 +28,9 @@ end
 function plotActualvPredict(odf, dataType)
         
     if dataType == "HIV"
-        label = odf.Label
+        label = :Label
     else
-        label = odf.Background
+        label = :Background
     end
     
     pl = plot(
