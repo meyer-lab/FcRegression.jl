@@ -120,6 +120,11 @@ function importDepletion(dataType)
     end
     df = join(df, affinity, on = :Condition => :IgG, kind = :left)
 
+    # The mG053 antibody doesn't bind to the virus
+    if dataType == "HIV"
+        df[df[:, :Label] .== "mG053", [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
+    end
+
     df[df[:, :Background] .== "R1KO", :FcgRI] .= 0.0
     df[df[:, :Background] .== "R2KO", :FcgRIIB] .= 0.0
     df[df[:, :Background] .== "R3KO", :FcgRIII] .= 0.0
