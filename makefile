@@ -8,6 +8,9 @@ venv/bin/activate: requirements.txt
 	. venv/bin/activate && pip install -Uqr requirements.txt
 	touch venv/bin/activate
 
+figureB1.svg figureB2.svg figureB3.svg figureB4.svg figureB5.svg figureB6.svg:
+	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureAll()'
+
 figure%.svg:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figure$*()'
 
