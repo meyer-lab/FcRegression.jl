@@ -19,7 +19,7 @@ include("figures/figureB1.jl")
 include("figures/figureB2.jl")
 
 function figureAll()
-	figureB1()
+    figureB1()
     figureB2()
     figureB3()
     figureB4()

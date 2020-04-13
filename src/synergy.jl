@@ -39,13 +39,12 @@ end
 function calcSynergy(IgGXidx::Int64, IgGYidx::Int64, valency, ICconc::Float64, FcExpr, Kav; quantity = nothing, actV = nothing)
 
     function calcFunc(xx)
-        println(xx)
         return calculateIsobologramPoint(xx, IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav; quantity = quantity, actV = actV)
     end
 
     additive = (calcFunc(0.0) + calcFunc(1.0)) / 2.0
 
-    synergy, err = quadgk(x -> calcFunc(xx), 0.0, 1.0, rtol=1e-8)
+    synergy, err = quadgk(calcFunc, 0.0, 1.0, rtol=1e-8)
 
     return (synergy - additive) / additive
 end
