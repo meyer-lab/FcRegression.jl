@@ -38,9 +38,6 @@ end
 
 
 function plotCellTypeEffects(wdf, dataType)
-    wdf.ymin = wdf.Weight .- wdf.BtpStdev
-    wdf.ymax = wdf.Weight .+ wdf.BtpStdev
-
     pl = plot(
         wdf,
         x = :Condition,
@@ -51,8 +48,8 @@ function plotCellTypeEffects(wdf, dataType)
         Scale.x_discrete(levels = unique(wdf.Condition)),
         Scale.y_continuous(minvalue = 0.0),
         Scale.color_discrete(levels = unique(wdf.Component)),
-        ymin = :ymin,
-        ymax = :ymax,
+        ymin = :FirstQ,
+        ymax = :ThirdQ,
         Geom.errorbar,
         Stat.dodge,
         Guide.title("Predicted weights of IgG and Cell Type in wt for $dataType"),
@@ -94,7 +91,7 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L
     return pl
 end
 
-function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool = true, IgGX = 2, IgGY = 3)
+function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3)
     if murine
         df = importDepletion(dataType)
         color = (dataType == "HIV") ? :Label : :Background

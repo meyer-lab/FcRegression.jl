@@ -1,5 +1,5 @@
 import MLBase.LOOCV
-import Statistics: mean, std
+import Statistics: mean, quantile
 import Distributions: cdf, Exponential
 import StatsBase: sample, mode
 using NonNegLeastSquares
@@ -143,18 +143,19 @@ function CVResults(df, lossFunc::Function = proportion_loss; L0, f, murine::Bool
         wildtype[!, :Genotype] .= "ZZZ"
     end
     rename!(wildtype, :IgG => :Condition)
-    wtX, _ = FcgR.regGenData(wildtype; L0 = L0, f = f, murine = murine, retdf = true)
+    wtX, _ = regGenData(wildtype; L0 = L0, f = f, murine = murine, retdf = true)
 
     fit_w = fit_w[in(names(wtX)).(names(X))]
     effects = wtX .* fit_w'
     effects[!, :Condition] .= wildtype[!, :Condition]
     btp_ws = cat([Matrix(wtX) .* a[in(names(wtX)).(names(X))]' for a in btp_out]..., dims = (3))
-    btp_std = dropdims(std(btp_ws; dims = 3), dims = 3)
+    btp_qtl = mapslices(x -> quantile(x, [0.25, 0.5, 0.75]), btp_ws, dims=[3])
 
     wdf = stack(effects, Not(:Condition))
     rename!(wdf, :variable => :Component)
     rename!(wdf, :value => :Weight)
-    wdf[!, :BtpStdev] .= vec(btp_std)
+    wdf[!, :FirstQ] .= vec(btp_qtl[:,:,1])
+    wdf[!, :ThirdQ] .= vec(btp_qtl[:,:,3])
 
     return fit_w, odf, wdf
 end
