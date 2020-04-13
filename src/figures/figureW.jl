@@ -61,8 +61,7 @@ function plotCellTypeEffects(wdf, dataType)
 end
 
 
-function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector;
-        L0, f, murine::Bool, c1q = false, neutralization = false)
+function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L0, f, murine::Bool, c1q = false, neutralization = false)
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
     Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
@@ -98,7 +97,7 @@ end
 function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool = true, IgGX = 2, IgGY = 3)
     if murine
         df = importDepletion(dataType)
-        color = (dataType=="HIV") ? :Label : :Background
+        color = (dataType == "HIV") ? :Label : :Background
         shape = :Condition
     else
         df = importHumanized(dataType)
@@ -109,8 +108,16 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool = true, IgGX = 2, IgGY
     p1 = plotActualvFit(odf, dataType, color, shape)
     p2 = plotActualvPredict(odf, dataType, color, shape)
     p3 = plotCellTypeEffects(wdf, dataType)
-    p4 = plotDepletionSynergy(IgGX, IgGY, fit_w; L0 = L0, f = f, murine = murine,
-                                c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
+    p4 = plotDepletionSynergy(
+        IgGX,
+        IgGY,
+        fit_w;
+        L0 = L0,
+        f = f,
+        murine = murine,
+        c1q = (:C1q in wdf.Component),
+        neutralization = (:Neutralization in wdf.Component),
+    )
 
     return p1, p2, p3, p4
 end
