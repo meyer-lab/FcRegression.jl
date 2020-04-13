@@ -115,9 +115,13 @@ function importDepletion(dataType)
     df[!, :Target] = 1.0 .- df[!, :Target] ./ 100.0
 
     affinity = importKav(murine = true, c1q = c1q, IgG2bFucose = true, retdf = true)
+
+    # Need to transform neutralization so that it will work in regression
+    neut = -log.(df[!, :Neutralization] / 50.0)
     if :Neutralization in names(df)
-        df[!, :Neutralization] .= replace!(1 ./ df[!, :Neutralization], Inf => 0.01)
+        df[!, :Neutralization] .= replace!(neut, Inf => 0.00001)
     end
+
     df = join(df, affinity, on = :Condition => :IgG, kind = :left)
 
     # The mG053 antibody doesn't bind to the virus
