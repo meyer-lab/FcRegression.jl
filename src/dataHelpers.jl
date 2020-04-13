@@ -117,8 +117,8 @@ function importDepletion(dataType)
     affinity = importKav(murine = true, c1q = c1q, IgG2bFucose = true, retdf = true)
 
     # Need to transform neutralization so that it will work in regression
-    neut = -log.(df[!, :Neutralization] / 50.0)
     if :Neutralization in names(df)
+        neut = -log.(df[!, :Neutralization] / 50.0)
         df[!, :Neutralization] .= replace!(neut, Inf => 0.0)
     end
 
