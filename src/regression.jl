@@ -136,8 +136,7 @@ function CVResults(df, lossFunc::Function = proportion_loss; L0, f, murine::Bool
     odf[!, :Fitted] = exponential(Matrix(X), fit_w)
     odf[!, :LOOPredict] = vcat([exponential(Matrix(X[[i], :]), loo_out[i]) for i = 1:length(loo_out)]...)
 
-    wildtype = copy(importKav(; murine = murine, c1q = (:C1q in names(X)),
-                                IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true))
+    wildtype = copy(importKav(; murine = murine, c1q = (:C1q in names(X)), IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true))
     wildtype[!, :Background] .= "wt"
     wildtype[!, :Target] .= 0.0
     if !murine
