@@ -114,11 +114,17 @@ function importDepletion(dataType)
     df[!, :Condition] .= Symbol.(df[!, :Condition])
     df[!, :Target] = 1.0 .- df[!, :Target] ./ 100.0
     if :Neutralization in names(df)
-        df[!, :Neutralization] .= replace!(1 ./ df[!, :Neutralization], Inf => 0.01)
+        neut = -log.(df[!, :Neutralization] / 50.0)
+        df[!, :Neutralization] .= replace!(neut, Inf => 0.0)
     end
 
     affinity = importKav(murine = true, c1q = c1q, IgG2bFucose = true, retdf = true)
     df = join(df, affinity, on = :Condition => :IgG, kind = :left)
+
+    # The mG053 antibody doesn't bind to the virus
+    if dataType == "HIV"
+        df[df[:, :Label] .== "mG053", [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
+    end
 
     df[df[:, :Background] .== "R1KO", :FcgRI] .= 0.0
     df[df[:, :Background] .== "R2KO", :FcgRIIB] .= 0.0
