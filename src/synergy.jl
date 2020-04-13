@@ -1,7 +1,7 @@
-using FastGaussQuadrature
+using QuadGK
 
 """ Calculates the isobologram between two IgGs under the defined conditions. """
-function calculateIsobologram(IgGXidx::Int64, IgGYidx::Int64, valency, ICconc::Float64, FcExpr, Kav; quantity = nothing, actV = nothing, nPoints = 33)
+function calculateIsobologramPoint(pointt::Float64, IgGXidx::Int64, IgGYidx::Int64, valency, ICconc::Float64, FcExpr, Kav; quantity = nothing, actV = nothing)
     @assert length(FcExpr) == size(Kav, 2)
 
     if actV != nothing
@@ -11,17 +11,24 @@ function calculateIsobologram(IgGXidx::Int64, IgGYidx::Int64, valency, ICconc::F
         quantity = :Lbound
     end
 
+    @assert 0.0 <= pointt <= 1.0
+
+    IgGC = zeros(size(Kav, 1))
+    IgGC[IgGYidx] += pointt
+    IgGC[IgGXidx] += 1.0 - pointt
+
+    w = polyfc(ICconc, KxConst, valency, FcExpr, IgGC, Kav, actV)
+
+    return getproperty(w, quantity)
+end
+
+
+function calculateIsobologram(IgGXidx::Int64, IgGYidx::Int64, valency, ICconc::Float64, FcExpr, Kav; quantity = nothing, actV = nothing, nPoints = 33)
     IgGYconc = range(0.0, stop = 1.0, length = nPoints)
     output = zeros(length(IgGYconc))
 
-    for idx = 1:length(IgGYconc)
-        IgGC = zeros(size(Kav, 1))
-        IgGC[IgGYidx] += IgGYconc[idx]
-        IgGC[IgGXidx] += 1.0 - IgGYconc[idx]
-
-        w = polyfc(ICconc, KxConst, valency, FcExpr, IgGC, Kav, actV)
-
-        output[idx] = getproperty(w, quantity)
+    for ii in 1:length(IgGYconc)
+        output[ii] = calculateIsobologramPoint(IgGYconc[ii], IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav; quantity = quantity, actV = actV)
     end
 
     return output
@@ -29,12 +36,15 @@ end
 
 
 """ Calculate the synergy index from an isobologram curve. """
-function calcSynergy(curve)
-    # TODO: This isn't _quite_ right as the edge points don't go to the end
-    nodes, weights = gausslegendre(length(curve))
+function calcSynergy(IgGXidx::Int64, IgGYidx::Int64, valency, ICconc::Float64, FcExpr, Kav; quantity = nothing, actV = nothing)
 
-    synergy = dot(weights, curve) / 2.0
-    additive = (curve[1] + curve[end]) / 2.0
+    function calcFunc(xx)
+        return calculateIsobologramPoint(xx, IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav; quantity = quantity, actV = actV)
+    end
+
+    additive = (calcFunc(0.0) + calcFunc(1.0)) / 2.0
+
+    synergy, err = quadgk(calcFunc, 0.0, 1.0, rtol=1e-8)
 
     return (synergy - additive) / additive
 end
@@ -59,8 +69,7 @@ function synergyGrid(valency, ICconc, FcExpr, Kav; quantity = nothing, actV = no
 
     for i = 1:size(Kav)[1]
         for j = 1:(i - 1)
-            I = calculateIsobologram(i, j, valency, ICconc, FcExpr, Kav, quantity = quantity, actV = actV, nPoints = 17)
-            M[i, j] = calcSynergy(I)
+            M[i, j] = calcSynergy(i, j, valency, ICconc, FcExpr, Kav; quantity = quantity, actV = actV)
         end
 
         M[:, i] = M[i, :]
