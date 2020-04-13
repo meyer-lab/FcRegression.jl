@@ -139,8 +139,14 @@ function CVResults(df, lossFunc::Function = proportion_loss; L0, f, murine::Bool
     (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine, retdf = true)
     components = names(X)
     @assert length(fit_w) == length(components)
+    
+    # Need labels for plotting the HIV case
+    if :Neutralization in names(df)
+        odf = df[!, [:Condition, :Background, :Label]]
+    else
+        odf = df[!, [:Condition, :Background]]
+    end
 
-    odf = df[!, [:Condition, :Background]]
     odf[!, :Concentration] .= (:Concentration in names(df)) ? (df[!, :Concentration] .* L0) : L0
     odf[!, :Y] = Y
     odf[!, :Fitted] = exponential(Matrix(X), fit_w)

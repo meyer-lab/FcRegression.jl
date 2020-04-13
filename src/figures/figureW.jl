@@ -1,10 +1,17 @@
 function plotActualvFit(odf, dataType)
+    
+    if dataType == "HIV"
+        label = :Label
+    else
+        label = :Background
+    end
+    
     pl = plot(
         odf,
         x = :Y,
         y = :Fitted,
         Geom.point,
-        color = :Background,
+        color = label,
         shape = :Condition,
         Guide.colorkey(pos = [0.05w, -0.28h]),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
@@ -19,12 +26,19 @@ end
 
 
 function plotActualvPredict(odf, dataType)
+        
+    if dataType == "HIV"
+        label = :Label
+    else
+        label = :Background
+    end
+    
     pl = plot(
         odf,
         x = :Y,
         y = :LOOPredict,
         Geom.point,
-        color = :Background,
+        color = label,
         shape = :Condition,
         Guide.colorkey(pos = [0.05w, -0.28h]),
         Geom.abline(color = "red"),
@@ -61,7 +75,7 @@ function plotCellTypeEffects(wdf, dataType)
 end
 
 
-function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L0, f, murine::Bool, c1q = false)
+function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L0, f, murine::Bool, c1q = false, Neutralization = false)
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
     Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
@@ -76,6 +90,10 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L
     X = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI)  # size: celltype * nPoints
     if c1q
         X = vcat(X, Kav_df[!, :C1q]' * IgGC)
+    end
+    if Neutralization
+        deleteat!(weights, 6)
+        Yname = murine ? murineIgG[IgGYidx-1] : humanIgG[IgGYidx-1]
     end
     @assert size(X, 1) == length(weights)
     output = exponential(Matrix(X'), weights)
@@ -121,7 +139,7 @@ function figureW(dataType; IgGX = 2, IgGY = 3, L0 = 1e-9, f = 4, murine::Bool = 
     p1 = plotActualvFit(odf, dataType)
     p2 = plotActualvPredict(odf, dataType)
     p3 = plotCellTypeEffects(wdf, dataType)
-    p4 = plotDepletionSynergy(IgGX, IgGY, fit_w; L0 = L0, f = f, murine = murine, c1q = (:C1q in unique(wdf.Component)))
+    p4 = plotDepletionSynergy(IgGX, IgGY, fit_w; L0 = L0, f = f, murine = murine, c1q = (:C1q in unique(wdf.Component)), Neutralization = (:Neutralization in unique(wdf.Component)))
 
     return p1, p2, p3, p4
 end
