@@ -130,27 +130,26 @@ function CVResults(df, lossFunc::Function = proportion_loss; L0, f, murine::Bool
     (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine, retdf = true)
     @assert length(fit_w) == length(names(X))
 
-    odf = df[!, in([:Condition, :Background, :Genotype]).(names(df))]
+    odf = df[!, in([:Condition, :Background, :Genotype, :Label]).(names(df))]
     odf[!, :Concentration] .= (:Concentration in names(df)) ? (df[!, :Concentration] .* L0) : L0
     odf[!, :Y] = Y
     odf[!, :Fitted] = exponential(Matrix(X), fit_w)
     odf[!, :LOOPredict] = vcat([exponential(Matrix(X[[i], :]), loo_out[i]) for i = 1:length(loo_out)]...)
 
-    wildtype = copy(importKav(; murine = murine, c1q = (:C1q in names(X)), retdf = true))
+    wildtype = copy(importKav(; murine = murine, c1q = (:C1q in names(X)),
+                                IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true))
     wildtype[!, :Background] .= "wt"
     wildtype[!, :Target] .= 0.0
     if !murine
         wildtype[!, :Genotype] .= "ZZZ"
     end
-    if :Neutralization in names(X)
-        wildtype[!, :Neutralization] .= 1.0
-    end
     rename!(wildtype, :IgG => :Condition)
     wtX, _ = FcgR.regGenData(wildtype; L0 = L0, f = f, murine = murine, retdf = true)
 
-    effects = wtX .* fit_w[in(names(wtX)).(names(X))]'
+    fit_w = fit_w[in(names(wtX)).(names(X))]
+    effects = wtX .* fit_w'
     effects[!, :Condition] .= wildtype[!, :Condition]
-    btp_ws = cat([Matrix(wtX) .* a' for a in btp_out]..., dims = (3))
+    btp_ws = cat([Matrix(wtX) .* a[in(names(wtX)).(names(X))]' for a in btp_out]..., dims = (3))
     btp_std = dropdims(std(btp_ws; dims = 3), dims = 3)
 
     wdf = stack(effects, Not(:Condition))

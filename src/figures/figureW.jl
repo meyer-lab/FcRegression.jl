@@ -55,7 +55,7 @@ function plotCellTypeEffects(wdf, dataType)
         ymax = :ymax,
         Geom.errorbar,
         Stat.dodge,
-        Guide.title("Weights of IgG and Cell Type in wt for $dataType"),
+        Guide.title("Predicted weights of IgG and Cell Type in wt for $dataType"),
     )
     return pl
 end
@@ -78,9 +78,6 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector;
     if c1q
         X = vcat(X, Kav_df[!, :C1q]' * IgGC)
     end
-    if neutralization
-        X = vcat(X, ones(size(X, 2))')
-    end
 
     @assert size(X, 1) == length(weights)
     output = exponential(Matrix(X'), weights)
@@ -101,7 +98,8 @@ end
 function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool = true, IgGX = 2, IgGY = 3)
     if murine
         df = importDepletion(dataType)
-        color, shape = :Background, :Condition
+        color = (dataType=="HIV") ? :Label : :Background
+        shape = :Condition
     else
         df = importHumanized(dataType)
         color, shape = :Genotype, :Concentration
