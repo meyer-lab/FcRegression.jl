@@ -140,6 +140,7 @@ function figureW(dataType; IgGX = 2, IgGY = 3, L0 = 1e-9, f = 4, murine::Bool = 
     p2 = plotActualvPredict(odf, dataType)
     p3 = plotCellTypeEffects(wdf, dataType)
     p4 = plotDepletionSynergy(IgGX, IgGY, fit_w; L0 = L0, f = f, murine = murine, c1q = (:C1q in unique(wdf.Component)), Neutralization = (:Neutralization in unique(wdf.Component)))
+    p5 = createHeatmap(24, -12, -6, dataType)
 
-    return p1, p2, p3, p4
+    return p1, p2, p3, p4, p5
 end
