@@ -119,7 +119,7 @@ function importDepletion(dataType)
     # Need to transform neutralization so that it will work in regression
     neut = -log.(df[!, :Neutralization] / 50.0)
     if :Neutralization in names(df)
-        df[!, :Neutralization] .= replace!(neut, Inf => 0.00001)
+        df[!, :Neutralization] .= replace!(neut, Inf => 0.0)
     end
 
     df = join(df, affinity, on = :Condition => :IgG, kind = :left)
