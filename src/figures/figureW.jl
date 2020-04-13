@@ -93,7 +93,6 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L
     end
     if Neutralization
         deleteat!(weights, 6)
-        Yname = murine ? murineIgG[IgGYidx-1] : humanIgG[IgGYidx-1]
     end
     @assert size(X, 1) == length(weights)
     output = exponential(Matrix(X'), weights)
