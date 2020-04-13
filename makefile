@@ -40,7 +40,7 @@ output/%/manuscript.html: venv output/%/manuscript.md figureB1.svg figureB2.svg 
 		--output=output/$*/manuscript.html output/$*/manuscript.md
 
 coverage.cob:
-	julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; coverage = process_folder(); LCOV.writefile("coverage-lcov.info", coverage)'
+	julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Pkg.activate("."); Pkg.test("FcgR"; coverage=true); coverage = process_folder(); LCOV.writefile("coverage-lcov.info", coverage)'
 	pip3 install --user lcov_cobertura
 	python3 ~/.local/lib/python3.7/site-packages/lcov_cobertura.py coverage-lcov.info -o coverage.cob
 
