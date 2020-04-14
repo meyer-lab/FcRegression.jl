@@ -1,7 +1,17 @@
 using QuadGK
 
 """ Calculates the isobologram between two IgGs under the defined conditions. """
-function calculateIsobologramPoint(pointt::Float64, IgGXidx::Int64, IgGYidx::Int64, valency, ICconc::Float64, FcExpr, Kav; quantity = nothing, actV = nothing)
+function calculateIsobologramPoint(
+    pointt::Float64,
+    IgGXidx::Int64,
+    IgGYidx::Int64,
+    valency,
+    ICconc::Float64,
+    FcExpr,
+    Kav;
+    quantity = nothing,
+    actV = nothing,
+)
     @assert length(FcExpr) == size(Kav, 2)
 
     if actV != nothing
@@ -27,7 +37,7 @@ function calculateIsobologram(IgGXidx::Int64, IgGYidx::Int64, valency, ICconc::F
     IgGYconc = range(0.0, stop = 1.0, length = nPoints)
     output = zeros(length(IgGYconc))
 
-    for ii in 1:length(IgGYconc)
+    for ii = 1:length(IgGYconc)
         output[ii] = calculateIsobologramPoint(IgGYconc[ii], IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav; quantity = quantity, actV = actV)
     end
 
@@ -44,7 +54,7 @@ function calcSynergy(IgGXidx::Int64, IgGYidx::Int64, valency, ICconc::Float64, F
 
     additive = (calcFunc(0.0) + calcFunc(1.0)) / 2.0
 
-    synergy, err = quadgk(calcFunc, 0.0, 1.0, rtol=1e-8)
+    synergy, err = quadgk(calcFunc, 0.0, 1.0, rtol = 1e-8)
 
     return (synergy - additive) / additive
 end
