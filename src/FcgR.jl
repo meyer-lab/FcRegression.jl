@@ -25,6 +25,9 @@ function figureAll()
     figureB4()
     figureB5()
     figureB6()
+    figureB11()
+    figureB12()
+    figureB13()
 end
 
 export polyfc, polyfc_ActV
