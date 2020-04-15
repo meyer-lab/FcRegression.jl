@@ -31,9 +31,8 @@ function antigenTables(s::String)
     # Find all rows that contain data for given antigen and create a subsetted dataframe
     df = dfMSG[occursin.(s, dfMSG.Fc), :]
     
-    #need to differentiate between antigens such "gp120.BAL" and "gp120.BAL.Kif" which will both be found with occursin
-    i = 1
-    for i = 1:size(df, 1)
+    # Need to differentiate between antigens such "gp120.BAL" and "gp120.BAL.Kif" which will both be found with occursin
+    for i = size(df, 1):-1:1
         m = match(Regex(s), df.Fc[i], length(df.Fc[i])-length(s) + 1)  #match only after index where the antigen name must start
         if m === nothing
             deleterows!(df, i)  #delete all the rows that are not for this specific antigen
