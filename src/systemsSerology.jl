@@ -32,15 +32,12 @@ function antigenTables(s::String)
     
     #need to differentiate between antigens such "gp120.BAL" and "gp120.BAL.Kif" which will both be found with occursin
     i = 1
-    A = []
-    while i <= size(df, 1)
+    for i = 1:size(df, 1)
         m = match(Regex(s), df.Fc[i], length(df.Fc[i])-length(s) + 1)  #match only after index where the antigen name must start
         if m === nothing
-            push!(A, i)  #find rows that do not match exactly
+            deleterows!(df, i)  #delete all the rows that are not for this specific antigen
         end
-        i += 1
     end
-    deleterows!(df, A)  #delete all the rows that are not for this specific antigen 
 
     for i in 1:size(df, 1)
         df.Fc[i] = replace(df.Fc[i], s => "")  #remove antigen name so we only have rec name for each col
