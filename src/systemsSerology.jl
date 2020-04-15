@@ -26,6 +26,7 @@ end
 """ For a given antigen, create a dataframe with Receptor values and ADCC values for each patient """
 function antigenTables(s::String)
     dfMSG = FcgR.importLuminex()
+    rename!(dfMSG, Dict(:ColNames => "Fc"))
 
     # Find all rows that contain data for given antigen and create a subsetted dataframe
     df = dfMSG[occursin.(s, dfMSG.Fc), :]
