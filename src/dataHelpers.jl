@@ -180,3 +180,13 @@ function importAlterMSG()
 
     return newdfL
 end
+
+function importLuminex()  #nearly same as importAlterMSB but does not separate into multiple columns
+    dfL = CSV.read(joinpath(dataDir, "alter-MSB", "data-luminex.csv"))
+    df = melt(dfL, view = true)
+    rename!(df, [:ColNames, :Value, :Subject])
+
+    # Convert FC column to strings
+    df.ColNames = string.(df.ColNames)
+    return df
+end
