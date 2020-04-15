@@ -24,18 +24,31 @@ end
 
 
 """ For a given antigen, create a dataframe with Receptor values and ADCC values for each patient """
-function antigenTables(string)
-    dfMSG = FcgR.importAlterMSG()
+function antigenTables(s::String)
+    dfMSG = FcgR.importLuminex()
 
     # Find all rows that contain data for given antigen and create a subsetted dataframe
-    df = dfMSG[occursin.(string, dfMSG.Sig), :]
+    df = dfMSG[occursin.(s, dfMSG.Fc), :]
+    
+    #need to differentiate between antigens such "gp120.BAL" and "gp120.BAL.Kif" which will both be found with occursin
+    i = 1
+    A = []
+    while i <= size(df, 1)
+        m = match(Regex(s), df.Fc[i], length(df.Fc[i])-length(s) + 1)  #match only after index where the antigen name must start
+        if m === nothing
+            push!(A, i)  #find rows that do not match exactly
+        end
+        i += 1
+    end
+    deleterows!(df, A)  #delete all the rows that are not for this specific antigen 
 
-    #Treat each genetic variant as a different receptor (add the genetic variant to overall receptor name in rec column)
-    for i = 1:size(df, 1)
-        df.Rec[i] = df.Rec[i] * "_" * df.Vir[i]
+    for i in 1:size(df, 1)
+        df.Fc[i] = replace(df.Fc[i], s => "")  #remove antigen name so we only have rec name for each col
+        df.Fc[i] = strip(df.Fc[i], ['.'])  #remove trailing "."
+        df.Fc[i] = replace(df.Fc[i], "." => "_")  #Receptor types now use underscores (e.g. "FcgRIIa_R131" and "FcgRIIa_H131")
     end
 
-    rec = unstack(df, :Subject, :Rec, :Value) #stack all the receptors as columns
+    rec = unstack(df, :Subject, :Fc, :Value) #stack all the receptors as columns
 
     #gather ADCC data
     dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")

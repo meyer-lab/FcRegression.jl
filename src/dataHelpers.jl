@@ -180,3 +180,20 @@ function importAlterMSG()
 
     return newdfL
 end
+
+function importLuminex()  #nearly same as importAlterMSB but does not separate into multiple columns
+    dfL = CSV.read(joinpath(dataDir, "alter-MSB", "data-luminex.csv"))
+    df = meltdf(dfL, view = true)
+    df2 = rename!(df, [:ColNames, :Value, :Subject])
+    newdfL = DataFrame(Fc = String[], Value = Float64[], Subject = Int64[])
+
+    #Convert FC column to strings
+    A = String[]
+    for i in 1:size(df2, 1)
+        A = string(df2.ColNames[i])
+        push!(newdfL, [A, df2.Value[i], df2.Subject[i]])  #Cols: rec.antigen title, the value, the subject id
+    end
+    
+    
+    return newdfL
+end
