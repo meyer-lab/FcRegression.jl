@@ -39,11 +39,9 @@ function antigenTables(s::String)
         end
     end
 
-    for i in 1:size(df, 1)
-        df.Fc[i] = replace(df.Fc[i], s => "")  #remove antigen name so we only have rec name for each col
-        df.Fc[i] = strip(df.Fc[i], ['.'])  #remove trailing "."
-        df.Fc[i] = replace(df.Fc[i], "." => "_")  #Receptor types now use underscores (e.g. "FcgRIIa_R131" and "FcgRIIa_H131")
-    end
+    df.Fc = replace.(df.Fc, s => "")  #remove antigen name so we only have rec name for each col
+    df.Fc = strip.(df.Fc, ['.'])  #remove trailing "."
+    df.Fc = replace.(df.Fc, "." => "_")  #Receptor types now use underscores (e.g. "FcgRIIa_R131" and "FcgRIIa_H131")
 
     rec = unstack(df, :Subject, :Fc, :Value) #stack all the receptors as columns
 
