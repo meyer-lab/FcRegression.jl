@@ -91,6 +91,38 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L
     return pl
 end
 
+function plotSynergy(weights::Vector; L0, f, murine::Bool, c1q = false, neutralization = false)
+    Kav_df = importKav(; murine = murine, IgG2bFucose = true, c1q = c1q, retdf = true)
+    Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
+    FcExpr = importRtot(; murine = murine)[:, 2]
+    S = zeros(10)
+
+    A = synergyGrid(f, L0, FcExpr, Kav)
+    h = collect(Iterators.flatten(A))
+    display(h)
+    S[1:5] = h[2:6]
+    S[5:8] = h[8:11]
+    S[8:9] = h[14:15]
+    S[10] = h[16]
+    display(S)
+
+    S = convert(DataFrame, S')
+    display(S)
+    rename!(S, Symbol.(receptorNamesB1()))
+    display(S)
+    S = stack(S)
+    display(S)
+    
+    pl = plot(
+        S,
+        y = :value,
+        color = :variable,
+        Geom.bar(position = :dodge),
+        Guide.title("Synergy"),
+    )
+    return pl
+end
+
 function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3)
     if murine
         df = importDepletion(dataType)
@@ -115,6 +147,14 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3)
         c1q = (:C1q in wdf.Component),
         neutralization = (:Neutralization in wdf.Component),
     )
+    p5 = plotSynergy(
+        fit_w;
+        L0 = L0,
+        f = f, 
+        murine = murine, 
+        c1q = (:C1q in wdf.Component), 
+        neutralization = (:Neutralization in wdf.Component),
+    )
 
-    return p1, p2, p3, p4
+    return p1, p2, p3, p4, p5
 end
