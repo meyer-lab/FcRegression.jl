@@ -92,26 +92,45 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L
 end
 
 function plotSynergy(weights::Vector; L0, f, murine::Bool, c1q = false, neutralization = false)
-    Kav_df = importKav(; murine = murine, IgG2bFucose = true, c1q = c1q, retdf = true)
+    Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
-    FcExpr = importRtot(; murine = murine)[:, 2]
-    S = zeros(10)
+    FcExpr = importRtot(; murine = murine)
+    ActI = murine ? murineActI : humanActI
 
-    A = synergyGrid(f, L0, FcExpr, Kav)
-    h = collect(Iterators.flatten(A))
-    display(h)
+    nPoints = 100
+    IgGC = zeros(Float64, size(Kav, 1), nPoints)
+    
+    M = zeros(size(Kav)[1], size(Kav)[1])
+
+    for i = 1:size(Kav)[1]
+        for j = 1:(i - 1)
+            IgGC = zeros(Float64, size(Kav, 1), nPoints)
+            IgGC[i, :] = range(0.0, 1.0; length = nPoints)
+            IgGC[j, :] = range(1.0, 0.0; length = nPoints)
+            X = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI)  # size: celltype * nPoints
+            if c1q
+                X = vcat(X, Kav_df[!, :C1q]' * IgGC)
+            end
+            @assert size(X, 1) == length(weights)
+            output = exponential(Matrix(X'), weights)
+            additive = range(output[1], output[end], length = nPoints)
+            synergy = sum((output - additive)/nPoints)
+            M[i, j] = synergy
+        end
+
+        M[:, i] = M[i, :]
+    end
+
+    S = zeros(10)
+    h = collect(Iterators.flatten(M))
     S[1:5] = h[2:6]
     S[5:8] = h[8:11]
     S[8:9] = h[14:15]
     S[10] = h[16]
-    display(S)
 
     S = convert(DataFrame, S')
-    display(S)
     rename!(S, Symbol.(receptorNamesB1()))
-    display(S)
     S = stack(S)
-    display(S)
     
     pl = plot(
         S,
