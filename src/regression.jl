@@ -149,13 +149,14 @@ function CVResults(df, lossFunc::Function = proportion_loss; L0, f, murine::Bool
     effects = wtX .* fit_w'
     effects[!, :Condition] .= wildtype[!, :Condition]
     btp_ws = cat([Matrix(wtX) .* a[in(names(wtX)).(names(X))]' for a in btp_out]..., dims = (3))
-    btp_qtl = mapslices(x -> quantile(x, [0.25, 0.5, 0.75]), btp_ws, dims = [3])
+    btp_qtl = mapslices(x -> quantile(x, [0.1, 0.5, 0.9]), btp_ws, dims = [3])
 
     wdf = stack(effects, Not(:Condition))
     rename!(wdf, :variable => :Component)
     rename!(wdf, :value => :Weight)
-    wdf[!, :FirstQ] .= vec(btp_qtl[:, :, 1])
-    wdf[!, :ThirdQ] .= vec(btp_qtl[:, :, 3])
+    wdf[!, :Q10] .= vec(btp_qtl[:, :, 1])
+    wdf[!, :Median] .= vec(btp_qtl[:, :, 2])
+    wdf[!, :Q90] .= vec(btp_qtl[:, :, 3])
 
     return fit_w, odf, wdf
 end
