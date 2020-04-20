@@ -146,7 +146,7 @@ function PlotSynvFcrExpr()
     """ Figure shows how Fc receptor expression affects synergy """
     Kav = importKav(murine = true, IgG2bFucose = true)
     FcgR = importRtot(murine = true)[:, 2] #2 = mean cMO
-    IC = 1e-9
+    IC = 10e-9
     multiplier = exp10.(range(-2, stop = 0, length = 50))
     S = zeros((50, 10))
 

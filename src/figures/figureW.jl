@@ -91,6 +91,57 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L
     return pl
 end
 
+function plotSynergy(weights::Vector; L0, f, murine::Bool, c1q = false, neutralization = false)
+    Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
+    Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
+    FcExpr = importRtot(; murine = murine)
+    ActI = murine ? murineActI : humanActI
+
+    nPoints = 100
+    IgGC = zeros(Float64, size(Kav, 1), nPoints)
+    
+    M = zeros(size(Kav)[1], size(Kav)[1])
+
+    for i = 1:size(Kav)[1]
+        for j = 1:(i - 1)
+            IgGC = zeros(Float64, size(Kav, 1), nPoints)
+            IgGC[i, :] = range(0.0, 1.0; length = nPoints)
+            IgGC[j, :] = range(1.0, 0.0; length = nPoints)
+            X = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI)  # size: celltype * nPoints
+            if c1q
+                X = vcat(X, Kav_df[!, :C1q]' * IgGC)
+            end
+            @assert size(X, 1) == length(weights)
+            output = exponential(Matrix(X'), weights)
+            additive = range(output[1], output[end], length = nPoints)
+            synergy = sum((output - additive)/nPoints)
+            M[i, j] = synergy
+        end
+
+        M[:, i] = M[i, :]
+    end
+
+    S = zeros(10)
+    h = collect(Iterators.flatten(M))
+    S[1:5] = h[2:6]
+    S[5:8] = h[8:11]
+    S[8:9] = h[14:15]
+    S[10] = h[16]
+
+    S = convert(DataFrame, S')
+    rename!(S, Symbol.(receptorNamesB1()))
+    S = stack(S)
+    
+    pl = plot(
+        S,
+        y = :value,
+        color = :variable,
+        Geom.bar(position = :dodge),
+        Guide.title("Synergy"),
+    )
+    return pl
+end
+
 function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3)
     if murine
         df = importDepletion(dataType)
@@ -115,6 +166,14 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3)
         c1q = (:C1q in wdf.Component),
         neutralization = (:Neutralization in wdf.Component),
     )
+    p5 = plotSynergy(
+        fit_w;
+        L0 = L0,
+        f = f, 
+        murine = murine, 
+        c1q = (:C1q in wdf.Component), 
+        neutralization = (:Neutralization in wdf.Component),
+    )
 
-    return p1, p2, p3, p4
+    return p1, p2, p3, p4, p5
 end
