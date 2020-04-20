@@ -60,6 +60,7 @@ function antigenTables(s::String)
     return allAntigen
 end
 
+<<<<<<< HEAD
 """ Assemble the Cube """
 function createCube()
     dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
@@ -114,7 +115,6 @@ Returns:
 function cp_decomp(tens, r)
     return candecomp(tens, r, (randn(size(tens)[1], r), randn(size(tens)[2], r), randn(size(tens)[3], r)), compute_error=true)
 end
-
 
 """Perform Tucker Decomposition on a 3D data tensor
 --------------------------------------------------------
