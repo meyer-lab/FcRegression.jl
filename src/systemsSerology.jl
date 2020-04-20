@@ -60,7 +60,6 @@ function antigenTables(s::String)
     return allAntigen
 end
 
-<<<<<<< HEAD
 """ Assemble the Cube """
 function createCube()
     dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
@@ -122,6 +121,11 @@ Inputs:
     tens: 3D data tensor
     r: rank of decomposition (tuple)
 Returns:
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> Update Parafac Doc
 """
 function tucker_decomp(tens, r)
     return nothing  ### To Do: Get Function Working
