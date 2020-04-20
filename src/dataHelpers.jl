@@ -113,15 +113,12 @@ function importDepletion(dataType)
     df = CSV.read(joinpath(dataDir, filename), delim = ",", comment = "#")
     df[!, :Condition] .= Symbol.(df[!, :Condition])
     df[!, :Target] = 1.0 .- df[!, :Target] ./ 100.0
-
-    affinity = importKav(murine = true, c1q = c1q, IgG2bFucose = true, retdf = true)
-
-    # Need to transform neutralization so that it will work in regression
     if :Neutralization in names(df)
         neut = -log.(df[!, :Neutralization] / 50.0)
         df[!, :Neutralization] .= replace!(neut, Inf => 0.0)
     end
 
+    affinity = importKav(murine = true, c1q = c1q, IgG2bFucose = true, retdf = true)
     df = join(df, affinity, on = :Condition => :IgG, kind = :left)
 
     # The mG053 antibody doesn't bind to the virus
@@ -182,4 +179,14 @@ function importAlterMSG()
     end
 
     return newdfL
+end
+
+function importLuminex()  #nearly same as importAlterMSB but does not separate into multiple columns
+    dfL = CSV.read(joinpath(dataDir, "alter-MSB", "data-luminex.csv"))
+    df = melt(dfL, view = true)
+    rename!(df, [:ColNames, :Value, :Subject])
+
+    # Convert FC column to strings
+    df.ColNames = string.(df.ColNames)
+    return df
 end

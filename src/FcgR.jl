@@ -18,6 +18,18 @@ include("figures/figure1.jl")
 include("figures/figureB1.jl")
 include("figures/figureB2.jl")
 
+function figureAll()
+    figureB1()
+    figureB2()
+    figureB3()
+    figureB4()
+    figureB5()
+    figureB6()
+    figureB11()
+    figureB12()
+    figureB13()
+end
+
 export polyfc, polyfc_ActV
 
 end # module

@@ -1,5 +1,5 @@
 import MLBase.LOOCV
-import Statistics: mean, std
+import Statistics: mean, quantile
 import Distributions: cdf, Exponential
 import StatsBase: sample, mode
 using NonNegLeastSquares
@@ -137,33 +137,34 @@ function CVResults(df, lossFunc::Function = proportion_loss; L0, f, murine::Bool
     btp_out = bootstrap(df, lossFunc; L0 = L0, f = f, murine = murine)
 
     (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine, retdf = true)
-    components = names(X)
-    @assert length(fit_w) == length(components)
-    
-    # Need labels for plotting the HIV case
-    if :Neutralization in names(df)
-        odf = df[!, [:Condition, :Background, :Label]]
-    else
-        odf = df[!, [:Condition, :Background]]
-    end
+    @assert length(fit_w) == length(names(X))
 
+    odf = df[!, in([:Condition, :Background, :Genotype, :Label]).(names(df))]
     odf[!, :Concentration] .= (:Concentration in names(df)) ? (df[!, :Concentration] .* L0) : L0
     odf[!, :Y] = Y
     odf[!, :Fitted] = exponential(Matrix(X), fit_w)
     odf[!, :LOOPredict] = vcat([exponential(Matrix(X[[i], :]), loo_out[i]) for i = 1:length(loo_out)]...)
 
-    selected = (odf[!, :Background] .== "wt") .& (odf[!, :Concentration] .== mode(odf[!, :Concentration]))
-    X = Matrix(X[selected, :])
+    wildtype = copy(importKav(; murine = murine, c1q = (:C1q in names(X)), IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true))
+    wildtype[!, :Background] .= "wt"
+    wildtype[!, :Target] .= 0.0
+    if !murine
+        wildtype[!, :Genotype] .= "ZZZ"
+    end
+    rename!(wildtype, :IgG => :Condition)
+    wtX, _ = regGenData(wildtype; L0 = L0, f = f, murine = murine, retdf = true)
 
-    effects = X .* fit_w'
-    btp_ws = cat([X .* a' for a in btp_out]..., dims = (3))
-    btp_std = dropdims(std(btp_ws; dims = 3), dims = 3)
-    @assert size(effects) == size(btp_std)
+    fit_w = fit_w[in(names(wtX)).(names(X))]
+    effects = wtX .* fit_w'
+    effects[!, :Condition] .= wildtype[!, :Condition]
+    btp_ws = cat([Matrix(wtX) .* a[in(names(wtX)).(names(X))]' for a in btp_out]..., dims = (3))
+    btp_qtl = mapslices(x -> quantile(x, [0.25, 0.5, 0.75]), btp_ws, dims = [3])
 
-    wdf = DataFrame(Weight = vec(effects), BtpStdev = vec(btp_std))
-    wdf[!, :Condition] = vec(repeat(odf[selected, :Condition], 1, length(fit_w)))
-    wdf[!, :Component] = vec(repeat(reshape(components, 1, :), size(effects, 1), 1))
-    @assert size(wdf, 1) == size(X, 1) * length(fit_w)
+    wdf = stack(effects, Not(:Condition))
+    rename!(wdf, :variable => :Component)
+    rename!(wdf, :value => :Weight)
+    wdf[!, :FirstQ] .= vec(btp_qtl[:, :, 1])
+    wdf[!, :ThirdQ] .= vec(btp_qtl[:, :, 3])
 
     return fit_w, odf, wdf
 end

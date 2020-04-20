@@ -14,14 +14,6 @@
         @test all(output .≈ 0.0)
     end
 
-    @testset "test calcSynergy" begin
-        # A flat curve should have zero synergy
-        @test abs(FcgR.calcSynergy(ones(7))) < 1e-14
-
-        # Line should have zero synergy
-        @test abs(FcgR.calcSynergy(range(0.0, stop = 1.0, length = 7))) < 1e-14
-    end
-
     @testset "test synergyGrid" begin
         Kav = ones(6, 5) * 1e9
         FcExpr = ones(5) * 1e3
