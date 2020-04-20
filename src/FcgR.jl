@@ -5,6 +5,7 @@ import Distances
 using Gadfly
 using Compose
 using polyBindingModel
+using TensorDecompositions
 
 include("fcBindingModel.jl")
 include("dataHelpers.jl")
