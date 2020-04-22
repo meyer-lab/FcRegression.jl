@@ -182,7 +182,12 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3)
         c1q = (:C1q in wdf.Component),
         neutralization = (:Neutralization in wdf.Component),
     )
-    p5 = createHeatmap(24, -12, -6, data=dataType)
+    if murine
+        p5 = createHeatmap(24, -12, -6, data=dataType)
+    else
+        p5 = nothing
+    end
+
     p6 = plotSynergy(fit_w; L0 = L0, f = f, murine = murine, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
 
     return p1, p2, p3, p4, p5, p6
