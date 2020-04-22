@@ -99,7 +99,7 @@ function plotSynergy(weights::Vector; L0, f, murine::Bool, c1q = false, neutrali
 
     nPoints = 100
     IgGC = zeros(Float64, size(Kav, 1), nPoints)
-    
+
     M = zeros(size(Kav)[1], size(Kav)[1])
 
     for i = 1:size(Kav)[1]
@@ -114,7 +114,7 @@ function plotSynergy(weights::Vector; L0, f, murine::Bool, c1q = false, neutrali
             @assert size(X, 1) == length(weights)
             output = exponential(Matrix(X'), weights)
             additive = range(output[1], output[end], length = nPoints)
-            synergy = sum((output - additive)/nPoints)
+            synergy = sum((output - additive) / nPoints)
             M[i, j] = synergy
         end
 
@@ -131,14 +131,8 @@ function plotSynergy(weights::Vector; L0, f, murine::Bool, c1q = false, neutrali
     S = convert(DataFrame, S')
     rename!(S, Symbol.(receptorNamesB1()))
     S = stack(S)
-    
-    pl = plot(
-        S,
-        y = :value,
-        color = :variable,
-        Geom.bar(position = :dodge),
-        Guide.title("Synergy"),
-    )
+
+    pl = plot(S, y = :value, color = :variable, Geom.bar(position = :dodge), Guide.title("Synergy"))
     return pl
 end
 
@@ -166,14 +160,7 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3)
         c1q = (:C1q in wdf.Component),
         neutralization = (:Neutralization in wdf.Component),
     )
-    p5 = plotSynergy(
-        fit_w;
-        L0 = L0,
-        f = f, 
-        murine = murine, 
-        c1q = (:C1q in wdf.Component), 
-        neutralization = (:Neutralization in wdf.Component),
-    )
+    p5 = plotSynergy(fit_w; L0 = L0, f = f, murine = murine, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
 
     return p1, p2, p3, p4, p5
 end
