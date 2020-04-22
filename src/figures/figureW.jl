@@ -97,6 +97,7 @@ function createHeatmap(vmax, clmin, clmax; murine = true, data="ITP")
         df = importDepletion(data)
     else
         df = importHumanized(data)
+    end
     concs = exp10.(range(clmin, stop=clmax, length=clmax-clmin+1))
     valencies = [2:vmax;]
     minimums = zeros(length(concs), length(valencies))
