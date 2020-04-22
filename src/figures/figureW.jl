@@ -92,8 +92,11 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L
 end
 
 
-function createHeatmap(vmax, clmin, clmax; data="ITP")
-    df = importDepletion(data)
+function createHeatmap(vmax, clmin, clmax; murine = true, data="ITP")
+    if murine
+        df = importDepletion(data)
+    else
+        df = importHumanized(data)
     concs = exp10.(range(clmin, stop=clmax, length=clmax-clmin+1))
     valencies = [2:vmax;]
     minimums = zeros(length(concs), length(valencies))
@@ -182,12 +185,7 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3)
         c1q = (:C1q in wdf.Component),
         neutralization = (:Neutralization in wdf.Component),
     )
-    if murine
-        p5 = createHeatmap(24, -12, -6, data=dataType)
-    else
-        p5 = nothing
-    end
-
+    p5 = createHeatmap(24, -12, -6, murine=murine, data=dataType)
     p6 = plotSynergy(fit_w; L0 = L0, f = f, murine = murine, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
 
     return p1, p2, p3, p4, p5, p6
