@@ -93,11 +93,12 @@ end
 
 
 function createHeatmap(vmax, clmin, clmax; murine = true, data="ITP")
-    if murine
+    if murine    
         df = importDepletion(data)
     else
-        df = importHumanized(data)
+        return nothing
     end
+
     concs = exp10.(range(clmin, stop=clmax, length=clmax-clmin+1))
     valencies = [2:vmax;]
     minimums = zeros(length(concs), length(valencies))
@@ -107,13 +108,14 @@ function createHeatmap(vmax, clmin, clmax; murine = true, data="ITP")
             minimums[i, j] = fit.r
         end
     end
-    p1 = spy(minimums,
+    pl = spy(minimums,
         Guide.xlabel("Valencies"),
         Guide.ylabel("L0 Concentrations"),
         Guide.title("$data"),
         Scale.x_discrete(labels = i -> valencies[i]),
         Scale.y_discrete(labels = i -> concs[i])
         )
+    return pl
 end
 
 function plotSynergy(weights::Vector; L0, f, murine::Bool, c1q = false, neutralization = false)
