@@ -50,6 +50,7 @@ function antigenTables(s::String)
     dfF = CSV.read(joinpath(dataDir, "alter-MSB", "data-function.csv"))
     newdfF = dfF[dfF[!, :ADCC] .!= "NA", :] #ignore subjects who have no ADCC data
     ADCConly = newdfF[:, [:Column1, :ADCC]] #only want ADCC data
+    ADCConly.ADCC = tryparse.(Float64, ADCConly.ADCC) #ADCC data should be Floats not strings
     ADCC = rename!(ADCConly, [:Subject, :ADCC]) #Subjects were called "Column1" before
 
     #join ADCC data with antigen receptor data
@@ -57,3 +58,4 @@ function antigenTables(s::String)
 
     return allAntigen
 end
+
