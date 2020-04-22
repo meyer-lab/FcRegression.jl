@@ -59,3 +59,49 @@ function antigenTables(s::String)
     return allAntigen
 end
 
+""" Assemble the Cube """
+function createCube()
+    dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
+    dfMA = CSV.read(joinpath(dataDir, "alter-MSB", "meta-antigens.csv"))
+    dfMS = CSV.read(joinpath(dataDir, "alter-MSB", "meta-subjects.csv"))
+    dfMD = CSV.read(joinpath(dataDir, "alter-MSB", "meta-detections.csv"))
+    dfMD.detection = replace.(dfMD.detection, "." => "_")
+    dfMD.Number = 1:22 #Add a column of index numbers that correspond to each receptor/detection
+
+    Cube = Array{Union{Nothing, Float64}}(nothing, 182, 23, 41) #create a the Cube, filled with nothing
+
+    #Subject IDs in column 1 down the cube
+    #Detection number across top of cube - like column names for each slice
+    for i = 2:182
+        for j = 2:23
+            for k = 1:41
+                Cube[i, 1, k] = dfMS.Column1[i-1]
+                Cube[1, j, k] = dfMD.Number[j-1]
+            end
+        end
+    end
+
+    #Massive for loop that will find correct index for each data point in antigen tables and put into correct index in the Cube
+    
+    for p = 1:size(dfMA, 1)
+        A = FcgR.antigenTables(dfMA.antigen[p])    #focus on one antigen at a time (one slice of cube)
+        B = describe(A)                            #want column names in a listed table for later
+        for j = 1:size(dfMD, 1)                    #run through all possible detections/receptors
+            for i in 1:size(B, 1)                  
+                if (Symbol(dfMD.detection[j]) == B.variable[i])    #see if current receptor binds to current antigen (exists in table)
+                    df2 = select(A, Symbol(dfMD.detection[j]), :Subject)  #create a subsetted dataframe for this receptor antigen combo
+                    rename!(df2, [:detection, :Subject])           #need uniform names 
+                    for l = 1:size(df2, 1)           #will now match subjects in cube to subjects in dataframe
+                        for n = 1:size(Cube, 1)
+                            if (df2.Subject[l] == Cube[n, 1, p]) #find index where subject, receptor, and antigen data line up
+                                    Cube[n, j+1, p] = df2.detection[l]  #input data point
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return Cube
+end
