@@ -72,15 +72,17 @@ function createCube()
 
     #Subject IDs in column 1 down the cube
     #Detection number across top of cube - like column names for each slice
+    Subjects = dfMS.Column1
+    DNums = dfMD.Number
     for i = 2:182
         for j = 2:23
             for k = 1:41
-                Cube[i, 1, k] = dfMS.Column1[i-1]
-                Cube[1, j, k] = dfMD.Number[j-1]
+                Cube[i, 1, k] = Subjects[i-1]
+                Cube[1, j, k] = DNums[j-1]
             end
         end
     end
-
+    
     #Massive for loop that will find correct index for each data point in antigen tables and put into correct index in the Cube
     
     for p = 1:size(dfMA, 1)
