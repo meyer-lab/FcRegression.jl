@@ -91,6 +91,33 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L
     return pl
 end
 
+
+function createHeatmap(vmax, clmin, clmax; murine = true, data="ITP")
+    if murine    
+        df = importDepletion(data)
+    else
+        return nothing
+    end
+
+    concs = exp10.(range(clmin, stop=clmax, length=clmax-clmin+1))
+    valencies = [2:vmax;]
+    minimums = zeros(length(concs), length(valencies))
+    for (i, L0) in enumerate(concs)
+        for (j, v) in enumerate(valencies)
+            fit = fitRegression(df, FcgR.quadratic_loss, L0 = L0, f = v, murine=true)
+            minimums[i, j] = fit.r
+        end
+    end
+    pl = spy(minimums,
+        Guide.xlabel("Valencies"),
+        Guide.ylabel("L0 Concentrations"),
+        Guide.title("$data"),
+        Scale.x_discrete(labels = i -> valencies[i]),
+        Scale.y_discrete(labels = i -> concs[i])
+        )
+    return pl
+end
+
 function plotSynergy(weights::Vector; L0, f, murine::Bool, c1q = false, neutralization = false)
     Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
@@ -145,6 +172,7 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3)
         df = importHumanized(dataType)
         color, shape = :Genotype, :Concentration
     end
+  
     fit_w, odf, wdf = CVResults(df; L0 = L0, f = f, murine = murine)
     @assert all(in(names(odf)).([color, shape]))
     p1 = plotActualvFit(odf, dataType, color, shape)
@@ -160,7 +188,8 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3)
         c1q = (:C1q in wdf.Component),
         neutralization = (:Neutralization in wdf.Component),
     )
-    p5 = plotSynergy(fit_w; L0 = L0, f = f, murine = murine, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
+    p5 = createHeatmap(24, -12, -6, murine=murine, data=dataType)
+    p6 = plotSynergy(fit_w; L0 = L0, f = f, murine = murine, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
 
-    return p1, p2, p3, p4, p5
+    return p1, p2, p3, p4, p5, p6
 end

@@ -65,6 +65,11 @@ function loss_wL0f(df, ps::Vector{T}, lossFunc::Function; murine::Bool)::T where
     return lossFunc(Y0, Y)
 end
 
+mutable struct fitResult{T}
+    x::Array{T}     # the param for best fit
+    r::T            # best fit residue
+end
+
 function fitRegression(df, lossFunc::Function = proportion_loss; L0, f, murine::Bool, wL0f = false)
     ## this method only supports expoential distribution due to param choice
 
@@ -87,7 +92,11 @@ function fitRegression(df, lossFunc::Function = proportion_loss; L0, f, murine::
         p_upper = vcat(-7, 6, p_upper)
     end
 
-    return p_init
+    res = fitResult{promote_type(typeof(L0), typeof(f))}(
+        p_init,
+        norm(X * p_init - inv_exponential.(Y), 2) / length(Y)
+    )
+    return res
 end
 
 function LOOCrossVal(df, lossFunc::Function; L0, f, murine, wL0f = false)
@@ -95,7 +104,7 @@ function LOOCrossVal(df, lossFunc::Function; L0, f, murine, wL0f = false)
     fitResults = Vector(undef, n)
     LOOindex = LOOCV(n)
     for (i, idx) in enumerate(LOOindex)
-        fitResults[i] = fitRegression(df[idx, :], lossFunc; L0 = L0, f = f, murine = murine, wL0f = wL0f)
+        fitResults[i] = fitRegression(df[idx, :], lossFunc; L0 = L0, f = f, murine = murine, wL0f = wL0f).x
     end
     return fitResults
 end
@@ -106,7 +115,7 @@ function bootstrap(df, lossFunc::Function; nsample = 100, L0, f, murine, wL0f = 
     for i = 1:nsample
         for j = 1:5
             fit = try
-                fitRegression(df[sample(1:n, n, replace = true), :], lossFunc; L0 = L0, f = f, murine = murine, wL0f = wL0f)
+                fitRegression(df[sample(1:n, n, replace = true), :], lossFunc; L0 = L0, f = f, murine = murine, wL0f = wL0f).x
             catch e
                 @warn "This bootstrapping set failed at fitRegression"
                 nothing
@@ -123,7 +132,7 @@ end
 
 
 function CVResults(df, lossFunc::Function = proportion_loss; L0, f, murine::Bool)
-    fit_w = fitRegression(df, lossFunc; L0 = L0, f = f, murine = murine)
+    fit_w = fitRegression(df, lossFunc; L0 = L0, f = f, murine = murine).x
     loo_out = LOOCrossVal(df, lossFunc; L0 = L0, f = f, murine = murine)
     btp_out = bootstrap(df, lossFunc; L0 = L0, f = f, murine = murine)
 
