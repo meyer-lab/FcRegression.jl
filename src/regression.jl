@@ -92,10 +92,7 @@ function fitRegression(df, lossFunc::Function = proportion_loss; L0, f, murine::
         p_upper = vcat(-7, 6, p_upper)
     end
 
-    res = fitResult{promote_type(typeof(L0), typeof(f))}(
-        p_init,
-        norm(X * p_init - inv_exponential.(Y), 2) / length(Y)
-    )
+    res = fitResult{promote_type(typeof(L0), typeof(f))}(p_init, norm(X * p_init - inv_exponential.(Y), 2) / length(Y))
     return res
 end
 
