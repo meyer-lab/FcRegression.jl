@@ -49,70 +49,54 @@ function regGenData(df; L0, f, murine::Bool, retdf = false)
 end
 
 
-function quadratic_loss(Y0::Vector, Y::Vector)
-    return Distances.sqeuclidean(Y0, Y)
-end
 
-function proportion_loss(p::Vector, Y::Vector)
-    res = sum((Y .- p) .^ 2 ./ (p .* (1 .- p) .+ 0.25))
-    @assert all(isfinite.(res))
-    return res
-end
-
-function loss_wL0f(df, ps::Vector{T}, lossFunc::Function; murine::Bool)::T where {T <: Real}
-    (X, Y) = regGenData(df; L0 = 10.0^ps[1], f = ps[2], murine = murine)
-    Y0 = exponential(X, ps[3:end])
-    return lossFunc(Y0, Y)
-end
 
 mutable struct fitResult{T}
     x::Array{T}     # the param for best fit
+    intercept::T
     r::T            # best fit residue
 end
 
-function fitRegression(df, lossFunc::Function = proportion_loss; L0, f, murine::Bool, wL0f = false)
-    ## this method only supports expoential distribution due to param choice
-
+function fitRegression(df, intercept = false, preset_W::Union{Vector,Nothing} = nothing;  L0, f, murine::Bool)
     (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine)
-    Np = size(X, 2)
-    if wL0f
-        fitMethod = (ps) -> loss_wL0f(df, ps, lossFunc)
-    else
-        fitMethod = (ps) -> lossFunc(exponential(X, ps), Y)
+
+    if preset_W != nothing
+        @assert size(X, 2) == length(preset_W)
+        X = X * preset_W
     end
-    g! = (G, ps) -> ForwardDiff.gradient!(G, fitMethod, ps)
-
-    p_init = vec(nonneg_lsq(X, inv_exponential.(Y)))
-    p_lower = zeros(Float64, Np)
-    p_upper = maximum(p_init) .* ones(Float64, Np)
-
-    if wL0f
-        p_init = vcat(-9, 4, p_init)
-        p_lower = vcat(-16, 1, p_lower)
-        p_upper = vcat(-7, 6, p_upper)
+    if intercept
+        X = hcat(ones(size(X, 1), 1), X)
     end
 
-    res = fitResult{promote_type(typeof(L0), typeof(f))}(p_init, norm(X * p_init - inv_exponential.(Y), 2) / length(Y))
+    cY = inv_exponential.(Y)
+    W = vec(nonneg_lsq(X, inv_exponential.(Y)))
+    res = fitResult{promote_type(typeof(L0), typeof(f))}([NaN], 0, NaN)
+    if intercept
+        res.intercept = W[1]
+        W = W[2:end]
+    end
+    res.x = preset_W != nothing ? W[1] .* preset_W : W
+    res.r = norm(X * res.x .+ res.intercept - cY, 2) / length(Y)
     return res
 end
 
-function LOOCrossVal(df, lossFunc::Function; L0, f, murine, wL0f = false)
+function LOOCrossVal(df, intercept, preset_W; L0, f, murine)
     n = size(df, 1)
     fitResults = Vector(undef, n)
     LOOindex = LOOCV(n)
     for (i, idx) in enumerate(LOOindex)
-        fitResults[i] = fitRegression(df[idx, :], lossFunc; L0 = L0, f = f, murine = murine, wL0f = wL0f).x
+        fitResults[i] = fitRegression(df[idx, :], intercept, preset_W; L0 = L0, f = f, murine = murine).x
     end
     return fitResults
 end
 
-function bootstrap(df, lossFunc::Function; nsample = 100, L0, f, murine, wL0f = false)
+function bootstrap(df, intercept, preset_W; nsample = 100, L0, f, murine)
     n = size(df, 1)
     fitResults = Vector(undef, nsample)
     for i = 1:nsample
         for j = 1:5
             fit = try
-                fitRegression(df[sample(1:n, n, replace = true), :], lossFunc; L0 = L0, f = f, murine = murine, wL0f = wL0f).x
+                fitRegression(df[sample(1:n, n, replace = true), :], intercept, preset_W; L0 = L0, f = f, murine = murine).x
             catch e
                 @warn "This bootstrapping set failed at fitRegression"
                 nothing
@@ -128,10 +112,10 @@ function bootstrap(df, lossFunc::Function; nsample = 100, L0, f, murine, wL0f = 
 end
 
 
-function CVResults(df, lossFunc::Function = proportion_loss; L0, f, murine::Bool)
-    fit_w = fitRegression(df, lossFunc; L0 = L0, f = f, murine = murine).x
-    loo_out = LOOCrossVal(df, lossFunc; L0 = L0, f = f, murine = murine)
-    btp_out = bootstrap(df, lossFunc; L0 = L0, f = f, murine = murine)
+function CVResults(df, intercept = false, preset_W = nothing; L0, f, murine::Bool)
+    fit_w = fitRegression(df, intercept, preset_W; L0 = L0, f = f, murine = murine).x
+    loo_out = LOOCrossVal(df, intercept, preset_W; L0 = L0, f = f, murine = murine)
+    btp_out = bootstrap(df, intercept, preset_W; L0 = L0, f = f, murine = murine)
 
     (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine, retdf = true)
     @assert length(fit_w) == length(names(X))

@@ -104,7 +104,7 @@ function createHeatmap(vmax, clmin, clmax; murine = true, data = "ITP")
     minimums = zeros(length(concs), length(valencies))
     for (i, L0) in enumerate(concs)
         for (j, v) in enumerate(valencies)
-            fit = fitRegression(df, FcgR.quadratic_loss, L0 = L0, f = v, murine = true)
+            fit = fitRegression(df; L0 = L0, f = v, murine = true)
             minimums[i, j] = fit.r
         end
     end
