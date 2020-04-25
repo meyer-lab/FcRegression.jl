@@ -14,8 +14,8 @@
         dataA = FcgR.importDepletion(data)
         dataB = dataA[shuffle(1:size(dataA, 1)), :]
 
-        diffFit = FcgR.fitRegression(dataA, L0 = 1.0e-9, f = 4, murine = true)
-        diffFit -= FcgR.fitRegression(dataB, L0 = 1.0e-9, f = 4, murine = true)
+        diffFit = FcgR.fitRegression(dataA, L0 = 1.0e-9, f = 4, murine = true).x
+        diffFit -= FcgR.fitRegression(dataB, L0 = 1.0e-9, f = 4, murine = true).x
 
         @test norm(diffFit) < 0.001
     end
