@@ -4,7 +4,13 @@ import Distributions: cdf, Exponential
 import StatsBase: sample, mode
 using NonNegLeastSquares
 
+mutable struct fitResult{T}
+    x::Array{T}     # the param for best fit
+    intercept::T
+    r::T            # best fit residue
+end
 exponential(X::Matrix, p::Vector) = cdf.(Exponential(), X * p)
+exponential(X::Matrix, p::fitResult) = cdf.(Exponential(), X * p.x .+ p.intercept)
 inv_exponential(y::Real) = -log(1 - y)
 
 function regGenData(df; L0, f, murine::Bool, retdf = false)
@@ -48,35 +54,26 @@ function regGenData(df; L0, f, murine::Bool, retdf = false)
     end
 end
 
-
-
-
-mutable struct fitResult{T}
-    x::Array{T}     # the param for best fit
-    intercept::T
-    r::T            # best fit residue
-end
-
 function fitRegression(df, intercept = false, preset_W::Union{Vector,Nothing} = nothing;  L0, f, murine::Bool)
     (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine)
-
+    Xo = copy(X)
     if preset_W != nothing
         @assert size(X, 2) == length(preset_W)
-        X = X * preset_W
+        X = X * reshape(preset_W, :, 1)
     end
     if intercept
         X = hcat(ones(size(X, 1), 1), X)
     end
 
     cY = inv_exponential.(Y)
-    W = vec(nonneg_lsq(X, inv_exponential.(Y)))
+    W = vec(nonneg_lsq(X, cY))
     res = fitResult{promote_type(typeof(L0), typeof(f))}([NaN], 0, NaN)
     if intercept
         res.intercept = W[1]
         W = W[2:end]
     end
     res.x = preset_W != nothing ? W[1] .* preset_W : W
-    res.r = norm(X * res.x .+ res.intercept - cY, 2) / length(Y)
+    res.r = norm(Xo * res.x .+ res.intercept - cY, 2) / length(Y)
     return res
 end
 
@@ -85,7 +82,7 @@ function LOOCrossVal(df, intercept, preset_W; L0, f, murine)
     fitResults = Vector(undef, n)
     LOOindex = LOOCV(n)
     for (i, idx) in enumerate(LOOindex)
-        fitResults[i] = fitRegression(df[idx, :], intercept, preset_W; L0 = L0, f = f, murine = murine).x
+        fitResults[i] = fitRegression(df[idx, :], intercept, preset_W; L0 = L0, f = f, murine = murine)
     end
     return fitResults
 end
@@ -113,20 +110,20 @@ end
 
 
 function CVResults(df, intercept = false, preset_W = nothing; L0, f, murine::Bool)
-    fit_w = fitRegression(df, intercept, preset_W; L0 = L0, f = f, murine = murine).x
+    fit_res = fitRegression(df, intercept, preset_W; L0 = L0, f = f, murine = murine)
     loo_out = LOOCrossVal(df, intercept, preset_W; L0 = L0, f = f, murine = murine)
     btp_out = bootstrap(df, intercept, preset_W; L0 = L0, f = f, murine = murine)
 
     (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine, retdf = true)
-    @assert length(fit_w) == length(names(X))
+    @assert length(fit_res.x) == length(names(X))
 
     odf = df[!, in([:Condition, :Background, :Genotype, :Label]).(names(df))]
     odf[!, :Concentration] .= (:Concentration in names(df)) ? (df[!, :Concentration] .* L0) : L0
     odf[!, :Y] = Y
-    odf[!, :Fitted] = exponential(Matrix(X), fit_w)
+    odf[!, :Fitted] = exponential(Matrix(X), fit_res)
     odf[!, :LOOPredict] = vcat([exponential(Matrix(X[[i], :]), loo_out[i]) for i = 1:length(loo_out)]...)
 
-    wildtype = copy(importKav(; murine = murine, c1q = (:C1q in names(X)), IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true))
+    wildtype = copy(importKav(; murine = murine, c1q = (:C1q in names(df)), IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true))
     wildtype[!, :Background] .= "wt"
     wildtype[!, :Target] .= 0.0
     if !murine
@@ -135,10 +132,11 @@ function CVResults(df, intercept = false, preset_W = nothing; L0, f, murine::Boo
     rename!(wildtype, :IgG => :Condition)
     wtX, _ = regGenData(wildtype; L0 = L0, f = f, murine = murine, retdf = true)
 
-    fit_w = fit_w[in(names(wtX)).(names(X))]
-    effects = wtX .* fit_w'
+    comp = in(names(wtX)).(names(X))
+    fit_res.x = fit_res.x[comp]    # remove neutralization from HIV
+    effects = wtX .* fit_res.x'
     effects[!, :Condition] .= wildtype[!, :Condition]
-    btp_ws = cat([Matrix(wtX) .* a[in(names(wtX)).(names(X))]' for a in btp_out]..., dims = (3))
+    btp_ws = cat([Matrix(wtX) .* a[comp]' for a in btp_out]..., dims = (3))
     btp_qtl = mapslices(x -> quantile(x, [0.1, 0.5, 0.9]), btp_ws, dims = [3])
 
     wdf = stack(effects, Not(:Condition))
@@ -148,5 +146,5 @@ function CVResults(df, intercept = false, preset_W = nothing; L0, f, murine::Boo
     wdf[!, :Median] .= vec(btp_qtl[:, :, 2])
     wdf[!, :Q90] .= vec(btp_qtl[:, :, 3])
 
-    return fit_w, odf, wdf
+    return fit_res, odf, wdf
 end

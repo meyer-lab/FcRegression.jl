@@ -58,7 +58,7 @@ function plotCellTypeEffects(wdf, dataType)
 end
 
 
-function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L0, f, murine::Bool, c1q = false, neutralization = false)
+function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult; L0, f, murine::Bool, c1q = false, neutralization = false)
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
     Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
@@ -75,8 +75,8 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, weights::Vector; L
         X = vcat(X, Kav_df[!, :C1q]' * IgGC)
     end
 
-    @assert size(X, 1) == length(weights)
-    output = exponential(Matrix(X'), weights)
+    @assert size(X, 1) == length(fit.x)
+    output = exponential(Matrix(X'), fit)
 
     pl = plot(
         layer(x = IgGC[IgGXidx, :], y = output, Geom.line, Theme(default_color = colorant"green")),
@@ -119,7 +119,7 @@ function createHeatmap(vmax, clmin, clmax; murine = true, data = "ITP")
     return pl
 end
 
-function plotSynergy(weights::Vector; L0, f, murine::Bool, c1q = false, neutralization = false)
+function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutralization = false)
     Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     FcExpr = importRtot(; murine = murine)
@@ -139,13 +139,12 @@ function plotSynergy(weights::Vector; L0, f, murine::Bool, c1q = false, neutrali
             if c1q
                 X = vcat(X, Kav_df[!, :C1q]' * IgGC)
             end
-            @assert size(X, 1) == length(weights)
-            output = exponential(Matrix(X'), weights)
+            @assert size(X, 1) == length(fit.x)
+            output = exponential(Matrix(X'), fit)
             additive = range(output[1], output[end], length = nPoints)
             synergy = sum((output - additive) / nPoints)
             M[i, j] = synergy
         end
-
         M[:, i] = M[i, :]
     end
 
@@ -164,17 +163,23 @@ function plotSynergy(weights::Vector; L0, f, murine::Bool, c1q = false, neutrali
     return pl
 end
 
-function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3)
+function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3)
+    preset_W = nothing
     if murine
         df = importDepletion(dataType)
         color = (dataType == "HIV") ? :Label : :Background
         shape = :Condition
     else
+        if preset
+            @assert dataType in ["blood", "bone"]
+            preset_W = fitRegression(importDepletion(dataType), intercept; L0 = L0, f = f, murine = true)
+            preset_W = preset_W.x
+        end
         df = importHumanized(dataType)
         color, shape = :Genotype, :Concentration
     end
 
-    fit_w, odf, wdf = CVResults(df; L0 = L0, f = f, murine = murine)
+    fit, odf, wdf = CVResults(df, intercept, preset_W; L0 = L0, f = f, murine = murine)
     @assert all(in(names(odf)).([color, shape]))
     p1 = plotActualvFit(odf, dataType, color, shape)
     p2 = plotActualvPredict(odf, dataType, color, shape)
@@ -182,7 +187,7 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3)
     p4 = plotDepletionSynergy(
         IgGX,
         IgGY,
-        fit_w;
+        fit;
         L0 = L0,
         f = f,
         murine = murine,
@@ -190,7 +195,7 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3)
         neutralization = (:Neutralization in wdf.Component),
     )
     p5 = createHeatmap(24, -12, -6, murine = murine, data = dataType)
-    p6 = plotSynergy(fit_w; L0 = L0, f = f, murine = murine, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
+    p6 = plotSynergy(fit; L0 = L0, f = f, murine = murine, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
 
     return p1, p2, p3, p4, p5, p6
 end
