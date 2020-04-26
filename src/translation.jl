@@ -36,10 +36,16 @@ function gen_discrete_Omega(side, divisor = 3)
 end
 
 
-function J_pearson(Omega, hR, hKav, mR, mKav; L0 = 1e-9, KxStar = KxConst, f = 4)
+function human2murine(Omega, hR, hKav, mR, mKav; L0 = 1e-9, f = 4)
     humanIgGC = gen_IgGC(4)
-    human = polyfc_ActV(L0, KxStar, f, hR, humanIgGC, hKav, humanActI)
-    murine = polyfc_ActV(L0, KxStar, f, mR, Omega * humanIgGC, mKav, murineActI)
+    human = polyfc_ActV(L0, KxConst, f, hR, humanIgGC, hKav, humanActI)
+    murine = polyfc_ActV(L0, KxConst, f, mR, Omega * humanIgGC, mKav, murineActI)
+    return human, murine
+end
+
+
+function J_pearson(Omega, hR, hKav, mR, mKav; L0 = 1e-9, f = 4)
+    human, murine = human2murine(Omega, hR, hKav, mR, mKav; L0 = L0, f = f)
     pcor = [Statistics.cor(human[i, :], murine[i, :]) for i = 1:size(human, 1)]
     pcor[isnan.(pcor)] .= 0
     return Statistics.mean(pcor)
@@ -61,4 +67,19 @@ function brute_force_discrete(divisor = 3)
 
     mxval, mxind = findmax(pcors)
     return (mxval, Omegas[:, :, mxind])
+end
+
+function plot_translation(Omega; L0 = 1e-9, f = 4)
+    hR = importRtot(murine = false)
+    hKav = importKav(murine = false)
+    mR = importRtot(murine = true)
+    mKav = importKav(murine = true)
+    human, murine = human2murine(Omega, hR, hKav, mR, mKav; L0 = L0, f = f)
+    human = rename!(DataFrame(human'), cellTypes)
+    murine = rename!(DataFrame(murine'), cellTypes)
+    comb = stack(human)
+    rename!(comb, :value => :human)
+    rename!(comb, :variable => :celltypes)
+    comb[!, :murine] .= stack(murine).value
+    return plot(comb, xgroup=:celltypes, x=:human, y=:murine, Geom.subplot_grid(Geom.point, free_x_axis=true))
 end
