@@ -43,7 +43,20 @@ end
 
 """ This file builds the depletion manuscript, humanized mice, Figure 13 (HIV). """
 function figureB13()
-    p1, p2, p3, p4, p5, p6 = figureW("bone marrow"; L0 = 1e-9, f = 4, murine = false)
+    p1, p2, p3, p4, p5, p6 = figureW("bone"; L0 = 1e-9, f = 4, murine = false)
 
     draw(SVG("figureB13.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p6 p6]))
+end
+
+""" This file builds the depletion manuscript, humanized mice, Figure 14 (blood). """
+function figureB14()
+    p1, p2, p3, p4, p5, p6 = figureW("blood", true, true; L0 = 1e-9, f = 4, murine = false)
+    draw(SVG("figureB14.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p6 p6]))
+end
+
+""" This file builds the depletion manuscript, humanized mice, Figure 15 (bone). """
+function figureB15()
+    p1, p2, p3, p4, p5, p6 = figureW("bone", true, true; L0 = 1e-9, f = 4, murine = false)
+
+    draw(SVG("figureB15.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p6 p6]))
 end
