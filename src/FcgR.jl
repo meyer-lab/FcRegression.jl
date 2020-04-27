@@ -6,6 +6,7 @@ using Gadfly
 using Compose
 using polyBindingModel
 using TensorDecompositions
+using Statistics
 
 include("fcBindingModel.jl")
 include("dataHelpers.jl")

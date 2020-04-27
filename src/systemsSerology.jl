@@ -1,6 +1,7 @@
 using DataFrames
 using CSV
 using TensorDecompositions
+using Stastics
 
 """ Subset systems serology dataset for HIV1.p66 """
 function HIV1p66sub()
@@ -121,12 +122,8 @@ Inputs:
     tens: 3D data tensor
     r: rank of decomposition (tuple)
 Returns:
-<<<<<<< HEAD
-=======
-
-
->>>>>>> Update Parafac Doc
 """
+
 function tucker_decomp(tens, r)
     return nothing  ### To Do: Get Function Working
 end
@@ -135,6 +132,7 @@ end
 function tucker_decomp_sparse(tens, rank)
     return spnntucker(tens, rank)
 end
+
 
 """Normalize the Data tensor"""
 function z_score(tensor, neg = true)
