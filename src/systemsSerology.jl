@@ -50,10 +50,52 @@ function antigenTables(s::String)
     dfF = CSV.read(joinpath(dataDir, "alter-MSB", "data-function.csv"))
     newdfF = dfF[dfF[!, :ADCC] .!= "NA", :] #ignore subjects who have no ADCC data
     ADCConly = newdfF[:, [:Column1, :ADCC]] #only want ADCC data
+    ADCConly.ADCC = tryparse.(Float64, ADCConly.ADCC) #ADCC data should be Floats not strings
     ADCC = rename!(ADCConly, [:Subject, :ADCC]) #Subjects were called "Column1" before
 
     #join ADCC data with antigen receptor data
     allAntigen = join(rec, ADCC, on = :Subject, kind = :inner)
 
     return allAntigen
+end
+
+""" Assemble the Cube """
+function createCube()
+    dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
+    dfMA = CSV.read(joinpath(dataDir, "alter-MSB", "meta-antigens.csv"))
+    dfMS = CSV.read(joinpath(dataDir, "alter-MSB", "meta-subjects.csv"))
+    dfMD = CSV.read(joinpath(dataDir, "alter-MSB", "meta-detections.csv"))
+    dfMD.detection = replace.(dfMD.detection, "." => "_")
+    dfMD.Number = 1:22 #Add a column of index numbers that correspond to each receptor/detection
+
+    Cube = Array{Union{Nothing, Float64}}(nothing, 181, 22, 41) #create a the Cube, filled with nothing
+    #Subjects down (181)
+    #detections/receptors across (22)
+    #antigens each slice (41)
+    
+    Subjects = dfMS.Column1
+
+    #Massive for loop that will find correct index for each data point in antigen tables and put into correct index in the Cube
+    
+    for p = 1:size(dfMA, 1)
+        A = FcgR.antigenTables(dfMA.antigen[p])    #focus on one antigen at a time (one slice of cube)
+        B = describe(A)                            #want column names in a listed table for later
+        for j = 1:size(dfMD, 1)                    #run through all possible detections/receptors
+            for i in 1:size(B, 1)                  
+                if (Symbol(dfMD.detection[j]) == B.variable[i])    #see if current receptor binds to current antigen (exists in table)
+                    df2 = select(A, Symbol(dfMD.detection[j]), :Subject)  #create a subsetted dataframe for this receptor antigen combo
+                    rename!(df2, [:detection, :Subject])           #need uniform names 
+                    for l = 1:size(df2, 1)           #will now match subjects in cube to subjects in dataframe
+                        for n = 1:size(Subjects, 1)
+                            if (df2.Subject[l] == Subjects[n]) #find index where subject, receptor, and antigen data line up
+                                    Cube[n, j, p] = df2.detection[l]  #input data point
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return Cube
 end
