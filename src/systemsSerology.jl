@@ -68,21 +68,13 @@ function createCube()
     dfMD.detection = replace.(dfMD.detection, "." => "_")
     dfMD.Number = 1:22 #Add a column of index numbers that correspond to each receptor/detection
 
-    Cube = Array{Union{Nothing, Float64}}(nothing, 182, 23, 41) #create a the Cube, filled with nothing
-
-    #Subject IDs in column 1 down the cube
-    #Detection number across top of cube - like column names for each slice
-    Subjects = dfMS.Column1
-    DNums = dfMD.Number
-    for i = 2:182
-        for j = 2:23
-            for k = 1:41
-                Cube[i, 1, k] = Subjects[i-1]
-                Cube[1, j, k] = DNums[j-1]
-            end
-        end
-    end
+    Cube = Array{Union{Nothing, Float64}}(nothing, 181, 22, 41) #create a the Cube, filled with nothing
+    #Subjects down (181)
+    #detections/receptors across (22)
+    #antigens each slice (41)
     
+    Subjects = dfMS.Column1
+
     #Massive for loop that will find correct index for each data point in antigen tables and put into correct index in the Cube
     
     for p = 1:size(dfMA, 1)
@@ -94,9 +86,9 @@ function createCube()
                     df2 = select(A, Symbol(dfMD.detection[j]), :Subject)  #create a subsetted dataframe for this receptor antigen combo
                     rename!(df2, [:detection, :Subject])           #need uniform names 
                     for l = 1:size(df2, 1)           #will now match subjects in cube to subjects in dataframe
-                        for n = 1:size(Cube, 1)
-                            if (df2.Subject[l] == Cube[n, 1, p]) #find index where subject, receptor, and antigen data line up
-                                    Cube[n, j+1, p] = df2.detection[l]  #input data point
+                        for n = 1:size(Subjects, 1)
+                            if (df2.Subject[l] == Subjects[n]) #find index where subject, receptor, and antigen data line up
+                                    Cube[n, j, p] = df2.detection[l]  #input data point
                             end
                         end
                     end
