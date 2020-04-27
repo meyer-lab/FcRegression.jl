@@ -74,10 +74,11 @@ end
 
 function plot_pearson(divisor = 3)
     _, pcors = brute_force_discrete(divisor)
-    return plot(x=pcors,
-        Coord.Cartesian(xmin=-0.6, xmax=0.6),
+    return plot(
+        x = pcors,
+        Coord.Cartesian(xmin = -0.6, xmax = 0.6),
         Guide.xlabel("Average Pearson correlations of predicted cell type responses"),
-        Geom.histogram(bincount=8),
+        Geom.histogram(bincount = 8),
     )
 end
 
@@ -94,14 +95,10 @@ function plot_translation(Omega; L0 = 1e-9, f = 4)
     rename!(comb, :value => :murine)
     rename!(comb, :variable => :celltypes)
     comb[!, :human] .= stack(human).value
-    
+
     pls = Vector(undef, length(cellTypes))
-    for i in 1:length(cellTypes)
-        pls[i] = plot(comb[comb[!, :celltypes] .== cellTypes[i], :],
-            x = :murine,
-            y = :human,
-            Guide.title("$(cellTypes[i])"),
-        )
+    for i = 1:length(cellTypes)
+        pls[i] = plot(comb[comb[!, :celltypes] .== cellTypes[i], :], x = :murine, y = :human, Guide.title("$(cellTypes[i])"))
     end
     pl = hstack(pls...)
     title(pl, "Pearson correlation of predicted responses between human and murine")

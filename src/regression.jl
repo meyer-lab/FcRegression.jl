@@ -54,7 +54,7 @@ function regGenData(df; L0, f, murine::Bool, retdf = false)
     end
 end
 
-function fitRegression(df, intercept = false, preset_W::Union{Vector,Nothing} = nothing;  L0, f, murine::Bool)
+function fitRegression(df, intercept = false, preset_W::Union{Vector, Nothing} = nothing; L0, f, murine::Bool)
     (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine)
     Xo = copy(X)
     if preset_W != nothing
