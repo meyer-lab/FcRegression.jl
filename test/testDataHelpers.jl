@@ -32,7 +32,7 @@
             df = FcgR.importDepletion(dataType)
             @test eltype(names(df)) == Symbol
         end
-        for dataType in ["blood", "spleen", "bone marrow"]
+        for dataType in ["blood", "spleen", "bone"]
             df = FcgR.importHumanized(dataType)
             @test eltype(names(df)) == Symbol
         end
