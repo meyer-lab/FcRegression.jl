@@ -200,9 +200,9 @@ version = "1.1.0"
 
 [[FFTW]]
 deps = ["AbstractFFTs", "FFTW_jll", "IntelOpenMP_jll", "Libdl", "LinearAlgebra", "MKL_jll", "Reexport"]
-git-tree-sha1 = "109d82fa4b00429f9afcce873e9f746f11f018d3"
+git-tree-sha1 = "b6a74f6dfd9e9d16b765397dc90df03e5a00532e"
 uuid = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
-version = "1.2.0"
+version = "1.2.1"
 
 [[FFTW_jll]]
 deps = ["Libdl", "Pkg"]
@@ -335,6 +335,7 @@ uuid = "5ab0869b-81aa-558d-bb23-cbf5423bbe9b"
 version = "0.5.1"
 
 [[LibGit2]]
+deps = ["Printf"]
 uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
 
 [[Libdl]]
@@ -612,9 +613,9 @@ version = "0.10.0"
 
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "5a3bcb6233adabde68ebc97be66e95dcb787424c"
+git-tree-sha1 = "4118cba3529e99af61aea9a83f7bfd3cff5ffb28"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "0.12.1"
+version = "0.12.2"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]

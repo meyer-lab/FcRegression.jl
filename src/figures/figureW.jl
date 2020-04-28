@@ -159,7 +159,7 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
     rename!(S, Symbol.(receptorNamesB1()))
     S = stack(S)
 
-    pl = plot(S, y = :value, color = :variable, Geom.bar(position = :dodge), Guide.title("Synergy"))
+    pl = plot(S, y = :value, x = :variable, Geom.bar(position = :dodge), Guide.title("Synergy"))
     return pl
 end
 
@@ -171,12 +171,13 @@ function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, 
         shape = :Condition
     else
         if preset
-            @assert dataType in ["blood", "bone"]
+            @assert dataType in ["blood", "bone", "ITP"]
             preset_W = fitRegression(importDepletion(dataType), intercept; L0 = L0, f = f, murine = true)
             preset_W = preset_W.x
         end
         df = importHumanized(dataType)
-        color, shape = :Genotype, :Concentration
+        color = :Genotype
+        shape = (dataType == "ITP") ? :Condition : :Concentration
     end
 
     fit, odf, wdf = CVResults(df, intercept, preset_W; L0 = L0, f = f, murine = murine)

@@ -60,3 +60,16 @@ function figureB15()
 
     draw(SVG("figureB15.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p6 p6]))
 end
+
+
+""" This file builds the depletion manuscript, humanized mice, Figure 16 (ITP) from Schwab 2015. """
+function figureB16()
+    p1, p2, p3, p4, p5, p6 = figureW("ITP"; L0 = 1e-9, f = 4, murine = false)
+    draw(SVG("figureB16.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p6 p6]))
+end
+
+""" This file builds the depletion manuscript, humanized mice, Figure 17 (bone) from Schwab 2015. """
+function figureB17()
+    p1, p2, p3, p4, p5, p6 = figureW("ITP", true, true; L0 = 1e-9, f = 4, murine = false)
+    draw(SVG("figureB17.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p6 p6]))
+end
