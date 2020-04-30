@@ -195,6 +195,7 @@ function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, 
         neutralization = (:Neutralization in wdf.Component),
     )
     p5 = createHeatmap(24, -12, -6, murine = murine, data = dataType)
+    display(dataType)
     p6 = plotSynergy(fit; L0 = L0, f = f, murine = murine, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
 
     return p1, p2, p3, p4, p5, p6
