@@ -43,7 +43,7 @@ end
 
 """ This file builds the depletion manuscript, humanized mice, Figure 13 (HIV). """
 function figureB13()
-    p1, p2, p3, p4, p5, p6 = figureW("bone"; L0 = 1e-8, f = 4, murine = false)
+    p1, p2, p3, p4, p5, p6 = figureW("bone"; L0 = 1e-9, f = 4, murine = false)
 
     draw(SVG("figureB13.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p6 p6]))
 end
