@@ -108,6 +108,8 @@ function createHeatmap(vmax, clmin, clmax; murine = true, data = "ITP")
             minimums[i, j] = fit.r
         end
     end
+    llim = minimum(minimums) - (.1 * minimum(minimums))
+    ulim = maximum(minimums) - (.1 * maximum(minimums))
     pl = spy(
         minimums,
         Guide.xlabel("Valencies"),
@@ -115,7 +117,7 @@ function createHeatmap(vmax, clmin, clmax; murine = true, data = "ITP")
         Guide.title("$data"),
         Scale.x_discrete(labels = i -> valencies[i]),
         Scale.y_discrete(labels = i -> concs[i]),
-        Scale.color_continuous(minvalue = 0, maxvalue = maximum(minimums))
+        Scale.color_continuous(minvalue = minimum(minimum, maxvalue = maximum(minimums))
     )
     return pl
 end
