@@ -102,6 +102,13 @@ function createHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
             minimums[i, j] = fit.r
         end
     end
+    if data == "HIV"
+        llim = 0
+        ulim = .1
+    else
+        llim = nothing
+        ulim = nothing
+    end
     pl = spy(
         minimums,
         Guide.xlabel("Valencies"),
@@ -109,6 +116,7 @@ function createHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
         Guide.title("L_0 and f exploration in $(murine ? "murine" : "human") $dataType data"),
         Scale.x_discrete(labels = i -> valencies[i]),
         Scale.y_discrete(labels = i -> concs[i]),
+        Scale.color_continuous(minvalue = llim, maxvalue = ulim)
     )
     return pl
 end
