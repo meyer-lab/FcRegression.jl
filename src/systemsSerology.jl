@@ -123,16 +123,14 @@ Inputs:
     r: rank of decomposition (tuple)
 Returns:
 """
-
 function tucker_decomp(tens, r)
-    return nothing  ### To Do: Get Function Working
+    return nothing
 end
 
 """Non Negative version of tucker - returns factors and a positive core"""
 function tucker_decomp_sparse(tens, rank)
     return spnntucker(tens, rank)
 end
-
 
 """Normalize the Data tensor"""
 function z_score(tensor, neg = true)
