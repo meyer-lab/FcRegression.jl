@@ -100,6 +100,7 @@ function createCube()
     end
 
     return Cube
+end
 
 ######################################## Factorization Below ##############################################################
 """Perform CP Decomposition on a 3D data tensor
