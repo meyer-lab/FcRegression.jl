@@ -1,7 +1,7 @@
 using DataFrames
 using CSV
 using TensorDecompositions
-using Stastics
+using Statistics
 
 """ Subset systems serology dataset for HIV1.p66 """
 function HIV1p66sub()
