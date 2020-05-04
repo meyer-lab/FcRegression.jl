@@ -108,8 +108,13 @@ function createHeatmap(vmax, clmin, clmax; murine = true, data = "ITP")
             minimums[i, j] = fit.r
         end
     end
-    llim = minimum(minimums) - (.1 * minimum(minimums))
-    ulim = maximum(minimums) - (.1 * maximum(minimums))
+    if data == "HIV"
+        llim = 0
+        ulim = .1
+    else
+        llim = nothing
+        ulim = nothing
+    end
     pl = spy(
         minimums,
         Guide.xlabel("Valencies"),
