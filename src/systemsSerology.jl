@@ -128,6 +128,7 @@ Returns:
 """
 function tucker_decomp(tens, r)
     return hosvd(tens, r)
+end
 
 """Non Negative version of tucker - returns factors and a positive core"""
 function tucker_decomp_sparse(tens, rank)
