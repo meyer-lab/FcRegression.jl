@@ -102,7 +102,7 @@ function createHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
             minimums[i, j] = fit.r
         end
     end
-    if data == "HIV"
+    if dataType == "HIV"
         llim = 0
         ulim = .1
     else
