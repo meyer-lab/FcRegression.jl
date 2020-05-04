@@ -123,10 +123,11 @@ Inputs:
     tens: 3D data tensor
     r: rank of decomposition (tuple)
 Returns:
+    tucker.factors: tuple of factor matrices
+    tucker.core: core matrix
 """
 function tucker_decomp(tens, r)
-    return nothing  ### To Do: Get Function Working
-end
+    return hosvd(tens, r)
 
 """Non Negative version of tucker - returns factors and a positive core"""
 function tucker_decomp_sparse(tens, rank)
