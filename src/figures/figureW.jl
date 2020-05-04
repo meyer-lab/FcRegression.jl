@@ -110,7 +110,7 @@ function createHeatmap(vmax, clmin, clmax; murine = true, data = "ITP")
     end
     if data == "HIV"
         llim = 0
-        ulim = .1
+        ulim = 0.1
     else
         llim = nothing
         ulim = nothing
@@ -122,7 +122,7 @@ function createHeatmap(vmax, clmin, clmax; murine = true, data = "ITP")
         Guide.title("$data"),
         Scale.x_discrete(labels = i -> valencies[i]),
         Scale.y_discrete(labels = i -> concs[i]),
-        Scale.color_continuous(minvalue = llim, maxvalue = ulim)
+        Scale.color_continuous(minvalue = llim, maxvalue = ulim),
     )
     return pl
 end
