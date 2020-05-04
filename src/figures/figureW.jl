@@ -117,7 +117,7 @@ function createHeatmap(vmax, clmin, clmax; murine = true, data = "ITP")
         Guide.title("$data"),
         Scale.x_discrete(labels = i -> valencies[i]),
         Scale.y_discrete(labels = i -> concs[i]),
-        Scale.color_continuous(minvalue = minimum(minimum, maxvalue = maximum(minimums))
+        Scale.color_continuous(minvalue = minimum(minimum, maxvalue = maximum(minimums)))
     )
     return pl
 end
