@@ -92,23 +92,17 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult; L0
 end
 
 
-function createHeatmap(vmax, clmin, clmax; murine = true, data = "ITP")
-    if murine
-        df = importDepletion(data)
-    else
-        return nothing
-    end
-
+function createHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
     concs = exp10.(range(clmin, stop = clmax, length = clmax - clmin + 1))
     valencies = [2:vmax;]
     minimums = zeros(length(concs), length(valencies))
     for (i, L0) in enumerate(concs)
         for (j, v) in enumerate(valencies)
-            fit = fitRegression(df; L0 = L0, f = v, murine = true)
+            fit = fitRegression(df; L0 = L0, f = v, murine = murine)
             minimums[i, j] = fit.r
         end
     end
-    if data == "HIV"
+    if dataType == "HIV"
         llim = 0
         ulim = 0.1
     else
@@ -119,7 +113,7 @@ function createHeatmap(vmax, clmin, clmax; murine = true, data = "ITP")
         minimums,
         Guide.xlabel("Valencies"),
         Guide.ylabel("L0 Concentrations"),
-        Guide.title("$data"),
+        Guide.title("L_0 and f exploration in $(murine ? "murine" : "human") $dataType data"),
         Scale.x_discrete(labels = i -> valencies[i]),
         Scale.y_discrete(labels = i -> concs[i]),
         Scale.color_continuous(minvalue = llim, maxvalue = ulim),
@@ -167,7 +161,7 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
     rename!(S, Symbol.(receptorNamesB1()))
     S = stack(S)
 
-    pl = plot(S, y = :value, color = :variable, Geom.bar(position = :dodge), Guide.title("Synergy"))
+    pl = plot(S, y = :value, x = :variable, Geom.bar(position = :dodge), Guide.title("Synergy"))
     return pl
 end
 
@@ -179,12 +173,13 @@ function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, 
         shape = :Condition
     else
         if preset
-            @assert dataType in ["blood", "bone"]
+            @assert dataType in ["blood", "bone", "ITP"]
             preset_W = fitRegression(importDepletion(dataType), intercept; L0 = L0, f = f, murine = true)
             preset_W = preset_W.x
         end
         df = importHumanized(dataType)
-        color, shape = :Genotype, :Concentration
+        color = :Genotype
+        shape = (dataType == "ITP") ? :Condition : :Concentration
     end
 
     fit, odf, wdf = CVResults(df, intercept, preset_W; L0 = L0, f = f, murine = murine)
@@ -202,7 +197,7 @@ function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, 
         c1q = (:C1q in wdf.Component),
         neutralization = (:Neutralization in wdf.Component),
     )
-    p5 = createHeatmap(24, -12, -6, murine = murine, data = dataType)
+    p5 = createHeatmap(df, dataType, 24, -12, -6, murine = murine)
     p6 = plotSynergy(fit; L0 = L0, f = f, murine = murine, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
 
     return p1, p2, p3, p4, p5, p6

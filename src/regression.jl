@@ -117,7 +117,7 @@ function CVResults(df, intercept = false, preset_W = nothing; L0, f, murine::Boo
     (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine, retdf = true)
     @assert length(fit_res.x) == length(names(X))
 
-    odf = df[!, in([:Condition, :Background, :Genotype, :Label]).(names(df))]
+    odf = df[!, in([:Condition, :Background, :Genotype, :Label, :Donor]).(names(df))]
     odf[!, :Concentration] .= (:Concentration in names(df)) ? (df[!, :Concentration] .* L0) : L0
     odf[!, :Y] = Y
     odf[!, :Fitted] = exponential(Matrix(X), fit_res)

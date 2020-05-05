@@ -138,16 +138,27 @@ function importDepletion(dataType)
 end
 
 
-""" Humanized mice data from Lux 2014 """
+""" Humanized mice data from Lux 2014, Schwab 2015 """
 function importHumanized(dataType)
-    df = CSV.read(joinpath(dataDir, "lux_humanized_CD19.csv"), delim = ",", comment = "#")
-    @assert dataType in ["blood", "spleen", "bone"] "Data type not found"
-    df = dropmissing(df, Symbol(dataType), disallowmissing = true)
-    df[!, :Target] = 1.0 .- df[!, Symbol(dataType)] ./ 100.0
-    df[!, :Condition] .= :IgG1
-    df = df[!, [:Genotype, :Concentration, :Condition, :Target]]
+    if dataType in ["blood", "spleen", "bone"]
+        df = CSV.read(joinpath(dataDir, "lux_humanized_CD19.csv"), delim = ",", comment = "#")
+        df = dropmissing(df, Symbol(dataType), disallowmissing = true)
+        df[!, :Target] = 1.0 .- df[!, Symbol(dataType)] ./ 100.0
+        df[!, :Condition] .= :IgG1
+        df = df[!, [:Genotype, :Concentration, :Condition, :Target]]
+        affinity = importKav(murine = false, c1q = true, retdf = true)
+    elseif dataType == "ITP"
+        df = CSV.read(joinpath(dataDir, "schwab_ITP_humanized.csv"), delim = ",", comment = "#")
+        df = stack(df, [:IgG1, :IgG2, :IgG3, :IgG4])
+        df = disallowmissing!(df[completecases(df), :])
+        rename!(df, [:variable => :Condition, :value => :Target])
+        df[!, :Target] .= 1. .- df.Target ./ 100.0
+        df[!, :Donor] .= Symbol.(df.Donor)
+        affinity = importKav(murine = false, c1q = false, retdf = true)
+    else
+        @error "Data type not found"
+    end
 
-    affinity = importKav(murine = false, c1q = true, retdf = true)
     df = join(df, affinity, on = :Condition => :IgG, kind = :left)
     return df
 end
