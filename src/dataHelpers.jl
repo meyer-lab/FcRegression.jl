@@ -152,7 +152,7 @@ function importHumanized(dataType)
         df = stack(df, [:IgG1, :IgG2, :IgG3, :IgG4])
         df = disallowmissing!(df[completecases(df), :])
         rename!(df, [:variable => :Condition, :value => :Target])
-        df[!, :Target] .= 1. .- df.Target ./ 100.0
+        df[!, :Target] .= 1.0 .- df.Target ./ 100.0
         df[!, :Donor] .= Symbol.(df.Donor)
         affinity = importKav(murine = false, c1q = false, retdf = true)
     else
