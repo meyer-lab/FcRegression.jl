@@ -104,7 +104,7 @@ function createHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
     end
     if dataType == "HIV"
         llim = 0
-        ulim = .1
+        ulim = 0.1
     else
         llim = nothing
         ulim = nothing
@@ -116,7 +116,7 @@ function createHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
         Guide.title("L_0 and f exploration in $(murine ? "murine" : "human") $dataType data"),
         Scale.x_discrete(labels = i -> valencies[i]),
         Scale.y_discrete(labels = i -> concs[i]),
-        Scale.color_continuous(minvalue = llim, maxvalue = ulim)
+        Scale.color_continuous(minvalue = llim, maxvalue = ulim),
     )
     return pl
 end
