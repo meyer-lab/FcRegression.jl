@@ -106,6 +106,9 @@ function importDepletion(dataType)
         filename = "nimmerjahn-melanoma.csv"
     elseif dataType == "HIV"
         filename = "elsevier-HIV.csv"
+    elseif dataType == "Bcell"
+        filename = "Lux_et_al_C57BL6.csv"
+        c1q = true
     else
         @error "Data type not found"
     end
