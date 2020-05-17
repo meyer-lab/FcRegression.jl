@@ -1,43 +1,28 @@
 """ This file builds the depletion manuscript, Figure 1. """
 
 """ Plot an example isobologram. """
-function plotIsobologram(IgGXidx::Int64, IgGYidx::Int64; murine = false, c1q = false)
-    Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
-    Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
-    Kav = importKav(murine = murine)
-    # TODO: Should import actual receptor abundance
-    FcExpr = zeros(length(humanFcgR))
-    FcExpr[7] = importRtot(murine = murine)[7, 2]
-
-    output = calculateIsobologram(IgGXidx, IgGYidx, 24, 1.0e-8, FcExpr, Kav)
-
-    X = range(0, stop = 1, length = length(output))
-
-    pl = plot(
-        layer(x = X, y = output, Geom.line, Theme(default_color = colorant"green")),
-        layer(x = [0, 1], y = [output[1], output[end]], Geom.line, Theme(default_color = colorant"red")),
-        Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
-        Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
-        Guide.xlabel("Percent hIgG3"),
-        Guide.ylabel("hFcgRIIIA-158V Binding"),
-        Guide.manual_color_key("", ["Predicted", "Linear Addition"], ["green", "red"]),
-        Guide.title("Receptor Binding vs IgG Composition"),
-        Theme(key_position = :inside),
-    )
-    return pl
-end
-
-""" Plot an example isobologram. """
-function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 = 1e-9, f = 4, murine = true, c1q = false)
+function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 = 1e-9, f = 4, murine = true, c1q = false, ex = false)
     CellName = ["ncMO", "cMO", "NKs", "Neu", "EO"]
     Cell = CellName[Cellidx]
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
-    Kav = importKav(murine = murine, IgG2bFucose = true)
+    Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
+    Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
+    ActI = murine ? murineActI : humanActI
     FcExpr = importRtot(murine = murine)[:, Cellidx]
+    if ex
+        FcExpr = zeros(length(humanFcgR))
+        FcExpr[7] = importRtot(murine = murine)[7, Cellidx]
+        ActI = nothing
+    end
 
-    output = calculateIsobologram(IgGXidx, IgGYidx, f, L0, FcExpr, Kav, actV = murineActI)
-    output /= maximum(output)
+    output = calculateIsobologram(IgGXidx, IgGYidx, f, L0, FcExpr, Kav, actV = ActI)
+    if ex
+        title = "Binding"
+    else
+        output /= maximum(output)
+        title = "Activity"
+    end
 
     X = range(0, stop = 1, length = length(output))
 
@@ -46,9 +31,9 @@ function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 
         layer(x = [0, 1], y = [output[1], output[end]], Geom.line, Theme(default_color = colorant"red")),
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
-        Guide.ylabel("$Cell Predicted Activity"),
+        Guide.ylabel("$Cell Predicted $title"),
         Guide.manual_color_key("", ["Predicted", "Linear Addition"], ["green", "red"]),
-        Guide.title("Activity vs IgG Composition"),
+        Guide.title("Receptor $title vs IgG Composition"),
         Theme(key_position = :inside),
     )
     return pl
@@ -178,7 +163,7 @@ function PlotSynvFcrExpr()
 end
 
 function figureB1()
-    p1 = plotIsobologram(2, 3)
+    p1 = plotCellIsobologram(2, 3, 2; L0 = 1e-8, f = 24, murine = false, ex = true)
     p2 = plotCellIsobologram(2, 4, 2)
     p3 = PlotSynGraph()
     p4 = PlotSynValency()
