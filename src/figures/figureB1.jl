@@ -20,7 +20,7 @@ function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 
     if ex
         title = "Binding"
     else
-        output /= maximum(output)
+        output /= maximum(output) + eps()
         title = "Activity"
     end
 
