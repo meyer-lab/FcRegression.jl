@@ -181,12 +181,6 @@ version = "0.8.2"
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
-[[DistributedArrays]]
-deps = ["Distributed", "LinearAlgebra", "Primes", "Random", "Serialization", "SparseArrays", "Statistics"]
-git-tree-sha1 = "b9cde03fd283e49ea09911297067b2f872f84c2d"
-uuid = "aaf54ef3-cdf8-58ed-94cc-d582ad619b94"
-version = "0.6.4"
-
 [[Distributions]]
 deps = ["FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns"]
 git-tree-sha1 = "c4ed10355637fcb0725dc6a27060f74df24f13cd"
@@ -375,11 +369,6 @@ deps = ["Distributions", "FFTW", "Interpolations", "Optim", "StatsBase", "Test"]
 git-tree-sha1 = "c1048817fe5711f699abc8fabd47b1ac6ba4db04"
 uuid = "5ab0869b-81aa-558d-bb23-cbf5423bbe9b"
 version = "0.5.1"
-
-[[LRUCache]]
-git-tree-sha1 = "788ab2f8a434a63f065ad962368a8cd0f8660a21"
-uuid = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637"
-version = "1.1.0"
 
 [[LibGit2]]
 deps = ["Printf"]
@@ -572,12 +561,6 @@ git-tree-sha1 = "127c47b91990c101ee3752291c4f45640eeb03d1"
 uuid = "85a6dd25-e78a-55b7-8502-1745935b8125"
 version = "0.2.3"
 
-[[Primes]]
-deps = ["Test"]
-git-tree-sha1 = "ff1a2323cb468ec5f201838fcbe3c232266b1f95"
-uuid = "27ebfcd6-29c5-5fa9-bf4b-fb8fc14df3ae"
-version = "0.4.0"
-
 [[Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
@@ -585,12 +568,6 @@ uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 [[Profile]]
 deps = ["Printf"]
 uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
-
-[[ProgressMeter]]
-deps = ["Distributed", "Printf", "Random", "Test"]
-git-tree-sha1 = "48058bc11607676e5bbc0b974af79106c6200787"
-uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
-version = "0.9.0"
 
 [[QuadGK]]
 deps = ["DataStructures", "LinearAlgebra"]
@@ -697,12 +674,6 @@ git-tree-sha1 = "f290ddd5fdedeadd10e961eb3f4d3340f09d030a"
 uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 version = "0.9.4"
 
-[[Strided]]
-deps = ["LinearAlgebra", "TupleTools"]
-git-tree-sha1 = "7bc504102ef0e49b19727ea45b54f611bee4320e"
-uuid = "5e0ebb24-38b0-5f93-81fe-25c709ecae67"
-version = "0.3.3"
-
 [[SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
 uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
@@ -719,18 +690,6 @@ git-tree-sha1 = "c45dcc27331febabc20d86cb3974ef095257dcf3"
 uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 version = "1.0.4"
 
-[[TensorDecompositions]]
-deps = ["DistributedArrays", "Distributions", "LinearAlgebra", "ProgressMeter", "SparseArrays", "Statistics", "StatsBase", "TensorOperations"]
-git-tree-sha1 = "d4ed39fc04f262f469b3ec410744886433e9dc31"
-uuid = "04ed911b-6d5f-4088-a74e-60d2d5028204"
-version = "1.1.0"
-
-[[TensorOperations]]
-deps = ["LRUCache", "LinearAlgebra", "Strided", "TupleTools"]
-git-tree-sha1 = "d59a3adf78f6d0637959e571b973310b4526008b"
-uuid = "6aa20fa7-93e2-5fca-9bc0-fbd0db3c71a2"
-version = "1.3.1"
-
 [[Test]]
 deps = ["Distributed", "InteractiveUtils", "Logging", "Random"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
@@ -740,11 +699,6 @@ deps = ["Dates", "EzXML", "Mocking", "Printf", "RecipesBase", "Serialization", "
 git-tree-sha1 = "07af1bd3226d644ca1a3235c93e7d0207ce4536a"
 uuid = "f269a46b-ccf7-5d73-abea-4c690281aa53"
 version = "1.1.1"
-
-[[TupleTools]]
-git-tree-sha1 = "62a7a6cd5a608ff71cecfdb612e67a0897836069"
-uuid = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
-version = "1.2.0"
 
 [[UUIDs]]
 deps = ["Random", "SHA"]
