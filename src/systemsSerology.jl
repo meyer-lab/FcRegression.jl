@@ -1,7 +1,5 @@
 using DataFrames
 using CSV
-using TensorDecompositions
-using Statistics
 
 """ Subset systems serology dataset for HIV1.p66 """
 function HIV1p66sub()
@@ -100,45 +98,4 @@ function createCube()
     end
 
     return Cube
-end
-
-######################################## Factorization Below ##############################################################
-"""Perform CP Decomposition on a 3D data tensor
--------------------------------------------------------
-Inputs: 
-    tens: 3D data tensor
-    r: rank of decomposition
-Returns:
-    CANDECOMP object
-        CANDECOMP.factors: factor matrices
-        CANDECOMP.props: relative residual (R2X Value)
-"""
-function cp_decomp(tens, r)
-    return candecomp(tens, r, (randn(size(tens)[1], r), randn(size(tens)[2], r), randn(size(tens)[3], r)), compute_error=true)
-end
-
-"""Perform Tucker Decomposition on a 3D data tensor
---------------------------------------------------------
-Inputs:
-    tens: 3D data tensor
-    r: rank of decomposition (tuple)
-Returns:
-    tucker.factors: tuple of factor matrices
-    tucker.core: core matrix
-"""
-function tucker_decomp(tens, r)
-    return hosvd(tens, r)
-end
-
-"""Non Negative version of tucker - returns factors and a positive core"""
-function tucker_decomp_sparse(tens, rank)
-    return spnntucker(tens, rank)
-end
-
-"""Normalize the Data tensor"""
-function z_score(tensor, neg = true)
-    if neg
-        tensor = tensor .- mean(tensor, dims = 3)
-    end
-    return tensor ./ var(tensor)
 end

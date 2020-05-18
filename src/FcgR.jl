@@ -5,8 +5,6 @@ import Distances
 using Gadfly
 using Compose
 using polyBindingModel
-using TensorDecompositions
-using Statistics
 
 include("fcBindingModel.jl")
 include("dataHelpers.jl")
@@ -27,6 +25,7 @@ function figureAll()
     figureB4()
     figureB5()
     figureB6()
+    figureB7()
     figureB11()
     figureB12()
     figureB13()
