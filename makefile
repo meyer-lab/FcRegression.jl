@@ -1,5 +1,5 @@
 
-all: figureB1.svg figureB2.svg figureB3.svg figureB4.svg figureB5.svg figureB6.svg figureB11.svg figureB12.svg figureB13.svg figureB14.svg figureB15.svg figureB16.svg figureB17.svg output/depletion/manuscript.html output/translation/manuscript.html
+all: figures output/depletion/manuscript.html output/translation/manuscript.html
 
 venv: venv/bin/activate
 
@@ -8,7 +8,7 @@ venv/bin/activate: requirements.txt
 	. venv/bin/activate && pip install -Uqr requirements.txt
 	touch venv/bin/activate
 
-figureB1.svg figureB2.svg figureB3.svg figureB4.svg figureB5.svg figureB6.svg figureB11.svg figureB12.svg figureB13.svg figureB14.svg figureB15.svg figureB16.svg figureB17.svg:
+figures:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureAll()'
 
 figure%.svg:

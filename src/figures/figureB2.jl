@@ -28,6 +28,13 @@ function figureB6()
     draw(SVG("figureB6.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p5 p6]))
 end
 
+""" Figure 7 (bone) from Lux C57BL/6 data """
+function figureB7()
+    p1, p2, p3, p4, p5, p6 = figureW("Bcell", true; IgGX = 2, IgGY = 4, L0 = 1e-10, f = 4, murine = true)
+    draw(SVG("figureB7.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p5 p6]))
+end
+
+
 """ This file builds the depletion manuscript, humanized mice, Figure 11 (blood). """
 function figureB11()
     p1, p2, p3, p4, p5, p6 = figureW("blood"; L0 = 1e-9, f = 4, murine = false)
