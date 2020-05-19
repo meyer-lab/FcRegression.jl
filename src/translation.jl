@@ -36,29 +36,71 @@ function gen_discrete_Omega(side, divisor = 3)
 end
 
 
-function J_pearson(Omega, hR, hKav, mR, mKav; L0 = 1e-9, KxStar = KxConst, f = 4)
-    humanIgGC = gen_IgGC(4)
-    human = polyfc_ActV(L0, KxStar, f, hR, humanIgGC, hKav, humanActI)
-    murine = polyfc_ActV(L0, KxStar, f, mR, Omega * humanIgGC, mKav, murineActI)
-    pcor = [Statistics.cor(human[i, :], murine[i, :]) for i = 1:size(human, 1)]
+function murine2human(Omega, mR, mKav, hR, hKav; L0 = 1e-9, f = 4)
+    murineIgGC = gen_IgGC(4)
+    murine = polyfc_ActV(L0, KxConst, f, mR, murineIgGC, mKav, murineActI)
+    human = polyfc_ActV(L0, KxConst, f, hR, Omega * murineIgGC, hKav, humanActI)
+    return murine, human
+end
+
+
+function J_pearson(Omega, mR, mKav, hR, hKav; L0 = 1e-9, f = 4)
+    murine, human = murine2human(Omega, mR, mKav, hR, hKav; L0 = L0, f = f)
+    pcor = [Statistics.cor(murine[i, :], human[i, :]) for i = 1:size(murine, 1)]
     pcor[isnan.(pcor)] .= 0
     return Statistics.mean(pcor)
 end
 
 
 function brute_force_discrete(divisor = 3)
-    hR = importRtot(murine = false)
-    hKav = importKav(murine = false)
     mR = importRtot(murine = true)
     mKav = importKav(murine = true)
-
+    hR = importRtot(murine = false)
+    hKav = importKav(murine = false)
     Omegas = gen_discrete_Omega(4, divisor)
 
     pcors = zeros(size(Omegas, 3))
     Threads.@threads for i = 1:size(Omegas, 3)
-        pcors[i] = J_pearson(Omegas[:, :, i], hR, hKav, mR, mKav)
+        pcors[i] = J_pearson(Omegas[:, :, i], mR, mKav, hR, hKav)
     end
+    return Omegas, pcors
+end
 
+function brute_force_optimum(divisor = 3)
+    Omegas, pcors = brute_force_discrete(divisor)
     mxval, mxind = findmax(pcors)
-    return (mxval, Omegas[:, :, mxind])
+    return mxval, Omegas[:, :, mxind]
+end
+
+function plot_pearson(divisor = 3)
+    _, pcors = brute_force_discrete(divisor)
+    return plot(
+        x = pcors,
+        Coord.Cartesian(xmin = -0.6, xmax = 0.6),
+        Guide.xlabel("Average Pearson correlations of predicted cell type responses"),
+        Geom.histogram(bincount = 8),
+    )
+end
+
+function plot_translation(Omega; L0 = 1e-9, f = 4)
+    mR = importRtot(murine = true)
+    mKav = importKav(murine = true)
+    hR = importRtot(murine = false)
+    hKav = importKav(murine = false)
+
+    murine, human = murine2human(Omega, mR, mKav, hR, hKav; L0 = L0, f = f)
+    murine = rename!(DataFrame(murine'), cellTypes)
+    human = rename!(DataFrame(human'), cellTypes)
+    comb = stack(murine)
+    rename!(comb, :value => :murine)
+    rename!(comb, :variable => :celltypes)
+    comb[!, :human] .= stack(human).value
+
+    pls = Vector(undef, length(cellTypes))
+    for i = 1:length(cellTypes)
+        pls[i] = plot(comb[comb[!, :celltypes] .== cellTypes[i], :], x = :murine, y = :human, Guide.title("$(cellTypes[i])"))
+    end
+    pl = hstack(pls...)
+    title(pl, "Pearson correlation of predicted responses between human and murine")
+    return pl
 end

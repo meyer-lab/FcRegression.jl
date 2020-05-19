@@ -70,23 +70,23 @@ function createCube()
     #Subjects down (181)
     #detections/receptors across (22)
     #antigens each slice (41)
-    
+
     Subjects = dfMS.Column1
 
     #Massive for loop that will find correct index for each data point in antigen tables and put into correct index in the Cube
-    
+
     for p = 1:size(dfMA, 1)
         A = FcgR.antigenTables(dfMA.antigen[p])    #focus on one antigen at a time (one slice of cube)
         B = describe(A)                            #want column names in a listed table for later
         for j = 1:size(dfMD, 1)                    #run through all possible detections/receptors
-            for i in 1:size(B, 1)                  
+            for i = 1:size(B, 1)
                 if (Symbol(dfMD.detection[j]) == B.variable[i])    #see if current receptor binds to current antigen (exists in table)
                     df2 = select(A, Symbol(dfMD.detection[j]), :Subject)  #create a subsetted dataframe for this receptor antigen combo
                     rename!(df2, [:detection, :Subject])           #need uniform names 
                     for l = 1:size(df2, 1)           #will now match subjects in cube to subjects in dataframe
                         for n = 1:size(Subjects, 1)
                             if (df2.Subject[l] == Subjects[n]) #find index where subject, receptor, and antigen data line up
-                                    Cube[n, j, p] = df2.detection[l]  #input data point
+                                Cube[n, j, p] = df2.detection[l]  #input data point
                             end
                         end
                     end
