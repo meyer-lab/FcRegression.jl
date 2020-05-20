@@ -13,6 +13,7 @@ include("synergy.jl")
 include("translation.jl")
 include("systemsSerology.jl")
 
+include("figures/figureCommon.jl")
 include("figures/figureW.jl")
 include("figures/figure1.jl")
 include("figures/figureB1.jl")

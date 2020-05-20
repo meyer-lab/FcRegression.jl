@@ -12,7 +12,7 @@ function plotActualvFit(odf, dataType, colorL::Symbol, shapeL::Symbol)
         Guide.xlabel("Actual effect"),
         Guide.ylabel("Fitted effect"),
         Guide.title("Actual effect vs fitted effect for $dataType"),
-        Theme(point_size = 5px),
+        style(point_size = 5px),
     )
     return pl
 end
@@ -31,7 +31,7 @@ function plotActualvPredict(odf, dataType, colorL::Symbol, shapeL::Symbol)
         Guide.xlabel("Actual effect"),
         Guide.ylabel("LOO predicted effect"),
         Guide.title("Actual effect vs LOO predicted for $dataType"),
-        Theme(point_size = 5px),
+        style(point_size = 5px),
     )
     return pl
 end
@@ -86,7 +86,7 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult; L0
         Guide.ylabel("Predicted Depletion"),
         Guide.manual_color_key("", ["Predicted", "Linear Addition"], ["green", "red"]),
         Guide.title("Total predicted effects vs $Xname-$Yname Composition"),
-        Theme(key_position = :inside),
+        style(key_position = :inside),
     )
     return pl
 end
