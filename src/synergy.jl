@@ -24,8 +24,8 @@ function calculateIsobologramPoint(
     @assert 0.0 <= pointt <= 1.0
 
     IgGC = zeros(size(Kav, 1))
-    IgGC[IgGYidx] += pointt
-    IgGC[IgGXidx] += 1.0 - pointt
+    IgGC[IgGXidx] += pointt
+    IgGC[IgGYidx] += 1.0 - pointt
 
     w = polyfc(ICconc, KxConst, valency, FcExpr, IgGC, Kav, actV)
 
