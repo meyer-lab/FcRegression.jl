@@ -183,8 +183,8 @@ function figureB1()
 end
 
 function figureS(Cellidx; L0 = 1e-9, f = 4, murine = true)
-    p1 = plotCellIsobologram(1, 1, Cellidx; L0 = L0, f = f, murine = murine)
-    p2 = plotCellIsobologram(2, 2, Cellidx; L0 = L0, f = f, murine = murine)
+    p1 = plotCellIsobologram(1, 2, Cellidx; L0 = L0, f = f, murine = murine)
+    p2 = plotCellIsobologram(2, 3, Cellidx; L0 = L0, f = f, murine = murine)
     p3 = plotCellIsobologram(1, 4, Cellidx; L0 = L0, f = f, murine = murine)
     p4 = plotCellIsobologram(2, 3, Cellidx; L0 = L0, f = f, murine = murine)
     p5 = plotCellIsobologram(2, 4, Cellidx; L0 = L0, f = f, murine = murine)
