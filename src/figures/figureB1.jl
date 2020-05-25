@@ -179,6 +179,6 @@ function figureS(Cellidx; L0 = 1e-9, f = 4, murine = true)
     p4 = plotCellIsobologram(2, 3, Cellidx; L0 = L0, f = f, murine = murine)
     p5 = plotCellIsobologram(2, 4, Cellidx; L0 = L0, f = f, murine = murine)
     p6 = plotCellIsobologram(3, 4, Cellidx; L0 = L0, f = f, murine = murine)
-    
+
     return p1, p2, p3, p4, p5, p6
 end
