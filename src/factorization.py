@@ -1,15 +1,19 @@
 """File To Handle Factorization Routines in Python"""
+from os.path import join, dirname
 import numpy as np
 import pandas as pd
 import tensorly as tl
+import h5py
 from tensorly.decomposition import parafac
-from tensorly.regression.metrics import variance as tl_var
+from tensorly.metrics.regression import variance as tl_var
+
+path_here = dirname(dirname(__file__))
 
 ############################################### Data Import #######################################################
-def get_data():
+def getData():
     "Get Data Set into Numpy Array"
     ## Deal with odd HDF5 Stuff
-    f = h5py.File("serology_tensor.jld", "r")
+    f = h5py.File(join(path_here, "data/alter-MSB/serology_tensor.jld"), "r")
     tens = f['tensor'][:]
     
     ## Data Carriers
