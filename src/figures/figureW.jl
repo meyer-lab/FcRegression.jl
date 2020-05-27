@@ -6,7 +6,8 @@ function plotActualvFit(odf, dataType, colorL::Symbol, shapeL::Symbol)
         Geom.point,
         color = colorL,
         shape = shapeL,
-        Guide.colorkey(pos = [0.05w, -0.28h]),
+        Guide.colorkey(),
+        Guide.shapekey(pos = [0.05w, -0.2h]),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
@@ -26,11 +27,12 @@ function plotActualvPredict(odf, dataType, colorL::Symbol, shapeL::Symbol)
         Geom.point,
         color = colorL,
         shape = shapeL,
-        Guide.colorkey(pos = [0.05w, -0.28h]),
+        Guide.colorkey(),
+        Guide.shapekey(pos = [0.05w, -0.3h]),
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
         Guide.ylabel("LOO predicted effect"),
-        Guide.title("Actual effect vs LOO predicted for $dataType"),
+        Guide.title("Actual effect vs LOO prediction for $dataType"),
         style(point_size = 5px),
     )
     return pl
@@ -43,7 +45,7 @@ function plotCellTypeEffects(wdf, dataType)
         x = :Condition,
         y = :Median,
         color = :Component,
-        Guide.colorkey(pos = [0.05w, -0.28h]),
+        Guide.colorkey(pos = [0.05w, -0.3h]),
         Geom.bar(position = :dodge),
         Scale.x_discrete(levels = unique(wdf.Condition)),
         Scale.y_continuous(minvalue = 0.0),
@@ -52,7 +54,7 @@ function plotCellTypeEffects(wdf, dataType)
         ymax = :Q90,
         Geom.errorbar,
         Stat.dodge,
-        Guide.title("Predicted weights of IgG and Cell Type in wt for $dataType"),
+        Guide.title("Predicted cell type weights for $dataType"),
     )
     return pl
 end

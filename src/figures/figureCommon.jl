@@ -1,19 +1,19 @@
 """
 Whenever making a plot with Gadfly, use `style()` instead of `Theme()` to add effects
 """
+function setGadflyTheme()
+    Gadfly.push_theme(Theme(background_color=nothing, grid_line_style=:dot,
+                        panel_stroke=colorant"black", plot_padding=[0.02w, 0.02w, 0.07h, 0.0pt],
+                        major_label_font="Helvetica", major_label_color=colorant"black",
+                        minor_label_font="Helvetica", minor_label_color=colorant"black",
+                        key_title_font="Helvetica", key_title_color=colorant"black",
+                        key_label_font="Helvetica", key_label_color=colorant"black",
+                        point_label_font="Helvetica", point_label_color=colorant"black",
+                        ))
+end
 
-Gadfly.push_theme(Theme(background_color=nothing, grid_line_style=:dot,
-                    panel_stroke=colorant"black", plot_padding=[0.02w, 0.02w, 0.07h, 0.0pt],
-                    major_label_font="Helvetica", major_label_color=colorant"black",
-                    minor_label_font="Helvetica", minor_label_color=colorant"black",
-                    key_title_font="Helvetica", key_title_color=colorant"black",
-                    key_label_font="Helvetica", key_label_color=colorant"black",
-                    point_label_font="Helvetica", point_label_color=colorant"black",
-                    ))
 
-
-function plotGrid(fig_size, grid_dim=(1,1), pls=[], ptitle=nothing)
-    @assert length(fig_size) == 2
+function plotGrid(grid_dim=(1,1), pls=[], ptitle=nothing)
     @assert length(grid_dim) == 2
     nplots = prod(grid_dim)
     if length(pls) != nplots
@@ -28,7 +28,6 @@ function plotGrid(fig_size, grid_dim=(1,1), pls=[], ptitle=nothing)
             (context(), text(0.0, 0.0, 'a'-1+i, hleft, vtop), font("Helvetica-Bold"), fontsize(30pt), fill(colorant"black")),
             (context(), render(pl)))
     end
-    Compose.set_default_graphic_size(fig_size...)
     fpl = gridstack(grid)
     if ptitle != nothing
         fpl = title(fpl, ptitle, Compose.font("Helvetica"), Compose.fontsize(20pt), fill(colorant"black"))
