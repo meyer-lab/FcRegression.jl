@@ -1,5 +1,5 @@
 
-all: figures output/depletion/manuscript.html output/translation/manuscript.html
+all: figures temporal output/depletion/manuscript.html output/translation/manuscript.html
 
 venv: venv/bin/activate
 
@@ -13,6 +13,9 @@ figures:
 
 figure%.svg:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figure$*()'
+
+temporal:
+	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.plot_hIgGtemp()'
 
 output/%/manuscript.md: venv manuscripts/%/*.md
 	mkdir -p ./output/$*
