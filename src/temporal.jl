@@ -44,12 +44,13 @@ function hCTtemp(x)
 end
 
 function plot_hIgGtemp()
+    setGadflyTheme()
     x = [0:0.1:20;];
     IgGlvl = hIgGtemp(x)
     CTlvl = hCTtemp(x)
     pl1 = plot(IgGlvl, x=:x, y=Col.value(humanIgG...), color=Col.index(humanIgG...), Geom.line,
-        Guide.xlabel("time (days)"), Guide.ylabel("Amount of IgG"), Guide.colorkey(title="isotypes"))
+        Guide.xlabel("time (days)"), Guide.ylabel("Amount of IgG"), Guide.colorkey(title="Isotypes"))
     pl2 = plot(CTlvl, x=:x, y=Col.value(cellTypes...), color=Col.index(cellTypes...), Geom.line,
-        Guide.xlabel("time (days)"), Guide.ylabel("Effector response (au)"), Guide.colorkey(title="Effector cells"))
-    draw(SVG("IgGtemp.svg"), vstack(pl1, pl2))
+        Guide.xlabel("time (days)"), Guide.ylabel("Effector response (au)", orientation=:vertical), Guide.colorkey(title="Effectors"))
+    draw(SVG("IgGtemp.svg", 5inch, 6inch), vstack(pl1, pl2))
 end
