@@ -138,8 +138,8 @@ function importDepletion(dataType)
     df[df[:, :Background] .== "gcKO", [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
     df[df[:, :Condition] .== :IgG1D265A, [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
 
-    for pair in ["wt"=>"wildtype", "R"=>"FcγR", "1"=>"I", "2"=>"II", "3"=>"III", "4"=>"IV", "gc"=>"γc"]
-         df[!, :Background] = map(x -> replace(x, pair), df.Background)
+    for pair in ["wt" => "wildtype", "R" => "FcγR", "1" => "I", "2" => "II", "3" => "III", "4" => "IV", "gc" => "γc"]
+        df[!, :Background] = map(x -> replace(x, pair), df.Background)
     end
     return df
 end
