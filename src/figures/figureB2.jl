@@ -34,7 +34,6 @@ function figureB7()
     draw(SVG("figureB7.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p5 p6]))
 end
 
-
 """ This file builds the depletion manuscript, humanized mice, Figure 11 (blood). """
 function figureB11()
     p1, p2, p3, p4, p5, p6 = figureW("blood"; L0 = 1e-9, f = 4, murine = false)
@@ -68,7 +67,6 @@ function figureB15()
     draw(SVG("figureB15.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p5 p6]))
 end
 
-
 """ This file builds the depletion manuscript, humanized mice, Figure 16 (ITP) from Schwab 2015. """
 function figureB16()
     p1, p2, p3, p4, p5, p6 = figureW("ITP"; L0 = 1e-9, f = 4, murine = false)
@@ -79,4 +77,34 @@ end
 function figureB17()
     p1, p2, p3, p4, p5, p6 = figureW("ITP", true, true; L0 = 1e-9, f = 4, murine = false)
     draw(SVG("figureB17.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p5 p6]))
+end
+
+""" This file builds the depletion manuscript, Synergy of ncMO. """
+function figureS1()
+    p1, p2, p3, p4, p5, p6 = figureS(1; L0 = 1e-9, f = 4, murine = true)
+    draw(SVG("figureS1.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p5 p6]))
+end
+
+""" This file builds the depletion manuscript, Synergy of cMO. """
+function figureS2()
+    p1, p2, p3, p4, p5, p6 = figureS(2; L0 = 1e-9, f = 4, murine = true)
+    draw(SVG("figureS2.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p5 p6]))
+end
+
+""" This file builds the depletion manuscript, Synergy of NKs. """
+function figureS3()
+    p1, p2, p3, p4, p5, p6 = figureS(3; L0 = 1e-9, f = 4, murine = true)
+    draw(SVG("figureS3.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p5 p6]))
+end
+
+""" This file builds the depletion manuscript, Synergy of Neu. """
+function figureS4()
+    p1, p2, p3, p4, p5, p6 = figureS(4; L0 = 1e-9, f = 4, murine = true)
+    draw(SVG("figureS4.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p5 p6]))
+end
+
+""" This file builds the depletion manuscript, Synergy of EO. """
+function figureS5()
+    p1, p2, p3, p4, p5, p6 = figureS(5; L0 = 1e-9, f = 4, murine = true)
+    draw(SVG("figureS5.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p5 p6]))
 end
