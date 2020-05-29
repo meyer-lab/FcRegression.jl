@@ -25,14 +25,16 @@ function calculateIsobologramPoint(
     @assert 0.0 <= pointt <= 1.0
 
     IgGC = zeros(size(Kav, 1))
-    IgGC[IgGXidx] += pointt
     if Mix
+        IgGC[IgGXidx] += pointt
         IgGC[IgGYidx] += 1.0 - pointt
+        w = polyfc(ICconc, KxConst, valency, FcExpr, IgGC, Kav, actV)
     else
+        IgGC[IgGXidx] += 1.0
         IgGC[IgGYidx] += eps()
+        ICconc *= pointt
+        w = polyfc(ICconc, KxConst, valency, FcExpr, IgGC, Kav, actV)
     end
-
-    w = polyfc(ICconc, KxConst, valency, FcExpr, IgGC, Kav, actV)
 
     return getproperty(w, quantity)
 end
