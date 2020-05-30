@@ -40,7 +40,17 @@ function calculateIsobologramPoint(
 end
 
 
-function calculateIsobologram(IgGXidx::Int64, IgGYidx::Int64, valency, ICconc::Float64, FcExpr, Kav; quantity = nothing, actV = nothing, Mix = true, nPoints = 100)
+function calculateIsobologram(
+    IgGXidx::Int64,
+    IgGYidx::Int64,
+    valency,
+    ICconc::Float64,
+    FcExpr,
+    Kav;
+    quantity = nothing,
+    actV = nothing,
+    nPoints = 100,
+)
     IgGXconc = range(0.0, stop = 1.0, length = nPoints)
     output = zeros(length(IgGXconc))
 
