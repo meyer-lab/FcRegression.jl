@@ -68,23 +68,40 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult; L0
 
     nPoints = 100
     IgGC = zeros(Float64, size(Kav, 1), nPoints)
+    
+    IgGC[IgGYidx, :] = range(eps(), eps(); length = nPoints)
+    IgGC[IgGXidx, :] = range(1.0, 1.0; length = nPoints)
+    X1 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
+    
+    IgGC[IgGXidx, :] = range(eps(), eps(); length = nPoints)
+    IgGC[IgGYidx, :] = range(1.0, 1.0; length = nPoints)
+    X2 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
+    
     IgGC[IgGXidx, :] = range(0.0, 1.0; length = nPoints)
     IgGC[IgGYidx, :] = range(1.0, 0.0; length = nPoints)
     X = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI)  # size: celltype * nPoints
+    
     if c1q
         X = vcat(X, Kav_df[!, :C1q]' * IgGC)
+        X1 = vcat(X1, Kav_df[!, :C1q]' * IgGC)
+        X2 = vcat(X2, Kav_df[!, :C1q]' * IgGC)
     end
 
     @assert size(X, 1) == length(fit.x)
+    @assert size(X1, 1) == length(fit.x)
+    @assert size(X2, 1) == length(fit.x)
     output = exponential(Matrix(X'), fit)
+    D1 = exponential(Matrix(X1'), fit)
+    D2 = reverse(exponential(Matrix(X2'), fit))
 
     pl = plot(
         layer(x = IgGC[IgGXidx, :], y = output, Geom.line, Theme(default_color = colorant"green")),
-        layer(x = [0, 1], y = [output[1], output[end]], Geom.line, Theme(default_color = colorant"red")),
+        layer(x = IgGC[IgGXidx, :], y = D1 + D2, Geom.line, Theme(default_color = colorant"red")),
+        layer(x = IgGC[IgGXidx, :], y = D1, Geom.line, Theme(default_color = colorant"blue")),
+        layer(x = IgGC[IgGXidx, :], y = D2, Geom.line, Theme(default_color = colorant"yellow")),
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
-        Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
         Guide.ylabel("Predicted Depletion"),
-        Guide.manual_color_key("", ["Predicted", "Linear Addition"], ["green", "red"]),
+        Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "yellow"]),
         Guide.title("Total predicted effects vs $Xname-$Yname Composition"),
         Theme(key_position = :inside),
     )
@@ -128,22 +145,34 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
     ActI = murine ? murineActI : humanActI
 
     nPoints = 100
-    IgGC = zeros(Float64, size(Kav, 1), nPoints)
-
     M = zeros(size(Kav)[1], size(Kav)[1])
 
     for i = 1:size(Kav)[1]
         for j = 1:(i - 1)
             IgGC = zeros(Float64, size(Kav, 1), nPoints)
+            IgGC[j, :] = range(eps(), eps(); length = nPoints)
+            IgGC[i, :] = range(1.0, 1.0; length = nPoints)
+            X1 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
+    
+            IgGC[i, :] = range(eps(), eps(); length = nPoints)
+            IgGC[j, :] = range(1.0, 1.0; length = nPoints)
+            X2 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
+    
             IgGC[i, :] = range(0.0, 1.0; length = nPoints)
             IgGC[j, :] = range(1.0, 0.0; length = nPoints)
             X = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI)  # size: celltype * nPoints
             if c1q
                 X = vcat(X, Kav_df[!, :C1q]' * IgGC)
+                X1 = vcat(X1, Kav_df[!, :C1q]' * IgGC)
+                X2 = vcat(X2, Kav_df[!, :C1q]' * IgGC)
             end
             @assert size(X, 1) == length(fit.x)
+            @assert size(X1, 1) == length(fit.x)
+            @assert size(X2, 1) == length(fit.x)
             output = exponential(Matrix(X'), fit)
-            additive = range(output[1], output[end], length = nPoints)
+            D1 = exponential(Matrix(X1'), fit)
+            D2 = reverse(exponential(Matrix(X2'), fit))
+            additive = D1 + D2
             synergy = sum((output - additive) / nPoints)
             M[i, j] = synergy
         end
