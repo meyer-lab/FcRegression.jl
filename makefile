@@ -1,5 +1,5 @@
 
-all: figures output/depletion/manuscript.html output/translation/manuscript.html
+all: figures depletion output/depletion/manuscript.html output/translation/manuscript.html
 
 venv: venv/bin/activate
 
@@ -7,6 +7,8 @@ venv/bin/activate: requirements.txt
 	test -d venv || virtualenv venv
 	. venv/bin/activate && pip install -Uqr requirements.txt
 	touch venv/bin/activate
+
+depletion: figure2.svg figure3.svg
 
 figures:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureAll()'
