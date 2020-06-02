@@ -50,6 +50,7 @@ function calculateIsobologram(
     quantity = nothing,
     actV = nothing,
     nPoints = 100,
+    Mix = true,
 )
     IgGXconc = range(0.0, stop = 1.0, length = nPoints)
     output = zeros(length(IgGXconc))
