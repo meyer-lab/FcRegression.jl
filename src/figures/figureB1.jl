@@ -4,7 +4,6 @@
 function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 = 1e-9, f = 4, murine = true, c1q = false, ex = false)
     CellName = ["ncMO", "cMO", "NKs", "Neu", "EO"]
     Cell = CellName[Cellidx]
-    Mix = false
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
     Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
@@ -18,8 +17,8 @@ function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 
     end
 
     output = calculateIsobologram(IgGXidx, IgGYidx, f, L0, FcExpr, Kav, actV = ActI)
-    D1 = calculateIsobologram(IgGXidx, IgGYidx, f, L0, FcExpr, Kav, actV = ActI, Mix = Mix)
-    D2 = reverse(calculateIsobologram(IgGYidx, IgGXidx, f, L0, FcExpr, Kav, actV = ActI, Mix = Mix))
+    D1 = calculateIsobologram(IgGXidx, IgGYidx, f, L0, FcExpr, Kav, actV = ActI, Mix = false)
+    D2 = reverse(calculateIsobologram(IgGYidx, IgGXidx, f, L0, FcExpr, Kav, actV = ActI, Mix = false))
     
     if ex
         title = "Receptor Binding"
