@@ -4,6 +4,7 @@ function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatri
     Input:
     Rtot: nr * nct matrix, nct = # cell types
     IgGC: ni * nset matrix, nset = # IgGC combinations
+    Mix: Specifies that the output will be a single IgG response if mix = false 
     Output:
     Matrix of size nct * nset filled with ActV
     """
