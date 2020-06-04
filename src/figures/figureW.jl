@@ -152,12 +152,12 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
     for i = 1:size(Kav)[1]
         for j = 1:(i - 1)
             IgGC = zeros(Float64, size(Kav, 1), nPoints)
-            IgGC[j, :] = range(eps(), eps(); length = nPoints)
-            IgGC[i, :] = range(1.0, 1.0; length = nPoints)
+            IgGC[j, :] .= eps()
+            IgGC[i, :] .= 1
             X1 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
     
-            IgGC[i, :] = range(eps(), eps(); length = nPoints)
-            IgGC[j, :] = range(1.0, 1.0; length = nPoints)
+            IgGC[i, :] .= eps()
+            IgGC[j, :] .= 1
             X2 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
     
             IgGC[i, :] = range(0.0, 1.0; length = nPoints)
