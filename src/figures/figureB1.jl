@@ -17,10 +17,12 @@ function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 
     end
 
     output = calculateIsobologram(IgGXidx, IgGYidx, f, L0, FcExpr, Kav, actV = ActI)
+    D1 = calculateIsobologram(IgGXidx, IgGYidx, f, L0, FcExpr, Kav, actV = ActI, Mix = false)
+    D2 = reverse(calculateIsobologram(IgGYidx, IgGXidx, f, L0, FcExpr, Kav, actV = ActI, Mix = false))
+    
     if ex
-        title = "Binding"
+        title = "Receptor Binding"
     else
-        output /= maximum(output) + eps()
         title = "Activity"
     end
 
@@ -28,12 +30,13 @@ function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 
 
     pl = plot(
         layer(x = X, y = output, Geom.line, Theme(default_color = colorant"green")),
-        layer(x = [0, 1], y = [output[1], output[end]], Geom.line, Theme(default_color = colorant"red")),
+        layer(x = X, y = D1, Geom.line, Theme(default_color = colorant"blue")),
+        layer(x = X, y = D2, Geom.line, Theme(default_color = colorant"yellow")),
+        layer(x = X, y = D1 + D2, Geom.line, Theme(default_color = colorant"red")),
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
-        Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
         Guide.ylabel("$Cell Predicted $title"),
-        Guide.manual_color_key("", ["Predicted", "Linear Addition"], ["green", "red"]),
-        Guide.title("Receptor $title vs IgG Composition"),
+        Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "yellow"]),
+        Guide.title("$title vs IgG Composition"),
         Theme(key_position = :inside),
     )
     return pl
