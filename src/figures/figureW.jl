@@ -192,7 +192,7 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
     rename!(S, Symbol.(receptorNamesB1()))
     S = stack(S)
 
-    pl = plot(S, y = :value, x = :variable, Geom.bar(position = :dodge), Guide.title("Synergy"))
+    pl = plot(S, y = :value, x = :variable, color = :variable, Geom.bar(position = :dodge), Theme(key_position = :none), Guide.title("Synergy"))
     return pl
 end
 
