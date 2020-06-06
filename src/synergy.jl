@@ -11,6 +11,7 @@ function calculateIsobologramPoint(
     Kav;
     quantity = nothing,
     actV = nothing,
+    Mix = true,
 )
     @assert length(FcExpr) == size(Kav, 2)
 
@@ -24,10 +25,16 @@ function calculateIsobologramPoint(
     @assert 0.0 <= pointt <= 1.0
 
     IgGC = zeros(size(Kav, 1))
-    IgGC[IgGYidx] += pointt
-    IgGC[IgGXidx] += 1.0 - pointt
-
-    w = polyfc(ICconc, KxConst, valency, FcExpr, IgGC, Kav, actV)
+    if Mix
+        IgGC[IgGXidx] += pointt
+        IgGC[IgGYidx] += 1.0 - pointt
+        w = polyfc(ICconc, KxConst, valency, FcExpr, IgGC, Kav, actV)
+    else
+        IgGC[IgGXidx] += 1.0
+        IgGC[IgGYidx] += eps()
+        ICconc *= pointt
+        w = polyfc(ICconc, KxConst, valency, FcExpr, IgGC, Kav, actV)
+    end
 
     return getproperty(w, quantity)
 end
@@ -43,12 +50,13 @@ function calculateIsobologram(
     quantity = nothing,
     actV = nothing,
     nPoints = 100,
+    Mix = true,
 )
-    IgGYconc = range(0.0, stop = 1.0, length = nPoints)
-    output = zeros(length(IgGYconc))
+    IgGXconc = range(0.0, stop = 1.0, length = nPoints)
+    output = zeros(length(IgGXconc))
 
-    for ii = 1:length(IgGYconc)
-        output[ii] = calculateIsobologramPoint(IgGYconc[ii], IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav; quantity = quantity, actV = actV)
+    for ii = 1:length(IgGXconc)
+        output[ii] = calculateIsobologramPoint(IgGXconc[ii], IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav; quantity = quantity, actV = actV, Mix = Mix)
     end
 
     return output
