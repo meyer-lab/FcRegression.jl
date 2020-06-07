@@ -182,9 +182,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[Distributions]]
 deps = ["FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns"]
-git-tree-sha1 = "5ad1c36bff608560df500e93aaeb5b86b4ad45ba"
+git-tree-sha1 = "78c4c32a2357a00a0a7d614880f02c2c6e1ec73c"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.23.3"
+version = "0.23.4"
 
 [[DocStringExtensions]]
 deps = ["LibGit2", "Markdown", "Pkg", "Test"]
@@ -200,9 +200,9 @@ version = "2.2.7+1"
 
 [[FFTW]]
 deps = ["AbstractFFTs", "FFTW_jll", "IntelOpenMP_jll", "Libdl", "LinearAlgebra", "MKL_jll", "Reexport"]
-git-tree-sha1 = "b6a74f6dfd9e9d16b765397dc90df03e5a00532e"
+git-tree-sha1 = "14536c95939aadcee44014728a459d2fe3ca9acf"
 uuid = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
-version = "1.2.1"
+version = "1.2.2"
 
 [[FFTW_jll]]
 deps = ["Libdl", "Pkg"]
@@ -391,9 +391,9 @@ version = "1.9.2+0"
 
 [[MKL_jll]]
 deps = ["IntelOpenMP_jll", "Libdl", "Pkg"]
-git-tree-sha1 = "720629cc8cbd12c146ca01b661fd1a6cf66e2ff4"
+git-tree-sha1 = "0ce9a7fa68c70cf83c49d05d2c04d91b47404b08"
 uuid = "856f044c-d86e-5d09-b602-aeab76dc8ba7"
-version = "2019.0.117+2"
+version = "2020.1.216+0"
 
 [[MLBase]]
 deps = ["IterTools", "Random", "Reexport", "StatsBase", "Test"]
@@ -504,9 +504,9 @@ version = "0.12.1"
 
 [[Parsers]]
 deps = ["Dates", "Test"]
-git-tree-sha1 = "f0abb338b4d00306500056a3fd44c221b8473ef2"
+git-tree-sha1 = "eb3e09940c0d7ae01b01d9291ebad7b081c844d3"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "1.0.4"
+version = "1.0.5"
 
 [[Pkg]]
 deps = ["Dates", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
