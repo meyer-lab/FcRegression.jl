@@ -70,19 +70,19 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult; L0
 
     nPoints = 100
     IgGC = zeros(Float64, size(Kav, 1), nPoints)
-    
+
     IgGC[IgGYidx, :] = range(eps(), eps(); length = nPoints)
     IgGC[IgGXidx, :] = range(1.0, 1.0; length = nPoints)
     X1 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
-    
+
     IgGC[IgGXidx, :] = range(eps(), eps(); length = nPoints)
     IgGC[IgGYidx, :] = range(1.0, 1.0; length = nPoints)
     X2 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
-    
+
     IgGC[IgGXidx, :] = range(0.0, 1.0; length = nPoints)
     IgGC[IgGYidx, :] = range(1.0, 0.0; length = nPoints)
     X = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI)  # size: celltype * nPoints
-    
+
     if c1q
         X = vcat(X, Kav_df[!, :C1q]' * IgGC)
         X1 = vcat(X1, Kav_df[!, :C1q]' * IgGC)
@@ -155,11 +155,11 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
             IgGC[j, :] .= eps()
             IgGC[i, :] .= 1
             X1 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
-    
+
             IgGC[i, :] .= eps()
             IgGC[j, :] .= 1
             X2 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
-    
+
             IgGC[i, :] = range(0.0, 1.0; length = nPoints)
             IgGC[j, :] = range(1.0, 0.0; length = nPoints)
             X = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI)  # size: celltype * nPoints
