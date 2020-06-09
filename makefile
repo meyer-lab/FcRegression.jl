@@ -17,7 +17,7 @@ figure%.svg:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figure$*()'
 
 temporal:
-	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.plot_hIgGtemp()'
+	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.plotTemporal()'
 
 output/%/manuscript.md: venv manuscripts/%/*.md
 	mkdir -p ./output/$*

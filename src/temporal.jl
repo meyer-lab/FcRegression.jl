@@ -1,4 +1,12 @@
 using DataFrames
+import Statistics: mean, std
+
+function plotTemporal()
+    setGadflyTheme()
+    plot_hIgGtemp()
+    plot_Murphy1(1e-11, 4)
+    plot_Murphy2(1e-11, 4)
+end
 
 function decay(x, x0, N0, thalf)
     tau = thalf / log(2)
@@ -53,4 +61,34 @@ function plot_hIgGtemp()
     pl2 = plot(CTlvl, x=:x, y=Col.value(cellTypes...), color=Col.index(cellTypes...), Geom.line,
         Guide.xlabel("time (days)"), Guide.ylabel("Effector response (au)", orientation=:vertical), Guide.colorkey(title="Effectors"))
     draw(SVG("IgGtemp.svg", 5inch, 6inch), vstack(pl1, pl2))
+end
+
+
+function plot_Murphy1(L0, f)
+    df = CSV.read(joinpath(dataDir, "murphy-jmedvir-2009-tab1.csv"), comment = "#")
+    res = polyfcm_ActV(Matrix(df)' .* L0, KxConst, f, importRtot(murine=false, retdf=false), importKav(murine=false, retdf=false), humanActI)
+    #return res
+    avgs = mean(res; dims=[2])
+    std = mapslices(x -> quantile(x, [0.1, 0.9]), res, dims = [2])
+    pl = plot(x=cellTypes, y=avgs, ymin=std[:,1], ymax=std[:,2], Geom.bar, Geom.yerrorbar)
+    draw(SVG("murphy1.svg", 4inch, 4inch), plotGrid((1, 1), [pl]))
+end
+
+
+function plot_Murphy2(L0, f)
+    df = CSV.read(joinpath(dataDir, "murphy-jmedvir-2009-tab2.csv"), comment = "#"; types=[String, Float64, Int64, Int64, Int64, Int64])
+    df[!, :Subject] .= Symbol.(df[!, :Subject])
+    res = polyfcm_ActV(Matrix(df[:, FcgR.humanIgG])' .* L0, KxConst, f,
+        importRtot(murine=false, retdf=false), importKav(murine=false, retdf=false), humanActI)
+    for i = 1:size(res, 1)
+        df[!, cellTypes[i]] = res[i, :] ./ maximum(res[i, :])
+    end
+
+    df = stack(df, cellTypes, [:Subject, :Time])
+    #return df
+    pls = Vector{Plot}(undef, 4)
+    for (i, s) in enumerate(Symbol.(["0101", "0106", "0205", "0207"]))
+        pls[i] = plot(df[df[!, :Subject] .== s, :], x=:Time, y=:value, color=:variable, Geom.line, Guide.title("Subject " * String(s)), Guide.colorkey(title="Cell Types"))
+    end
+    draw(SVG("murphy2.svg", 7inch, 7inch), plotGrid((2, 2), pls))
 end
