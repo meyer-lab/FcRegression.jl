@@ -13,7 +13,7 @@ end
 
 """ Plot HIV1.p66 data in terms of FcgRIIIa vs. ADCC data"""
 function plotHIV1p66()
-    df1 = FcgR.antigenTables("HIV1.p66")
+    df1 = FcgR.antigenTables("6H.HIV1.p66")
     final = rename!(df1, :FcgRIIIa_F158 => :F158, :FcgRIIIa_V158 => :V158)
 
     #using StatsPlots - New Note: Assuming Gadfly plots can fix this? The ADCC values will plot in list order(not in increasing 
