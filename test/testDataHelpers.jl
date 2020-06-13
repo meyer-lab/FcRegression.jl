@@ -30,11 +30,11 @@
     @testset "Depletion data can be imported" begin
         for dataType in ["ITP", "blood", "bone", "melanoma", "HIV"]
             df = FcgR.importDepletion(dataType)
-            @test eltype(names(df)) == Symbol
+            @test eltype(propertynames(df)) == Symbol
         end
         for dataType in ["blood", "spleen", "bone"]
             df = FcgR.importHumanized(dataType)
-            @test eltype(names(df)) == Symbol
+            @test eltype(propertynames(df)) == Symbol
         end
     end
 
