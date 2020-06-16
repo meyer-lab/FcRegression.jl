@@ -1,4 +1,4 @@
-function plotActualvFit(odf, dataType, colorL::Symbol, shapeL::Symbol)
+function plotActualvFit(odf, dataType, colorL::Symbol, shapeL::Symbol; legend = true)
     pl = plot(
         odf,
         x = :Y,
@@ -13,13 +13,13 @@ function plotActualvFit(odf, dataType, colorL::Symbol, shapeL::Symbol)
         Guide.xlabel("Actual effect"),
         Guide.ylabel("Fitted effect"),
         Guide.title("Actual effect vs fitted effect for $dataType"),
-        style(point_size = 5px),
+        style(point_size = 5px, key_position = legend ? :right : :none),
     )
     return pl
 end
 
 
-function plotActualvPredict(odf, dataType, colorL::Symbol, shapeL::Symbol)
+function plotActualvPredict(odf, dataType, colorL::Symbol, shapeL::Symbol; legend = true)
     pl = plot(
         odf,
         x = :Y,
@@ -33,13 +33,13 @@ function plotActualvPredict(odf, dataType, colorL::Symbol, shapeL::Symbol)
         Guide.xlabel("Actual effect"),
         Guide.ylabel("LOO predicted effect"),
         Guide.title("Actual effect vs LOO prediction for $dataType"),
-        style(point_size = 5px),
+        style(point_size = 5px, key_position = legend ? :right : :none),
     )
     return pl
 end
 
 
-function plotCellTypeEffects(wdf, dataType)
+function plotCellTypeEffects(wdf, dataType; legend = true)
     pl = plot(
         wdf,
         x = :Condition,
@@ -55,6 +55,7 @@ function plotCellTypeEffects(wdf, dataType)
         Geom.errorbar,
         Stat.dodge,
         Guide.title("Predicted cell type weights for $dataType"),
+        style(key_position = legend ? :right : :none),
     )
     return pl
 end
@@ -196,7 +197,7 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
     return pl
 end
 
-function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3)
+function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, legend = true)
     preset_W = nothing
     if murine
         df = importDepletion(dataType)

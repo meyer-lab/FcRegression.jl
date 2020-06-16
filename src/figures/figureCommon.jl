@@ -21,24 +21,53 @@ function setGadflyTheme()
 end
 
 
-function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing)
+function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], heights = [])
     @assert length(grid_dim) == 2
     nplots = prod(grid_dim)
     if length(pls) != nplots
         @warn "The number of plots doesn't match the dimension of grid"
     end
-    grid = Matrix{Union{Plot, Compose.Context}}(fill(context(), grid_dim))
+
+    if length(widths) == grid_dim[2]
+        widths = repeat(reshape(widths, 1, :), grid_dim[1])
+    elseif length(widths) == 0
+        widths = ones(grid_dim...)
+    end
+    widths = widths ./ sum(widths, dims=2)
+    @assert size(widths) == grid_dim "Specified widths, $(size(widths)), should have the same size as the grid, $grid_dim"
+
+    if length(heights) > 0
+        @assert length(heights) == grid_dim[1] "Specified heights should have the same size as the grid"
+        heights = heights ./ sum(heights)
+    else
+        heights = ones(grid_dim[1]) ./ grid_dim[1]
+    end
+
+    # grid[yi][xi]
+    grid = Vector(undef, grid_dim[1])
+    for i = 1:grid_dim[1]
+        grid[i] = Vector{Union{Plot, Compose.Context}}(fill(context(), grid_dim[2]))
+    end
+
     for (i, pl) in enumerate(pls)
         if i > nplots
             break
         end
-        grid[(i - 1) ÷ grid_dim[2] + 1, (i - 1) % grid_dim[2] + 1] = compose(
-            context(),
+        xi = (i - 1) % grid_dim[2] + 1
+        yi = (i - 1) ÷ grid_dim[2] + 1
+        grid[yi][xi] = compose(
+            context(0, 0, widths[yi, xi], 1),
             (context(), text(0.0, 0.0, 'a' - 1 + i, hleft, vtop), font("Helvetica-Bold"), fontsize(30pt), fill(colorant"black")),
             (context(), render(pl)),
         )
     end
-    fpl = gridstack(grid)
+
+    fplrows = Vector(undef, grid_dim[1])
+    for i in 1:grid_dim[1]
+        fplrows[i] = compose(context(0, 0, 1, heights[i]), hstack(grid[i]))
+    end
+    fpl = vstack(fplrows...)
+
     if ptitle != nothing
         fpl = title(fpl, ptitle, Compose.font("Helvetica"), Compose.fontsize(20pt), fill(colorant"black"))
     end
