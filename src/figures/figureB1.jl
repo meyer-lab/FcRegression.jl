@@ -19,7 +19,7 @@ function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 
     output = calculateIsobologram(IgGXidx, IgGYidx, f, L0, FcExpr, Kav, actV = ActI)
     D1 = calculateIsobologram(IgGXidx, IgGYidx, f, L0, FcExpr, Kav, actV = ActI, Mix = false)
     D2 = reverse(calculateIsobologram(IgGYidx, IgGXidx, f, L0, FcExpr, Kav, actV = ActI, Mix = false))
-    
+
     if ex
         title = "Receptor Binding"
     else

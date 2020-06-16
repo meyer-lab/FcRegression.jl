@@ -56,7 +56,8 @@ function calculateIsobologram(
     output = zeros(length(IgGXconc))
 
     for ii = 1:length(IgGXconc)
-        output[ii] = calculateIsobologramPoint(IgGXconc[ii], IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav; quantity = quantity, actV = actV, Mix = Mix)
+        output[ii] =
+            calculateIsobologramPoint(IgGXconc[ii], IgGXidx, IgGYidx, valency, ICconc, FcExpr, Kav; quantity = quantity, actV = actV, Mix = Mix)
     end
 
     return output

@@ -7,7 +7,7 @@ function plotActualvFit(odf, dataType, colorL::Symbol, shapeL::Symbol)
         color = colorL,
         shape = shapeL,
         Guide.colorkey(),
-        Guide.shapekey(pos = [0.05w, -0.2h]),
+        Guide.shapekey(),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
@@ -28,7 +28,7 @@ function plotActualvPredict(odf, dataType, colorL::Symbol, shapeL::Symbol)
         color = colorL,
         shape = shapeL,
         Guide.colorkey(),
-        Guide.shapekey(pos = [0.05w, -0.3h]),
+        Guide.shapekey(),
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
         Guide.ylabel("LOO predicted effect"),
@@ -70,28 +70,28 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult; L0
 
     nPoints = 100
     IgGC = zeros(Float64, size(Kav, 1), nPoints)
-    
+
     IgGC[IgGYidx, :] = range(eps(), eps(); length = nPoints)
     IgGC[IgGXidx, :] = range(1.0, 1.0; length = nPoints)
     X1 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
-    
+
     IgGC[IgGXidx, :] = range(eps(), eps(); length = nPoints)
     IgGC[IgGYidx, :] = range(1.0, 1.0; length = nPoints)
     X2 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
-    
+
     IgGC[IgGXidx, :] = range(0.0, 1.0; length = nPoints)
     IgGC[IgGYidx, :] = range(1.0, 0.0; length = nPoints)
     X = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI)  # size: celltype * nPoints
-    
+
     if c1q
         X = vcat(X, Kav_df[!, :C1q]' * IgGC)
         X1 = vcat(X1, Kav_df[!, :C1q]' * IgGC)
         X2 = vcat(X2, Kav_df[!, :C1q]' * IgGC)
     end
-
     @assert size(X, 1) == length(fit.x)
     @assert size(X1, 1) == length(fit.x)
     @assert size(X2, 1) == length(fit.x)
+
     output = exponential(Matrix(X'), fit)
     D1 = exponential(Matrix(X1'), fit)
     D2 = reverse(exponential(Matrix(X2'), fit))
@@ -155,11 +155,11 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
             IgGC[j, :] .= eps()
             IgGC[i, :] .= 1
             X1 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
-    
+
             IgGC[i, :] .= eps()
             IgGC[j, :] .= 1
             X2 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
-    
+
             IgGC[i, :] = range(0.0, 1.0; length = nPoints)
             IgGC[j, :] = range(1.0, 0.0; length = nPoints)
             X = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI)  # size: celltype * nPoints
@@ -214,7 +214,7 @@ function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, 
     end
 
     fit, odf, wdf = CVResults(df, intercept, preset_W; L0 = L0, f = f, murine = murine)
-    @assert all(in(names(odf)).([color, shape]))
+    @assert all(in(propertynames(odf)).([color, shape]))
     p1 = plotActualvFit(odf, dataType, color, shape)
     p2 = plotActualvPredict(odf, dataType, color, shape)
     p3 = plotCellTypeEffects(wdf, dataType)
