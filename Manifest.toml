@@ -65,9 +65,9 @@ version = "0.8.1"
 
 [[ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
-git-tree-sha1 = "c73d9cfc2a9d8433dc77f5bff4bddf46b1d78c20"
+git-tree-sha1 = "27eb374570946a02aa184ef5b403dabaa7380693"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
-version = "0.10.3"
+version = "0.10.4"
 
 [[Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "InteractiveUtils", "Reexport"]
@@ -129,9 +129,9 @@ version = "0.21.2"
 
 [[DataStructures]]
 deps = ["InteractiveUtils", "OrderedCollections"]
-git-tree-sha1 = "af6d9c86e191c917c2276fbede1137e8ea20157f"
+git-tree-sha1 = "be680f1ad03c0a03796aa3fda5a2180df7f83b46"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.17.17"
+version = "0.17.18"
 
 [[DataValueInterfaces]]
 git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
@@ -182,9 +182,9 @@ version = "0.23.4"
 
 [[DocStringExtensions]]
 deps = ["LibGit2", "Markdown", "Pkg", "Test"]
-git-tree-sha1 = "88bb0edb352b16608036faadcc071adda068582a"
+git-tree-sha1 = "c5714d9bcdba66389612dc4c47ed827c64112997"
 uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
-version = "0.8.1"
+version = "0.8.2"
 
 [[Expat_jll]]
 deps = ["Libdl", "Pkg"]
@@ -229,9 +229,9 @@ uuid = "6a86dc24-6348-571c-b903-95158fe2bd41"
 version = "2.3.2"
 
 [[FixedPointNumbers]]
-git-tree-sha1 = "3ba9ea634d4c8b289d590403b4a06f8e227a6238"
+git-tree-sha1 = "8fb797c37a3b7ced4327a05ac4ca0dd6a4f1ba92"
 uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
-version = "0.8.0"
+version = "0.8.1"
 
 [[Fontconfig]]
 deps = ["Fontconfig_jll", "Libdl", "Printf"]
@@ -439,10 +439,10 @@ uuid = "d41bc354-129a-5804-8e4c-c37616107c6c"
 version = "7.6.1"
 
 [[NLsolve]]
-deps = ["DiffEqDiffTools", "Distances", "ForwardDiff", "LineSearches", "LinearAlgebra", "NLSolversBase", "Printf", "Reexport"]
-git-tree-sha1 = "c9578878f56f425a2160f5b436c7f79a154d154c"
+deps = ["Distances", "LineSearches", "LinearAlgebra", "NLSolversBase", "Printf", "Reexport"]
+git-tree-sha1 = "ea172c86745810136d744fc67650d2e2de669c4f"
 uuid = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
-version = "4.1.0"
+version = "4.4.0"
 
 [[NaNMath]]
 git-tree-sha1 = "928b8ca9b2791081dc71a51c55347c27c618760f"
@@ -566,9 +566,9 @@ version = "0.6.1"
 
 [[Rmath_jll]]
 deps = ["Libdl", "Pkg"]
-git-tree-sha1 = "1660f8fefbf5ab9c67560513131d4e933012fc4b"
+git-tree-sha1 = "d76185aa1f421306dec73c057aa384bad74188f0"
 uuid = "f50d1b31-88e8-58de-be2c-1cc44531875f"
-version = "0.2.2+0"
+version = "0.2.2+1"
 
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
