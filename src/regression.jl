@@ -18,7 +18,7 @@ function regGenData(df; L0, f, murine::Bool, retdf = false)
     FcRecep = murine ? murineFcgR : humanFcgR
     ActI = murine ? murineActI : humanActI
 
-    if :Concentration in names(df)
+    if :Concentration in propertynames(df)
         df[!, :Concentration] .*= L0
     else
         insertcols!(df, 3, :Concentration => L0)
@@ -32,14 +32,14 @@ function regGenData(df; L0, f, murine::Bool, retdf = false)
         push!(X, polyfc_ActV(df[i, :Concentration], KxConst, f, Rtot, [1.0], Kav, ActI))
     end
 
-    if :C1q in names(df)
+    if :C1q in propertynames(df)
         X[!, :C1q] = df[!, :C1q] .* df[!, :Concentration]
     end
-    if :Neutralization in names(df)
+    if :Neutralization in propertynames(df)
         X[!, :Neutralization] = df[!, :Neutralization]
     end
 
-    if :Background in names(df)
+    if :Background in propertynames(df)
         X[df[:, :Background] .== "NeuKO", :Neu] .= 0.0
         X[df[:, :Background] .== "ncMOKO", :ncMO] .= 0.0
     end
@@ -117,13 +117,13 @@ function CVResults(df, intercept = false, preset_W = nothing; L0, f, murine::Boo
     (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine, retdf = true)
     @assert length(fit_res.x) == length(names(X))
 
-    odf = df[!, in([:Condition, :Background, :Genotype, :Label, :Donor]).(names(df))]
-    odf[!, :Concentration] .= (:Concentration in names(df)) ? (df[!, :Concentration] .* L0) : L0
+    odf = df[!, in([:Condition, :Background, :Genotype, :Label, :Donor]).(propertynames(df))]
+    odf[!, :Concentration] .= (:Concentration in propertynames(df)) ? (df[!, :Concentration] .* L0) : L0
     odf[!, :Y] = Y
     odf[!, :Fitted] = exponential(Matrix(X), fit_res)
     odf[!, :LOOPredict] = vcat([exponential(Matrix(X[[i], :]), loo_out[i]) for i = 1:length(loo_out)]...)
 
-    wildtype = copy(importKav(; murine = murine, c1q = (:C1q in names(df)), IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true))
+    wildtype = copy(importKav(; murine = murine, c1q = (:C1q in propertynames(df)), IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true))
     wildtype[!, :Background] .= "wt"
     wildtype[!, :Target] .= 0.0
     if !murine
@@ -132,7 +132,7 @@ function CVResults(df, intercept = false, preset_W = nothing; L0, f, murine::Boo
     rename!(wildtype, :IgG => :Condition)
     wtX, _ = regGenData(wildtype; L0 = L0, f = f, murine = murine, retdf = true)
 
-    comp = in(names(wtX)).(names(X))
+    comp = in(propertynames(wtX)).(propertynames(X))
     fit_res.x = fit_res.x[comp]    # remove neutralization from HIV
     effects = wtX .* fit_res.x'
     effects[!, :Condition] .= wildtype[!, :Condition]
@@ -141,6 +141,7 @@ function CVResults(df, intercept = false, preset_W = nothing; L0, f, murine::Boo
 
     wdf = stack(effects, Not(:Condition))
     rename!(wdf, :variable => :Component)
+    wdf[!, :Component] = map(Symbol, wdf[!, :Component])
     rename!(wdf, :value => :Weight)
     wdf[!, :Q10] .= vec(btp_qtl[:, :, 1])
     wdf[!, :Median] .= vec(btp_qtl[:, :, 2])
