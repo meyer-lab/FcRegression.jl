@@ -63,8 +63,9 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
     end
 
     fplrows = Vector(undef, grid_dim[1])
-    fplrows[1] = compose(context(0, 0, 1, heights[1]), hstack(grid[1]))
-    fplrows[2] = compose(context(0, 0, 1, heights[2]), hstack(grid[2]))
+    for i in 1:grid_dim[1]
+        fplrows[i] = compose(context(0, 0, 1, heights[i]), hstack(grid[i]))
+    end
     fpl = vstack(fplrows...)
 
     if ptitle != nothing
