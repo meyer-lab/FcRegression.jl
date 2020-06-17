@@ -216,9 +216,9 @@ function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, 
 
     fit, odf, wdf = CVResults(df, intercept, preset_W; L0 = L0, f = f, murine = murine)
     @assert all(in(propertynames(odf)).([color, shape]))
-    p1 = plotActualvFit(odf, dataType, color, shape)
-    p2 = plotActualvPredict(odf, dataType, color, shape)
-    p3 = plotCellTypeEffects(wdf, dataType)
+    p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
+    p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
+    p3 = plotCellTypeEffects(wdf, dataType; legend = legend)
     p4 = plotDepletionSynergy(
         IgGX,
         IgGY,
