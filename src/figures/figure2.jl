@@ -1,8 +1,8 @@
 function figure2()
     setGadflyTheme()
-    fig_melanoma = figureW("melanoma"; IgGX = 2, IgGY = 3, L0 = 1e-9, f = 4, murine = true)
-    fig_ITP = figureW("ITP"; IgGX = 1, IgGY = 2, L0 = 1e-8, f = 10, murine = true)
-    fig_blood = figureW("blood"; IgGX = 1, IgGY = 2, L0 = 1e-10, f = 4, murine = true)
+    fig_melanoma = figureW("melanoma"; IgGX = 2, IgGY = 3, L0 = 1e-9, f = 4, murine = true, legend = false)
+    fig_ITP = figureW("ITP"; IgGX = 1, IgGY = 2, L0 = 1e-8, f = 10, murine = true, legend = false)
+    fig_blood = figureW("blood"; IgGX = 1, IgGY = 2, L0 = 1e-10, f = 4, murine = true, legend = false)
     fig_bone = figureW("bone"; IgGX = 1, IgGY = 2, L0 = 1e-10, f = 4, murine = true)
     fig_HIV = figureW("HIV"; IgGX = 1, IgGY = 2, L0 = 1e-8, f = 24, murine = true)
 
@@ -10,7 +10,9 @@ function figure2()
         SVG("figure2.svg", 20inch, 7inch),
         plotGrid(
             (2, 5),
-            [fig_melanoma[1] fig_ITP[1] fig_blood[1] fig_bone[1] fig_HIV[1] fig_melanoma[2] fig_ITP[2] fig_blood[2] fig_bone[2] fig_HIV[2]],
+            [fig_melanoma[1] fig_ITP[1] fig_blood[1] fig_bone[1] fig_HIV[1] fig_melanoma[2] fig_ITP[2] fig_blood[2] fig_bone[2] fig_HIV[2]];
+            widths = [4 4 4 5 5; 5 5 5 6 6],
+            heights = [],
         ),
     )
 end

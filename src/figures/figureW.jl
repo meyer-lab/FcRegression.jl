@@ -1,4 +1,4 @@
-function plotActualvFit(odf, dataType, colorL::Symbol, shapeL::Symbol)
+function plotActualvFit(odf, dataType, colorL::Symbol, shapeL::Symbol; legend = true)
     pl = plot(
         odf,
         x = :Y,
@@ -7,19 +7,19 @@ function plotActualvFit(odf, dataType, colorL::Symbol, shapeL::Symbol)
         color = colorL,
         shape = shapeL,
         Guide.colorkey(),
-        Guide.shapekey(pos = [0.05w, -0.2h]),
+        Guide.shapekey(),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
         Guide.ylabel("Fitted effect"),
         Guide.title("Actual effect vs fitted effect for $dataType"),
-        style(point_size = 5px),
+        style(point_size = 5px, key_position = legend ? :right : :none),
     )
     return pl
 end
 
 
-function plotActualvPredict(odf, dataType, colorL::Symbol, shapeL::Symbol)
+function plotActualvPredict(odf, dataType, colorL::Symbol, shapeL::Symbol; legend = true)
     pl = plot(
         odf,
         x = :Y,
@@ -28,18 +28,18 @@ function plotActualvPredict(odf, dataType, colorL::Symbol, shapeL::Symbol)
         color = colorL,
         shape = shapeL,
         Guide.colorkey(),
-        Guide.shapekey(pos = [0.05w, -0.3h]),
+        Guide.shapekey(),
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
         Guide.ylabel("LOO predicted effect"),
         Guide.title("Actual effect vs LOO prediction for $dataType"),
-        style(point_size = 5px),
+        style(point_size = 5px, key_position = legend ? :right : :none),
     )
     return pl
 end
 
 
-function plotCellTypeEffects(wdf, dataType)
+function plotCellTypeEffects(wdf, dataType; legend = true)
     pl = plot(
         wdf,
         x = :Condition,
@@ -55,6 +55,7 @@ function plotCellTypeEffects(wdf, dataType)
         Geom.errorbar,
         Stat.dodge,
         Guide.title("Predicted cell type weights for $dataType"),
+        style(key_position = legend ? :right : :none),
     )
     return pl
 end
@@ -88,10 +89,10 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult; L0
         X1 = vcat(X1, Kav_df[!, :C1q]' * IgGC)
         X2 = vcat(X2, Kav_df[!, :C1q]' * IgGC)
     end
-
     @assert size(X, 1) == length(fit.x)
     @assert size(X1, 1) == length(fit.x)
     @assert size(X2, 1) == length(fit.x)
+
     output = exponential(Matrix(X'), fit)
     D1 = exponential(Matrix(X1'), fit)
     D2 = reverse(exponential(Matrix(X2'), fit))
@@ -196,7 +197,7 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
     return pl
 end
 
-function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3)
+function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, legend = true)
     preset_W = nothing
     if murine
         df = importDepletion(dataType)
@@ -214,10 +215,10 @@ function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, 
     end
 
     fit, odf, wdf = CVResults(df, intercept, preset_W; L0 = L0, f = f, murine = murine)
-    @assert all(in(names(odf)).([color, shape]))
-    p1 = plotActualvFit(odf, dataType, color, shape)
-    p2 = plotActualvPredict(odf, dataType, color, shape)
-    p3 = plotCellTypeEffects(wdf, dataType)
+    @assert all(in(propertynames(odf)).([color, shape]))
+    p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
+    p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
+    p3 = plotCellTypeEffects(wdf, dataType; legend = legend)
     p4 = plotDepletionSynergy(
         IgGX,
         IgGY,

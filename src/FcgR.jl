@@ -11,7 +11,7 @@ include("dataHelpers.jl")
 include("regression.jl")
 include("synergy.jl")
 include("translation.jl")
-include("systemsSerology.jl")
+include("temporal.jl")
 
 include("figures/figureCommon.jl")
 include("figures/figureW.jl")
