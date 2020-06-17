@@ -33,7 +33,7 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
     elseif length(widths) == 0
         widths = ones(grid_dim...)
     end
-    widths = widths ./ sum(widths, dims=2)
+    widths = widths ./ sum(widths, dims = 2)
     @assert size(widths) == grid_dim "Specified widths, $(size(widths)), should have the same size as the grid, $grid_dim"
 
     if length(heights) > 0
@@ -63,7 +63,7 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
     end
 
     fplrows = Vector(undef, grid_dim[1])
-    for i in 1:grid_dim[1]
+    for i = 1:grid_dim[1]
         fplrows[i] = compose(context(0, 0, 1, heights[i]), hstack(grid[i]))
     end
     fpl = vstack(fplrows...)
