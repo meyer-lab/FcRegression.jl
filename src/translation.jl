@@ -54,7 +54,7 @@ end
 
 function brute_force_discrete(divisor = 3)
     mR = importRtot(murine = true)
-    mKav = importKav(murine = true)
+    mKav = importKav(murine = true, IgG2bFucose = true)
     hR = importRtot(murine = false)
     hKav = importKav(murine = false)
     Omegas = gen_discrete_Omega(4, divisor)
