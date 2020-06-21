@@ -84,7 +84,7 @@ end
 
 function plot_translation(Omega; L0 = 1e-9, f = 4)
     mR = importRtot(murine = true)
-    mKav = importKav(murine = true)
+    mKav = importKav(murine = true, IgG2bFucose = true)
     hR = importRtot(murine = false)
     hKav = importKav(murine = false)
 
