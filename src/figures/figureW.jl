@@ -141,7 +141,7 @@ function createHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
 end
 
 function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutralization = false)
-    Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
+    Kav_df = importKav(; murine = murine, IgG2bFucose = true, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     FcExpr = importRtot(; murine = murine)
     ActI = murine ? murineActI : humanActI
@@ -178,18 +178,26 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
             synergy = sum((output - additive) / nPoints)
             M[i, j] = synergy
         end
-        M[:, i] = M[i, :]
+    end
+    
+    h = collect(Iterators.flatten(M))
+    if murine
+        S = zeros(10)
+        S[1:4] = h[2:5]
+        S[5:7] = h[8:10]
+        S[8:9] = h[14:15]
+        S[10] = h[20]
+        S = convert(DataFrame, S')
+        rename!(S, Symbol.(receptorNamesB1()))
+    else
+        S = zeros(6)
+        S[1:3] = h[2:4]
+        S[4:5] = h[7:8]
+        S[6] = h[12]
+        S = convert(DataFrame, S')
+        rename!(S, Symbol.(humanreceptorNamesB1()))
     end
 
-    S = zeros(10)
-    h = collect(Iterators.flatten(M))
-    S[1:5] = h[2:6]
-    S[5:8] = h[8:11]
-    S[8:9] = h[14:15]
-    S[10] = h[16]
-
-    S = convert(DataFrame, S')
-    rename!(S, Symbol.(receptorNamesB1()))
     S = stack(S)
 
     pl = plot(S, y = :value, x = :variable, color = :variable, Geom.bar(position = :dodge), Theme(key_position = :none), Guide.title("Synergy"))

@@ -57,6 +57,17 @@ function receptorNamesB1()
     ]
 end
 
+function humanreceptorNamesB1()
+    return [
+        "IgG1/2",
+        "IgG1/3",
+        "IgG1/4",
+        "IgG2/3",
+        "IgG2/4",
+        "IgG3/4",
+    ]
+end
+
 
 """Figure shows the affect of increasing immune complex concentration on synergies for each IgG combination"""
 function PlotSynGraph()
