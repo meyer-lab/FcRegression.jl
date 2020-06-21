@@ -23,12 +23,13 @@ const dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
 
 @memoize function importRtot(; murine = true, genotype = "HIV", retdf = false)
     if murine
-        df = CSV.read(joinpath(dataDir, "murine-FcgR-abundance.csv"))
+        df = CSV.read(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#")
     else
-        df = CSV.read(joinpath(dataDir, "human-FcgR-abundance.csv"))
+        df = CSV.read(joinpath(dataDir, "human-FcgR-abundance.csv"), comment = "#")
     end
-    df = aggregate(df, [:Cells, :Receptor], geocmean)
+    df = combine(groupby(df, [:Cells, :Receptor]), names(df, :Count) .=> geocmean)
     df = unstack(df, :Receptor, :Cells, :Count_geocmean)
+    dropmissing!(df)
     df[!, :Receptor] = map(Symbol, df[!, :Receptor])
     if murine
         df = df[in(murineFcgR).(df.Receptor), :]
@@ -38,17 +39,18 @@ const dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
         generic_type = Symbol.(["FcgRIIA", "FcgRIIB", "FcgRIIIA"])
         prefixes = ["FcgRIIA-131", "FcgRIIB-232", "FcgRIIIA-158"]
         options = [['H', 'R'], ['I', 'T'], ['V', 'F']]
+        ncols = size(df)[2] - 1
         for i = 1:3
             rowidx = findfirst(df[:, :Receptor] .== generic_type[i])
             if genotype[i] == options[i][1]
                 df[rowidx, :Receptor] = Symbol(prefixes[i] * options[i][1])
-                insert!.(eachcol(df, false), rowidx + 1, [Symbol(prefixes[i] * options[i][2]); repeat([0.0], 7)])
+                insert!.(eachcol(df), rowidx + 1, [Symbol(prefixes[i] * options[i][2]); repeat([0.0], ncols)])
             elseif genotype[i] == options[i][2]
                 df[rowidx, :Receptor] = Symbol(prefixes[i] * options[i][2])
-                insert!.(eachcol(df, false), rowidx, [Symbol(prefixes[i] * options[i][1]); repeat([0.0], 7)])
+                insert!.(eachcol(df), rowidx, [Symbol(prefixes[i] * options[i][1]); repeat([0.0], ncols)])
             else  # heterozygous
-                insert!.(eachcol(df, false), rowidx, [Symbol(prefixes[i] * options[i][1]); Array(df[rowidx, 2:end]) ./ 2])
-                insert!.(eachcol(df, false), rowidx + 1, [Symbol(prefixes[i] * options[i][2]); Array(df[rowidx, 2:end])])
+                insert!.(eachcol(df), rowidx, [Symbol(prefixes[i] * options[i][1]); Array(df[rowidx, 2:end]) ./ 2])
+                insert!.(eachcol(df), rowidx + 1, [Symbol(prefixes[i] * options[i][2]); Array(df[rowidx, 2:end])])
                 df = df[df[:, :Receptor] .!= generic_type[i], :]
             end
         end
@@ -81,6 +83,8 @@ end
     end
     df = stack(df; variable_name = :IgG, value_name = :Kav)
     df = unstack(df, :FcgR, :Kav)
+    df[!, :IgG] = map(Symbol, df[!, :IgG])
+    dropmissing!(df)
     df = df[in(IgGlist).(df.IgG), :]
 
     if retdf
@@ -116,13 +120,13 @@ function importDepletion(dataType)
     df = CSV.read(joinpath(dataDir, filename), delim = ",", comment = "#")
     df[!, :Condition] .= Symbol.(df[!, :Condition])
     df[!, :Target] = 1.0 .- df[!, :Target] ./ 100.0
-    if :Neutralization in names(df)
+    if :Neutralization in propertynames(df)
         neut = -log.(df[!, :Neutralization] / 50.0)
         df[!, :Neutralization] .= replace!(neut, Inf => 0.0)
     end
 
     affinity = importKav(murine = true, c1q = c1q, IgG2bFucose = true, retdf = true)
-    df = join(df, affinity, on = :Condition => :IgG, kind = :left)
+    df = leftjoin(df, affinity, on = :Condition => :IgG)
 
     # The mG053 antibody doesn't bind to the virus
     if dataType == "HIV"
@@ -138,7 +142,7 @@ function importDepletion(dataType)
     df[df[:, :Background] .== "gcKO", [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
     df[df[:, :Condition] .== :IgG1D265A, [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]] .= 0.0
 
-    for pair in ["wt" => "wildtype", "R" => "FcγR", "1" => "I", "2" => "II", "3" => "III", "4" => "IV", "gc" => "γc"]
+    for pair in ["R" => "FcγR", "1" => "I", "2" => "II", "3" => "III", "4" => "IV", "gc" => "γc"]
         df[!, :Background] = map(x -> replace(x, pair), df.Background)
     end
     return df
@@ -159,6 +163,8 @@ function importHumanized(dataType)
         df = stack(df, [:IgG1, :IgG2, :IgG3, :IgG4])
         df = disallowmissing!(df[completecases(df), :])
         rename!(df, [:variable => :Condition, :value => :Target])
+        df[!, :Condition] .= Symbol.(df.Condition)
+
         df[!, :Target] .= 1.0 .- df.Target ./ 100.0
         df[!, :Donor] .= Symbol.(df.Donor)
         affinity = importKav(murine = false, c1q = false, retdf = true)
@@ -166,45 +172,6 @@ function importHumanized(dataType)
         @error "Data type not found"
     end
 
-    df = join(df, affinity, on = :Condition => :IgG, kind = :left)
-    return df
-end
-
-
-
-""" Import systems serology dataset. """
-function importAlterMSG()
-    dfF = CSV.read(joinpath(dataDir, "alter-MSB", "data-function.csv"))
-    dfGP = CSV.read(joinpath(dataDir, "alter-MSB", "data-glycan-gp120.csv"))
-    dfIGG = CSV.read(joinpath(dataDir, "alter-MSB", "data-luminex-igg.csv"))
-    dfL = CSV.read(joinpath(dataDir, "alter-MSB", "data-luminex.csv"))
-    dfMA = CSV.read(joinpath(dataDir, "alter-MSB", "meta-antigens.csv"))
-    dfMD = CSV.read(joinpath(dataDir, "alter-MSB", "meta-detections.csv"))
-    dfMG = CSV.read(joinpath(dataDir, "alter-MSB", "meta-glycans.csv"))
-    dfMS = CSV.read(joinpath(dataDir, "alter-MSB", "meta-subjects.csv"))
-
-    df = meltdf(dfL, view = true)
-    newdfL = DataFrame(Rec = String[], Vir = String[], Sig = String[], Value = Float64[], Subject = Int64[])
-
-    # Split column name into constituent parts
-    for i = 1:size(df, 1)
-        Ar = split(string(df.variable[i]), "."; limit = 3)
-        if length(Ar) == 3
-            push!(newdfL, [Ar[1], Ar[2], Ar[3], df.value[i], df.Column1[i]])
-        else
-            push!(newdfL, [Ar[1], Ar[2], "N/A", df.value[i], df.Column1[i]])
-        end
-    end
-
-    return newdfL
-end
-
-function importLuminex()  #nearly same as importAlterMSB but does not separate into multiple columns
-    dfL = CSV.read(joinpath(dataDir, "alter-MSB", "data-luminex.csv"))
-    df = melt(dfL, view = true)
-    rename!(df, [:ColNames, :Value, :Subject])
-
-    # Convert FC column to strings
-    df.ColNames = string.(df.ColNames)
+    df = leftjoin(df, affinity, on = :Condition => :IgG)
     return df
 end
