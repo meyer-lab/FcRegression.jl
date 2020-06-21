@@ -2,11 +2,10 @@
 
 """ Plot an example isobologram. """
 function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 = 1e-9, f = 4, murine = true, c1q = false, ex = false)
-    CellName = ["ncMO", "cMO", "NKs", "Neu", "EO"]
-    Cell = CellName[Cellidx]
+    Cell = cellTypes[Cellidx]
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
-    Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
+    Kav_df = importKav(; murine = murine, IgG2bFucose = true, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     ActI = murine ? murineActI : humanActI
     FcExpr = importRtot(murine = murine)[:, Cellidx]
@@ -190,9 +189,12 @@ function figureS(Cellidx; L0 = 1e-9, f = 4, murine = true)
     p1 = plotCellIsobologram(1, 2, Cellidx; L0 = L0, f = f, murine = murine)
     p2 = plotCellIsobologram(1, 3, Cellidx; L0 = L0, f = f, murine = murine)
     p3 = plotCellIsobologram(1, 4, Cellidx; L0 = L0, f = f, murine = murine)
-    p4 = plotCellIsobologram(2, 3, Cellidx; L0 = L0, f = f, murine = murine)
-    p5 = plotCellIsobologram(2, 4, Cellidx; L0 = L0, f = f, murine = murine)
-    p6 = plotCellIsobologram(3, 4, Cellidx; L0 = L0, f = f, murine = murine)
+    p4 = plotCellIsobologram(1, 5, Cellidx; L0 = L0, f = f, murine = murine)
+    p5 = plotCellIsobologram(2, 3, Cellidx; L0 = L0, f = f, murine = murine)
+    p6 = plotCellIsobologram(2, 4, Cellidx; L0 = L0, f = f, murine = murine)
+    p7 = plotCellIsobologram(2, 5, Cellidx; L0 = L0, f = f, murine = murine)
+    p8 = plotCellIsobologram(3, 4, Cellidx; L0 = L0, f = f, murine = murine)
+    p9 = plotCellIsobologram(3, 5, Cellidx; L0 = L0, f = f, murine = murine)
 
-    return p1, p2, p3, p4, p5, p6
+    return p1, p2, p3, p4, p5, p6, p7, p8, p9
 end
