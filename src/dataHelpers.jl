@@ -12,7 +12,8 @@ function geocmean(x)
 end
 
 const cellTypes = [:ncMO, :cMO, :NKs, :Neu, :EO]
-const murineIgG = [:IgG1, :IgG2a, :IgG2b, :IgG3, :IgG2bFucose]
+const murineIgG = [:IgG1, :IgG2a, :IgG2b, :IgG3]
+const murineIgGFucose = [:IgG1, :IgG2a, :IgG2b, :IgG3, :IgG2bFucose]
 const humanIgG = [:IgG1, :IgG2, :IgG3, :IgG4]
 const murineFcgR = [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]
 const humanFcgR =
