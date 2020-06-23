@@ -195,6 +195,7 @@ function figureS(Cellidx; L0 = 1e-9, f = 4, murine = true)
     p7 = plotCellIsobologram(2, 5, Cellidx; L0 = L0, f = f, murine = murine)
     p8 = plotCellIsobologram(3, 4, Cellidx; L0 = L0, f = f, murine = murine)
     p9 = plotCellIsobologram(3, 5, Cellidx; L0 = L0, f = f, murine = murine)
+    p9 = plotCellIsobologram(4, 5, Cellidx; L0 = L0, f = f, murine = murine)
 
     return p1, p2, p3, p4, p5, p6, p7, p8, p9
 end
