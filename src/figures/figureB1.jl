@@ -3,8 +3,8 @@
 """ Plot an example isobologram. """
 function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 = 1e-9, f = 4, murine = true, c1q = false, ex = false)
     Cell = cellTypes[Cellidx]
-    Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
-    Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
+    Xname = murine ? murineIgGFucose[IgGXidx] : humanIgG[IgGXidx]
+    Yname = murine ? murineIgGFucose[IgGYidx] : humanIgG[IgGYidx]
     Kav_df = importKav(; murine = murine, IgG2bFucose = true, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     ActI = murine ? murineActI : humanActI
