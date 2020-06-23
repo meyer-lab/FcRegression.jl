@@ -170,9 +170,9 @@ version = "0.8.2"
 
 [[Expat_jll]]
 deps = ["Libdl", "Pkg"]
-git-tree-sha1 = "9cdd4b1523086c9d93604599e3a389e8941e52b0"
+git-tree-sha1 = "fb53564d23aeaa2936ff26adbe17255296ef487c"
 uuid = "2e619515-83b5-522b-bb60-26c02a35a201"
-version = "2.2.7+1"
+version = "2.2.7+2"
 
 [[FFTW]]
 deps = ["AbstractFFTs", "FFTW_jll", "IntelOpenMP_jll", "Libdl", "LinearAlgebra", "MKL_jll", "Reexport"]
@@ -194,9 +194,9 @@ version = "0.8.0"
 
 [[FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays"]
-git-tree-sha1 = "44f561e293987ffc84272cd3d2b14b0b93123d63"
+git-tree-sha1 = "bf726ba7ce99e00d10bf63c031285fb9ab3676ae"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "0.8.10"
+version = "0.8.11"
 
 [[FiniteDiff]]
 deps = ["ArrayInterface", "LinearAlgebra", "Requires", "SparseArrays", "StaticArrays"]
@@ -410,9 +410,9 @@ uuid = "b7351bd1-99d9-5c5d-8786-f205a815c4d7"
 version = "0.2.0"
 
 [[OffsetArrays]]
-git-tree-sha1 = "930db8ef90483570107f2396b1ffc6680f08e8b7"
+git-tree-sha1 = "ab697473e983a7499f463b696da8e8feb1b20ffd"
 uuid = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
-version = "1.0.4"
+version = "1.1.0"
 
 [[OpenBLAS_jll]]
 deps = ["CompilerSupportLibraries_jll", "Libdl", "Pkg"]
@@ -625,13 +625,13 @@ version = "0.5.2"
 
 [[Zlib_jll]]
 deps = ["Libdl", "Pkg"]
-git-tree-sha1 = "a2e0d558f6031002e380a90613b199e37a8565bf"
+git-tree-sha1 = "64b39656c75e67f85b4ac2b336c54674a39f599d"
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
-version = "1.2.11+10"
+version = "1.2.11+11"
 
 [[polyBindingModel]]
 deps = ["LinearAlgebra", "NLsolve"]
-git-tree-sha1 = "0786853652f140b562efe3121bf1d9b799593399"
+git-tree-sha1 = "bcb211cc72dd60fa4266c06a86073664e5686c17"
 repo-rev = "master"
 repo-url = "https://github.com/meyer-lab/polyBindingModel.jl.git"
 uuid = "d8b71a59-0ce5-46cb-870e-e9e7240c6f77"
