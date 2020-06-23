@@ -62,8 +62,8 @@ end
 
 
 function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult; L0, f, murine::Bool, c1q = false, neutralization = false)
-    Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
-    Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
+    Xname = murine ? murineIgGFucose[IgGXidx] : humanIgG[IgGXidx]
+    Yname = murine ? murineIgGFucose[IgGYidx] : humanIgG[IgGYidx]
     Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     FcExpr = importRtot(; murine = murine)
