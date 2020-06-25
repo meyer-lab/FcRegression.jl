@@ -88,7 +88,6 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult; L0
         X = vcat(X, Kav_df[!, :C1q]' * IgGC)
         X1 = vcat(X1, Kav_df[!, :C1q]' * IgGC)
         X2 = vcat(X2, Kav_df[!, :C1q]' * IgGC)
-        additive = exponential(Matrix((X1+X2)'), fit)
     end
     @assert size(X, 1) == length(fit.x)
     @assert size(X1, 1) == length(fit.x)
@@ -97,7 +96,8 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult; L0
     output = exponential(Matrix(X'), fit)
     D1 = exponential(Matrix(X1'), fit)
     D2 = reverse(exponential(Matrix(X2'), fit))
-
+    additive = exponential(Matrix((X1+X2)'), fit)
+    
     pl = plot(
         layer(x = IgGC[IgGXidx, :], y = output, Geom.line, Theme(default_color = colorant"green")),
         layer(x = IgGC[IgGXidx, :], y = additive, Geom.line, Theme(default_color = colorant"red")),
