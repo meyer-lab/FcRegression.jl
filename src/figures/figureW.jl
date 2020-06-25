@@ -174,8 +174,6 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
             @assert size(X1, 1) == length(fit.x)
             @assert size(X2, 1) == length(fit.x)
             output = exponential(Matrix(X'), fit)
-            D1 = exponential(Matrix(X1'), fit)
-            D2 = reverse(exponential(Matrix(X2'), fit))
             additive = exponential(Matrix((X1+X2)'), fit)
             synergy = sum((output - additive) / nPoints)
             M[i, j] = synergy
