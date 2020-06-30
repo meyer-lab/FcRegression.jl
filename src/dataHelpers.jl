@@ -44,13 +44,13 @@ const dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
             rowidx = findfirst(df[:, :Receptor] .== generic_type[i])
             if genotype[i] == options[i][1]
                 df[rowidx, :Receptor] = Symbol(prefixes[i] * options[i][1])
-                insert!.(eachcol(df), rowidx + 1, [Symbol(prefixes[i] * options[i][2]); repeat([0.0], ncols)])
+                insert!.(df, rowidx + 1, [Symbol(prefixes[i] * options[i][2]); repeat([0.0], ncols)])
             elseif genotype[i] == options[i][2]
                 df[rowidx, :Receptor] = Symbol(prefixes[i] * options[i][2])
-                insert!.(eachcol(df), rowidx, [Symbol(prefixes[i] * options[i][1]); repeat([0.0], ncols)])
+                insert!.(df, rowidx, [Symbol(prefixes[i] * options[i][1]); repeat([0.0], ncols)])
             else  # heterozygous
-                insert!.(eachcol(df), rowidx, [Symbol(prefixes[i] * options[i][1]); Array(df[rowidx, 2:end]) ./ 2])
-                insert!.(eachcol(df), rowidx + 1, [Symbol(prefixes[i] * options[i][2]); Array(df[rowidx, 2:end])])
+                insert!.(df, rowidx, [Symbol(prefixes[i] * options[i][1]); Array(df[rowidx, 2:end]) ./ 2])
+                insert!.(df, rowidx + 1, [Symbol(prefixes[i] * options[i][2]); Array(df[rowidx, 2:end])])
                 df = df[df[:, :Receptor] .!= generic_type[i], :]
             end
         end
