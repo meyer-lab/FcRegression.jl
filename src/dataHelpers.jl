@@ -1,5 +1,5 @@
 using DataFrames
-using CSV
+import CSV
 import StatsBase.geomean
 using Memoize
 
@@ -17,16 +17,16 @@ const murineIgGFucose = [:IgG1, :IgG2a, :IgG2b, :IgG3, :IgG2bFucose]
 const humanIgG = [:IgG1, :IgG2, :IgG3, :IgG4]
 const murineFcgR = [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]
 const humanFcgR =
-    Symbol.(["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158V", "FcgRIIIA-158F", "FcgRIIIB"])
+    Symbol.(["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"])
 const murineActI = [1, -1, 1, 1]
 const humanActI = [1, 1, 1, -1, -1, 1, 1, 1, 1]
 const dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
 
 @memoize function importRtot(; murine = true, genotype = "HIV", retdf = false)
     if murine
-        df = CSV.read(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#")
+        df = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame!
     else
-        df = CSV.read(joinpath(dataDir, "human-FcgR-abundance.csv"), comment = "#")
+        df = CSV.File(joinpath(dataDir, "human-FcgR-abundance.csv"), comment = "#") |> DataFrame!
     end
     df = combine(groupby(df, [:Cells, :Receptor]), names(df, :Count) .=> geocmean)
     df = unstack(df, :Receptor, :Cells, :Count_geocmean)
@@ -39,23 +39,25 @@ const dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
 
         generic_type = Symbol.(["FcgRIIA", "FcgRIIB", "FcgRIIIA"])
         prefixes = ["FcgRIIA-131", "FcgRIIB-232", "FcgRIIIA-158"]
-        options = [['H', 'R'], ['I', 'T'], ['V', 'F']]
+        options = [['H', 'R'], ['I', 'T'], ['F', 'V']]
         ncols = size(df)[2] - 1
+
         for i = 1:3
             rowidx = findfirst(df[:, :Receptor] .== generic_type[i])
             if genotype[i] == options[i][1]
                 df[rowidx, :Receptor] = Symbol(prefixes[i] * options[i][1])
-                insert!.(eachcol(df), rowidx + 1, [Symbol(prefixes[i] * options[i][2]); repeat([0.0], ncols)])
+                push!(df, [Symbol(prefixes[i] * options[i][2]); repeat([0.0], ncols)])
             elseif genotype[i] == options[i][2]
                 df[rowidx, :Receptor] = Symbol(prefixes[i] * options[i][2])
-                insert!.(eachcol(df), rowidx, [Symbol(prefixes[i] * options[i][1]); repeat([0.0], ncols)])
+                push!(df, [Symbol(prefixes[i] * options[i][1]); repeat([0.0], ncols)])
             else  # heterozygous
-                insert!.(eachcol(df), rowidx, [Symbol(prefixes[i] * options[i][1]); Array(df[rowidx, 2:end]) ./ 2])
-                insert!.(eachcol(df), rowidx + 1, [Symbol(prefixes[i] * options[i][2]); Array(df[rowidx, 2:end])])
+                push!(df, [Symbol(prefixes[i] * options[i][1]); Array(df[rowidx, 2:end]) ./ 2])
+                push!(df, [Symbol(prefixes[i] * options[i][2]); Array(df[rowidx, 2:end]) ./ 2])
                 df = df[df[:, :Receptor] .!= generic_type[i], :]
             end
         end
 
+        sort!(df, [:Receptor])
     end
     @assert df.Receptor == (murine ? murineFcgR : humanFcgR)
     if retdf
@@ -69,9 +71,9 @@ end
 """ Import human or murine affinity data. """
 @memoize function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = false)
     if murine
-        df = CSV.read(joinpath(dataDir, "murine-affinities.csv"), comment = "#")
+        df = CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#") |> DataFrame!
     else
-        df = CSV.read(joinpath(dataDir, "human-affinities.csv"), comment = "#")
+        df = CSV.File(joinpath(dataDir, "human-affinities.csv"), comment = "#") |> DataFrame!
     end
 
     IgGlist = copy(murine ? murineIgG : humanIgG)
@@ -118,7 +120,7 @@ function importDepletion(dataType)
         @error "Data type not found"
     end
 
-    df = CSV.read(joinpath(dataDir, filename), delim = ",", comment = "#")
+    df = CSV.File(joinpath(dataDir, filename), delim = ",", comment = "#") |> DataFrame!
     df[!, :Condition] .= Symbol.(df[!, :Condition])
     df[!, :Target] = 1.0 .- df[!, :Target] ./ 100.0
     if :Neutralization in propertynames(df)
@@ -153,14 +155,14 @@ end
 """ Humanized mice data from Lux 2014, Schwab 2015 """
 function importHumanized(dataType)
     if dataType in ["blood", "spleen", "bone"]
-        df = CSV.read(joinpath(dataDir, "lux_humanized_CD19.csv"), delim = ",", comment = "#")
+        df = CSV.File(joinpath(dataDir, "lux_humanized_CD19.csv"), delim = ",", comment = "#") |> DataFrame!
         df = dropmissing(df, Symbol(dataType), disallowmissing = true)
         df[!, :Target] = 1.0 .- df[!, Symbol(dataType)] ./ 100.0
         df[!, :Condition] .= :IgG1
         df = df[!, [:Genotype, :Concentration, :Condition, :Target]]
         affinity = importKav(murine = false, c1q = true, retdf = true)
     elseif dataType == "ITP"
-        df = CSV.read(joinpath(dataDir, "schwab_ITP_humanized.csv"), delim = ",", comment = "#")
+        df = CSV.File(joinpath(dataDir, "schwab_ITP_humanized.csv"), delim = ",", comment = "#") |> DataFrame!
         df = stack(df, [:IgG1, :IgG2, :IgG3, :IgG4])
         df = disallowmissing!(df[completecases(df), :])
         rename!(df, [:variable => :Condition, :value => :Target])
