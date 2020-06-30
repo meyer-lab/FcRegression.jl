@@ -30,42 +30,39 @@ function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 
     pl = plot(
         layer(x = X, y = output, Geom.line, Theme(default_color = colorant"green")),
         layer(x = X, y = D1, Geom.line, Theme(default_color = colorant"blue")),
-        layer(x = X, y = D2, Geom.line, Theme(default_color = colorant"yellow")),
+        layer(x = X, y = D2, Geom.line, Theme(default_color = colorant"orange")),
         layer(x = X, y = D1 + D2, Geom.line, Theme(default_color = colorant"red")),
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
-        Guide.ylabel("$Cell Predicted $title"),
-        Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "yellow"]),
+        Guide.xticks(orientation=:horizontal),
+        Guide.ylabel("$Cell Predicted $title", orientation=:vertical),
+        Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "orange"]),
         Guide.title("$title vs IgG Composition"),
-        Theme(key_position = :inside),
+        style(key_position = :inside),
     )
     return pl
 end
 
-function receptorNamesB1()
-    return [
-        "IgG1/2a",
-        "IgG1/2b",
-        "IgG1/3",
-        "IgG1/2b-Fucose",
-        "IgG2a/2b",
-        "IgG2a/3",
-        "IgG2a/2b-Fucose",
-        "IgG2b/3",
-        "IgG2b/2b-Fucose",
-        "IgG3/2b-Fucose",
-    ]
-end
+const receptorNamesB1 = Symbol.([
+    "IgG1/2a",
+    "IgG1/2b",
+    "IgG1/3",
+    "IgG1/2b-Fucose",
+    "IgG2a/2b",
+    "IgG2a/3",
+    "IgG2a/2b-Fucose",
+    "IgG2b/3",
+    "IgG2b/2b-Fucose",
+    "IgG3/2b-Fucose",
+])
 
-function humanreceptorNamesB1()
-    return [
-        "IgG1/2",
-        "IgG1/3",
-        "IgG1/4",
-        "IgG2/3",
-        "IgG2/4",
-        "IgG3/4",
-    ]
-end
+const humanreceptorNamesB1 = Symbol.([
+    "IgG1/2",
+    "IgG1/3",
+    "IgG1/4",
+    "IgG2/3",
+    "IgG2/4",
+    "IgG3/4",
+])
 
 
 """Figure shows the affect of increasing immune complex concentration on synergies for each IgG combination"""
@@ -85,7 +82,7 @@ function PlotSynGraph()
     end
 
     S = convert(DataFrame, S)
-    rename!(S, Symbol.(receptorNamesB1()))
+    rename!(S, receptorNamesB1)
     S = stack(S)
 
     pl = plot(
@@ -122,7 +119,7 @@ function PlotSynValency()
     end
 
     S = convert(DataFrame, S)
-    rename!(S, Symbol.(receptorNamesB1()))
+    rename!(S, receptorNamesB1)
     S = stack(S)
 
     pl = plot(
@@ -157,7 +154,7 @@ function PlotSynvFcrExpr()
     end
 
     S = convert(DataFrame, S)
-    rename!(S, Symbol.(receptorNamesB1()))
+    rename!(S, receptorNamesB1)
     S = stack(S)
 
     pl = plot(
@@ -175,17 +172,9 @@ function PlotSynvFcrExpr()
     return pl
 end
 
-function figureB1()
-    p1 = plotCellIsobologram(2, 3, 2; L0 = 1e-8, f = 24, murine = false, ex = true)
-    p2 = plotCellIsobologram(2, 4, 2)
-    p3 = PlotSynGraph()
-    p4 = PlotSynValency()
-    p5 = PlotSynvFcrExpr()
-
-    draw(SVG("figureB1.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p5 p5]))
-end
 
 function figureS(Cellidx; L0 = 1e-9, f = 4, murine = true)
+    setGadflyTheme()
     p1 = plotCellIsobologram(1, 2, Cellidx; L0 = L0, f = f, murine = murine)
     p2 = plotCellIsobologram(1, 3, Cellidx; L0 = L0, f = f, murine = murine)
     p3 = plotCellIsobologram(1, 4, Cellidx; L0 = L0, f = f, murine = murine)

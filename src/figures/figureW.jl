@@ -97,15 +97,15 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult; L0
     D1 = exponential(Matrix(X1'), fit)
     D2 = reverse(exponential(Matrix(X2'), fit))
     additive = exponential(Matrix((X1+reverse(X2, dims = 2))'), fit)
-    
+
     pl = plot(
         layer(x = IgGC[IgGXidx, :], y = output, Geom.line, Theme(default_color = colorant"green")),
         layer(x = IgGC[IgGXidx, :], y = additive, Geom.line, Theme(default_color = colorant"red")),
         layer(x = IgGC[IgGXidx, :], y = D1, Geom.line, Theme(default_color = colorant"blue")),
-        layer(x = IgGC[IgGXidx, :], y = D2, Geom.line, Theme(default_color = colorant"yellow")),
+        layer(x = IgGC[IgGXidx, :], y = D2, Geom.line, Theme(default_color = colorant"orange")),
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
         Guide.ylabel("Predicted Depletion"),
-        Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "yellow"]),
+        Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "orange"]),
         Guide.title("Total predicted effects vs $Xname-$Yname Composition"),
         style(key_position = :inside),
     )
@@ -113,7 +113,7 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult; L0
 end
 
 
-function createHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
+function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
     concs = exp10.(range(clmin, stop = clmax, length = clmax - clmin + 1))
     valencies = [2:vmax;]
     minimums = zeros(length(concs), length(valencies))
@@ -133,8 +133,8 @@ function createHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
     pl = spy(
         minimums,
         Guide.xlabel("Valencies"),
-        Guide.ylabel("L0 Concentrations"),
-        Guide.title("L_0 and f exploration in $(murine ? "murine" : "human") $dataType data"),
+        Guide.ylabel("L<sub>0</sub> Concentrations"),
+        Guide.title("L<sub>0</sub> and f exploration in $(murine ? "murine" : "human") $dataType data"),
         Scale.x_discrete(labels = i -> valencies[i]),
         Scale.y_discrete(labels = i -> concs[i]),
         Scale.color_continuous(minvalue = llim, maxvalue = ulim),
@@ -179,7 +179,7 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
             M[i, j] = synergy
         end
     end
-    
+
     h = collect(Iterators.flatten(M))
     if murine
         S = zeros(10)
@@ -188,19 +188,19 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
         S[8:9] = h[14:15]
         S[10] = h[20]
         S = convert(DataFrame, S')
-        rename!(S, Symbol.(receptorNamesB1()))
+        rename!(S, receptorNamesB1)
     else
         S = zeros(6)
         S[1:3] = h[2:4]
         S[4:5] = h[7:8]
         S[6] = h[12]
         S = convert(DataFrame, S')
-        rename!(S, Symbol.(humanreceptorNamesB1()))
+        rename!(S, humanreceptorNamesB1)
     end
 
     S = stack(S)
 
-    pl = plot(S, y = :value, x = :variable, color = :variable, Geom.bar(position = :dodge), Theme(key_position = :none), Guide.title("Synergy"))
+    pl = plot(S, y = :value, x = :variable, color = :variable, Geom.bar(position = :dodge), style(key_position = :none), Guide.title("Synergy"))
     return pl
 end
 
@@ -236,7 +236,7 @@ function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, 
         c1q = (:C1q in wdf.Component),
         neutralization = (:Neutralization in wdf.Component),
     )
-    p5 = createHeatmap(df, dataType, 24, -12, -6, murine = murine)
+    p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
     p6 = plotSynergy(fit; L0 = L0, f = f, murine = murine, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
 
     return p1, p2, p3, p4, p5, p6
