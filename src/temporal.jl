@@ -80,7 +80,7 @@ end
 
 
 function plot_Murphy1(L0, f)
-    df = CSV.read(joinpath(dataDir, "murphy-jmedvir-2009-tab1.csv"), comment = "#")
+    df = CSV.File(joinpath(dataDir, "murphy-jmedvir-2009-tab1.csv"), comment = "#") |> DataFrame!
     res = polyfcm_ActV(Matrix(df)' .* L0, KxConst, f, importRtot(murine = false, retdf = false), importKav(murine = false, retdf = false), humanActI)
     #return res
     avgs = mean(res; dims = [2])
@@ -91,7 +91,7 @@ end
 
 
 function plot_Murphy2(L0, f)
-    df = CSV.read(joinpath(dataDir, "murphy-jmedvir-2009-tab2.csv"), comment = "#"; types = [String, Float64, Int64, Int64, Int64, Int64])
+    df = CSV.File(joinpath(dataDir, "murphy-jmedvir-2009-tab2.csv"), comment = "#"; types = [String, Float64, Int64, Int64, Int64, Int64]) |> DataFrame!
     df[!, :Subject] .= Symbol.(df[!, :Subject])
     res = polyfcm_ActV(
         Matrix(df[:, FcgR.humanIgG])' .* L0,
