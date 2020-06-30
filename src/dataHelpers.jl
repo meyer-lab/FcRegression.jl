@@ -38,7 +38,7 @@ const dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
 
         generic_type = Symbol.(["FcgRIIA", "FcgRIIB", "FcgRIIIA"])
         prefixes = ["FcgRIIA-131", "FcgRIIB-232", "FcgRIIIA-158"]
-        options = [['H', 'R'], ['I', 'T'], ['V', 'F']]
+        options = [['H', 'R'], ['I', 'T'], ['F', 'V']]
         ncols = size(df)[2] - 1
 
         for i = 1:3
@@ -51,7 +51,7 @@ const dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
                 push!(df, [Symbol(prefixes[i] * options[i][1]); repeat([0.0], ncols)])
             else  # heterozygous
                 push!(df, [Symbol(prefixes[i] * options[i][1]); Array(df[rowidx, 2:end]) ./ 2])
-                push!(df, [Symbol(prefixes[i] * options[i][2]); Array(df[rowidx, 2:end])])
+                push!(df, [Symbol(prefixes[i] * options[i][2]); Array(df[rowidx, 2:end]) ./ 2])
                 df = df[df[:, :Receptor] .!= generic_type[i], :]
             end
         end
