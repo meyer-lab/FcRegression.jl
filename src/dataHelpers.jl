@@ -16,7 +16,7 @@ const murineIgG = [:IgG1, :IgG2a, :IgG2b, :IgG3]
 const humanIgG = [:IgG1, :IgG2, :IgG3, :IgG4]
 const murineFcgR = [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]
 const humanFcgR =
-    Symbol.(["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158V", "FcgRIIIA-158F", "FcgRIIIB"])
+    Symbol.(["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"])
 const murineActI = [1, -1, 1, 1]
 const humanActI = [1, 1, 1, -1, -1, 1, 1, 1, 1]
 const dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
@@ -40,21 +40,23 @@ const dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
         prefixes = ["FcgRIIA-131", "FcgRIIB-232", "FcgRIIIA-158"]
         options = [['H', 'R'], ['I', 'T'], ['V', 'F']]
         ncols = size(df)[2] - 1
+
         for i = 1:3
             rowidx = findfirst(df[:, :Receptor] .== generic_type[i])
             if genotype[i] == options[i][1]
                 df[rowidx, :Receptor] = Symbol(prefixes[i] * options[i][1])
-                insert!.(df, rowidx + 1, [Symbol(prefixes[i] * options[i][2]); repeat([0.0], ncols)])
+                push!(df, [Symbol(prefixes[i] * options[i][2]); repeat([0.0], ncols)])
             elseif genotype[i] == options[i][2]
                 df[rowidx, :Receptor] = Symbol(prefixes[i] * options[i][2])
-                insert!.(df, rowidx, [Symbol(prefixes[i] * options[i][1]); repeat([0.0], ncols)])
+                push!(df, [Symbol(prefixes[i] * options[i][1]); repeat([0.0], ncols)])
             else  # heterozygous
-                insert!.(df, rowidx, [Symbol(prefixes[i] * options[i][1]); Array(df[rowidx, 2:end]) ./ 2])
-                insert!.(df, rowidx + 1, [Symbol(prefixes[i] * options[i][2]); Array(df[rowidx, 2:end])])
+                push!(df, [Symbol(prefixes[i] * options[i][1]); Array(df[rowidx, 2:end]) ./ 2])
+                push!(df, [Symbol(prefixes[i] * options[i][2]); Array(df[rowidx, 2:end])])
                 df = df[df[:, :Receptor] .!= generic_type[i], :]
             end
         end
 
+        sort!(df, [:Receptor])
     end
     @assert df.Receptor == (murine ? murineFcgR : humanFcgR)
     if retdf
