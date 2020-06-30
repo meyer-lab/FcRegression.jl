@@ -96,7 +96,7 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult; L0
     output = exponential(Matrix(X'), fit)
     D1 = exponential(Matrix(X1'), fit)
     D2 = reverse(exponential(Matrix(X2'), fit))
-    additive = exponential(Matrix((X1+X2)'), fit)
+    additive = exponential(Matrix((X1+reverse(X2, dims = 2))'), fit)
     
     pl = plot(
         layer(x = IgGC[IgGXidx, :], y = output, Geom.line, Theme(default_color = colorant"green")),
@@ -174,7 +174,7 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
             @assert size(X1, 1) == length(fit.x)
             @assert size(X2, 1) == length(fit.x)
             output = exponential(Matrix(X'), fit)
-            additive = exponential(Matrix((X1+X2)'), fit)
+            additive = exponential(Matrix((X1+reverse(X2, dims = 2))'), fit)
             synergy = sum((output - additive) / nPoints)
             M[i, j] = synergy
         end
