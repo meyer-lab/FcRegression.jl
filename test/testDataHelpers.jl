@@ -6,8 +6,7 @@
         arr_HZF = FcgR.importRtot(murine = false, genotype = "HZF")
 
         ## Set up mapping
-        receps =
-            ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158V", "FcgRIIIA-158F", "FcgRIIIB"]
+        receps = string.(FcgR.humanFcgR)
         idxs = 1:9
         d = Dict(receps .=> idxs)
 
