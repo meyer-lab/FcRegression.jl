@@ -28,10 +28,10 @@ function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 
     X = range(0, stop = 1, length = length(output))
 
     pl = plot(
-        layer(x = X, y = output, Geom.line, Theme(default_color = colorant"green")),
-        layer(x = X, y = D1, Geom.line, Theme(default_color = colorant"blue")),
-        layer(x = X, y = D2, Geom.line, Theme(default_color = colorant"orange")),
-        layer(x = X, y = D1 + D2, Geom.line, Theme(default_color = colorant"red")),
+        layer(x = X, y = D1, Geom.line, Theme(default_color = colorant"blue", line_width = 1px)),
+        layer(x = X, y = D2, Geom.line, Theme(default_color = colorant"orange", line_width = 1px)),
+        layer(x = X, y = output, Geom.line, Theme(default_color = colorant"green", line_width = 2px)),
+        layer(x = X, y = D1 + D2, Geom.line, Theme(default_color = colorant"red", line_width = 3px)),
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
         Guide.xticks(orientation=:horizontal),
         Guide.ylabel("$Cell Predicted $title", orientation=:vertical),

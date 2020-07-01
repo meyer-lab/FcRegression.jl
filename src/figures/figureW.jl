@@ -99,10 +99,11 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult; L0
     additive = exponential(Matrix((X1+reverse(X2, dims = 2))'), fit)
 
     pl = plot(
-        layer(x = IgGC[IgGXidx, :], y = output, Geom.line, Theme(default_color = colorant"green")),
-        layer(x = IgGC[IgGXidx, :], y = additive, Geom.line, Theme(default_color = colorant"red")),
-        layer(x = IgGC[IgGXidx, :], y = D1, Geom.line, Theme(default_color = colorant"blue")),
-        layer(x = IgGC[IgGXidx, :], y = D2, Geom.line, Theme(default_color = colorant"orange")),
+        layer(x = IgGC[IgGXidx, :], y = D1, Geom.line, Theme(default_color = colorant"blue", line_width = 1px)),
+        layer(x = IgGC[IgGXidx, :], y = D2, Geom.line, Theme(default_color = colorant"orange", line_width = 1px)),
+        layer(x = IgGC[IgGXidx, :], y = output, Geom.line, Theme(default_color = colorant"green", line_width = 2px)),
+        layer(x = IgGC[IgGXidx, :], y = additive, Geom.line, Theme(default_color = colorant"red", line_width = 3px)),
+
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
         Guide.ylabel("Predicted Depletion"),
         Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "orange"]),
