@@ -12,7 +12,7 @@ function calculateIsobologramPoint(
     quantity = nothing,
     actV = nothing,
     Mix = true,
-    )
+)
     @assert length(FcExpr) == size(Kav, 2)
 
     if actV != nothing

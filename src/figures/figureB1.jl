@@ -33,8 +33,8 @@ function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 
         layer(x = X, y = output, Geom.line, Theme(default_color = colorant"green", line_width = 2px)),
         layer(x = X, y = D1 + D2, Geom.line, Theme(default_color = colorant"red", line_width = 3px)),
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
-        Guide.xticks(orientation=:horizontal),
-        Guide.ylabel("$Cell Predicted $title", orientation=:vertical),
+        Guide.xticks(orientation = :horizontal),
+        Guide.ylabel("$Cell Predicted $title", orientation = :vertical),
         Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "orange"]),
         Guide.title("$title vs IgG Composition"),
         style(key_position = :inside),
@@ -42,27 +42,21 @@ function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 
     return pl
 end
 
-const receptorNamesB1 = Symbol.([
-    "IgG1/2a",
-    "IgG1/2b",
-    "IgG1/3",
-    "IgG1/2b-Fucose",
-    "IgG2a/2b",
-    "IgG2a/3",
-    "IgG2a/2b-Fucose",
-    "IgG2b/3",
-    "IgG2b/2b-Fucose",
-    "IgG3/2b-Fucose",
-])
+const receptorNamesB1 =
+    Symbol.([
+        "IgG1/2a",
+        "IgG1/2b",
+        "IgG1/3",
+        "IgG1/2b-Fucose",
+        "IgG2a/2b",
+        "IgG2a/3",
+        "IgG2a/2b-Fucose",
+        "IgG2b/3",
+        "IgG2b/2b-Fucose",
+        "IgG3/2b-Fucose",
+    ])
 
-const humanreceptorNamesB1 = Symbol.([
-    "IgG1/2",
-    "IgG1/3",
-    "IgG1/4",
-    "IgG2/3",
-    "IgG2/4",
-    "IgG3/4",
-])
+const humanreceptorNamesB1 = Symbol.(["IgG1/2", "IgG1/3", "IgG1/4", "IgG2/3", "IgG2/4", "IgG3/4"])
 
 
 """Figure shows the affect of increasing immune complex concentration on synergies for each IgG combination"""
