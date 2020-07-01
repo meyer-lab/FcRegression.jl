@@ -91,7 +91,9 @@ end
 
 
 function plot_Murphy2(L0, f)
-    df = CSV.File(joinpath(dataDir, "murphy-jmedvir-2009-tab2.csv"), comment = "#"; types = [String, Float64, Int64, Int64, Int64, Int64]) |> DataFrame!
+    df =
+        CSV.File(joinpath(dataDir, "murphy-jmedvir-2009-tab2.csv"), comment = "#"; types = [String, Float64, Int64, Int64, Int64, Int64]) |>
+        DataFrame!
     df[!, :Subject] .= Symbol.(df[!, :Subject])
     res = polyfcm_ActV(
         Matrix(df[:, FcgR.humanIgG])' .* L0,

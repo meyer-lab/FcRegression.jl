@@ -49,7 +49,7 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
         grid[i] = Vector{Union{Plot, Compose.Context}}(fill(context(), grid_dim[2]))
     end
 
-    for i in 1:nplots
+    for i = 1:nplots
         xi = (i - 1) % grid_dim[2] + 1
         yi = (i - 1) ÷ grid_dim[2] + 1
         if i <= length(pls)
