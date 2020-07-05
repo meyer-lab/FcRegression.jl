@@ -2,11 +2,10 @@
 
 """ Plot an example isobologram. """
 function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 = 1e-9, f = 4, murine = true, c1q = false, ex = false)
-    CellName = ["ncMO", "cMO", "NKs", "Neu", "EO"]
-    Cell = CellName[Cellidx]
-    Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
-    Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
-    Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
+    Cell = cellTypes[Cellidx]
+    Xname = murine ? murineIgGFucose[IgGXidx] : humanIgG[IgGXidx]
+    Yname = murine ? murineIgGFucose[IgGYidx] : humanIgG[IgGYidx]
+    Kav_df = importKav(; murine = murine, IgG2bFucose = true, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     ActI = murine ? murineActI : humanActI
     FcExpr = importRtot(murine = murine)[:, Cellidx]
@@ -29,21 +28,22 @@ function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 
     X = range(0, stop = 1, length = length(output))
 
     pl = plot(
-        layer(x = X, y = output, Geom.line, Theme(default_color = colorant"green")),
-        layer(x = X, y = D1, Geom.line, Theme(default_color = colorant"blue")),
-        layer(x = X, y = D2, Geom.line, Theme(default_color = colorant"yellow")),
-        layer(x = X, y = D1 + D2, Geom.line, Theme(default_color = colorant"red")),
+        layer(x = X, y = D1, Geom.line, Theme(default_color = colorant"blue", line_width = 1px)),
+        layer(x = X, y = D2, Geom.line, Theme(default_color = colorant"orange", line_width = 1px)),
+        layer(x = X, y = output, Geom.line, Theme(default_color = colorant"green", line_width = 2px)),
+        layer(x = X, y = D1 + D2, Geom.line, Theme(default_color = colorant"red", line_width = 3px)),
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
-        Guide.ylabel("$Cell Predicted $title"),
-        Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "yellow"]),
+        Guide.xticks(orientation = :horizontal),
+        Guide.ylabel("$Cell Predicted $title", orientation = :vertical),
+        Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "orange"]),
         Guide.title("$title vs IgG Composition"),
-        Theme(key_position = :inside),
+        style(key_position = :inside),
     )
     return pl
 end
 
-function receptorNamesB1()
-    return [
+const receptorNamesB1 =
+    Symbol.([
         "IgG1/2a",
         "IgG1/2b",
         "IgG1/3",
@@ -54,8 +54,9 @@ function receptorNamesB1()
         "IgG2b/3",
         "IgG2b/2b-Fucose",
         "IgG3/2b-Fucose",
-    ]
-end
+    ])
+
+const humanreceptorNamesB1 = Symbol.(["IgG1/2", "IgG1/3", "IgG1/4", "IgG2/3", "IgG2/4", "IgG3/4"])
 
 
 """Figure shows the affect of increasing immune complex concentration on synergies for each IgG combination"""
@@ -75,7 +76,7 @@ function PlotSynGraph()
     end
 
     S = convert(DataFrame, S)
-    rename!(S, Symbol.(receptorNamesB1()))
+    rename!(S, receptorNamesB1)
     S = stack(S)
 
     pl = plot(
@@ -112,7 +113,7 @@ function PlotSynValency()
     end
 
     S = convert(DataFrame, S)
-    rename!(S, Symbol.(receptorNamesB1()))
+    rename!(S, receptorNamesB1)
     S = stack(S)
 
     pl = plot(
@@ -147,7 +148,7 @@ function PlotSynvFcrExpr()
     end
 
     S = convert(DataFrame, S)
-    rename!(S, Symbol.(receptorNamesB1()))
+    rename!(S, receptorNamesB1)
     S = stack(S)
 
     pl = plot(
@@ -165,23 +166,19 @@ function PlotSynvFcrExpr()
     return pl
 end
 
-function figureB1()
-    p1 = plotCellIsobologram(2, 3, 2; L0 = 1e-8, f = 24, murine = false, ex = true)
-    p2 = plotCellIsobologram(2, 4, 2)
-    p3 = PlotSynGraph()
-    p4 = PlotSynValency()
-    p5 = PlotSynvFcrExpr()
-
-    draw(SVG("figureB1.svg", 1000px, 800px), gridstack([p1 p2 p3; p4 p5 p5]))
-end
 
 function figureS(Cellidx; L0 = 1e-9, f = 4, murine = true)
+    setGadflyTheme()
     p1 = plotCellIsobologram(1, 2, Cellidx; L0 = L0, f = f, murine = murine)
     p2 = plotCellIsobologram(1, 3, Cellidx; L0 = L0, f = f, murine = murine)
     p3 = plotCellIsobologram(1, 4, Cellidx; L0 = L0, f = f, murine = murine)
-    p4 = plotCellIsobologram(2, 3, Cellidx; L0 = L0, f = f, murine = murine)
-    p5 = plotCellIsobologram(2, 4, Cellidx; L0 = L0, f = f, murine = murine)
-    p6 = plotCellIsobologram(3, 4, Cellidx; L0 = L0, f = f, murine = murine)
+    p4 = plotCellIsobologram(1, 5, Cellidx; L0 = L0, f = f, murine = murine)
+    p5 = plotCellIsobologram(2, 3, Cellidx; L0 = L0, f = f, murine = murine)
+    p6 = plotCellIsobologram(2, 4, Cellidx; L0 = L0, f = f, murine = murine)
+    p7 = plotCellIsobologram(2, 5, Cellidx; L0 = L0, f = f, murine = murine)
+    p8 = plotCellIsobologram(3, 4, Cellidx; L0 = L0, f = f, murine = murine)
+    p9 = plotCellIsobologram(3, 5, Cellidx; L0 = L0, f = f, murine = murine)
+    p10 = plotCellIsobologram(4, 5, Cellidx; L0 = L0, f = f, murine = murine)
 
-    return p1, p2, p3, p4, p5, p6
+    return p1, p2, p3, p4, p5, p6, p7, p8, p9, p10
 end

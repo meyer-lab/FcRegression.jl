@@ -49,17 +49,19 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
         grid[i] = Vector{Union{Plot, Compose.Context}}(fill(context(), grid_dim[2]))
     end
 
-    for (i, pl) in enumerate(pls)
-        if i > nplots
-            break
-        end
+    for i = 1:nplots
         xi = (i - 1) % grid_dim[2] + 1
         yi = (i - 1) ÷ grid_dim[2] + 1
-        grid[yi][xi] = compose(
-            context(0, 0, widths[yi, xi], 1),
-            (context(), text(0.0, 0.0, 'a' - 1 + i, hleft, vtop), font("Helvetica-Bold"), fontsize(30pt), fill(colorant"black")),
-            (context(), render(pl)),
-        )
+        if i <= length(pls)
+            pl = pls[i]
+            grid[yi][xi] = compose(
+                context(0, 0, widths[yi, xi], 1),
+                (context(), text(0.0, 0.0, 'a' - 1 + i, hleft, vtop), font("Helvetica-Bold"), fontsize(30pt), fill(colorant"black")),
+                (context(), render(pl)),
+            )
+        else
+            grid[yi][xi] = context(0, 0, widths[yi, xi], 1)
+        end
     end
 
     fplrows = Vector(undef, grid_dim[1])
