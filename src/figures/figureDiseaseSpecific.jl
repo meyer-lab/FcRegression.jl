@@ -1,6 +1,6 @@
 function figureB1()
-    p1 = plotCellIsobologram(2, 3, 2; L0 = 1e-8, f = 24, murine = false, ex = true)
-    p2 = plotCellIsobologram(2, 4, 2)
+    p1 = plotDepletionSynergy(2, 3; L0 = 1e-8, f = 24, murine = false, Cellidx = 2, ex = true)
+    p2 = plotDepletionSynergy(2, 4; Cellidx = 2)
     p3 = PlotSynGraph()
     p4 = PlotSynValency()
     p5 = PlotSynvFcrExpr()

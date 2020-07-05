@@ -1,5 +1,5 @@
 
-function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatrix, ActI::Vector; Mix = true)
+function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatrix, ActI; Mix = true)
     """
     Input:
     Rtot: nr * nct matrix, nct = # cell types

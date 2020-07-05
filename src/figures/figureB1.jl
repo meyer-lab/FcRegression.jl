@@ -1,47 +1,5 @@
 """ This file builds the depletion manuscript, Figure 1. """
 
-""" Plot an example isobologram. """
-function plotCellIsobologram(IgGXidx::Int64, IgGYidx::Int64, Cellidx::Int64; L0 = 1e-9, f = 4, murine = true, c1q = false, ex = false)
-    Cell = cellTypes[Cellidx]
-    Xname = murine ? murineIgGFucose[IgGXidx] : humanIgG[IgGXidx]
-    Yname = murine ? murineIgGFucose[IgGYidx] : humanIgG[IgGYidx]
-    Kav_df = importKav(; murine = murine, IgG2bFucose = true, c1q = c1q, retdf = true)
-    Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
-    ActI = murine ? murineActI : humanActI
-    FcExpr = importRtot(murine = murine)[:, Cellidx]
-    if ex
-        FcExpr = zeros(length(humanFcgR))
-        FcExpr[7] = importRtot(murine = murine)[7, Cellidx]
-        ActI = nothing
-    end
-
-    output = calculateIsobologram(IgGXidx, IgGYidx, f, L0, FcExpr, Kav, actV = ActI)
-    D1 = calculateIsobologram(IgGXidx, IgGYidx, f, L0, FcExpr, Kav, actV = ActI, Mix = false)
-    D2 = reverse(calculateIsobologram(IgGYidx, IgGXidx, f, L0, FcExpr, Kav, actV = ActI, Mix = false))
-
-    if ex
-        title = "Receptor Binding"
-    else
-        title = "Activity"
-    end
-
-    X = range(0, stop = 1, length = length(output))
-
-    pl = plot(
-        layer(x = X, y = D1, Geom.line, Theme(default_color = colorant"blue", line_width = 1px)),
-        layer(x = X, y = D2, Geom.line, Theme(default_color = colorant"orange", line_width = 1px)),
-        layer(x = X, y = output, Geom.line, Theme(default_color = colorant"green", line_width = 2px)),
-        layer(x = X, y = D1 + D2, Geom.line, Theme(default_color = colorant"red", line_width = 3px)),
-        Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
-        Guide.xticks(orientation = :horizontal),
-        Guide.ylabel("$Cell Predicted $title", orientation = :vertical),
-        Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "orange"]),
-        Guide.title("$title vs IgG Composition"),
-        style(key_position = :inside),
-    )
-    return pl
-end
-
 const receptorNamesB1 =
     Symbol.([
         "IgG1/2a",
@@ -169,16 +127,16 @@ end
 
 function figureS(Cellidx; L0 = 1e-9, f = 4, murine = true)
     setGadflyTheme()
-    p1 = plotCellIsobologram(1, 2, Cellidx; L0 = L0, f = f, murine = murine)
-    p2 = plotCellIsobologram(1, 3, Cellidx; L0 = L0, f = f, murine = murine)
-    p3 = plotCellIsobologram(1, 4, Cellidx; L0 = L0, f = f, murine = murine)
-    p4 = plotCellIsobologram(1, 5, Cellidx; L0 = L0, f = f, murine = murine)
-    p5 = plotCellIsobologram(2, 3, Cellidx; L0 = L0, f = f, murine = murine)
-    p6 = plotCellIsobologram(2, 4, Cellidx; L0 = L0, f = f, murine = murine)
-    p7 = plotCellIsobologram(2, 5, Cellidx; L0 = L0, f = f, murine = murine)
-    p8 = plotCellIsobologram(3, 4, Cellidx; L0 = L0, f = f, murine = murine)
-    p9 = plotCellIsobologram(3, 5, Cellidx; L0 = L0, f = f, murine = murine)
-    p10 = plotCellIsobologram(4, 5, Cellidx; L0 = L0, f = f, murine = murine)
+    p1 = plotDepletionSynergy(1, 2; L0 = L0, f = f, murine = murine, Cellidx = Cellidx)
+    p2 = plotCellIsobologram(1, 3; L0 = L0, f = f, murine = murine, Cellidx = Cellidx)
+    p3 = plotCellIsobologram(1, 4; L0 = L0, f = f, murine = murine, Cellidx = Cellidx)
+    p4 = plotCellIsobologram(1, 5; L0 = L0, f = f, murine = murine, Cellidx = Cellidx)
+    p5 = plotCellIsobologram(2, 3; L0 = L0, f = f, murine = murine, Cellidx = Cellidx)
+    p6 = plotCellIsobologram(2, 4; L0 = L0, f = f, murine = murine, Cellidx = Cellidx)
+    p7 = plotCellIsobologram(2, 5; L0 = L0, f = f, murine = murine, Cellidx = Cellidx)
+    p8 = plotCellIsobologram(3, 4; L0 = L0, f = f, murine = murine, Cellidx = Cellidx)
+    p9 = plotCellIsobologram(3, 5; L0 = L0, f = f, murine = murine, Cellidx = Cellidx)
+    p10 = plotCellIsobologram(4, 5; L0 = L0, f = f, murine = murine, Cellidx = Cellidx)
 
     return p1, p2, p3, p4, p5, p6, p7, p8, p9, p10
 end

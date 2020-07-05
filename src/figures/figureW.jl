@@ -62,7 +62,7 @@ end
 
 
 
-function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult = nothing; L0, f, murine::Bool, Cellidx = nothing, c1q = false, neutralization = false, ex = false)
+function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64; L0 = 1e-9, f = 4, murine = true, fit = nothing, Cellidx = nothing, c1q = false, neutralization = false, ex = false)
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
     Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
@@ -103,16 +103,17 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult = n
         D2 = vcat(D2, Kav_df[!, :C1q]' * IgGC)
     end
 
-    if fit !== nothing
+    if fit != nothing
         @assert size(output, 1) == length(fit.x)
         @assert size(D1, 1) == length(fit.x)
         @assert size(D2, 1) == length(fit.x)
-        additive = exponential(Matrix((D1 + reverse(D2, dims = 2))'), fit)
+        additive = exponential(Matrix((D1 + reverse(D2; dims = 2))'), fit)
         output = exponential(Matrix(output'), fit)
         D1 = exponential(Matrix(D1'), fit)
         D2 = reverse(exponential(Matrix(D2'), fit))
     else
-        D2 = reverse(D2)
+        D2 = reverse(D2; dims = 2)
+        additive = D1 + D2
     end
 
     pl = plot(
@@ -121,7 +122,8 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult = n
         layer(x = IgGC[IgGXidx, :], y = output, Geom.line, Theme(default_color = colorant"green", line_width = 2px)),
         layer(x = IgGC[IgGXidx, :], y = additive, Geom.line, Theme(default_color = colorant"red", line_width = 3px)),
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
-        Guide.ylabel("Predicted $title"),
+        Guide.xticks(orientation = :horizontal),
+        Guide.ylabel("Predicted $title", orientation = :vertical),
         Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "orange"]),
         Guide.title("Total predicted effects vs $Xname-$Yname Composition"),
         style(key_position = :inside),
@@ -191,7 +193,7 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
             @assert size(X1, 1) == length(fit.x)
             @assert size(X2, 1) == length(fit.x)
             output = exponential(Matrix(X'), fit)
-            additive = exponential(Matrix((X1 + reverse(X2, dims = 2))'), fit)
+            additive = exponential(Matrix((X1 + reverse(X2; dims = 2))'), fit)
             synergy = sum((output - additive) / nPoints)
             M[i, j] = synergy
         end
@@ -245,11 +247,11 @@ function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, 
     p3 = plotCellTypeEffects(wdf, dataType; legend = legend)
     p4 = plotDepletionSynergy(
         IgGX,
-        IgGY,
-        fit;
+        IgGY;
         L0 = L0,
         f = f,
         murine = murine,
+        fit = fit,
         c1q = (:C1q in wdf.Component),
         neutralization = (:Neutralization in wdf.Component),
     )
