@@ -61,50 +61,67 @@ function plotCellTypeEffects(wdf, dataType; legend = true)
 end
 
 
-function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult; L0, f, murine::Bool, c1q = false, neutralization = false)
+function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult = nothing; L0, f, murine::Bool, Cellidx = nothing, c1q = false, neutralization = false, ex = false)
     Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
     Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
-    FcExpr = importRtot(; murine = murine)
     ActI = murine ? murineActI : humanActI
+    
+    if ex
+        FcExpr = zeros(length(humanFcgR))
+        FcExpr[7] = importRtot(murine = murine)[7, Cellidx]
+        ActI = nothing
+        title = "Receptor Binding"
+    elseif Cellidx == nothing
+        FcExpr = importRtot(; murine = murine)
+        title = "Predicted Depletion"
+    else
+        FcExpr = importRtot(murine = murine)[:, Cellidx]
+        title = "Activity"
+    end
 
     nPoints = 100
     IgGC = zeros(Float64, size(Kav, 1), nPoints)
 
     IgGC[IgGYidx, :] = range(eps(), eps(); length = nPoints)
     IgGC[IgGXidx, :] = range(1.0, 1.0; length = nPoints)
-    X1 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
+    D1 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
 
     IgGC[IgGXidx, :] = range(eps(), eps(); length = nPoints)
     IgGC[IgGYidx, :] = range(1.0, 1.0; length = nPoints)
-    X2 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
+    D2 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
 
     IgGC[IgGXidx, :] = range(0.0, 1.0; length = nPoints)
     IgGC[IgGYidx, :] = range(1.0, 0.0; length = nPoints)
-    X = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI)  # size: celltype * nPoints
+    output = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI)  # size: celltype * nPoints
 
     if c1q
-        X = vcat(X, Kav_df[!, :C1q]' * IgGC)
-        X1 = vcat(X1, Kav_df[!, :C1q]' * IgGC)
-        X2 = vcat(X2, Kav_df[!, :C1q]' * IgGC)
+        output = vcat(output, Kav_df[!, :C1q]' * IgGC)
+        D1 = vcat(D1, Kav_df[!, :C1q]' * IgGC)
+        D2 = vcat(D2, Kav_df[!, :C1q]' * IgGC)
     end
-    @assert size(X, 1) == length(fit.x)
-    @assert size(X1, 1) == length(fit.x)
-    @assert size(X2, 1) == length(fit.x)
 
-    output = exponential(Matrix(X'), fit)
-    D1 = exponential(Matrix(X1'), fit)
-    D2 = reverse(exponential(Matrix(X2'), fit))
+    if fit !== nothing
+        @assert size(output, 1) == length(fit.x)
+        @assert size(D1, 1) == length(fit.x)
+        @assert size(D2, 1) == length(fit.x)
+        additive = exponential(Matrix((D1 + reverse(D2, dims = 2))'), fit)
+        output = exponential(Matrix(output'), fit)
+        D1 = exponential(Matrix(D1'), fit)
+        D2 = reverse(exponential(Matrix(D2'), fit))
+    else
+        D2 = reverse(D2)
+    end
 
     pl = plot(
-        layer(x = IgGC[IgGXidx, :], y = output, Geom.line, Theme(default_color = colorant"green")),
-        layer(x = IgGC[IgGXidx, :], y = D1 + D2, Geom.line, Theme(default_color = colorant"red")),
-        layer(x = IgGC[IgGXidx, :], y = D1, Geom.line, Theme(default_color = colorant"blue")),
-        layer(x = IgGC[IgGXidx, :], y = D2, Geom.line, Theme(default_color = colorant"yellow")),
+        layer(x = IgGC[IgGXidx, :], y = D1, Geom.line, Theme(default_color = colorant"blue", line_width = 1px)),
+        layer(x = IgGC[IgGXidx, :], y = D2, Geom.line, Theme(default_color = colorant"orange", line_width = 1px)),
+        layer(x = IgGC[IgGXidx, :], y = output, Geom.line, Theme(default_color = colorant"green", line_width = 2px)),
+        layer(x = IgGC[IgGXidx, :], y = additive, Geom.line, Theme(default_color = colorant"red", line_width = 3px)),
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
-        Guide.ylabel("Predicted Depletion"),
-        Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "yellow"]),
+        Guide.ylabel("Predicted $title"),
+        Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "orange"]),
         Guide.title("Total predicted effects vs $Xname-$Yname Composition"),
         style(key_position = :inside),
     )
