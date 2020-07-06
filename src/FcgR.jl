@@ -37,11 +37,11 @@ function figureAll()
     figure_Hspleen()
     figure_HITP()
 
-    figure_SynncMO()
-    figure_SyncMO()
-    figure_SynNKs()
-    figure_SynNeu()
-    figure_SynEO()
+    figure_Syn_ncMO()
+    figure_Syn_cMO()
+    figure_Syn_NKs()
+    figure_Syn_Neu()
+    figure_Syn_EO()
 end
 
 export polyfc, polyfc_ActV
