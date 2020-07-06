@@ -1,5 +1,5 @@
 @testset "synergy.jl tests" begin
-    @testset "test calculateIsobologram" begin
+    #=@testset "test calculateIsobologram" begin
         Kav = ones(6, 5) * 1e9
         FcExpr = ones(5) * 1e3
         nPoints = 100
@@ -30,5 +30,5 @@
 
         @test all(size(grid) .== size(Kav)[1])
         #@test all(grid .== transpose(grid))
-    end
+    end=#
     end
