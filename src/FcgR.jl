@@ -18,6 +18,7 @@ include("figures/figureW.jl")
 include("figures/figure1.jl")
 include("figures/figure2.jl")
 include("figures/figureB1.jl")
+include("figures/figureS.jl")
 include("figures/figureDiseaseSpecific.jl")
 include("figures/figureCelltypeSynergy.jl")
 

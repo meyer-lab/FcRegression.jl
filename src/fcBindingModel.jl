@@ -1,15 +1,17 @@
-
-function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatrix, ActI; Mix = true)
+function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatrix, ActI = nothing; Mix = true)
     """
     Input:
     Rtot: nr * nct matrix, nct = # cell types
     IgGC: ni * nset matrix, nset = # IgGC combinations
-    Mix: Specifies that output will be the response to a single IgG input if mix = false 
+    Mix: Specifies that output will be the response to a single IgG input if mix = false
     Output:
-    Matrix of size nct * nset filled with ActV
+    Matrix of size nct * nset filled with ActV/Rbound (depends on if ActI is provided)
     """
     ansType = promote_type(typeof(L0), typeof(KxStar), typeof(f), eltype(Rtot), eltype(IgGC))
     res = Matrix{ansType}(undef, size(Rtot, 2), size(IgGC, 2))
+    @assert size(Rtot, 1) == size(Kav, 2)
+    @assert size(IgGC, 1) == size(Kav, 1)
+
     if Mix
         L0 = ones(size(res, 2)) * L0
     else
@@ -17,7 +19,11 @@ function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatri
     end
     for ict = 1:size(res, 1)
         for iset = 1:size(res, 2)
-            res[ict, iset] = polyfc(L0[iset], KxStar, f, Rtot[:, ict], IgGC[:, iset], Kav, ActI).ActV
+            if ActI == nothing
+                res[ict, iset] = polyfc(L0[iset], KxStar, f, Rtot[:, ict], IgGC[:, iset], Kav).Rbound
+            else
+                res[ict, iset] = polyfc(L0[iset], KxStar, f, Rtot[:, ict], IgGC[:, iset], Kav, ActI).ActV
+            end
         end
     end
     return res

@@ -1,14 +1,3 @@
-function figureB1()
-    p1 = plotDepletionSynergy(2, 3; L0 = 1e-8, f = 24, murine = false, Cellidx = 2, ex = true)
-    p2 = plotDepletionSynergy(2, 4; Cellidx = 2)
-    p3 = PlotSynGraph(4; murine = true, Cellidx = 2)
-    p4 = PlotSynValency(1e-9; murine = true, Cellidx = 2)
-    p5 = PlotSynvFcrExpr(1e-9, 4; murine = true, Cellidx = 2)
-
-    draw(SVG("figureB1.svg", 1200px, 800px), plotGrid((2, 3), [p1, p2, p3, p4, p5]; widths = [3 3 4; 4 4 2]))
-end
-
-
 function figure_Mmelanoma()
     p1, p2, p3, p4, p5, p6 = figureW("melanoma"; IgGX = 2, IgGY = 3, L0 = 1e-9, f = 4, murine = true)
     draw(SVG("figure_Mmelanoma.svg", 1200px, 800px), plotGrid((2, 3), [p1, p2, p3, p4, p5, p6]; widths = [5 5 4; 4 6 4]))
