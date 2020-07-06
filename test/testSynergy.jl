@@ -7,7 +7,7 @@
 
         # All the receptors are the same, so this should be flat
         #output = FcgR.calculateIsobologram(1, 5, 16, 1.2e-9, FcExpr, Kav, nPoints = 33)
-        ActI = murine ? murineActI : humanActI
+        ActI = murine ? FcgR.murineActI : FcgR.humanActI
         IgGC[1, :] = range(0.0, 1.0; length = nPoints)
         IgGC[5, :] = range(1.0, 0.0; length = nPoints)
         output = FcgR.polyfc_ActV(1.2e-9, FcgR.KxConst, 16, FcExpr, IgGC, Kav, ActI)
