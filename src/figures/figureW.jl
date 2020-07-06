@@ -61,10 +61,9 @@ function plotCellTypeEffects(wdf, dataType; legend = true)
 end
 
 
-
 function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64; L0 = 1e-9, f = 4, murine = true, fit = nothing, Cellidx = nothing, c1q = false, neutralization = false, ex = false)
-    Xname = murine ? murineIgG[IgGXidx] : humanIgG[IgGXidx]
-    Yname = murine ? murineIgG[IgGYidx] : humanIgG[IgGYidx]
+    Xname = murine ? murineIgGFucose[IgGXidx] : humanIgG[IgGXidx]
+    Yname = murine ? murineIgGFucose[IgGYidx] : humanIgG[IgGYidx]
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     ActI = murine ? murineActI : humanActI
