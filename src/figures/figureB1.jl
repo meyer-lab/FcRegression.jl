@@ -17,109 +17,181 @@ const receptorNamesB1 =
 const humanreceptorNamesB1 = Symbol.(["IgG1/2", "IgG1/3", "IgG1/4", "IgG2/3", "IgG2/4", "IgG3/4"])
 
 
-"""Figure shows the affect of increasing immune complex concentration on synergies for each IgG combination"""
-function PlotSynGraph()
-    Kav = importKav(murine = true, IgG2bFucose = true)
-    FcgR = importRtot(murine = true)[:, 2] #2 = mean cMO
-    IC = exp10.(range(-12, stop = -6, length = 20))
-    S = zeros((length(IC), 10))
-
-    for (ii, value) in enumerate(IC)
-        A = synergyGrid(4, value, FcgR, Kav)
-        h = collect(Iterators.flatten(A))
-        S[ii, 1:5] = h[2:6]
-        S[ii, 5:8] = h[8:11]
-        S[ii, 8:9] = h[14:15]
-        S[ii, 10] = h[20]
+"""Figure shows the affect of increasing L0 on binding synergies for each IgG combination"""
+function PlotSynGraph(f; murine::Bool, fit = nothing, Cellidx = 2, quantity = nothing, c1q = false, neutralization = false)
+    Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
+    Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
+    #ActI = nothing #binding only
+    ActI = murine ? murineActI : humanActI
+    
+    if Cellidx == nothing #Not using single cell
+        FcExpr = importRtot(; murine = murine)
+    else #Using single cell
+        Cell = cellTypes[Cellidx]
+        FcExpr = importRtot(murine = murine)[:, Cellidx]
     end
-
-    S = convert(DataFrame, S)
-    rename!(S, receptorNamesB1)
+    
+    L0 = exp10.(range(-12, stop = -6, length = 20))
+    
+    if murine
+        index = length(receptorNamesB1)
+        S = zeros(length(L0), index)
+        for (ii, value) in enumerate(L0)
+            M = synergyGrid(value, f, FcExpr, Kav; fit = fit, ActI = ActI, c1q = c1q)
+            display(M)
+            h = collect(Iterators.flatten(M))
+            S[ii, 1:4] = h[2:5]
+            S[ii, 5:7] = h[8:10]
+            S[ii, 8:9] = h[14:15]
+            S[ii, 10] = h[20]
+        end
+        S = convert(DataFrame, S)
+        rename!(S, receptorNamesB1)
+    else
+        index = length(humanreceptorNamesB1)
+        S = zeros(length(L0), index)
+        for (ii, value) in enumerate(L0)
+            M = synergyGrid(value, f, FcExpr, Kav; fit = fit, ActI = ActI, c1q = c1q)
+            h = collect(Iterators.flatten(M))
+            S[ii, 1:3] = h[2:4]
+            S[ii, 4:5] = h[7:8]
+            S[ii, 6] = h[12]
+        end
+        S = convert(DataFrame, S)
+        rename!(S, humanreceptorNamesB1)
+    end
     S = stack(S)
 
     pl = plot(
         S,
-        x = repeat(IC; outer = [10]),
+        x = repeat(L0; outer = [index]),
         y = :value,
         Geom.line,
         color = :variable,
         Guide.colorkey(title = "IgG Combination"),
         Scale.x_log10,
-        Guide.xlabel("IC Concentration"),
+        Guide.xlabel("L0"),
         Guide.ylabel("Synergy"),
-        Guide.title("Effect of IC Concentration on Synergy"),
+        Guide.title("L0 vs Synergy for $Cell"),
         Guide.xticks(),
     )
     return pl
 end
 
 """ Figure shows how immune complex valency affects synergy """
-function PlotSynValency()
-    Kav = importKav(murine = true, IgG2bFucose = true)
-    FcgR = importRtot(murine = true)[:, 2] #2 = mean cMO
-    IC = 10e-9
-    Valency = range(1, stop = 24)
-    S = zeros((length(Valency), 10))
-
-    for (ii, value) in enumerate(Valency)
-        A = synergyGrid(value, IC, FcgR, Kav)
-        h = collect(Iterators.flatten(A))
-        S[ii, 1:5] = h[2:6]
-        S[ii, 5:8] = h[8:11]
-        S[ii, 8:9] = h[14:15]
-        S[ii, 10] = h[20]
+function PlotSynValency(L0; murine::Bool, fit = nothing, Cellidx = 2, quantity = nothing, c1q = false, neutralization = false)
+    Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
+    Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
+    #ActI = nothing #binding only
+    ActI = murine ? murineActI : humanActI
+    
+    if Cellidx == nothing #Not using single cell
+        FcExpr = importRtot(; murine = murine)
+    else #Using single cell
+        Cell = cellTypes[Cellidx]
+        FcExpr = importRtot(murine = murine)[:, Cellidx]
     end
-
-    S = convert(DataFrame, S)
-    rename!(S, receptorNamesB1)
+    
+    f = range(1, stop = 24)
+    
+    if murine
+        index = length(receptorNamesB1)
+        S = zeros(length(f), index)
+        for (ii, value) in enumerate(f)
+            M = synergyGrid(L0, value, FcExpr, Kav; fit = fit, ActI = ActI, c1q = c1q)
+            h = collect(Iterators.flatten(M))
+            S[ii, 1:4] = h[2:5]
+            S[ii, 5:7] = h[8:10]
+            S[ii, 8:9] = h[14:15]
+            S[ii, 10] = h[20]
+        end
+        S = convert(DataFrame, S)
+        rename!(S, receptorNamesB1)
+    else
+        index = length(humanreceptorNamesB1)
+        S = zeros(length(f), index)
+        for (ii, value) in enumerate(f)
+            M = synergyGrid(L0, value, FcExpr, Kav; fit = fit, ActI = ActI, c1q = c1q)
+            h = collect(Iterators.flatten(M))
+            S[ii, 1:3] = h[2:4]
+            S[ii, 4:5] = h[7:8]
+            S[ii, 6] = h[12]
+        end
+        S = convert(DataFrame, S)
+        rename!(S, humanreceptorNamesB1)
+    end
     S = stack(S)
 
     pl = plot(
         S,
-        x = repeat(Valency; outer = [10]),
+        x = repeat(f; outer = [index]),
         y = :value,
         Geom.point,
         color = :variable,
         Guide.colorkey(title = "IgG Combination"),
         Guide.xlabel("IC Valency"),
         Guide.ylabel("Synergy"),
-        Guide.title("Effect of IC Valency on Synergy"),
+        Guide.title("IC Valency vs Synergy for $Cell"),
     )
     return pl
 end
 
-function PlotSynvFcrExpr()
+function PlotSynvFcrExpr(f, L0; murine::Bool, fit = nothing, Cellidx = 2, quantity = nothing, c1q = false, neutralization = false)
     """ Figure shows how Fc receptor expression affects synergy """
-    Kav = importKav(murine = true, IgG2bFucose = true)
-    FcgR = importRtot(murine = true)[:, 2] #2 = mean cMO
-    IC = 10e-9
+    Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
+    Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
+    #ActI = nothing #binding only
+    ActI = murine ? murineActI : humanActI
+    
+    if Cellidx == nothing #Not using single cell
+        FcExpr = importRtot(; murine = murine)
+    else #Using single cell
+        Cell = cellTypes[Cellidx]
+        FcExpr = importRtot(murine = murine)[:, Cellidx]
+    end
+    
     multiplier = exp10.(range(-2, stop = 0, length = 50))
     S = zeros((50, 10))
-
-    for (ii, value) in enumerate(multiplier)
-        A = synergyGrid(4, IC, (FcgR * value), Kav)
-        h = collect(Iterators.flatten(A))
-        S[ii, 1:5] = h[2:6]
-        S[ii, 5:8] = h[8:11]
-        S[ii, 8:9] = h[14:15]
-        S[ii, 10] = h[20]
+    
+    if murine
+        index = length(receptorNamesB1)
+        S = zeros(length(multiplier), index)
+        for (ii, value) in enumerate(multiplier)
+            M = synergyGrid(L0, f, (FcExpr*value), Kav; fit = fit, ActI = ActI, c1q = c1q)
+            h = collect(Iterators.flatten(M))
+            S[ii, 1:4] = h[2:5]
+            S[ii, 5:7] = h[8:10]
+            S[ii, 8:9] = h[14:15]
+            S[ii, 10] = h[20]
+        end
+        S = convert(DataFrame, S)
+        rename!(S, receptorNamesB1)
+    else
+        index = length(humanreceptorNamesB1)
+        S = zeros(length(multiplier), index)
+        for (ii, value) in enumerate(f)
+            M = synergyGrid(L0, f, (FcExpr*value), Kav; fit = fit, ActI = ActI, c1q = c1q)
+            h = collect(Iterators.flatten(M))
+            S[ii, 1:3] = h[2:4]
+            S[ii, 4:5] = h[7:8]
+            S[ii, 6] = h[12]
+        end
+        S = convert(DataFrame, S)
+        rename!(S, humanreceptorNamesB1)
     end
-
-    S = convert(DataFrame, S)
-    rename!(S, receptorNamesB1)
     S = stack(S)
 
     pl = plot(
         S,
-        x = repeat(multiplier; outer = [10]),
+        x = repeat(multiplier; outer = [index]),
         y = :value,
         Geom.line,
         Scale.x_log10,
         color = :variable,
         Guide.colorkey(title = "IgG Combination"),
-        Guide.xlabel("Fcr Expression"),
+        Guide.xlabel("Fc Expression"),
         Guide.ylabel("Synergy"),
-        Guide.title("Effect of Fc Expression on Synergy"),
+        Guide.title("Fc Expression vs Synergy for $Cell"),
     )
     return pl
 end
