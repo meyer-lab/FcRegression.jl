@@ -4,6 +4,7 @@
         FcExpr = ones(5) * 1e3
         murine = true
         nPoints = 100
+        IgGC = zeros(Float64, size(Kav, 1), nPoints)
 
         # All the receptors are the same, so this should be flat
         #output = FcgR.calculateIsobologram(1, 5, 16, 1.2e-9, FcExpr, Kav, nPoints = 33)
