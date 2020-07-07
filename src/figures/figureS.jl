@@ -28,6 +28,7 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64; L0 = 1e-9, f = 4, 
     if fit != nothing  # use disease model
         FcExpr = importRtot(; murine = murine)
         title = "Depletion"
+        ymax = 1.0
         D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
     elseif Cellidx != nothing
         if murine
