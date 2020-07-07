@@ -1,4 +1,4 @@
-function figureS(Cellidx; L0 = 1e-9, f = 4, murine = true)
+function figureS(Cellidx; L0 = 1e-9, f = 4, murine = false)
     setGadflyTheme()
     p1 = plotDepletionSynergy(1, 2; L0 = L0, f = f, murine = murine, Cellidx = Cellidx)
     p2 = plotDepletionSynergy(1, 3; L0 = L0, f = f, murine = murine, Cellidx = Cellidx)
