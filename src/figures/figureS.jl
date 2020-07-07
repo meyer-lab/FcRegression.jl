@@ -43,6 +43,12 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64; L0 = 1e-9, f = 4, 
     else
         @error "Not allowed combination of fit/Cellidx/RecepIdx."
     end
+    
+    if murine
+        ymax = murineResponse[Cellidx]
+    else
+        ymax = humanResponse[Cellidx]
+    end
 
     x = range(0.0, 1.0; length = nPoints)
     @assert length(x) == length(D1)
@@ -58,6 +64,7 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64; L0 = 1e-9, f = 4, 
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
         Guide.xticks(orientation = :horizontal),
         Guide.ylabel("Predicted $title", orientation = :vertical),
+        Coord.cartesian(ymin = 0, ymax = ymax),
         Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "orange"]),
         Guide.title("Total predicted effects vs $Xname-$Yname Composition"),
         style(key_position = :inside),
