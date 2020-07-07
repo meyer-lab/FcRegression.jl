@@ -30,6 +30,11 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64; L0 = 1e-9, f = 4, 
         title = "Depletion"
         D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
     elseif Cellidx != nothing
+        if murine
+            ymax = murineResponse[Cellidx]
+        else
+            ymax = humanResponse[Cellidx]
+        end
         if RecepIdx == nothing  # single cell type
             FcExpr = importRtot(murine = murine)[:, Cellidx]
             title = "Activity"
@@ -42,12 +47,6 @@ function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64; L0 = 1e-9, f = 4, 
         end
     else
         @error "Not allowed combination of fit/Cellidx/RecepIdx."
-    end
-    
-    if murine
-        ymax = murineResponse[Cellidx]
-    else
-        ymax = humanResponse[Cellidx]
     end
 
     x = range(0.0, 1.0; length = nPoints)
