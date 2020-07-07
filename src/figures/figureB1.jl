@@ -28,11 +28,14 @@ const humanreceptorNamesB1 = Symbol.(["IgG1/2", "IgG1/3", "IgG1/4", "IgG2/3", "I
 
 
 """Figure shows the affect of increasing L0 on binding synergies for each IgG combination"""
-function PlotSynGraph(f; murine::Bool, fit = nothing, Cellidx = 2, c1q = false, neutralization = false)
+function PlotSynGraph(f; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c1q = false, neutralization = false)
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
-    #ActI = nothing #binding only
-    ActI = murine ? murineActI : humanActI
+    if Rbound
+        ActI = nothing #binding only
+    else
+        ActI = murine ? murineActI : humanActI
+    end
 
     if Cellidx == nothing #Not using single cell
         FcExpr = importRtot(; murine = murine)
