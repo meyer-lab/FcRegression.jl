@@ -1,3 +1,42 @@
+function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, legend = true)
+    preset_W = nothing
+    if murine
+        df = importDepletion(dataType)
+        color = (dataType == "HIV") ? :Label : :Background
+        shape = :Condition
+    else
+        if preset
+            @assert dataType in ["blood", "bone", "ITP"]
+            preset_W = fitRegression(importDepletion(dataType), intercept; L0 = L0, f = f, murine = true)
+            preset_W = preset_W.x
+        end
+        df = importHumanized(dataType)
+        color = :Genotype
+        shape = (dataType == "ITP") ? :Condition : :Concentration
+    end
+
+    fit, odf, wdf = CVResults(df, intercept, preset_W; L0 = L0, f = f, murine = murine)
+    @assert all(in(propertynames(odf)).([color, shape]))
+    p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
+    p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
+    p3 = plotCellTypeEffects(wdf, dataType; legend = legend)
+    p4 = plotDepletionSynergy(
+        IgGX,
+        IgGY;
+        L0 = L0,
+        f = f,
+        murine = murine,
+        fit = fit,
+        c1q = (:C1q in wdf.Component),
+        neutralization = (:Neutralization in wdf.Component),
+    )
+    p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
+    p6 = plotSynergy(L0, f; murine = murine, fit = fit, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
+
+    return p1, p2, p3, p4, p5, p6
+end
+
+
 function plotActualvFit(odf, dataType, colorL::Symbol, shapeL::Symbol; legend = true)
     pl = plot(
         odf,
@@ -61,58 +100,6 @@ function plotCellTypeEffects(wdf, dataType; legend = true)
 end
 
 
-function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64, fit::fitResult; L0, f, murine::Bool, c1q = false, neutralization = false)
-    Xname = murine ? murineIgGFucose[IgGXidx] : humanIgG[IgGXidx]
-    Yname = murine ? murineIgGFucose[IgGYidx] : humanIgG[IgGYidx]
-    Kav_df = importKav(; murine = murine, c1q = c1q, retdf = true)
-    Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
-    FcExpr = importRtot(; murine = murine)
-    ActI = murine ? murineActI : humanActI
-
-    nPoints = 100
-    IgGC = zeros(Float64, size(Kav, 1), nPoints)
-
-    IgGC[IgGYidx, :] = range(eps(), eps(); length = nPoints)
-    IgGC[IgGXidx, :] = range(1.0, 1.0; length = nPoints)
-    X1 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
-
-    IgGC[IgGXidx, :] = range(eps(), eps(); length = nPoints)
-    IgGC[IgGYidx, :] = range(1.0, 1.0; length = nPoints)
-    X2 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
-
-    IgGC[IgGXidx, :] = range(0.0, 1.0; length = nPoints)
-    IgGC[IgGYidx, :] = range(1.0, 0.0; length = nPoints)
-    X = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI)  # size: celltype * nPoints
-
-    if c1q
-        X = vcat(X, Kav_df[!, :C1q]' * IgGC)
-        X1 = vcat(X1, Kav_df[!, :C1q]' * IgGC)
-        X2 = vcat(X2, Kav_df[!, :C1q]' * IgGC)
-    end
-    @assert size(X, 1) == length(fit.x)
-    @assert size(X1, 1) == length(fit.x)
-    @assert size(X2, 1) == length(fit.x)
-
-    output = exponential(Matrix(X'), fit)
-    D1 = exponential(Matrix(X1'), fit)
-    D2 = reverse(exponential(Matrix(X2'), fit))
-    additive = exponential(Matrix((X1 + reverse(X2, dims = 2))'), fit)
-
-    pl = plot(
-        layer(x = IgGC[IgGXidx, :], y = D1, Geom.line, Theme(default_color = colorant"blue", line_width = 1px)),
-        layer(x = IgGC[IgGXidx, :], y = D2, Geom.line, Theme(default_color = colorant"orange", line_width = 1px)),
-        layer(x = IgGC[IgGXidx, :], y = output, Geom.line, Theme(default_color = colorant"green", line_width = 2px)),
-        layer(x = IgGC[IgGXidx, :], y = additive, Geom.line, Theme(default_color = colorant"red", line_width = 3px)),
-        Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
-        Guide.ylabel("Predicted Depletion"),
-        Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "orange"]),
-        Guide.title("Total predicted effects vs $Xname-$Yname Composition"),
-        style(key_position = :inside),
-    )
-    return pl
-end
-
-
 function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
     concs = exp10.(range(clmin, stop = clmax, length = clmax - clmin + 1))
     valencies = [2:vmax;]
@@ -142,47 +129,22 @@ function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
     return pl
 end
 
-function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutralization = false)
-    Kav_df = importKav(; murine = murine, IgG2bFucose = true, c1q = c1q, retdf = true)
+function plotSynergy(L0, f; murine::Bool, fit = nothing, Cellidx = nothing, quantity = nothing, c1q = false, neutralization = false)
+    Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
-    FcExpr = importRtot(; murine = murine)
     ActI = murine ? murineActI : humanActI
 
-    nPoints = 100
-    M = zeros(size(Kav)[1], size(Kav)[1])
-
-    for i = 1:size(Kav)[1]
-        for j = 1:(i - 1)
-            IgGC = zeros(Float64, size(Kav, 1), nPoints)
-            IgGC[j, :] .= eps()
-            IgGC[i, :] .= 1
-            X1 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
-
-            IgGC[i, :] .= eps()
-            IgGC[j, :] .= 1
-            X2 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI, Mix = false)  # size: celltype * nPoints
-
-            IgGC[i, :] = range(0.0, 1.0; length = nPoints)
-            IgGC[j, :] = range(1.0, 0.0; length = nPoints)
-            X = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, ActI)  # size: celltype * nPoints
-            if c1q
-                X = vcat(X, Kav_df[!, :C1q]' * IgGC)
-                X1 = vcat(X1, Kav_df[!, :C1q]' * IgGC)
-                X2 = vcat(X2, Kav_df[!, :C1q]' * IgGC)
-            end
-            @assert size(X, 1) == length(fit.x)
-            @assert size(X1, 1) == length(fit.x)
-            @assert size(X2, 1) == length(fit.x)
-            output = exponential(Matrix(X'), fit)
-            additive = exponential(Matrix((X1 + reverse(X2, dims = 2))'), fit)
-            synergy = sum((output - additive) / nPoints)
-            M[i, j] = synergy
-        end
+    if Cellidx == nothing #Not using single cell
+        FcExpr = importRtot(; murine = murine)
+    else #Using single cell
+        FcExpr = importRtot(murine = murine)[:, Cellidx]
     end
+
+    M = synergyGrid(L0, f, FcExpr, Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
 
     h = collect(Iterators.flatten(M))
     if murine
-        S = zeros(10)
+        S = zeros(length(receptorNamesB1))
         S[1:4] = h[2:5]
         S[5:7] = h[8:10]
         S[8:9] = h[14:15]
@@ -190,7 +152,7 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
         S = convert(DataFrame, S')
         rename!(S, receptorNamesB1)
     else
-        S = zeros(6)
+        S = zeros(length(humanreceptorNamesB1))
         S[1:3] = h[2:4]
         S[4:5] = h[7:8]
         S[6] = h[12]
@@ -202,42 +164,4 @@ function plotSynergy(fit::fitResult; L0, f, murine::Bool, c1q = false, neutraliz
 
     pl = plot(S, y = :value, x = :variable, color = :variable, Geom.bar(position = :dodge), style(key_position = :none), Guide.title("Synergy"))
     return pl
-end
-
-function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, legend = true)
-    preset_W = nothing
-    if murine
-        df = importDepletion(dataType)
-        color = (dataType == "HIV") ? :Label : :Background
-        shape = :Condition
-    else
-        if preset
-            @assert dataType in ["blood", "bone", "ITP"]
-            preset_W = fitRegression(importDepletion(dataType), intercept; L0 = L0, f = f, murine = true)
-            preset_W = preset_W.x
-        end
-        df = importHumanized(dataType)
-        color = :Genotype
-        shape = (dataType == "ITP") ? :Condition : :Concentration
-    end
-
-    fit, odf, wdf = CVResults(df, intercept, preset_W; L0 = L0, f = f, murine = murine)
-    @assert all(in(propertynames(odf)).([color, shape]))
-    p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
-    p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
-    p3 = plotCellTypeEffects(wdf, dataType; legend = legend)
-    p4 = plotDepletionSynergy(
-        IgGX,
-        IgGY,
-        fit;
-        L0 = L0,
-        f = f,
-        murine = murine,
-        c1q = (:C1q in wdf.Component),
-        neutralization = (:Neutralization in wdf.Component),
-    )
-    p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
-    p6 = plotSynergy(fit; L0 = L0, f = f, murine = murine, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
-
-    return p1, p2, p3, p4, p5, p6
 end
