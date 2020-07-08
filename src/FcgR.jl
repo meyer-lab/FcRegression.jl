@@ -38,11 +38,16 @@ function figureAll()
     figure_Hspleen()
     figure_HITP()
 
-    figure_Syn_ncMO()
-    figure_Syn_cMO()
-    figure_Syn_NKs()
-    figure_Syn_Neu()
-    figure_Syn_EO()
+    figure_MSyn_ncMO()
+    figure_MSyn_cMO()
+    figure_MSyn_NKs()
+    figure_MSyn_Neu()
+    figure_MSyn_EO()
+    figure_HSyn_ncMO()
+    figure_HSyn_cMO()
+    figure_HSyn_NKs()
+    figure_HSyn_Neu()
+    figure_HSyn_EO()
 end
 
 export polyfc, polyfc_ActV

@@ -3,9 +3,9 @@
 function figureB1()
     p1 = plotDepletionSynergy(2, 3; L0 = 1e-8, f = 24, murine = false, Cellidx = 2, RecepIdx = 3)
     p2 = plotDepletionSynergy(2, 4; Cellidx = 2)
-    p3 = PlotSynGraph(4; murine = true, Cellidx = 2, Rbound = true)
-    p4 = PlotSynValency(1e-9; murine = true, Cellidx = 2, Rbound = true)
-    p5 = PlotSynvFcrExpr(1e-9, 4; murine = true, Cellidx = 2, Rbound = true)
+    p3 = plotSynL0(4; murine = true, Cellidx = 2, Rbound = true)
+    p4 = plotSynf(1e-9; murine = true, Cellidx = 2, Rbound = true)
+    p5 = plotSynFc(1e-9, 4; murine = true, Cellidx = 2, Rbound = true)
 
     draw(SVG("figureB1.svg", 1200px, 800px), plotGrid((2, 3), [p1, p2, p3, p4, p5]; widths = [3 3 4; 4 4 2]))
 end
@@ -28,7 +28,7 @@ const humanreceptorNamesB1 = Symbol.(["IgG1/2", "IgG1/3", "IgG1/4", "IgG2/3", "I
 
 
 """Figure shows the affect of increasing L0 on binding synergies for each IgG combination"""
-function PlotSynGraph(f; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c1q = false, neutralization = false)
+function plotSynL0(f; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c1q = false, neutralization = false)
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     if Rbound
@@ -92,7 +92,7 @@ function PlotSynGraph(f; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true
 end
 
 """ Figure shows how immune complex valency affects synergy """
-function PlotSynValency(L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c1q = false, neutralization = false)
+function plotSynf(L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c1q = false, neutralization = false)
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     if Rbound
@@ -152,7 +152,7 @@ function PlotSynValency(L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = t
     return pl
 end
 
-function PlotSynvFcrExpr(f, L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c1q = false, neutralization = false)
+function plotSynFc(f, L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c1q = false, neutralization = false)
     """ Figure shows how Fc receptor expression affects synergy """
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])

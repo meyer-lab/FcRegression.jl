@@ -1,4 +1,4 @@
-function figureS(Cellidx; L0 = 1e-9, f = 4, murine = false)
+function figureS(Cellidx; L0 = 1e-9, f = 4, murine = true)
     setGadflyTheme()
     p1 = plotDepletionSynergy(1, 2; L0 = L0, f = f, murine = murine, Cellidx = Cellidx)
     p2 = plotDepletionSynergy(1, 3; L0 = L0, f = f, murine = murine, Cellidx = Cellidx)
@@ -17,6 +17,16 @@ end
 
 function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64; L0 = 1e-9, f = 4, murine = true,
         fit = nothing, Cellidx = nothing, c1q = false, neutralization = false, RecepIdx = nothing)
+    if murine
+        if IgGXidx > length(murineIgGFucose) || IgGYidx > length(murineIgGFucose)
+            IgGXidx, IgGYidx = 1, 2
+        end
+    else
+        if IgGXidx > length(humanIgG) || IgGYidx > length(humanIgG)
+            IgGXidx, IgGYidx = 1, 2
+        end
+    end
+    @assert IgGXidx != IgGYidx
     Xname = murine ? murineIgGFucose[IgGXidx] : humanIgG[IgGXidx]
     Yname = murine ? murineIgGFucose[IgGYidx] : humanIgG[IgGYidx]
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
