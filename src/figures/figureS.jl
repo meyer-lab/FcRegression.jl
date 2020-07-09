@@ -15,8 +15,18 @@ function figureS(Cellidx; L0 = 1e-9, f = 4, murine = true)
 end
 
 
-function plotDepletionSynergy(IgGXidx::Int64, IgGYidx::Int64; L0 = 1e-9, f = 4, murine = true,
-        fit = nothing, Cellidx = nothing, c1q = false, neutralization = false, RecepIdx = nothing)
+function plotDepletionSynergy(
+    IgGXidx::Int64,
+    IgGYidx::Int64;
+    L0 = 1e-9,
+    f = 4,
+    murine = true,
+    fit = nothing,
+    Cellidx = nothing,
+    c1q = false,
+    neutralization = false,
+    RecepIdx = nothing,
+)
     if murine
         if IgGXidx > length(murineIgGFucose) || IgGYidx > length(murineIgGFucose)
             IgGXidx, IgGYidx = 1, 2
