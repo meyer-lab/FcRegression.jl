@@ -26,6 +26,7 @@ function plotDepletionSynergy(
     c1q = false,
     neutralization = false,
     RecepIdx = nothing,
+    Rbound = false
 )
     if murine
         if IgGXidx > length(murineIgGFucose) || IgGYidx > length(murineIgGFucose)
@@ -42,8 +43,13 @@ function plotDepletionSynergy(
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     Receps = murine ? murineFcgR : humanFcgR
-    ActI = murine ? murineActI : humanActI
     nPoints = 100
+    
+    if Rbound
+        ActI = nothing #binding only
+    else
+        ActI = murine ? murineActI : humanActI
+    end
 
     if fit != nothing  # use disease model
         FcExpr = importRtot(; murine = murine)
