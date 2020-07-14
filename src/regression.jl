@@ -9,6 +9,7 @@ mutable struct fitResult{T}
     intercept::T
     r::T            # best fit residue
 end
+exponential(x::Real) = cdf(Exponential(), x)
 exponential(X::Matrix, p::Vector) = cdf.(Exponential(), X * p)
 exponential(X::Matrix, p::fitResult) = cdf.(Exponential(), X * p.x .+ p.intercept)
 inv_exponential(y::Real) = -log(1 - y)
