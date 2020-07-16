@@ -58,9 +58,9 @@ function plotDepletionSynergy(
         D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
     elseif Cellidx != nothing
         if murine
-            ymax = murineResponse[Cellidx]
+            ymax = murineActYmax[Cellidx]
         else
-            ymax = humanResponse[Cellidx]
+            ymax = humanActYmax[Cellidx]
         end
         if RecepIdx == nothing  # single cell type
             FcExpr = importRtot(murine = murine)[:, Cellidx]
