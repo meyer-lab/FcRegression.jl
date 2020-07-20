@@ -19,8 +19,8 @@ const murineFcgR = [:FcgRI, :FcgRIIB, :FcgRIII, :FcgRIV]
 const humanFcgR =
     Symbol.(["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"])
 const murineActI = [1, -1, 1, 1]
-const murineResponse = [8e4, 3.5e4, 2.5e-1, 7e3, 3]
-const humanResponse = [6e4, 2e5, 4.5e4, 3.5e4, 3e3]
+const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
+const humanActYmax = [5.5e4, 1.5e5, 4.5e4, 3.5e4, 3e3] # ymax for synergy plots
 const humanActI = [1, 1, 1, -1, -1, 1, 1, 1, 1]
 const dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
 
