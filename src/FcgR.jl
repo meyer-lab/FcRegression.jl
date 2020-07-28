@@ -12,7 +12,7 @@ include("regression.jl")
 include("synergy.jl")
 include("translation.jl")
 include("temporal.jl")
-include("fitting.jl")
+include("fitActI.jl")
 
 include("figures/figureCommon.jl")
 include("figures/figureW.jl")
