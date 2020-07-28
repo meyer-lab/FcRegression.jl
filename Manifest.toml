@@ -8,9 +8,9 @@ version = "0.5.0"
 
 [[ArrayInterface]]
 deps = ["LinearAlgebra", "Requires", "SparseArrays"]
-git-tree-sha1 = "0eccdcbe27fd6bd9cba3be31c67bdd435a21e865"
+git-tree-sha1 = "066d1e7a9eb4873660791db7f0d8c7902600b81c"
 uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
-version = "2.9.1"
+version = "2.11.0"
 
 [[AxisAlgorithms]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "WoodburyMatrices"]
@@ -41,9 +41,9 @@ version = "0.8.1"
 
 [[ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
-git-tree-sha1 = "6e7aa35d0294f647bb9c985ccc34d4f5d371a533"
+git-tree-sha1 = "efec1b9e082d98d24c99f243abafb4653fb960d6"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
-version = "0.10.6"
+version = "0.10.7"
 
 [[Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "InteractiveUtils", "Reexport"]
@@ -182,15 +182,15 @@ version = "0.8.13"
 
 [[FiniteDiff]]
 deps = ["ArrayInterface", "LinearAlgebra", "Requires", "SparseArrays", "StaticArrays"]
-git-tree-sha1 = "80becc23db3942d9e5eb8d0d42e725b9c46616f8"
+git-tree-sha1 = "43b397bf66d07d113cc2cc012dd2029d336c3894"
 uuid = "6a86dc24-6348-571c-b903-95158fe2bd41"
-version = "2.5.0"
+version = "2.5.1"
 
 [[FixedPointNumbers]]
 deps = ["Statistics"]
-git-tree-sha1 = "06cc75081c58853a58f8e7e74eedd43b7ce9b730"
+git-tree-sha1 = "335bfdceacc84c5cdf16aadc768aa5ddfc5383cc"
 uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
-version = "0.8.3"
+version = "0.8.4"
 
 [[Fontconfig]]
 deps = ["Fontconfig_jll", "Libdl", "Printf"]
@@ -393,9 +393,9 @@ uuid = "b7351bd1-99d9-5c5d-8786-f205a815c4d7"
 version = "0.2.0"
 
 [[OffsetArrays]]
-git-tree-sha1 = "4ba4cd84c88df8340da1c3e2d8dcb9d18dd1b53b"
+git-tree-sha1 = "2066e16af994955287f2e03ba1d9e890eb43b0dd"
 uuid = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
-version = "1.1.1"
+version = "1.1.2"
 
 [[OpenSpecFun_jll]]
 deps = ["CompilerSupportLibraries_jll", "Libdl", "Pkg"]
@@ -574,9 +574,9 @@ version = "1.0.0"
 
 [[Tables]]
 deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "TableTraits", "Test"]
-git-tree-sha1 = "c45dcc27331febabc20d86cb3974ef095257dcf3"
+git-tree-sha1 = "b7f762e9820b7fab47544c36f26f54ac59cf8abf"
 uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "1.0.4"
+version = "1.0.5"
 
 [[Test]]
 deps = ["Distributed", "InteractiveUtils", "Logging", "Random"]
@@ -607,8 +607,8 @@ uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
 version = "1.2.11+14"
 
 [[polyBindingModel]]
-deps = ["LinearAlgebra", "NLsolve"]
-git-tree-sha1 = "bcb211cc72dd60fa4266c06a86073664e5686c17"
+deps = ["Combinatorics", "LinearAlgebra", "NLsolve"]
+git-tree-sha1 = "3c9220c00a3e2c4faaebcfd2c97a24f749ea6d05"
 repo-rev = "master"
 repo-url = "https://github.com/meyer-lab/polyBindingModel.jl.git"
 uuid = "d8b71a59-0ce5-46cb-870e-e9e7240c6f77"
