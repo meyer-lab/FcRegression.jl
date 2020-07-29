@@ -1,4 +1,4 @@
-function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, legend = true)
+function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, murine::Bool, ActI = nothing, IgGX = 2, IgGY = 3, legend = true)
     preset_W = nothing
     if murine
         df = importDepletion(dataType)
@@ -7,7 +7,7 @@ function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, 
     else
         if preset
             @assert dataType in ["blood", "bone", "ITP"]
-            preset_W = fitRegression(importDepletion(dataType), intercept; L0 = L0, f = f, murine = true)
+            preset_W = fitRegression(importDepletion(dataType), intercept; L0 = L0, f = f, murine = true, ActI = ActI)
             preset_W = preset_W.x
         end
         df = importHumanized(dataType)
@@ -15,7 +15,7 @@ function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, 
         shape = (dataType == "ITP") ? :Condition : :Concentration
     end
 
-    fit, odf, wdf = CVResults(df, intercept, preset_W; L0 = L0, f = f, murine = murine)
+    fit, odf, wdf = CVResults(df, intercept, preset_W; L0 = L0, f = f, murine = murine, ActI = ActI)
     @assert all(in(propertynames(odf)).([color, shape]))
     p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
     p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
@@ -30,7 +30,7 @@ function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, 
         c1q = (:C1q in wdf.Component),
         neutralization = (:Neutralization in wdf.Component),
     )
-    p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
+    p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine, ActI = ActI)
     p6 = plotSynergy(L0, f; murine = murine, fit = fit, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
 
     return p1, p2, p3, p4, p5, p6
@@ -100,13 +100,13 @@ function plotCellTypeEffects(wdf, dataType; legend = true)
 end
 
 
-function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
+function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax; murine = true, ActI = nothing)
     concs = exp10.(range(clmin, stop = clmax, length = clmax - clmin + 1))
     valencies = [2:vmax;]
     minimums = zeros(length(concs), length(valencies))
     for (i, L0) in enumerate(concs)
         for (j, v) in enumerate(valencies)
-            fit = fitRegression(df; L0 = L0, f = v, murine = murine)
+            fit = fitRegression(df; L0 = L0, f = v, murine = murine, ActI = ActI)
             minimums[i, j] = fit.r
         end
     end

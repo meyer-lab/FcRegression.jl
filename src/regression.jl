@@ -13,10 +13,14 @@ exponential(X::Matrix, p::Vector) = cdf.(Exponential(), X * p)
 exponential(X::Matrix, p::fitResult) = cdf.(Exponential(), X * p.x .+ p.intercept)
 inv_exponential(y::Real) = -log(1 - y)
 
-function regGenData(df; L0, f, murine::Bool, retdf = false)
+function regGenData(df; L0, f, murine::Bool, retdf = false, ActI::Union{Vector, Nothing} = nothing)
     df = copy(df)
     FcRecep = murine ? murineFcgR : humanFcgR
-    ActI = murine ? murineActI : humanActI
+    if ActI == nothing
+        ActI = murine ? murineActI : humanActI
+    else
+        @assert length(ActI) == length(murine ? murineActI : humanActI)
+    end
 
     if :Concentration in propertynames(df)
         df[!, :Concentration] .*= L0
@@ -54,8 +58,8 @@ function regGenData(df; L0, f, murine::Bool, retdf = false)
     end
 end
 
-function fitRegression(df, intercept = false, preset_W::Union{Vector, Nothing} = nothing; L0, f, murine::Bool)
-    (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine)
+function fitRegression(df, intercept = false, preset_W::Union{Vector, Nothing} = nothing; L0, f, murine::Bool, ActI = nothing)
+    (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine, ActI = ActI)
     Xo = copy(X)
     if preset_W != nothing
         @assert size(X, 2) == length(preset_W)
@@ -77,23 +81,23 @@ function fitRegression(df, intercept = false, preset_W::Union{Vector, Nothing} =
     return res
 end
 
-function LOOCrossVal(df, intercept, preset_W; L0, f, murine)
+function LOOCrossVal(df, intercept, preset_W; L0, f, murine, ActI = nothing)
     n = size(df, 1)
     fitResults = Vector(undef, n)
     LOOindex = LOOCV(n)
     for (i, idx) in enumerate(LOOindex)
-        fitResults[i] = fitRegression(df[idx, :], intercept, preset_W; L0 = L0, f = f, murine = murine)
+        fitResults[i] = fitRegression(df[idx, :], intercept, preset_W; L0 = L0, f = f, murine = murine, ActI = ActI)
     end
     return fitResults
 end
 
-function bootstrap(df, intercept, preset_W; nsample = 100, L0, f, murine)
+function bootstrap(df, intercept, preset_W; nsample = 100, L0, f, murine, ActI = nothing)
     n = size(df, 1)
     fitResults = Vector(undef, nsample)
     for i = 1:nsample
         for j = 1:5
             fit = try
-                fitRegression(df[sample(1:n, n, replace = true), :], intercept, preset_W; L0 = L0, f = f, murine = murine).x
+                fitRegression(df[sample(1:n, n, replace = true), :], intercept, preset_W; L0 = L0, f = f, murine = murine, ActI = ActI).x
             catch e
                 @warn "This bootstrapping set failed at fitRegression"
                 nothing
@@ -109,12 +113,12 @@ function bootstrap(df, intercept, preset_W; nsample = 100, L0, f, murine)
 end
 
 
-function CVResults(df, intercept = false, preset_W = nothing; L0, f, murine::Bool)
-    fit_res = fitRegression(df, intercept, preset_W; L0 = L0, f = f, murine = murine)
-    loo_out = LOOCrossVal(df, intercept, preset_W; L0 = L0, f = f, murine = murine)
-    btp_out = bootstrap(df, intercept, preset_W; L0 = L0, f = f, murine = murine)
+function CVResults(df, intercept = false, preset_W = nothing; L0, f, murine::Bool, ActI = nothing)
+    fit_res = fitRegression(df, intercept, preset_W; L0 = L0, f = f, murine = murine, ActI = ActI)
+    loo_out = LOOCrossVal(df, intercept, preset_W; L0 = L0, f = f, murine = murine, ActI = ActI)
+    btp_out = bootstrap(df, intercept, preset_W; L0 = L0, f = f, murine = murine, ActI = ActI)
 
-    (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine, retdf = true)
+    (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine, retdf = true, ActI = ActI)
     @assert length(fit_res.x) == length(names(X))
 
     odf = df[!, in([:Condition, :Background, :Genotype, :Label, :Donor]).(propertynames(df))]
@@ -130,7 +134,7 @@ function CVResults(df, intercept = false, preset_W = nothing; L0, f, murine::Boo
         wildtype[!, :Genotype] .= "ZZZ"
     end
     rename!(wildtype, :IgG => :Condition)
-    wtX, _ = regGenData(wildtype; L0 = L0, f = f, murine = murine, retdf = true)
+    wtX, _ = regGenData(wildtype; L0 = L0, f = f, murine = murine, retdf = true, ActI = ActI)
 
     comp = in(propertynames(wtX)).(propertynames(X))
     fit_res.x = fit_res.x[comp]    # remove neutralization from HIV

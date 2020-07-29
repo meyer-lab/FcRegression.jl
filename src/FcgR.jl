@@ -12,6 +12,7 @@ include("regression.jl")
 include("synergy.jl")
 include("translation.jl")
 include("temporal.jl")
+include("fitActI.jl")
 
 include("figures/figureCommon.jl")
 include("figures/figureW.jl")
@@ -48,6 +49,8 @@ function figureAll()
     figure_HSyn_NKs()
     figure_HSyn_Neu()
     figure_HSyn_EO()
+
+    figure_fitActI()
 end
 
 export polyfc, polyfc_ActV
