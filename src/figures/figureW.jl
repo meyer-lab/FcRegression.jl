@@ -51,7 +51,7 @@ function plotActualvFit(odf, dataType, colorL::Symbol, shapeL::Symbol; legend = 
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
         Guide.ylabel("Fitted effect"),
-        Guide.title("Actual effect vs fitted effect for $dataType"),
+        Guide.title("Actual vs fitted effect for $dataType"),
         style(point_size = 5px, key_position = legend ? :right : :none),
     )
     return pl
@@ -71,7 +71,7 @@ function plotActualvPredict(odf, dataType, colorL::Symbol, shapeL::Symbol; legen
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
         Guide.ylabel("LOO predicted effect"),
-        Guide.title("Actual effect vs LOO prediction for $dataType"),
+        Guide.title("Actual vs LOO prediction for $dataType"),
         style(point_size = 5px, key_position = legend ? :right : :none),
     )
     return pl
