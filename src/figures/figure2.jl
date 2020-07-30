@@ -1,10 +1,7 @@
 function figure2()
     setGadflyTheme()
-    fig_melanoma = figureW("melanoma"; IgGX = 2, IgGY = 3, L0 = 1e-9, f = 4, murine = true, legend = false)
-    fig_ITP = figureW("ITP"; IgGX = 1, IgGY = 2, L0 = 1e-8, f = 10, murine = true, legend = true)
-    fig_blood = figureW("blood"; IgGX = 1, IgGY = 2, L0 = 1e-10, f = 4, murine = true, legend = false)
-    fig_bone = figureW("bone"; IgGX = 1, IgGY = 2, L0 = 1e-10, f = 4, murine = true)
-    fig_HIV = figureW("HIV"; IgGX = 1, IgGY = 2, L0 = 1e-8, f = 24, murine = true)
+    fig_melanoma = figureW("melanoma"; IgGX = 2, IgGY = 3, L0 = 1e-9, f = 6, murine = true, legend = false)
+    fig_ITP = figureW("ITP"; IgGX = 1, IgGY = 2, L0 = 1e-9, f = 6, murine = true, legend = true)
 
     draw(
         SVG("figure2.svg", 7inch, 7inch),
@@ -16,10 +13,12 @@ function figure2()
     )
 
     draw(
-        SVG("figureS2.svg", 16inch, 7inch),
+        SVG("figureS2.svg", 9inch, 6inch),
         plotGrid(
-            (2, 4),
-            [fig_melanoma[2] fig_ITP[2] fig_blood[1] fig_blood[2] fig_bone[1] fig_bone[2] fig_HIV[1] fig_HIV[2]];
+            (2, 2),
+            [fig_melanoma[2] fig_melanoma[5]; fig_ITP[2] fig_ITP[5]],
+            widths = [3 4; 1 1],
+            heights = [2, 1],
         ),
     )
 end
