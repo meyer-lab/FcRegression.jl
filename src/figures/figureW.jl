@@ -26,12 +26,13 @@ function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, 
         L0 = L0,
         f = f,
         murine = murine,
+        dataType = dataType,
         fit = fit,
         c1q = (:C1q in wdf.Component),
         neutralization = (:Neutralization in wdf.Component),
     )
     p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine, ActI = ActI)
-    p6 = plotSynergy(L0, f; murine = murine, fit = fit, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
+    p6 = plotSynergy(L0, f; murine = murine, datat fit = fit, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
 
     return p1, p2, p3, p4, p5, p6
 end
@@ -162,6 +163,15 @@ function plotSynergy(L0, f; murine::Bool, fit = nothing, Cellidx = nothing, quan
 
     S = stack(S)
 
-    pl = plot(S, y = :value, x = :variable, color = :variable, Geom.bar(position = :dodge), style(key_position = :none), Guide.title("Synergy"))
+    pl = plot(
+        S, 
+        y = :value, 
+        x = :variable, 
+        color = :variable, 
+        Geom.bar(position = :dodge), 
+        style(key_position = :none), 
+        Guide.xlabel("Mixture", orientation = :vertical), 
+        Guide.xlabel("Synergy", orientation = :horizontal), 
+        Guide.title("Synergy vs Mixture"))
     return pl
 end
