@@ -11,10 +11,10 @@ venv/bin/activate: requirements.txt
 depletion: figure2.svg figure3.svg
 
 figures:
-	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figureAll()'
+	julia -e 'using Pkg; Pkg.activate("."); using FcRegression; FcRegression.figureAll()'
 
 figure%.svg:
-	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figure$*()'
+	julia -e 'using Pkg; Pkg.activate("."); using FcRegression; FcRegression.figure$*()'
 
 output/manuscript.md: venv manuscripts/%/*.md
 	mkdir -p ./output
@@ -42,7 +42,7 @@ output/manuscript.html: venv output/manuscript.md
 		--output=output/manuscript.html output/manuscript.md
 
 coverage.cob:
-	julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Pkg.activate("."); Pkg.test("FcgR"; coverage=true); coverage = process_folder(); LCOV.writefile("coverage-lcov.info", coverage)'
+	julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Pkg.activate("."); Pkg.test("FcRegression"; coverage=true); coverage = process_folder(); LCOV.writefile("coverage-lcov.info", coverage)'
 	pip3 install --user lcov_cobertura
 	python3 ~/.local/lib/python3.8/site-packages/lcov_cobertura.py coverage-lcov.info -o coverage.cob
 
