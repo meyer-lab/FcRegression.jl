@@ -1,12 +1,12 @@
 @testset "dataHelpers.jl tests" begin
     @testset "Testing human FcgR abundance import" begin
-        arr_HIV = FcgR.importRtot(murine = false)
-        arr_heterozygote = FcgR.importRtot(murine = false, genotype = "ZZZ")
-        arr_RTF = FcgR.importRtot(murine = false, genotype = "RTF")
-        arr_HZF = FcgR.importRtot(murine = false, genotype = "HZF")
+        arr_HIV = FcRegression.importRtot(murine = false)
+        arr_heterozygote = FcRegression.importRtot(murine = false, genotype = "ZZZ")
+        arr_RTF = FcRegression.importRtot(murine = false, genotype = "RTF")
+        arr_HZF = FcRegression.importRtot(murine = false, genotype = "HZF")
 
         ## Set up mapping
-        receps = string.(FcgR.humanFcgR)
+        receps = string.(FcRegression.humanFcgR)
         idxs = 1:9
         d = Dict(receps .=> idxs)
 
@@ -28,12 +28,12 @@
 
     @testset "Depletion data can be imported" begin
         for dataType in ["ITP", "blood", "bone", "melanoma", "HIV"]
-            df = FcgR.importDepletion(dataType)
+            df = FcRegression.importDepletion(dataType)
             @test eltype(propertynames(df)) == Symbol
             @test eltype(df[!, :Condition]) == Symbol
         end
         for dataType in ["blood", "spleen", "bone"]
-            df = FcgR.importHumanized(dataType)
+            df = FcRegression.importHumanized(dataType)
             @test eltype(propertynames(df)) == Symbol
             @test eltype(df[!, :Condition]) == Symbol
         end

@@ -1,5 +1,5 @@
 
-all: figures depletion temporal output/depletion/manuscript.html output/translation/manuscript.html
+all: figures depletion output/manuscript.html
 
 venv: venv/bin/activate
 
@@ -16,18 +16,15 @@ figures:
 figure%.svg:
 	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.figure$*()'
 
-temporal:
-	julia -e 'using Pkg; Pkg.activate("."); using FcgR; FcgR.plotTemporal()'
+output/manuscript.md: venv manuscripts/%/*.md
+	mkdir -p ./output
+	. venv/bin/activate && manubot process --content-directory=manuscripts/ --output-directory=output/ --log-level=WARNING
 
-output/%/manuscript.md: venv manuscripts/%/*.md
-	mkdir -p ./output/$*
-	. venv/bin/activate && manubot process --content-directory=manuscripts/$*/ --output-directory=output/$*/ --log-level=WARNING
-
-output/%/manuscript.html: venv output/%/manuscript.md
-	cp *.svg output/$*/
+output/manuscript.html: venv output/manuscript.md
+	cp *.svg output/
 	. venv/bin/activate && pandoc \
 		--from=markdown --to=html5 --filter=pandoc-fignos --filter=pandoc-eqnos --filter=pandoc-tablenos \
-		--bibliography=output/$*/references.json \
+		--bibliography=output/references.json \
 		--csl=common/templates/manubot/style.csl \
 		--metadata link-citations=true \
 		--include-after-body=common/templates/manubot/default.html \
@@ -42,7 +39,7 @@ output/%/manuscript.html: venv output/%/manuscript.md
 		--mathjax --variable math="" \
 		--include-after-body=common/templates/manubot/plugins/math.html \
 		--include-after-body=common/templates/manubot/plugins/hypothesis.html \
-		--output=output/$*/manuscript.html output/$*/manuscript.md
+		--output=output/manuscript.html output/manuscript.md
 
 coverage.cob:
 	julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Pkg.activate("."); Pkg.test("FcgR"; coverage=true); coverage = process_folder(); LCOV.writefile("coverage-lcov.info", coverage)'
