@@ -16,7 +16,7 @@ figures:
 figure%.svg:
 	julia -e 'using Pkg; Pkg.activate("."); using FcRegression; FcRegression.figure$*()'
 
-output/manuscript.md: venv manuscripts/%/*.md
+output/manuscript.md: venv manuscripts/*.md
 	mkdir -p ./output
 	. venv/bin/activate && manubot process --content-directory=manuscripts/ --output-directory=output/ --log-level=WARNING
 
