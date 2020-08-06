@@ -25,6 +25,8 @@ function figureAll()
     setGadflyTheme()
 
     figureB1()
+    figure2()
+    figure3()
 
     figure_Mmelanoma()
     figure_MITP()
