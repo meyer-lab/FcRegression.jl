@@ -7,4 +7,3 @@ using LinearAlgebra
 include("testDataHelpers.jl")
 include("testSynergy.jl")
 include("testRegression.jl")
-
