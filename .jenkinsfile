@@ -17,7 +17,7 @@ pipeline {
     }
     stage('Build Figures') {
       steps {
-	      sh 'make figures'
+	    sh 'make figures'
         lock ('manubot') {
           sh 'make output/manuscript.md'
         }
