@@ -15,50 +15,7 @@ exponential(X::Matrix, p::Vector) = cdf.(Exponential(), X * p)
 exponential(X::Matrix, p::fitResult) = cdf.(Exponential(), X * p.x .+ p.intercept)
 inv_exponential(y::Real) = -log(1 - y)
 
-function regGenData(df; L0, f, murine::Bool, retdf = false, ActI::Union{Vector, Nothing} = nothing)
-    df = copy(df)
-    FcRecep = murine ? murineFcgR : humanFcgR
-    if ActI == nothing
-        ActI = murine ? murineActI : humanActI
-    else
-        @assert length(ActI) == length(murine ? murineActI : humanActI)
-    end
 
-    if :Concentration in propertynames(df)
-        df[!, :Concentration] .*= L0
-    else
-        insertcols!(df, 3, :Concentration => L0)
-    end
-
-    X = DataFrame(repeat([Float64], length(cellTypes)), cellTypes)
-    for i = 1:size(df, 1)
-        Kav = convert(Vector{Float64}, df[i, FcRecep])
-        Kav = reshape(Kav, 1, :)
-        Rtot = importRtot(; murine = murine, genotype = murine ? "NA" : df[i, :Genotype])
-        push!(X, polyfc_ActV(df[i, :Concentration], KxConst, f, Rtot, [1.0], Kav, ActI))
-    end
-
-    if :C1q in propertynames(df)
-        X[!, :C1q] = df[!, :C1q] .* df[!, :Concentration]
-    end
-    if :Neutralization in propertynames(df)
-        X[!, :Neutralization] = df[!, :Neutralization]
-    end
-
-    if :Background in propertynames(df)
-        X[df[:, :Background] .== "NeuKO", :Neu] .= 0.0
-        X[df[:, :Background] .== "ncMOKO", :ncMO] .= 0.0
-    end
-    Y = df[!, :Target]
-
-    @assert all(isfinite.(Matrix(X)))
-    @assert all(isfinite.(Y))
-    if retdf
-        return (X, Y)
-    else
-        return (Matrix{Float64}(X), Y)
-    end
-end
 
 function fitRegression(df, intercept = false, preset_W::Union{Vector, Nothing} = nothing; L0, f, murine::Bool, ActI = nothing)
     (X, Y) = regGenData(df; L0 = L0, f = f, murine = murine, ActI = ActI)
