@@ -22,7 +22,7 @@ const murineActI = [1, -1, 1, 1]
 const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
 const humanActYmax = [5.5e4, 1.5e5, 4.5e4, 3.5e4, 3e3] # ymax for synergy plots
 const humanActI = [1, 1, 1, -1, -1, 1, 1, 1, 1]
-const dataDir = joinpath(dirname(pathof(FcgR)), "..", "data")
+const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
 @memoize function importRtot(; murine = true, genotype = "HIV", retdf = false)
     if murine

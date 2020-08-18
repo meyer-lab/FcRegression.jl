@@ -1,6 +1,5 @@
-module FcgR
+module FcRegression
 using LinearAlgebra
-using ForwardDiff
 import Distances
 using Gadfly
 using Compose
@@ -10,8 +9,6 @@ include("fcBindingModel.jl")
 include("dataHelpers.jl")
 include("regression.jl")
 include("synergy.jl")
-include("translation.jl")
-include("temporal.jl")
 include("fitActI.jl")
 
 include("figures/figureCommon.jl")
@@ -28,6 +25,8 @@ function figureAll()
     setGadflyTheme()
 
     figureB1()
+    figure2()
+    figure3()
 
     figure_Mmelanoma()
     figure_MITP()
