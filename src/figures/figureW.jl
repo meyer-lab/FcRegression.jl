@@ -14,7 +14,8 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
     p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
     p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
     p3 = plotCellTypeEffects(effects, dataType; legend = legend)
-    p4 = plotDepletionSynergy(
+    p4 = nothing
+    """plotDepletionSynergy(
         IgGX,
         IgGY;
         L0 = L0,
@@ -23,9 +24,9 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
         fit = fit,
         c1q = (:C1q in effects.Component),
         neutralization = (:Neutralization in effects.Component),
-    )
+    )"""
     p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
-    p6 = plotSynergy(L0, f; murine = murine, fit = fit, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
+    p6 = nothing#plotSynergy(L0, f; murine = murine, fit = fit, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
 
     return p1, p2, p3, p4, p5, p6
 end
