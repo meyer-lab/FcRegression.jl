@@ -164,14 +164,15 @@ function plotSynergy(L0, f; murine::Bool, fit = nothing, Cellidx = nothing, quan
     S = stack(S)
 
     pl = plot(
-        S, 
-        y = :value, 
-        x = :variable, 
-        color = :variable, 
-        Geom.bar(position = :dodge), 
-        style(key_position = :none), 
-        Guide.xlabel("Mixture", orientation = :vertical), 
-        Guide.xlabel("Synergy", orientation = :horizontal), 
-        Guide.title("Synergy vs Mixture"))
+        S,
+        y = :value,
+        x = :variable,
+        color = :variable,
+        Geom.bar(position = :dodge),
+        style(key_position = :none),
+        Guide.xlabel("Mixture", orientation = :vertical),
+        Guide.xlabel("Synergy", orientation = :horizontal),
+        Guide.title("Synergy vs Mixture"),
+    )
     return pl
 end
