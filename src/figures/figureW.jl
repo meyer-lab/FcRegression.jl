@@ -11,22 +11,23 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
 
     res, odf, effects, ActI_df = regressionResult(df; L0 = L0, f = f, murine = murine)
     @assert all(in(names(odf)).([color, shape]))
+
     p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
     p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
     p3 = plotCellTypeEffects(effects, dataType; legend = legend)
-    p4 = nothing
-    """plotDepletionSynergy(
+    p4 = plotDepletionSynergy(
         IgGX,
         IgGY;
         L0 = L0,
         f = f,
         murine = murine,
-        fit = fit,
-        c1q = (:C1q in effects.Component),
-        neutralization = (:Neutralization in effects.Component),
-    )"""
+        fit = res,
+        c1q = ("C1q" in effects.Component),
+        neutralization = ("Neutralization" in names(df)),
+    )
     p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
-    p6 = nothing#plotSynergy(L0, f; murine = murine, fit = fit, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
+    p6 = plotSynergy(L0, f; murine = murine, fit = res,
+        c1q = ("C1q" in effects.Component), neutralization = ("Neutralization" in names(df)))
 
     return p1, p2, p3, p4, p5, p6
 end
@@ -77,7 +78,7 @@ function plotCellTypeEffects(wdf, dataType; legend = true)
     pl = plot(
         wdf,
         x = "Condition",
-        y = "Median",
+        y = "Weight",
         color = "Component",
         Guide.colorkey(pos = [0.05w, -0.3h]),
         Geom.bar(position = :dodge),
@@ -136,7 +137,7 @@ function plotSynergy(L0, f; murine::Bool, fit = nothing, Cellidx = nothing, quan
         FcExpr = importRtot(murine = murine)[:, Cellidx]
     end
 
-    M = synergyGrid(L0, f, FcExpr, Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
+    M = synergyGrid(L0, f, FcExpr, Kav; murine = murine, fit = fit, c1q = c1q, neutralization = neutralization)
 
     h = collect(Iterators.flatten(M))
     if murine

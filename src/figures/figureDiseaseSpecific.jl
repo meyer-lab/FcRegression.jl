@@ -24,7 +24,7 @@ function figure_MHIV()
 end
 
 function figure_MBcell()
-    p1, p2, p3, p4, p5, p6 = figureW("Bcell", true; IgGX = 1, IgGY = 2, L0 = 1e-10, f = 4, murine = true)
+    p1, p2, p3, p4, p5, p6 = figureW("Bcell"; IgGX = 1, IgGY = 2, L0 = 1e-10, f = 4, murine = true)
     draw(SVG("figure_MBcell.svg", 1000px, 800px), plotGrid((2, 3), [p1, p2, p3, p4, p5, p6]; widths = [5 5 4; 4 6 4]))
 end
 

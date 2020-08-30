@@ -21,7 +21,7 @@ function plotDepletionSynergy(
     L0 = 1e-9,
     f = 4,
     murine = true,
-    fit = nothing,
+    fit::Union{optResult, Nothing} = nothing,
     Cellidx = nothing,
     c1q = false,
     neutralization = false,
@@ -55,7 +55,8 @@ function plotDepletionSynergy(
         FcExpr = importRtot(; murine = murine)
         title = "Depletion"
         ymax = 1.0
-        D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
+        D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav;
+            murine = murine, fit = fit, c1q = c1q, neutralization = neutralization)
     elseif Cellidx != nothing
         if murine
             ymax = murineActYmax[Cellidx]
@@ -65,12 +66,12 @@ function plotDepletionSynergy(
         if RecepIdx == nothing  # single cell type
             FcExpr = importRtot(murine = murine)[:, Cellidx]
             title = "Activity"
-            D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav; murine = murine, ActI = ActI)
+            D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav; murine = murine, fit = nothing)
         else  # bind to one receptor
             FcExpr = zeros(length(Receps), 1)
             FcExpr[RecepIdx, 1] = importRtot(murine = murine)[RecepIdx, Cellidx]
             title = "$(murine ? murineFcgR[RecepIdx] : humanFcgR[RecepIdx]) Binding"
-            D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav; murine = murine)
+            D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav; murine = murine, fit = nothing)
         end
     else
         @error "Not allowed combination of fit/Cellidx/RecepIdx."

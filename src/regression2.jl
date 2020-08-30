@@ -1,6 +1,5 @@
 using NonNegLeastSquares
 
-
 mutable struct optResult{T}
     cellWs::Array{T}
     ActI::Array{T}
@@ -34,7 +33,7 @@ function modelPred(df; L0, f, murine::Bool = true)
             Xfc[i, :, k] = polyfc(df[k, :Concentration], KxConst, f, Rtotc, [1.0], Kav).Rmulti_n
         end
     end
-    Xdf = df[!, in(["Condition", "Concentration", "C1q", "Neutralization"]).(names(df))]
+    Xdf = df[!, in(["Condition", "Concentration", "Genotype", "C1q", "Neutralization"]).(names(df))]
     if "C1q" in names(df)
         Xdf[!, "C1q"] = Xdf[!, "C1q"] .* Xdf[!, "Concentration"]
     end
@@ -44,19 +43,31 @@ function modelPred(df; L0, f, murine::Bool = true)
 end
 
 
-function regressionPred(Xfc, Xdf, cellWeights, recepActI; showXmat=false)
+function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepActI; showXmat=false)
     ansType = promote_type(eltype(Xfc), eltype(cellWeights), eltype(recepActI))
-    extra = Xdf[!, in(["C1q", "Neutralization"]).(names(Xdf))]
+    noextra = true
+    if Xdf == nothing
+        extra = DataFrame([])
+        noextra = true
+    else
+        extra = Xdf[!, in(["C1q", "Neutralization"]).(names(Xdf))]
+        noextra = size(extra, 2) == 0
+    end
+
     @assert length(cellWeights) == size(Xfc, 1) + size(extra, 2)
     @assert length(recepActI) == size(Xfc, 2)
-    @assert size(Xfc, 3) == size(Xdf, 1)
+    if !noextra
+        @assert size(Xfc, 3) == size(extra, 1)
+        Xmat = DataFrame(repeat([ansType], length(cellWeights)), vcat(cellTypes, names(extra)))
+    else
+        Xmat = DataFrame(repeat([ansType], length(cellWeights)), cellTypes)
+    end
 
-    Xmat = DataFrame(repeat([ansType], length(cellWeights)), vcat(FcRegression.cellTypes, names(extra)))
     Ypred = Array{ansType}(undef, size(Xfc, 3))
     for k = 1:size(Xfc, 3)
         recepEff = Xfc[:, :, k] * recepActI
         recepEff[recepEff .< 0.0] .= 0.0
-        if size(extra, 2) > 0
+        if !noextra
             append!(recepEff, extra[k, :])
         end
         push!(Xmat, recepEff)
@@ -159,6 +170,12 @@ function regressionResult(df; L0, f, murine::Bool)
     odf[!, "Y"] = Y
     odf[!, "Fitted"] = exponential(regressionPred(Xfc, Xdf, res))
     odf[!, "LOOPredict"] = exponential([regressionPred(Xfc[:, :, ii], Xdf[[ii], :], loo_res[ii])[1] for ii in 1:length(loo_res)])
+    if "Label" in names(df)
+        odf[!, "Label"] .= df[!, "Label"]
+    end
+    if "Genotype" in names(df)
+        odf[!, "Genotype"] .= df[!, "Genotype"]
+    end
 
     # Prepare for cell type weights in wildtype
     wildtype = copy(importKav(; murine = murine, c1q = ("C1q" in names(df)), IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true))

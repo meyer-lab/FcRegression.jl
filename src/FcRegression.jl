@@ -25,7 +25,7 @@ include("figures/figureCelltypeSynergy.jl")
 function figureAll()
     setGadflyTheme()
 
-    figureB1()
+    #figureB1()
     figure2()
     figure3()
 
@@ -50,8 +50,6 @@ function figureAll()
     figure_HSyn_NKs()
     figure_HSyn_Neu()
     figure_HSyn_EO()
-
-    figure_fitActI()
 end
 
 export polyfc, polyfc_ActV
