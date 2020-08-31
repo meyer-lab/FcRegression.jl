@@ -22,8 +22,9 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
         f = f,
         murine = murine,
         fit = res,
-        c1q = ("C1q" in effects.Component),
         neutralization = ("Neutralization" in names(df)),
+        c1q = ("C1q" in effects.Component),
+        dataType = dataType,
     )
     p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
     p6 = plotSynergy(L0, f; murine = murine, fit = res,
@@ -159,6 +160,16 @@ function plotSynergy(L0, f; murine::Bool, fit = nothing, Cellidx = nothing, quan
 
     S = stack(S)
 
-    pl = plot(S, y = :value, x = :variable, color = :variable, Geom.bar(position = :dodge), style(key_position = :none), Guide.title("Synergy"))
+    pl = plot(
+        S,
+        y = :value,
+        x = :variable,
+        color = :variable,
+        Geom.bar(position = :dodge),
+        style(key_position = :none),
+        Guide.xlabel("Mixture", orientation = :vertical),
+        Guide.xlabel("Synergy", orientation = :horizontal),
+        Guide.title("Synergy vs Mixture"),
+    )
     return pl
 end

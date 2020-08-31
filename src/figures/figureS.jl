@@ -21,6 +21,7 @@ function plotDepletionSynergy(
     L0 = 1e-9,
     f = 4,
     murine = true,
+    dataType = nothing,
     fit::Union{optResult, Nothing} = nothing,
     Cellidx = nothing,
     c1q = false,
@@ -53,7 +54,8 @@ function plotDepletionSynergy(
 
     if fit != nothing  # use disease model
         FcExpr = importRtot(; murine = murine)
-        title = "Depletion"
+        ylabel = "Depletion"
+        title = "$dataType"
         ymax = 1.0
         D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav;
             murine = murine, fit = fit, c1q = c1q, neutralization = neutralization)
@@ -65,13 +67,14 @@ function plotDepletionSynergy(
         end
         if RecepIdx == nothing  # single cell type
             FcExpr = importRtot(murine = murine)[:, Cellidx]
-            title = "Activity"
+            title = "$(cellTypes[Cellidx])"
             D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav; murine = murine, fit = nothing)
         else  # bind to one receptor
             FcExpr = zeros(length(Receps), 1)
             FcExpr[RecepIdx, 1] = importRtot(murine = murine)[RecepIdx, Cellidx]
-            title = "$(murine ? murineFcgR[RecepIdx] : humanFcgR[RecepIdx]) Binding"
             D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav; murine = murine, fit = nothing)
+            ylabel = "$(murine ? murineFcgR[RecepIdx] : humanFcgR[RecepIdx]) Binding"
+            title = "$(murine ? murineFcgR[RecepIdx] : humanFcgR[RecepIdx])"
         end
     else
         @error "Not allowed combination of fit/Cellidx/RecepIdx."
@@ -90,10 +93,11 @@ function plotDepletionSynergy(
         layer(x = x, y = additive, Geom.line, Theme(default_color = colorant"red", line_width = 3px)),
         Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
         Guide.xticks(orientation = :horizontal),
-        Guide.ylabel("Predicted $title", orientation = :vertical),
+        Guide.xlabel("L0 = $L0", orientation = :horizontal),
+        Guide.ylabel("Predicted $ylabel", orientation = :vertical),
         Coord.cartesian(ymin = 0, ymax = ymax),
         Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "orange"]),
-        Guide.title("Total predicted effects vs $Xname-$Yname Composition"),
+        Guide.title("Predicted effects vs $Xname-$Yname Composition ($title)"),
         style(key_position = :inside),
     )
     return pl
