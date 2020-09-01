@@ -84,7 +84,8 @@ regressionPred(Xfc, Xdf, fit::optResult; showXmat=false) = regressionPred(Xfc, X
 
 function old_opt(Xfc, extra, Y, ActI)
     cY = inv_exponential.(Y)
-    Xmat = Matrix{eltype(Xfc)}(undef, size(Xfc, 3), size(Xfc, 1))
+    ansType = promote_type(eltype(Xfc), eltype(Y), eltype(ActI))
+    Xmat = Matrix{ansType}(undef, size(Xfc, 3), size(Xfc, 1))
     for i in 1:size(Xfc, 1)
         for j in 1:size(Xfc, 3)
             Xmat[j, i] = Xfc[i, :, j]' * ActI
@@ -104,22 +105,29 @@ function old_opt(Xfc, extra, Y, ActI)
 end
 
 
-function fitRegression2(Xfc, Xdf, Y; murine::Bool=true)
+function fitRegression2(Xfc, Xdf, Y; murine::Bool=true, upper = nothing, lower= nothing)
     cY = inv_exponential.(Y)
     extra = Xdf[!, in(["C1q", "Neutralization"]).(names(Xdf))]
     cellWlen = size(Xfc, 1) + size(extra, 2)
 
-    """func = x -> old_opt(Xfc, extra, Y, x)[2]
+    if upper == nothing
+        upper = Float64.(murine ? murineActI : humanActI)
+    end
+    if lower == nothing
+        lower = Float64.(murine ? murineActI : humanActI)
+    end
+    upper .+= eps()
+    lower .-= eps()
+    @assert all(lower .<= upper)
+
+    func = x -> old_opt(Xfc, extra, Y, x)[2]
     ActI_init = Float64.(murine ? murineActI : humanActI)
 
-    inits = ones(length(ActI_init))
-    lower = repeat([-2.0], length(ActI_init))
-    upper = repeat([10.0], length(ActI_init))
+    od = OnceDifferentiable(func, ActI_init; autodiff = :forward)
+    opt = optimize(od, ActI_init, BFGS())
+    #opt = optimize(func, lower, upper, ActI_init)
+    ActI = opt.minimizer
 
-    opt = optimize(func, lower, upper, ActI_init)
-    ActI = opt.minimizer"""
-
-    ActI = Float64.(murine ? murineActI : humanActI)
     cellWs, residual = old_opt(Xfc, extra, Y, ActI)
     res = optResult(cellWs, ActI, residual)
     return res
