@@ -50,7 +50,7 @@ function plotSynL0(f; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c
         index = length(receptorNamesB1)
         S = zeros(length(L0), index)
         for (ii, value) in enumerate(L0)
-            M = synergyGrid(value, f, FcExpr, Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
+            M = synergyGrid(value, f, FcExpr, Kav; murine = murine, fit = fit, c1q = c1q)
             #display(M)
             h = collect(Iterators.flatten(M))
             S[ii, 1:4] = h[2:5]
@@ -64,7 +64,7 @@ function plotSynL0(f; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c
         index = length(humanreceptorNamesB1)
         S = zeros(length(L0), index)
         for (ii, value) in enumerate(L0)
-            M = synergyGrid(value, f, FcExpr, Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
+            M = synergyGrid(value, f, FcExpr, Kav; murine = murine, fit = fit, c1q = c1q)
             h = collect(Iterators.flatten(M))
             S[ii, 1:3] = h[2:4]
             S[ii, 4:5] = h[7:8]
@@ -114,7 +114,7 @@ function plotSynf(L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c
         index = length(receptorNamesB1)
         S = zeros(length(f), index)
         for (ii, value) in enumerate(f)
-            M = synergyGrid(L0, value, FcExpr, Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
+            M = synergyGrid(L0, value, FcExpr, Kav; murine = murine, fit = fit, c1q = c1q)
             h = collect(Iterators.flatten(M))
             S[ii, 1:4] = h[2:5]
             S[ii, 5:7] = h[8:10]
@@ -127,7 +127,7 @@ function plotSynf(L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c
         index = length(humanreceptorNamesB1)
         S = zeros(length(f), index)
         for (ii, value) in enumerate(f)
-            M = synergyGrid(L0, value, FcExpr, Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
+            M = synergyGrid(L0, value, FcExpr, Kav; murine = murine, fit = fit, c1q = c1q)
             h = collect(Iterators.flatten(M))
             S[ii, 1:3] = h[2:4]
             S[ii, 4:5] = h[7:8]
@@ -176,7 +176,7 @@ function plotSynFc(f, L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = tru
         index = length(receptorNamesB1)
         S = zeros(length(multiplier), index)
         for (ii, value) in enumerate(multiplier)
-            M = synergyGrid(L0, f, (FcExpr * value), Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
+            M = synergyGrid(L0, f, (FcExpr * value), Kav; murine = murine, fit = fit, c1q = c1q)
             h = collect(Iterators.flatten(M))
             S[ii, 1:4] = h[2:5]
             S[ii, 5:7] = h[8:10]
@@ -189,7 +189,7 @@ function plotSynFc(f, L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = tru
         index = length(humanreceptorNamesB1)
         S = zeros(length(multiplier), index)
         for (ii, value) in enumerate(f)
-            M = synergyGrid(L0, f, (FcExpr * value), Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
+            M = synergyGrid(L0, f, (FcExpr * value), Kav; murine = murine, fit = fit, c1q = c1q)
             h = collect(Iterators.flatten(M))
             S[ii, 1:3] = h[2:4]
             S[ii, 4:5] = h[7:8]

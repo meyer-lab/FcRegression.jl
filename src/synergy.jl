@@ -24,7 +24,7 @@ function calcSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, FcExpr, Kav;
             fit = optResult(fit.cellWs, fit.ActI, fit.residual)
             fit.cellWs = fit.cellWs[1:(end-1)]
         end
-        
+
         @assert size(combine, 1) + (c1q ? 1 : 0) == length(fit.cellWs)
         @assert size(D1, 1) + (c1q ? 1 : 0) == length(fit.cellWs)
         @assert size(D2, 1) + (c1q ? 1 : 0) == length(fit.cellWs)
@@ -52,7 +52,7 @@ function calcSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, FcExpr, Kav;
 end
 
 
-"""Calculate the IgG mixture at the point of maximum synergy or antagonism for a pair of IgGs"""
+"""Calculate the IgG mixture at the point of maximum synergy or antagonism for a pair of IgGs"""()
 function maxSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, FcExpr, Kav; fit = nothing, c1q = false, neutralization = false, nPoints = 100)
 
     D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav; fit = fit, c1q = c1q, neutralization = neutralization, nPoints = nPoints)

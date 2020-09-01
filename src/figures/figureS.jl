@@ -67,11 +67,12 @@ function plotDepletionSynergy(
         end
         if RecepIdx == nothing  # single cell type
             FcExpr = importRtot(murine = murine)[:, Cellidx]
+            ylabel = "Activity"
             title = "$(cellTypes[Cellidx])"
             D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav; murine = murine, fit = nothing)
         else  # bind to one receptor
-            FcExpr = zeros(length(Receps), 1)
-            FcExpr[RecepIdx, 1] = importRtot(murine = murine)[RecepIdx, Cellidx]
+            FcExpr = zeros(length(Receps))
+            FcExpr[RecepIdx] = importRtot(murine = murine)[RecepIdx, Cellidx]
             D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav; murine = murine, fit = nothing)
             ylabel = "$(murine ? murineFcgR[RecepIdx] : humanFcgR[RecepIdx]) Binding"
             title = "$(murine ? murineFcgR[RecepIdx] : humanFcgR[RecepIdx])"
