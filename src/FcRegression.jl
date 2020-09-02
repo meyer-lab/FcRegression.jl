@@ -18,6 +18,7 @@ include("figures/figure2.jl")
 include("figures/figure3.jl")
 include("figures/figureB1.jl")
 include("figures/figureS.jl")
+include("figures/figureRR1.jl")
 include("figures/figureDiseaseSpecific.jl")
 include("figures/figureCelltypeSynergy.jl")
 
@@ -51,6 +52,7 @@ function figureAll()
     figure_HSyn_EO()
 
     figure_fitActI()
+    figureRR1()
 end
 
 export polyfc, polyfc_ActV
