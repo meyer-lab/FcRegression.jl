@@ -104,7 +104,7 @@ function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
     for (i, L0) in enumerate(concs)
         for (j, v) in enumerate(valencies)
             Xfc, Xdf, Y = modelPred(df; L0 = L0, f = v, murine = murine)
-            fit = fitRegression2(Xfc, Xdf, Y; murine = murine)
+            fit = fitRegression(Xfc, Xdf, Y; murine = murine)
             minima[i, j] = fit.residual
         end
     end
