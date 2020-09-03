@@ -13,7 +13,11 @@ function fitActI(dataType; L0 = 1e-10, f = 4, murine::Bool = true, lower = nothi
         end
     end
     if init == nothing
-        init = Float64.(murine ? murineActI : humanActI)
+        if lower != nothing && upper != nothing
+            init = (lower .+ upper) ./ 2
+        else
+            init = Float64.(murine ? murineActI : humanActI)
+        end
     end
     opt = optimize(func, lower, upper, init)
     if murine
