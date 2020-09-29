@@ -106,16 +106,15 @@ function old_opt(Xfc, extra, Y, ActI)
         @assert size(extraM, 1) == size(Xfc, 3)
         Xmat = hcat(Xmat, extraM)
     end
-    w = nonneg_lsq(Xmat, cY)
+    w = vec(nonneg_lsq(Xmat, cY))
     Yr = Xmat * w
-    residual = norm(Y-Yr, 2)/length(Y)
+    residual = norm(cY - Yr, 2)/length(Y)
 
     return w, residual
 end
 
 
 function fitRegression(Xfc, Xdf, Y; murine::Bool=true, upper = nothing, lower = nothing, init = nothing)
-    cY = inv_exponential.(Y)
     extra = Xdf[!, in(["C1q", "Neutralization"]).(names(Xdf))]
     cellWlen = size(Xfc, 1) + size(extra, 2)
 

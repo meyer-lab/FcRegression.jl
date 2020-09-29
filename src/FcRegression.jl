@@ -50,8 +50,7 @@ function figureAll()
     figure_HSyn_NKs()
     figure_HSyn_Neu()
     figure_HSyn_EO()
-
-    figure_fitActI()
+    
     figureRR1()
 end
 
