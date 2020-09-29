@@ -29,6 +29,7 @@ function figureAll()
     figureB1()
     figure2()
     figure3()
+    plotMixPrediction()
 
     figure_Mmelanoma()
     figure_MITP()
