@@ -8,6 +8,7 @@ using polyBindingModel
 include("fcBindingModel.jl")
 include("dataHelpers.jl")
 include("regression.jl")
+include("mixture.jl")
 include("synergy.jl")
 include("fitActI.jl")
 
