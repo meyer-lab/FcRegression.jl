@@ -3,7 +3,7 @@ function predictMixture(dfrow)
     IgGC[Symbol(dfrow."subclass_1") .== humanIgG] .= dfrow."%_1"
     IgGC[Symbol(dfrow."subclass_2") .== humanIgG] .= dfrow."%_2"
 
-    recepExp = Dict("hFcgRIIA-131His" => 6e5, "hFcgRIIB" => 1e5, "hFcgRIIIA-131Val" => 8e5)
+    recepExp = Dict("hFcgRIIA-131His" => 445141, "hFcgRIIB" => 31451, "hFcgRIIIA-131Val" => 657219). # geometric mean
     recepName = Dict("hFcgRIIA-131His" => "FcgRIIA-131H", "hFcgRIIB" => "FcgRIIB-232I", "hFcgRIIIA-131Val" => "FcgRIIIA-158V")
     Kav = importKav(; murine = false, retdf = true)
     Kav = Matrix(Kav[!, [recepName[dfrow."Cell"]]])
