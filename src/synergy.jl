@@ -11,12 +11,12 @@ function calcSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, FcExpr = nothing;
     IgGC[IgGYidx, :] .= eps()
     IgGC[IgGXidx, :] .= 1
     D1 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, Mix = false)  # size: celltype * FcRecep * nPoints
-    D1df = c1q ? DataFrame(C1q = IgGC' * Kav_df[!, :C1q] .* range(0, stop = 1, length = size(IgGC, 2)) .* L0) : nothing
+    D1df = c1q ? DataFrame(C1q = IgGC' * Kav_df[!, :C1q] .* range(0, stop = 1, length = nPoints) .* L0) : nothing
 
     IgGC[IgGXidx, :] .= eps()
     IgGC[IgGYidx, :] .= 1
     D2 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, Mix = false)  # size: celltype * FcRecep * nPoints
-    D2df = c1q ? DataFrame(C1q = IgGC' * Kav_df[!, :C1q] .* range(0, stop = 1, length = size(IgGC, 2)) .* L0) : nothing
+    D2df = c1q ? DataFrame(C1q = IgGC' * Kav_df[!, :C1q] .* range(0, stop = 1, length = nPoints) .* L0) : nothing
 
     IgGC[IgGXidx, :] = range(0.0, 1.0; length = nPoints)
     IgGC[IgGYidx, :] = range(1.0, 0.0; length = nPoints)
