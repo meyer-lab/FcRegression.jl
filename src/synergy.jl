@@ -4,19 +4,19 @@ function calcSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, FcExpr = nothing;
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     if FcExpr == nothing
-        FcExpr = FcRegression.importRtot(;murine = murine)
+        FcExpr = importRtot(; murine = murine)
     end
 
     IgGC = zeros(Float64, size(Kav, 1), nPoints)
     IgGC[IgGYidx, :] .= eps()
     IgGC[IgGXidx, :] .= 1
-    D1 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, Mix = false)  # size: celltype * nPoints
+    D1 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, Mix = false)  # size: celltype * FcRecep * nPoints
     D1df = c1q ? DataFrame(C1q = IgGC' * Kav_df[!, :C1q] .* range(0, stop = 1, length = size(IgGC, 2)) .* L0) : nothing
 
     IgGC[IgGXidx, :] .= eps()
     IgGC[IgGYidx, :] .= 1
-    D2 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, Mix = false)  # size: celltype * nPoints
-    D2df = c1q ? DataFrame(C1q = reverse(IgGC' * Kav_df[!, :C1q] .* range(0, stop = 1, length = size(IgGC, 2))) .* L0) : nothing
+    D2 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, Mix = false)  # size: celltype * FcRecep * nPoints
+    D2df = c1q ? DataFrame(C1q = IgGC' * Kav_df[!, :C1q] .* range(0, stop = 1, length = size(IgGC, 2)) .* L0) : nothing
 
     IgGC[IgGXidx, :] = range(0.0, 1.0; length = nPoints)
     IgGC[IgGYidx, :] = range(1.0, 0.0; length = nPoints)
@@ -33,7 +33,7 @@ function calcSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, FcExpr = nothing;
         @assert size(D1, 1) + (c1q ? 1 : 0) == length(fit.cellWs)
         @assert size(D2, 1) + (c1q ? 1 : 0) == length(fit.cellWs)
 
-        additive = exponential(regressionPred(D1 + reverse(D2; dims = 3), (c1q ? D1df.+D2df : nothing), fit))
+        additive = exponential(regressionPred(D1 + reverse(D2; dims = 3), (c1q ? D1df.+D2df[nPoints:-1:1, :] : nothing), fit))
         combine = exponential(regressionPred(combine, combinedf, fit))
         D1 = exponential(regressionPred(D1, D1df, fit))
         D2 = reverse(exponential(regressionPred(D2, D2df, fit)))
@@ -46,9 +46,9 @@ function calcSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, FcExpr = nothing;
         D2 = reverse(D2' * ActI)
         combine = dropdims(combine, dims=1)
         combine = combine' * ActI
-        additive = D1 + D2
         D1[D1 .<= 0.0] .= 0.0
         D2[D2 .<= 0.0] .= 0.0
+        additive = D1 + D2
         combine[combine .<= 0.0] .= 0.0
         additive[additive .<= 0.0] .= 0.0
     end
