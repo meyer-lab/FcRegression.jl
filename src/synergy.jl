@@ -16,9 +16,13 @@ function calcSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, FcExpr, Kav; murine,
     if fit != nothing # using disease model
         if c1q
             Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = true, retdf = true)
-            output = vcat(output, Kav_df[!, :C1q]' * IgGC)
-            D1 = vcat(D1, Kav_df[!, :C1q]' * IgGC)
-            D2 = vcat(D2, Kav_df[!, :C1q]' * IgGC)
+            output = vcat(output, Kav_df[!, :C1q]' * IgGC .* L0)
+            IgGC[IgGYidx, :] .= eps()
+            IgGC[IgGXidx, :] .= 1
+            D1 = vcat(D1, Kav_df[!, :C1q]' * IgGC .* range(0, stop = 1, length = nPoints)' .* L0)
+            IgGC[IgGXidx, :] .= eps()
+            IgGC[IgGYidx, :] .= 1
+            D2 = vcat(D2, Kav_df[!, :C1q]' * IgGC .* range(0, stop = 1, length = nPoints)' .* L0)
         end
         @assert size(output, 1) == length(fit.x)
         @assert size(D1, 1) == length(fit.x)
