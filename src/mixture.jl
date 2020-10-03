@@ -32,7 +32,7 @@ function plotMixPrediction()
     df = loadMixData()
     # Calculate predictions
     df[!, "Predict"] .= 0.0
-    for i in 1:size(df)[1]
+    for i = 1:size(df)[1]
         df[i, "Predict"] = predictMixture(df[i, :])
     end
 
