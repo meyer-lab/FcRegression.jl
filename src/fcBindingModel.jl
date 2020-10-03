@@ -1,4 +1,4 @@
-function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatrix, ActI = nothing; Mix = true)
+function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatrix, Rbound = false; Mix = true)
     """
     Input:
     Rtot: nr * nct matrix, nct = # cell types
@@ -8,11 +8,11 @@ function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatri
     Matrix of size nct * nset filled with ActV/Rbound (depends on if ActI is provided)
     """
     ansType = promote_type(typeof(L0), typeof(KxStar), typeof(f), eltype(Rtot), eltype(IgGC))
-    if ActI == nothing
+    if !Rbound
         res = Array{ansType}(undef, size(Rtot, 2), size(Rtot, 1), size(IgGC, 2))
-        #res = ones(size(Rtot, 2), size(Rtot, 1), size(IgGC, 2)) .* -1
     else
-        res = Matrix{ansType}(undef, size(Rtot, 2), size(IgGC, 2))
+        @assert ndims(Rtot) == 1
+        res = Vector{ansType}(undef, size(IgGC, 2))
     end
     @assert size(Rtot, 1) == size(Kav, 2)
     @assert size(IgGC, 1) == size(Kav, 1)
@@ -22,12 +22,12 @@ function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatri
     else
         L0 = (range(0, stop = 1, length = size(IgGC, 2))) * L0
     end
-    for ict = 1:size(Rtot, 2)
-        for iset = 1:size(IgGC, 2)
-            if ActI == nothing
+    for iset = 1:size(IgGC, 2)
+        if Rbound
+            res[iset] = polyfc(L0[iset], KxStar, f, Rtot, IgGC[:, iset], Kav).Rbound
+        else
+            for ict = 1:size(Rtot, 2)
                 res[ict, :, iset] .= polyfc(L0[iset], KxStar, f, Rtot[:, ict], IgGC[:, iset], Kav).Rmulti_n
-            else
-                res[ict, iset] = polyfc(L0[iset], KxStar, f, Rtot[:, ict], IgGC[:, iset], Kav, ActI).ActV
             end
         end
     end

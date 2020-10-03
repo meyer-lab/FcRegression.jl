@@ -1,6 +1,6 @@
 """Calculate the single, mixed drug, and additive responses for one IgG pair"""
 function calcSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, FcExpr = nothing;
-        murine, fit::Union{optResult, Nothing}, c1q = false, neutralization = false, nPoints = 100)
+        murine, fit::Union{optResult, Nothing}, Rbound = false, c1q = false, neutralization = false, nPoints = 100)
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     if FcExpr == nothing
@@ -10,17 +10,17 @@ function calcSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, FcExpr = nothing;
     IgGC = zeros(Float64, size(Kav, 1), nPoints)
     IgGC[IgGYidx, :] .= eps()
     IgGC[IgGXidx, :] .= 1
-    D1 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, Mix = false)  # size: celltype * FcRecep * nPoints
+    D1 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, Rbound; Mix = false)  # size: celltype * FcRecep * nPoints
     D1df = c1q ? DataFrame(C1q = IgGC' * Kav_df[!, :C1q] .* range(0, stop = 1, length = nPoints) .* L0) : nothing
 
     IgGC[IgGXidx, :] .= eps()
     IgGC[IgGYidx, :] .= 1
-    D2 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, Mix = false)  # size: celltype * FcRecep * nPoints
+    D2 = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, Rbound; Mix = false)  # size: celltype * FcRecep * nPoints
     D2df = c1q ? DataFrame(C1q = IgGC' * Kav_df[!, :C1q] .* range(0, stop = 1, length = nPoints) .* L0) : nothing
 
     IgGC[IgGXidx, :] = range(0.0, 1.0; length = nPoints)
     IgGC[IgGYidx, :] = range(1.0, 0.0; length = nPoints)
-    combine = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav)  # size: celltype * nPoints
+    combine = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, Rbound;)  # size: celltype * nPoints
     combinedf = c1q ? DataFrame(C1q = IgGC' * Kav_df[!, :C1q] .* L0) : nothing
 
     if fit != nothing  # using disease model
@@ -38,14 +38,17 @@ function calcSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, FcExpr = nothing;
         D1 = exponential(regressionPred(D1, D1df, fit))
         D2 = reverse(exponential(regressionPred(D2, D2df, fit)))
     else  # single cell activity
-        ActI = murine ? murineActI : humanActI
         @assert ndims(FcExpr) == 1
-        D1 = dropdims(D1, dims=1)
-        D1 = D1' * ActI
-        D2 = dropdims(D2, dims=1)
-        D2 = reverse(D2' * ActI)
-        combine = dropdims(combine, dims=1)
-        combine = combine' * ActI
+        if !Rbound #binding only
+            ActI = murine ? murineActI : humanActI
+            D1 = dropdims(D1, dims=1)
+            D2 = dropdims(D2, dims=1)
+            combine = dropdims(combine, dims=1)
+            D1 = D1' * ActI
+            D2 = (D2' * ActI)
+            combine = combine' * ActI
+        end
+        D2 = reverse(D2)
         D1[D1 .<= 0.0] .= 0.0
         D2[D2 .<= 0.0] .= 0.0
         additive = D1 + D2
@@ -57,9 +60,9 @@ end
 
 
 """Calculate the IgG mixture at the point of maximum synergy or antagonism for a pair of IgGs"""
-function maxSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f; fit = nothing, c1q = false, neutralization = false, nPoints = 100)
+function maxSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, FcExpr; fit = nothing, Rbound = false, c1q = false, neutralization = false, nPoints = 100)
 
-    D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f; fit = fit, c1q = c1q, neutralization = neutralization, nPoints = nPoints)
+    D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; fit = fit, Rbound = Rbound, c1q = c1q, neutralization = neutralization, nPoints = nPoints)
     sampleAxis = range(0, stop = 1, length = length(output))
 
     # Subtract a line
@@ -71,12 +74,12 @@ end
 
 
 """ Calculate the synergy metric for all pairs of IgG. """
-function synergyGrid(L0, f, FcExpr, Kav; murine, fit = nothing, c1q = false, neutralization = false)
+function synergyGrid(L0, f, FcExpr, Kav; murine, fit = nothing, Rbound = false, c1q = false, neutralization = false)
     M = zeros(size(Kav)[1], size(Kav)[1])
     nPoints = 100
     for i = 1:size(Kav)[1]
         for j = 1:(i - 1)
-            D1, D2, additive, output = calcSynergy(i, j, L0, f; murine = murine, fit = fit, c1q = c1q, neutralization = neutralization, nPoints = nPoints)
+            D1, D2, additive, output = calcSynergy(i, j, L0, f, FcExpr; murine = murine, fit = fit, Rbound = Rbound, c1q = c1q, neutralization = neutralization, nPoints = nPoints)
             synergy = sum((output - additive) / nPoints)
             M[i, j] = synergy
         end
