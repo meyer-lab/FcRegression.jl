@@ -8,6 +8,7 @@ using polyBindingModel
 include("fcBindingModel.jl")
 include("dataHelpers.jl")
 include("regression.jl")
+include("mixture.jl")
 include("synergy.jl")
 include("fitActI.jl")
 
@@ -28,6 +29,7 @@ function figureAll()
     #figureB1()
     figure2()
     figure3()
+    plotMixPrediction()
 
     figure_Mmelanoma()
     figure_MITP()

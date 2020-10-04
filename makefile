@@ -9,10 +9,10 @@ venv/bin/activate: requirements.txt
 	touch venv/bin/activate
 
 figures:
-	julia -e 'using Pkg; Pkg.activate("."); using FcRegression; FcRegression.figureAll()'
+	julia -e 'using Pkg; Pkg.activate("."); Pkg.instantiate(); using FcRegression; FcRegression.figureAll()'
 
 figure%.svg:
-	julia -e 'using Pkg; Pkg.activate("."); using FcRegression; FcRegression.figure$*()'
+	julia -e 'using Pkg; Pkg.activate("."); Pkg.instantiate(); using FcRegression; FcRegression.figure$*()'
 
 output/manuscript.md: venv manuscripts/*.md
 	mkdir -p ./output
