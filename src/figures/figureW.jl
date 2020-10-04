@@ -27,8 +27,7 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
         dataType = dataType,
     )
     p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
-    p6 = plotSynergy(L0, f; murine = murine, fit = res,
-        c1q = ("C1q" in effects.Component), neutralization = ("Neutralization" in names(df)))
+    p6 = plotSynergy(L0, f; murine = murine, fit = res, c1q = ("C1q" in effects.Component), neutralization = ("Neutralization" in names(df)))
 
     return p1, p2, p3, p4, p5, p6
 end

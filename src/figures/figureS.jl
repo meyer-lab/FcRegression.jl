@@ -51,8 +51,7 @@ function plotDepletionSynergy(
         ylabel = "Depletion"
         title = "$dataType"
         ymax = 1.0
-        D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f;
-            murine = murine, fit = fit, c1q = c1q, neutralization = neutralization)
+        D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f; murine = murine, fit = fit, c1q = c1q, neutralization = neutralization)
     elseif Cellidx != nothing
         if murine
             ymax = murineActYmax[Cellidx]
@@ -63,11 +62,13 @@ function plotDepletionSynergy(
             FcExpr = importRtot(murine = murine)[:, Cellidx]
             ylabel = "Activity"
             title = "$(cellTypes[Cellidx])"
-            D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; murine = murine, fit = nothing, Rbound = Rbound, nPoints = nPoints)
+            D1, D2, additive, output =
+                calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; murine = murine, fit = nothing, Rbound = Rbound, nPoints = nPoints)
         else  # bind to one receptor
             FcExpr = zeros(length(Receps))
             FcExpr[RecepIdx] = importRtot(murine = murine)[RecepIdx, Cellidx]
-            D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; murine = murine, fit = nothing, Rbound = Rbound, nPoints = nPoints)
+            D1, D2, additive, output =
+                calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; murine = murine, fit = nothing, Rbound = Rbound, nPoints = nPoints)
             ylabel = "$(murine ? murineFcgR[RecepIdx] : humanFcgR[RecepIdx]) Binding"
             title = "$(murine ? murineFcgR[RecepIdx] : humanFcgR[RecepIdx])"
         end
