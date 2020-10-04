@@ -18,7 +18,10 @@ function old_regGenData(df; L0, f, murine::Bool, ActI::Union{Vector, Nothing} = 
         Kav = convert(Vector{Float64}, df[i, FcRecep])
         Kav = reshape(Kav, 1, :)
         Rtot = FcRegression.importRtot(; murine = murine, genotype = murine ? "NA" : df[i, :Genotype])
-        push!(X, polyfc_ActV(df[i, :Concentration], FcRegression.KxConst, f, Rtot, [1.0], Kav, ActI))
+        Rmulti = polyfc_ActV(df[i, :Concentration], FcRegression.KxConst, f, Rtot, [1.0], Kav, false)
+        item = dropdims(Rmulti, dims=3) * ActI
+        item[item .<= 0.0] .= 0.0
+        push!(X, item)
     end
 
     if :C1q in propertynames(df)
