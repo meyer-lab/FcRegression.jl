@@ -28,14 +28,9 @@ const humanreceptorNamesB1 = Symbol.(["IgG1/2", "IgG1/3", "IgG1/4", "IgG2/3", "I
 
 
 """Figure shows the affect of increasing L0 on binding synergies for each IgG combination"""
-function plotSynL0(f; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c1q = false, neutralization = false)
+function plotSynL0(f; murine::Bool, fit = nothing, Cellidx = 2, Rbound = false, c1q = false, neutralization = false)
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
-    if Rbound
-        ActI = nothing #binding only
-    else
-        ActI = murine ? murineActI : humanActI
-    end
 
     if Cellidx == nothing #Not using single cell
         FcExpr = importRtot(; murine = murine)
@@ -50,8 +45,7 @@ function plotSynL0(f; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c
         index = length(receptorNamesB1)
         S = zeros(length(L0), index)
         for (ii, value) in enumerate(L0)
-            M = synergyGrid(value, f, FcExpr, Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
-            #display(M)
+            M = synergyGrid(value, f, FcExpr, Kav; murine = murine, fit = fit, Rbound = Rbound, c1q = c1q)
             h = collect(Iterators.flatten(M))
             S[ii, 1:4] = h[2:5]
             S[ii, 5:7] = h[8:10]
@@ -64,7 +58,7 @@ function plotSynL0(f; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c
         index = length(humanreceptorNamesB1)
         S = zeros(length(L0), index)
         for (ii, value) in enumerate(L0)
-            M = synergyGrid(value, f, FcExpr, Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
+            M = synergyGrid(value, f, FcExpr, Kav; murine = murine, fit = fit, Rbound = Rbound, c1q = c1q)
             h = collect(Iterators.flatten(M))
             S[ii, 1:3] = h[2:4]
             S[ii, 4:5] = h[7:8]
@@ -92,14 +86,9 @@ function plotSynL0(f; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c
 end
 
 """ Figure shows how immune complex valency affects synergy """
-function plotSynf(L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c1q = false, neutralization = false)
+function plotSynf(L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = false, c1q = false, neutralization = false)
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
-    if Rbound
-        ActI = nothing #binding only
-    else
-        ActI = murine ? murineActI : humanActI
-    end
 
     if Cellidx == nothing #Not using single cell
         FcExpr = importRtot(; murine = murine)
@@ -114,7 +103,7 @@ function plotSynf(L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c
         index = length(receptorNamesB1)
         S = zeros(length(f), index)
         for (ii, value) in enumerate(f)
-            M = synergyGrid(L0, value, FcExpr, Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
+            M = synergyGrid(L0, value, FcExpr, Kav; murine = murine, fit = fit, Rbound = Rbound, c1q = c1q)
             h = collect(Iterators.flatten(M))
             S[ii, 1:4] = h[2:5]
             S[ii, 5:7] = h[8:10]
@@ -127,7 +116,7 @@ function plotSynf(L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c
         index = length(humanreceptorNamesB1)
         S = zeros(length(f), index)
         for (ii, value) in enumerate(f)
-            M = synergyGrid(L0, value, FcExpr, Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
+            M = synergyGrid(L0, value, FcExpr, Kav; murine = murine, fit = fit, Rbound = Rbound, c1q = c1q)
             h = collect(Iterators.flatten(M))
             S[ii, 1:3] = h[2:4]
             S[ii, 4:5] = h[7:8]
@@ -152,15 +141,10 @@ function plotSynf(L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c
     return pl
 end
 
-function plotSynFc(f, L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = true, c1q = false, neutralization = false)
+function plotSynFc(f, L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = false, c1q = false, neutralization = false)
     """ Figure shows how Fc receptor expression affects synergy """
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
-    if Rbound
-        ActI = nothing #binding only
-    else
-        ActI = murine ? murineActI : humanActI
-    end
 
     if Cellidx == nothing #Not using single cell
         FcExpr = importRtot(; murine = murine)
@@ -176,7 +160,7 @@ function plotSynFc(f, L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = tru
         index = length(receptorNamesB1)
         S = zeros(length(multiplier), index)
         for (ii, value) in enumerate(multiplier)
-            M = synergyGrid(L0, f, (FcExpr * value), Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
+            M = synergyGrid(L0, f, (FcExpr * value), Kav; murine = murine, fit = fit, Rbound = Rbound, c1q = c1q)
             h = collect(Iterators.flatten(M))
             S[ii, 1:4] = h[2:5]
             S[ii, 5:7] = h[8:10]
@@ -189,7 +173,7 @@ function plotSynFc(f, L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = tru
         index = length(humanreceptorNamesB1)
         S = zeros(length(multiplier), index)
         for (ii, value) in enumerate(f)
-            M = synergyGrid(L0, f, (FcExpr * value), Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
+            M = synergyGrid(L0, f, (FcExpr * value), Kav; murine = murine, fit = fit, Rbound = Rbound, c1q = c1q)
             h = collect(Iterators.flatten(M))
             S[ii, 1:3] = h[2:4]
             S[ii, 4:5] = h[7:8]

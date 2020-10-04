@@ -22,7 +22,7 @@ function plotDepletionSynergy(
     f = 4,
     murine = true,
     dataType = nothing,
-    fit = nothing,
+    fit::Union{optResult, Nothing} = nothing,
     Cellidx = nothing,
     c1q = false,
     neutralization = false,
@@ -46,18 +46,13 @@ function plotDepletionSynergy(
     Receps = murine ? murineFcgR : humanFcgR
     nPoints = 100
 
-    if Rbound
-        ActI = nothing #binding only
-    else
-        ActI = murine ? murineActI : humanActI
-    end
-
     if fit != nothing  # use disease model
         FcExpr = importRtot(; murine = murine)
         ylabel = "Depletion"
         title = "$dataType"
         ymax = 1.0
-        D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
+        D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f;
+            murine = murine, fit = fit, c1q = c1q, neutralization = neutralization)
     elseif Cellidx != nothing
         if murine
             ymax = murineActYmax[Cellidx]
@@ -68,13 +63,13 @@ function plotDepletionSynergy(
             FcExpr = importRtot(murine = murine)[:, Cellidx]
             ylabel = "Activity"
             title = "$(cellTypes[Cellidx])"
-            D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav; murine = murine, ActI = ActI)
+            D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; murine = murine, fit = nothing, Rbound = Rbound, nPoints = nPoints)
         else  # bind to one receptor
-            FcExpr = zeros(length(Receps), 1)
-            FcExpr[RecepIdx, 1] = importRtot(murine = murine)[RecepIdx, Cellidx]
+            FcExpr = zeros(length(Receps))
+            FcExpr[RecepIdx] = importRtot(murine = murine)[RecepIdx, Cellidx]
+            D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; murine = murine, fit = nothing, Rbound = Rbound, nPoints = nPoints)
             ylabel = "$(murine ? murineFcgR[RecepIdx] : humanFcgR[RecepIdx]) Binding"
             title = "$(murine ? murineFcgR[RecepIdx] : humanFcgR[RecepIdx])"
-            D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr, Kav; murine = murine)
         end
     else
         @error "Not allowed combination of fit/Cellidx/RecepIdx."

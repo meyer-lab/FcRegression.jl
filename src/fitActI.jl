@@ -1,6 +1,6 @@
 using Optim
 
-function fitActI(dataType; L0 = 1e-10, f = 4, murine::Bool = true, lower::Array{Float64} = nothing, upper::Array{Float64} = nothing)
+function fitActI(dataType; L0 = 1e-10, f = 4, murine::Bool = true, lower = nothing, upper = nothing, init = nothing)
     df = murine ? importDepletion(dataType) : importHumanized(dataType)
     func = ActI -> fitRegression(df; L0 = L0, f = f, murine = murine, ActI = ActI).r
     if lower == nothing && upper == nothing
@@ -12,7 +12,10 @@ function fitActI(dataType; L0 = 1e-10, f = 4, murine::Bool = true, lower::Array{
             upper = [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
         end
     end
-    opt = optimize(func, lower, upper, Float64.(murine ? murineActI : humanActI))
+    if init == nothing
+        init = Float64.(murine ? murineActI : humanActI)
+    end
+    opt = optimize(func, lower, upper, init)
     if murine
         return figureW(dataType; L0 = L0, f = f, murine = true, IgGX = 3, IgGY = 5, ActI = opt.minimizer), opt.minimizer
     else

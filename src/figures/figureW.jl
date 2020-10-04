@@ -1,48 +1,44 @@
-function figureW(dataType, intercept = false, preset = false; L0 = 1e-9, f = 4, murine::Bool, ActI = nothing, IgGX = 2, IgGY = 3, legend = true)
-    preset_W = nothing
+function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, legend = true)
     if murine
         df = importDepletion(dataType)
-        color = (dataType == "HIV") ? :Label : :Background
-        shape = :Condition
+        color = (dataType == "HIV") ? "Label" : "Background"
+        shape = "Condition"
     else
-        if preset
-            @assert dataType in ["blood", "bone", "ITP"]
-            preset_W = fitRegression(importDepletion(dataType), intercept; L0 = L0, f = f, murine = true, ActI = ActI)
-            preset_W = preset_W.x
-        end
         df = importHumanized(dataType)
-        color = :Genotype
-        shape = (dataType == "ITP") ? :Condition : :Concentration
+        color = "Genotype"
+        shape = (dataType == "ITP") ? "Condition" : "Concentration"
     end
 
-    fit, odf, wdf = CVResults(df, intercept, preset_W; L0 = L0, f = f, murine = murine, ActI = ActI)
-    @assert all(in(propertynames(odf)).([color, shape]))
+    res, odf, effects, ActI_df = regressionResult(df; L0 = L0, f = f, murine = murine)
+    @assert all(in(names(odf)).([color, shape]))
+
     p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
     p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
-    p3 = plotCellTypeEffects(wdf, dataType; legend = legend)
+    p3 = plotCellTypeEffects(effects, dataType; legend = legend)
     p4 = plotDepletionSynergy(
         IgGX,
         IgGY;
         L0 = L0,
         f = f,
         murine = murine,
+        fit = res,
+        neutralization = ("Neutralization" in names(df)),
+        c1q = ("C1q" in effects.Component),
         dataType = dataType,
-        fit = fit,
-        c1q = (:C1q in wdf.Component),
-        neutralization = (:Neutralization in wdf.Component),
     )
-    p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine, ActI = ActI)
-    p6 = plotSynergy(L0, f; murine = murine, fit = fit, c1q = (:C1q in wdf.Component), neutralization = (:Neutralization in wdf.Component))
+    p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
+    p6 = plotSynergy(L0, f; murine = murine, fit = res,
+        c1q = ("C1q" in effects.Component), neutralization = ("Neutralization" in names(df)))
 
     return p1, p2, p3, p4, p5, p6
 end
 
 
-function plotActualvFit(odf, dataType, colorL::Symbol, shapeL::Symbol; legend = true)
+function plotActualvFit(odf, dataType, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}; legend = true)
     pl = plot(
         odf,
-        x = :Y,
-        y = :Fitted,
+        x = "Y",
+        y = "Fitted",
         Geom.point,
         color = colorL,
         shape = shapeL,
@@ -59,11 +55,11 @@ function plotActualvFit(odf, dataType, colorL::Symbol, shapeL::Symbol; legend = 
 end
 
 
-function plotActualvPredict(odf, dataType, colorL::Symbol, shapeL::Symbol; legend = true)
+function plotActualvPredict(odf, dataType, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}; legend = true)
     pl = plot(
         odf,
-        x = :Y,
-        y = :LOOPredict,
+        x = "Y",
+        y = "LOOPredict",
         Geom.point,
         color = colorL,
         shape = shapeL,
@@ -82,16 +78,16 @@ end
 function plotCellTypeEffects(wdf, dataType; legend = true)
     pl = plot(
         wdf,
-        x = :Condition,
-        y = :Median,
-        color = :Component,
+        x = "Condition",
+        y = "Weight",
+        color = "Component",
         Guide.colorkey(pos = [0.05w, -0.3h]),
         Geom.bar(position = :dodge),
         Scale.x_discrete(levels = unique(wdf.Condition)),
         Scale.y_continuous(minvalue = 0.0),
         Scale.color_discrete(levels = unique(wdf.Component)),
-        ymin = :Q10,
-        ymax = :Q90,
+        ymin = "Q10",
+        ymax = "Q90",
         Geom.errorbar,
         Stat.dodge,
         Guide.title("Predicted cell type weights for $dataType"),
@@ -101,14 +97,15 @@ function plotCellTypeEffects(wdf, dataType; legend = true)
 end
 
 
-function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax; murine = true, ActI = nothing)
+function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
     concs = exp10.(range(clmin, stop = clmax, length = clmax - clmin + 1))
     valencies = [2:vmax;]
-    minimums = zeros(length(concs), length(valencies))
+    minima = zeros(length(concs), length(valencies))
     for (i, L0) in enumerate(concs)
         for (j, v) in enumerate(valencies)
-            fit = fitRegression(df; L0 = L0, f = v, murine = murine, ActI = ActI)
-            minimums[i, j] = fit.r
+            Xfc, Xdf, Y = modelPred(df; L0 = L0, f = v, murine = murine)
+            fit = fitRegression(Xfc, Xdf, Y; murine = murine)
+            minima[i, j] = fit.residual
         end
     end
     if dataType == "HIV"
@@ -119,7 +116,7 @@ function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax; murine = true, ActI 
         ulim = nothing
     end
     pl = spy(
-        minimums,
+        minima,
         Guide.xlabel("Valencies"),
         Guide.ylabel("L<sub>0</sub> Concentrations"),
         Guide.title("L<sub>0</sub> and f exploration in $(murine ? "murine" : "human") $dataType data"),
@@ -141,7 +138,7 @@ function plotSynergy(L0, f; murine::Bool, fit = nothing, Cellidx = nothing, quan
         FcExpr = importRtot(murine = murine)[:, Cellidx]
     end
 
-    M = synergyGrid(L0, f, FcExpr, Kav; murine = murine, fit = fit, ActI = ActI, c1q = c1q)
+    M = synergyGrid(L0, f, FcExpr, Kav; murine = murine, fit = fit, c1q = c1q, neutralization = neutralization)
 
     h = collect(Iterators.flatten(M))
     if murine
