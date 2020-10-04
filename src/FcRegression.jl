@@ -52,7 +52,7 @@ function figureAll()
     figure_HSyn_NKs()
     figure_HSyn_Neu()
     figure_HSyn_EO()
-    
+
     figureRR1()
 end
 

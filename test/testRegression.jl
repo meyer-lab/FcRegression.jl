@@ -19,7 +19,7 @@ function old_regGenData(df; L0, f, murine::Bool, ActI::Union{Vector, Nothing} = 
         Kav = reshape(Kav, 1, :)
         Rtot = FcRegression.importRtot(; murine = murine, genotype = murine ? "NA" : df[i, :Genotype])
         Rmulti = polyfc_ActV(df[i, :Concentration], FcRegression.KxConst, f, Rtot, [1.0], Kav, false)
-        item = dropdims(Rmulti, dims=3) * ActI
+        item = dropdims(Rmulti, dims = 3) * ActI
         item[item .<= 0.0] .= 0.0
         push!(X, item)
     end
@@ -46,12 +46,12 @@ end
 @testset "Test genRegPred() can take ForwardDiff." begin
     for data in ("ITP", "melanoma", "blood", "bone")
         df = FcRegression.importDepletion(data)
-        Xo, Yo = old_regGenData(df; L0=1e-10, f=6, murine=true)
+        Xo, Yo = old_regGenData(df; L0 = 1e-10, f = 6, murine = true)
 
-        Xfc, Xdf, Yex = FcRegression.modelPred(df; L0=1e-10, f=6, murine=true)
+        Xfc, Xdf, Yex = FcRegression.modelPred(df; L0 = 1e-10, f = 6, murine = true)
         extra = Xdf[!, in(["C1q", "Neutralization"]).(names(Xdf))]
         weights = rand(size(Xfc, 1) + size(extra, 2))
-        Xmat, _ = FcRegression.regressionPred(Xfc, Xdf, weights, FcRegression.murineActI; showXmat=true)
+        Xmat, _ = FcRegression.regressionPred(Xfc, Xdf, weights, FcRegression.murineActI; showXmat = true)
         @test all(Matrix(Xmat) .≈ Xo)
         @test all(Yex .≈ Yo)
 
@@ -65,7 +65,7 @@ end
 @testset "Test regressionResult()" begin
     for data in ("ITP", "blood", "bone", "melanoma", "HIV", "Bcell")
         df = FcRegression.importDepletion(data)
-        res, odf, effects, ActI_df = FcRegression.regressionResult(df; L0=1e-9, f=6, murine=true)
+        res, odf, effects, ActI_df = FcRegression.regressionResult(df; L0 = 1e-9, f = 6, murine = true)
         @test "Fitted" in names(odf)
         @test "LOOPredict" in names(odf)
         @test all(effects[!, "Q10"] .<= effects[!, "Median"])
@@ -73,7 +73,7 @@ end
     end
     for data in ("blood", "spleen", "bone")
         df = FcRegression.importHumanized(data)
-        res, odf, effects, ActI_df = FcRegression.regressionResult(df; L0=1e-9, f=6, murine=false)
+        res, odf, effects, ActI_df = FcRegression.regressionResult(df; L0 = 1e-9, f = 6, murine = false)
         @test "Fitted" in names(odf)
         @test "LOOPredict" in names(odf)
         @test all(effects[!, "Q10"] .<= effects[!, "Median"])

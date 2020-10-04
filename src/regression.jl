@@ -52,7 +52,7 @@ function modelPred(df; L0, f, murine::Bool = true)
 end
 
 
-function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepActI; showXmat=false)
+function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepActI; showXmat = false)
     ansType = promote_type(eltype(Xfc), eltype(cellWeights), eltype(recepActI))
     noextra = true
     if Xdf == nothing
@@ -89,14 +89,14 @@ function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepA
     end
 end
 
-regressionPred(Xfc, Xdf, fit::optResult; showXmat=false) = regressionPred(Xfc, Xdf, fit.cellWs, fit.ActI; showXmat=showXmat)
+regressionPred(Xfc, Xdf, fit::optResult; showXmat = false) = regressionPred(Xfc, Xdf, fit.cellWs, fit.ActI; showXmat = showXmat)
 
 function old_opt(Xfc, extra, Y, ActI)
     cY = inv_exponential.(Y)
     ansType = promote_type(eltype(Xfc), eltype(Y), eltype(ActI))
     Xmat = Matrix{ansType}(undef, size(Xfc, 3), size(Xfc, 1))
-    for i in 1:size(Xfc, 1)
-        for j in 1:size(Xfc, 3)
+    for i = 1:size(Xfc, 1)
+        for j = 1:size(Xfc, 3)
             Xmat[j, i] = Xfc[i, :, j]' * ActI
         end
     end
@@ -108,13 +108,13 @@ function old_opt(Xfc, extra, Y, ActI)
     end
     w = vec(nonneg_lsq(Xmat, cY))
     Yr = Xmat * w
-    residual = norm(cY - Yr, 2)/length(Y)
+    residual = norm(cY - Yr, 2) / length(Y)
 
     return w, residual
 end
 
 
-function fitRegression(Xfc, Xdf, Y; murine::Bool=true, upper = nothing, lower = nothing, init = nothing)
+function fitRegression(Xfc, Xdf, Y; murine::Bool = true, upper = nothing, lower = nothing, init = nothing)
     extra = Xdf[!, in(["C1q", "Neutralization"]).(names(Xdf))]
     cellWlen = size(Xfc, 1) + size(extra, 2)
 
@@ -146,7 +146,7 @@ function LOOCrossVal(Xfc, Xdf, Y; murine)
     fitResults = Vector{optResult}(undef, n)
     LOOindex = LOOCV(n)
     for (i, idx) in enumerate(LOOindex)
-        fitResults[i] = fitRegression(Xfc[:,:,idx], Xdf[idx,:], Y[idx]; murine = murine)
+        fitResults[i] = fitRegression(Xfc[:, :, idx], Xdf[idx, :], Y[idx]; murine = murine)
     end
     return fitResults
 end
@@ -159,7 +159,7 @@ function bootstrap(Xfc, Xdf, Y; nsample = 100, murine)
         for j = 1:5
             idx = sample(1:n, n, replace = true)
             fit = try
-                fitRegression(Xfc[:,:,idx], Xdf[idx,:], Y[idx]; murine = murine)
+                fitRegression(Xfc[:, :, idx], Xdf[idx, :], Y[idx]; murine = murine)
             catch e
                 @warn "This bootstrapping set failed at fitRegression"
                 nothing
@@ -184,7 +184,7 @@ function regressionResult(df; L0, f, murine::Bool)
     odf[!, "Concentration"] .= ("Concentration" in names(df)) ? (df[!, "Concentration"] .* L0) : L0
     odf[!, "Y"] = Y
     odf[!, "Fitted"] = exponential(regressionPred(Xfc, Xdf, res))
-    odf[!, "LOOPredict"] = exponential([regressionPred(Xfc[:, :, ii], Xdf[[ii], :], loo_res[ii])[1] for ii in 1:length(loo_res)])
+    odf[!, "LOOPredict"] = exponential([regressionPred(Xfc[:, :, ii], Xdf[[ii], :], loo_res[ii])[1] for ii = 1:length(loo_res)])
     if "Label" in names(df)
         odf[!, "Label"] .= df[!, "Label"]
     end
@@ -204,7 +204,7 @@ function regressionResult(df; L0, f, murine::Bool)
     end
     rename!(wildtype, "IgG" => "Condition")
     wtXfc, wtXdf, wtY = modelPred(wildtype; L0 = L0, f = f, murine = murine)
-    Xmat, _ = regressionPred(wtXfc, wtXdf, res.cellWs, res.ActI; showXmat=true)
+    Xmat, _ = regressionPred(wtXfc, wtXdf, res.cellWs, res.ActI; showXmat = true)
     Xmat = Xmat .* res.cellWs'
     Xmat[!, "Condition"] = wtXdf[!, "Condition"]
     effects = stack(Xmat, Not("Condition"))
@@ -212,10 +212,10 @@ function regressionResult(df; L0, f, murine::Bool)
 
     # Assemble bootstrap results
     for bres in btp_res
-        Xmatb, _ = regressionPred(wtXfc, wtXdf, bres; showXmat=true)
+        Xmatb, _ = regressionPred(wtXfc, wtXdf, bres; showXmat = true)
         Xmatb = Xmatb .* bres.cellWs'
         Xmatb[!, "Condition"] = wtXdf[!, "Condition"]
-        effects = innerjoin(effects, stack(Xmatb, Not("Condition")), on = [:Condition, :variable], makeunique=true)
+        effects = innerjoin(effects, stack(Xmatb, Not("Condition")), on = [:Condition, :variable], makeunique = true)
     end
     rename!(effects, "variable" => "Component")
 
