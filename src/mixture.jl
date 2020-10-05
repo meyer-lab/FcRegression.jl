@@ -24,18 +24,17 @@ function loadMixData()
         df[df.Experiment .== exp, "Value"] .= floor.(df[df.Experiment .== exp, "Value"] .* 1000 / meanval)
     end
 
-    return df
-end
-
-
-function plotMixPrediction()
-    df = loadMixData()
     # Calculate predictions
     df[!, "Predict"] .= 0.0
     for i = 1:size(df)[1]
         df[i, "Predict"] = predictMixture(df[i, :])
     end
 
+    return df
+end
+
+
+function plotMixPrediction(df, title = "")
     setGadflyTheme()
     pl = plot(
         df,
@@ -43,9 +42,25 @@ function plotMixPrediction()
         y = :Predict,
         color = :Experiment,
         shape = :Valency,
-        Guide.title("Predicted vs measured mixture Lbound"),
+        Guide.title(title),
         style(key_position = :right),
     )
-    draw(SVG("figure_mixture.svg", 500px, 400px), plotGrid((1, 1), [pl]))
     return pl
+end
+
+function plotMixtures()
+    df = loadMixData()
+    draw(SVG("figure_mixture.svg", 600px, 400px), plotGrid((1, 1), [plotMixPrediction(df)]))
+    cells = unique(df."Cell")
+    pairs = unique([r."subclass_1" * "-" * r."subclass_2" for r in eachrow(df)])
+    pls = Matrix(undef, length(cells), length(pairs))
+    for (i, pair) in enumerate(pairs)
+        for (j, cell) in enumerate(cells)
+            pls[j, i] = plotMixPrediction(df[(df."Cell" .== cell) .&
+                                        (df."subclass_1" .== split(pair, "-")[1]) .&
+                                        (df."subclass_2" .== split(pair, "-")[2]), :],
+                                        pair * " in " * cell)
+        end
+    end
+    draw(SVG("figure_mixture_split.svg", 2500px, 1000px), plotGrid(size(pls), pls))
 end
