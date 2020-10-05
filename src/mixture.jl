@@ -36,15 +36,7 @@ end
 
 function plotMixPrediction(df, title = "")
     setGadflyTheme()
-    pl = plot(
-        df,
-        x = :Value,
-        y = :Predict,
-        color = :Experiment,
-        shape = :Valency,
-        Guide.title(title),
-        style(key_position = :right),
-    )
+    pl = plot(df, x = :Value, y = :Predict, color = :Experiment, shape = :Valency, Guide.title(title), style(key_position = :right))
     return pl
 end
 
@@ -56,10 +48,10 @@ function plotMixtures()
     pls = Matrix(undef, length(cells), length(pairs))
     for (i, pair) in enumerate(pairs)
         for (j, cell) in enumerate(cells)
-            pls[j, i] = plotMixPrediction(df[(df."Cell" .== cell) .&
-                                        (df."subclass_1" .== split(pair, "-")[1]) .&
-                                        (df."subclass_2" .== split(pair, "-")[2]), :],
-                                        pair * " in " * cell)
+            pls[j, i] = plotMixPrediction(
+                df[(df."Cell" .== cell) .& (df."subclass_1" .== split(pair, "-")[1]) .& (df."subclass_2" .== split(pair, "-")[2]), :],
+                pair * " in " * cell,
+            )
         end
     end
     draw(SVG("figure_mixture_split.svg", 2500px, 1000px), plotGrid(size(pls), pls))
