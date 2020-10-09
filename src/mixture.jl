@@ -59,9 +59,9 @@ function plotMixContinuous(df)
     IgGYname = Symbol(unique(df."subclass_2")[1])
     x = 0:0.01:1
     df4 = df[(df."Valency" .== 4), :]
-    preds4 = [predictMix(df4[1, :], IgGXname, IgGYname, i, 1-i) for i in x]
+    preds4 = [predictMix(df4[1, :], IgGXname, IgGYname, i, 1 - i) for i in x]
     df33 = df[(df."Valency" .== 33), :]
-    preds33 = [predictMix(df33[1, :], IgGXname, IgGYname, i, 1-i) for i in x]
+    preds33 = [predictMix(df33[1, :], IgGXname, IgGYname, i, 1 - i) for i in x]
     for val in unique(df."Valency")
         for exp in unique(df."Experiment")
             meanval = mean(df[(df."Experiment" .== exp) .& (df."Valency" .== val), "Value"])
@@ -109,7 +109,10 @@ function plotMixtures()
     pls = Matrix(undef, length(cells), length(pairs))
     for (i, pair) in enumerate(pairs)
         for (j, cell) in enumerate(cells)
-            pls[j, i] = plotMixContinuous(df[(df."Cell" .== cell) .& (df."subclass_1" .== split(pair, "-")[1]) .& (df."subclass_2" .== split(pair, "-")[2]), :])
+            pls[j, i] = plotMixContinuous(df[
+                (df."Cell" .== cell) .& (df."subclass_1" .== split(pair, "-")[1]) .& (df."subclass_2" .== split(pair, "-")[2]),
+                :,
+            ])
         end
     end
     draw(SVG("figure_mixture_continuous.svg", 2500px, 1000px), plotGrid(size(pls), pls))
