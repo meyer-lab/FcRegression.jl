@@ -24,14 +24,6 @@ function loadMixData()
     rename!(df, "value" => "Value")
     df[!, "Value"] = convert.(Float64, df[!, "Value"])
 
-    # Normalize each experiment
-    """
-    for exp in unique(df.Experiment)
-        meanval = mean(df[df.Experiment .== exp, "Value"])
-        df[df.Experiment .== exp, "Value"] .= floor.(df[df.Experiment .== exp, "Value"] .* 1000 / meanval)
-    end
-    """
-
     # Calculate predictions
     df[!, "Predict"] .= 0.0
     for i = 1:size(df)[1]
@@ -77,13 +69,10 @@ function plotMixContinuous(df)
         layer(x = x, y = preds33, Geom.line, Theme(default_color = colorant"green", line_width = 2px)),
         layer(df, x = "%_1", y = "Value", color = "Experiment", shape = "Valency"),
         Scale.x_continuous(labels = n -> "$IgGXname $(n*100)%\n$IgGYname $(100-n*100)%"),
-        #Guide.xticks(orientation = :horizontal),
         Guide.xlabel(""),
         Guide.ylabel("Lbound", orientation = :vertical),
-        #Coord.cartesian(ymin = 0, ymax = ymax),
         Guide.manual_color_key("Predictions", ["f = 4", "f = 33"], ["red", "green"]),
         Guide.title("$IgGXname-$IgGYname in $(df[1, "Cell"])"),
-        #style(key_position = :inside),
     )
 
     return pl
