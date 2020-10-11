@@ -24,11 +24,8 @@ function loadMixData()
     rename!(df, "value" => "Value")
     df[!, "Value"] = convert.(Float64, df[!, "Value"])
 
-    # Calculate predictions
-    df[!, "Predict"] .= 0.0
-    for i = 1:size(df)[1]
-        df[i, "Predict"] = predictDFRow(df[i, :])
-    end
+    df[!, "%_1"] ./= 100.0
+    df[!, "%_2"] ./= 100.0
 
     return df
 end
@@ -36,33 +33,50 @@ end
 
 function plotMixPrediction(df, title = "")
     setGadflyTheme()
+    # Calculate predictions
+    df[!, "Predict"] .= 0.0
+    for i = 1:size(df)[1]
+        df[i, "Predict"] = predictDFRow(df[i, :])
+    end
     pl = plot(df, x = :Value, y = :Predict, color = :Experiment, shape = :Valency, Guide.title(title), style(key_position = :right))
     return pl
 end
 
 
 """ Use for only one pair of IgG subclasses and cell line / Fc receptor"""
-function plotMixContinuous(df)
+function plotMixContinuous(df; split_val = true)
     df = copy(df)
     @assert length(unique(df."Cell")) == 1
     @assert length(unique(df."subclass_1")) == 1
     @assert length(unique(df."subclass_2")) == 1
     IgGXname = Symbol(unique(df."subclass_1")[1])
     IgGYname = Symbol(unique(df."subclass_2")[1])
+    # Calculate predictions
+    df[!, "Predict"] .= 0.0
+    for i = 1:size(df)[1]
+        df[i, "Predict"] = predictDFRow(df[i, :])
+    end
+
     x = 0:0.01:1
     df4 = df[(df."Valency" .== 4), :]
     preds4 = [predictMix(df4[1, :], IgGXname, IgGYname, i, 1 - i) for i in x]
     df33 = df[(df."Valency" .== 33), :]
     preds33 = [predictMix(df33[1, :], IgGXname, IgGYname, i, 1 - i) for i in x]
-    for val in unique(df."Valency")
+    if split_val
+        for val in unique(df."Valency")
+            for exp in unique(df."Experiment")
+                meanval = mean(df[(df."Experiment" .== exp) .& (df."Valency" .== val), "Value"])
+                meanpred = mean(df[(df."Experiment" .== exp) .& (df."Valency" .== val), "Predict"])
+                df[(df."Experiment" .== exp) .& (df."Valency" .== val), "Value"] .*= meanpred / meanval
+            end
+        end
+    else
         for exp in unique(df."Experiment")
-            meanval = mean(df[(df."Experiment" .== exp) .& (df."Valency" .== val), "Value"])
-            meanpred = mean(df[(df."Experiment" .== exp) .& (df."Valency" .== val), "Predict"])
-            df[(df."Experiment" .== exp) .& (df."Valency" .== val), "Value"] .*= meanpred / meanval
+            meanval = mean(df[df."Experiment" .== exp, "Value"])
+            meanpred = mean(df[df."Experiment" .== exp, "Predict"])
+            df[df."Experiment" .== exp, "Value"] .*= meanpred / meanval
         end
     end
-    df[!, "%_1"] ./= maximum(df[!, "%_1"])
-    df[!, "%_2"] ./= maximum(df[!, "%_2"])
 
     pl = plot(
         layer(x = x, y = preds4, Geom.line, Theme(default_color = colorant"red", line_width = 2px)),
@@ -77,6 +91,58 @@ function plotMixContinuous(df)
 
     return pl
 end
+
+
+function fitValLoss(df, val1, val2)
+    df = copy(df)
+    @assert length(unique(df."Cell")) == 1
+    @assert length(unique(df."subclass_1")) == 1
+    @assert length(unique(df."subclass_2")) == 1
+    IgGXname = Symbol(unique(df."subclass_1")[1])
+    IgGYname = Symbol(unique(df."subclass_2")[1])
+
+    rename!(df, "Valency" => "OldValency")
+    df[!, "Valency"] .= 1
+    df[(df."OldValency" .== 4), "Valency"] .= val1
+    df[(df."OldValency" .== 33), "Valency"] .= val2
+    # Calculate predictions
+    df[!, "Predict"] .= 0.0
+    for i = 1:size(df)[1]
+        df[i, "Predict"] = predictDFRow(df[i, :])
+    end
+
+    for exp in unique(df."Experiment")
+        meanval = mean(df[(df."Experiment" .== exp), "Value"])
+        meanpred = mean(df[(df."Experiment" .== exp), "Predict"])
+        df[(df."Experiment" .== exp), "Value"] .*= meanpred / meanval
+    end
+
+    loss = 0
+    for val in unique(df."Valency")
+        ndf = df[df."Valency" .== val, :]
+        diffs = (ndf[!, "Value"] .- ndf[!, "Predict"]) ./ ndf[!, "Predict"]
+        loss += (diffs' * diffs) / length(diffs)
+    end
+    return loss
+end
+
+
+function plotValLoss(df, title = "")
+    losses = zeros(10, 33)
+    for val1 in 1:10
+        for val2 in 1:33
+            losses[val1, val2] = log(fitValLoss(df, val1, val2))
+        end
+    end
+    pl = spy(
+        losses,
+        Guide.xlabel("Fitted valency for f=33"),
+        Guide.ylabel("Fitted valency for f=4"),
+        Guide.title("Log loss for " * title),
+    )
+    return pl
+end
+
 
 
 function plotMixtures()
@@ -95,14 +161,18 @@ function plotMixtures()
     end
     draw(SVG("figure_mixture_split.svg", 2500px, 1000px), plotGrid(size(pls), pls))
 
-    pls = Matrix(undef, length(cells), length(pairs))
+    plson = Matrix(undef, length(cells), length(pairs))
+    plsoff = Matrix(undef, length(cells), length(pairs))
+    plv = Matrix(undef, length(cells), length(pairs))
     for (i, pair) in enumerate(pairs)
         for (j, cell) in enumerate(cells)
-            pls[j, i] = plotMixContinuous(df[
-                (df."Cell" .== cell) .& (df."subclass_1" .== split(pair, "-")[1]) .& (df."subclass_2" .== split(pair, "-")[2]),
-                :,
-            ])
+            ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== split(pair, "-")[1]) .& (df."subclass_2" .== split(pair, "-")[2]), :]
+            plson[j, i] = plotMixContinuous(ndf)
+            plsoff[j, i] = plotMixContinuous(ndf; split_val = false)
+            plv[j, i] = plotValLoss(ndf, pair * " in " * cell)
         end
     end
-    draw(SVG("figure_mixture_continuous.svg", 2500px, 1000px), plotGrid(size(pls), pls))
+    draw(SVG("figure_mixture_continuous.svg", 2500px, 1000px), plotGrid(size(plson), plson))
+    draw(SVG("figure_mixture_continuous_notsplit.svg", 2500px, 1000px), plotGrid(size(plsoff), plsoff))
+    draw(SVG("figure_mixture_valencies.svg", 2500px, 1000px), plotGrid(size(plv), plv))
 end
