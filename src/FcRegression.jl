@@ -22,6 +22,8 @@ include("figures/figureS.jl")
 include("figures/figureRR1.jl")
 include("figures/figureDiseaseSpecific.jl")
 include("figures/figureCelltypeSynergy.jl")
+include("figures/figureDiseaseSynergy.jl")
+
 
 function figureAll()
     setGadflyTheme()
@@ -52,6 +54,9 @@ function figureAll()
     figure_HSyn_NKs()
     figure_HSyn_Neu()
     figure_HSyn_EO()
+
+    figure_MSyn_melanoma()
+    figure_MSyn_ITP()
 
     figureRR1()
 end
