@@ -129,17 +129,12 @@ end
 
 function plotValLoss(df, title = "")
     losses = zeros(10, 33)
-    for val1 in 1:10
-        for val2 in 1:33
+    for val1 = 1:10
+        for val2 = 1:33
             losses[val1, val2] = log(fitValLoss(df, val1, val2))
         end
     end
-    pl = spy(
-        losses,
-        Guide.xlabel("Fitted valency for f=33"),
-        Guide.ylabel("Fitted valency for f=4"),
-        Guide.title("Log loss for " * title),
-    )
+    pl = spy(losses, Guide.xlabel("Fitted valency for f=33"), Guide.ylabel("Fitted valency for f=4"), Guide.title("Log loss for " * title))
     return pl
 end
 
