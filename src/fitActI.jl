@@ -1,5 +1,3 @@
-using Optim
-
 function fitActI(dataType; L0 = 1e-10, f = 4, murine::Bool = true, lower = nothing, upper = nothing, init = nothing)
     df = murine ? importDepletion(dataType) : importHumanized(dataType)
     func = ActI -> fitRegression(df; L0 = L0, f = f, murine = murine, ActI = ActI).r

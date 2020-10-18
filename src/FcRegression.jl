@@ -4,6 +4,7 @@ import Distances
 using Gadfly
 using Compose
 using polyBindingModel
+using Optim
 
 include("fcBindingModel.jl")
 include("dataHelpers.jl")

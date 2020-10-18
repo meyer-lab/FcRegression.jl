@@ -32,73 +32,68 @@ function predictDFRow(dfrow)
 end
 
 
-function conversionFactor(df, Vals::Vector{Int64})
-    df = copy(df)
-    df[!, "NewValency"] .= 0
-    @assert length(Vals) == length(unique(df."Valency"))
-    for (i, f) in enumerate(sort(unique(df."Valency")))
-        df[(df."Valency" .== f), "NewValency"] .= Vals[i]
-    end
+function TwoDFit(X::Matrix, Y::Matrix)
+    """
+    Fit X_ij * p_i * q_j ≈ Y_ij
+    p[1] == 1 (fixed)
+    length(p) == size(X, 1) - 1 == m
+    length(q) == size(X, 2) == n
+    v == vcat(p, q)
+    """
+    @assert size(X) == size(Y)
+    m, n = size(X)
+    f(p::Vector, q::Vector) = sum((reshape([1.0; p], :, 1) .* X .* reshape(q, 1, :) .- Y) .^ 2)
+    f(v::Vector) = f(v[1:(m-1)], v[m:end])
+    init_v = ones(m+n-1)
+    od = OnceDifferentiable(f, init_v; autodiff = :forward)
+    res = optimize(od, init_v, BFGS()).minimizer
+    return [1.0; res[1:(m-1)]], res[m:end]
+end
 
-    # Calculate predictions
+
+function MixtureFitLoss(df, ValConv::Vector, ExpConv::Vector)
+    df = copy(df)
     df[!, "Predict"] .= 0.0
     for i = 1:size(df)[1]
         df[i, "Predict"] = predictDFRow(df[i, :])
     end
-
-    meansh = mean(df[!, "Predict"]) ./ mean(df[!, "Value"])
-    ValConvs = Dict(
-        [f => mean(df[df[!, "Valency"] .== f, "Predict"]) ./ mean(df[df[!, "Valency"] .== f, "Value"]) ./ meansh for f in sort(unique(df."Valency"))],
-    )
-    ExpConvs = Dict(
-        [d => mean(df[df[!, "Experiment"] .== d, "Predict"]) ./ mean(df[df[!, "Experiment"] .== d, "Value"]) for d in sort(unique(df."Experiment"))],
-    )
-
-    return ValConvs, ExpConvs
-end
-
-function conversionDF(df, ValConvs, ExpConvs, Vals = nothing)
-    df = copy(df)
-    df[!, "Adjusted"] .= df[!, "Value"]
-    for i = 1:size(df)[1]
-        df[i, "Adjusted"] *= ValConvs[df[i, "Valency"]]
-        df[i, "Adjusted"] *= ExpConvs[df[i, "Experiment"]]
-    end
-    if Vals != nothing
-        df[!, "NewValency"] .= 0
-        @assert length(Vals) == length(unique(df."Valency"))
-        for (i, f) in enumerate(sort(unique(df."Valency")))
-            df[(df."Valency" .== f), "NewValency"] .= Vals[i]
+    dtype = promote_type(eltype(df."Value"), eltype(ValConv), eltype(ExpConv))
+    df[!, "Adjusted"] .= convert.(dtype, df[!, "Value"])
+    loss = 0.0
+    for (iv, val) in enumerate(unique(df."Valency"))
+        for (ie, exp) in enumerate(unique(df."Experiment"))
+            sdf = @view df[(df."Valency" .== val) .& (df."Experiment" .== exp), :]
+            sdf."Adjusted" .*= ValConv[iv] * ExpConv[ie]
+            loss += norm(sdf."Adjusted" .- sdf."Predict", 2) / nrow(sdf)
         end
     end
-    if !("Predict" in names(df))
-        df[!, "Predict"] .= 0.0
-        for i = 1:size(df)[1]
-            df[i, "Predict"] = predictDFRow(df[i, :])
-        end
-    end
-    return df
+    return loss, df
 end
 
 
-function fitValLoss(df, Vals)
-    df = conversionDF(df, conversionFactor(df, Vals)..., Vals)
-    #println(df[1, :])
-    loss = 0
-    for val in unique(df."Valency")
-        ndf = df[df."Valency" .== val, :]
-        diffs = (ndf[!, "Value"] .- ndf[!, "Predict"]) ./ ndf[!, "Predict"]
-        loss += (diffs' * diffs) / length(diffs)
-    end
-    return loss
+function MixtureFit(df)
+    nv, ne = length(unique(df."Valency")), length(unique(df."Experiment"))
+    f(p::Vector, q::Vector) = MixtureFitLoss(df, [1.0; p], q)[1]
+    f(v::Vector) = f(v[1:(nv-1)], v[nv:end])
+    init_v = ones(nv+ne-1)
+    od = OnceDifferentiable(f, init_v; autodiff = :forward)
+    res = optimize(od, init_v, BFGS()).minimizer
+    p, q = [1.0; res[1:(nv-1)]], res[nv:end]
+    res = MixtureFitLoss(df, p, q)
+    return Dict("loss" => res[1], "df" => res[2], "ValConv" => p, "ExpConv" => q)
 end
 
 
 function plotValLoss(df, title = "")
+    df = copy(df)
+    df[!, "NewValency"] .= 0
+
     losses = zeros(10, 40)
     for val1 = 1:10
+        df[(df."Valency" .== 4), "NewValency"] .= val1
         for val2 = 1:40
-            losses[val1, val2] = log(fitValLoss(df, [val1, val2]))
+            df[(df."Valency" .== 33), "NewValency"] .= val2
+            losses[val1, val2] = log(MixtureFit(df)["loss"])
         end
     end
     pl = spy(losses, Guide.xlabel("Fitted valency for f=33"), Guide.ylabel("Fitted valency for f=4"), Guide.title("Log loss for " * title))
@@ -107,31 +102,20 @@ end
 
 
 function plotMixPrediction(df, title = "")
-    setGadflyTheme()
-    df = copy(df)
-    # Calculate predictions
-    df[!, "Predict"] .= 0.0
-    for i = 1:size(df)[1]
-        df[i, "Predict"] = predictDFRow(df[i, :])
-    end
+    @assert "Predict" in names(df)
     pl = plot(df, x = :Value, y = :Predict, color = :Experiment, shape = :Valency, Guide.title(title), style(key_position = :right))
     return pl
 end
 
 
 """ Use for only one pair of IgG subclasses and cell line / Fc receptor"""
-function plotMixContinuous(df, ValConvs, ExpConvs)
+function plotMixContinuous(df)
     df = copy(df)
     @assert length(unique(df."Cell")) == 1
     @assert length(unique(df."subclass_1")) == 1
     @assert length(unique(df."subclass_2")) == 1
     IgGXname = Symbol(unique(df."subclass_1")[1])
     IgGYname = Symbol(unique(df."subclass_2")[1])
-    # Calculate predictions
-    df[!, "Predict"] .= 0.0
-    for i = 1:size(df)[1]
-        df[i, "Predict"] = predictDFRow(df[i, :])
-    end
 
     x = 0:0.01:1
     df4 = df[(df."Valency" .== 4), :]
@@ -139,9 +123,7 @@ function plotMixContinuous(df, ValConvs, ExpConvs)
     df33 = df[(df."Valency" .== 33), :]
     preds33 = [predictMix(df33[1, :], IgGXname, IgGYname, i, 1 - i) for i in x]
 
-    if !("Adjusted" in names(df))
-        df = conversionDF(df, ValConvs, ExpConvs)
-    end
+    @assert "Adjusted" in names(df)
 
     pl = plot(
         layer(x = x, y = preds4, Geom.line, Theme(default_color = colorant"red", line_width = 2px)),
@@ -159,29 +141,17 @@ end
 
 
 function plotMixtures()
-    df = loadMixData()
-    draw(SVG("figure_mixture.svg", 600px, 400px), plotGrid((1, 1), [plotMixPrediction(df)]))
+    setGadflyTheme()
+    df = MixtureFit(loadMixData())["df"]
     draw(SVG("figure_mixture_valencies.svg", 700px, 300px), plotGrid((1, 1), [plotValLoss(df, "all data")]))
     cells = unique(df."Cell")
     pairs = unique([r."subclass_1" * "-" * r."subclass_2" for r in eachrow(df)])
-
-    ValConvs, ExpConvs = conversionFactor(df, [4, 33])
-    pls = Matrix(undef, length(cells), length(pairs))
-    for (i, pair) in enumerate(pairs)
-        for (j, cell) in enumerate(cells)
-            pls[j, i] = plotMixPrediction(
-                df[(df."Cell" .== cell) .& (df."subclass_1" .== split(pair, "-")[1]) .& (df."subclass_2" .== split(pair, "-")[2]), :],
-                pair * " in " * cell,
-            )
-        end
-    end
-    draw(SVG("figure_mixture_split.svg", 2500px, 1000px), plotGrid(size(pls), pls))
 
     pls = Matrix(undef, length(cells), length(pairs))
     for (i, pair) in enumerate(pairs)
         for (j, cell) in enumerate(cells)
             ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== split(pair, "-")[1]) .& (df."subclass_2" .== split(pair, "-")[2]), :]
-            pls[j, i] = plotMixContinuous(ndf, ValConvs, ExpConvs)
+            pls[j, i] = plotMixContinuous(ndf)
         end
     end
     draw(SVG("figure_mixture_continuous.svg", 2500px, 1000px), plotGrid(size(pls), pls))
