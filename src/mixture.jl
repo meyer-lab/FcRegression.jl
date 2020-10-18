@@ -47,8 +47,12 @@ function conversionFactor(df, Vals::Vector{Int64})
     end
 
     meansh = mean(df[!, "Predict"]) ./ mean(df[!, "Value"])
-    ValConvs = Dict([f => mean(df[df[!, "Valency"] .== f, "Predict"]) ./ mean(df[df[!, "Valency"] .== f, "Value"]) ./ meansh for f in sort(unique(df."Valency"))])
-    ExpConvs = Dict([d => mean(df[df[!, "Experiment"] .== d, "Predict"]) ./ mean(df[df[!, "Experiment"] .== d, "Value"]) for d in sort(unique(df."Experiment"))])
+    ValConvs = Dict(
+        [f => mean(df[df[!, "Valency"] .== f, "Predict"]) ./ mean(df[df[!, "Valency"] .== f, "Value"]) ./ meansh for f in sort(unique(df."Valency"))],
+    )
+    ExpConvs = Dict(
+        [d => mean(df[df[!, "Experiment"] .== d, "Predict"]) ./ mean(df[df[!, "Experiment"] .== d, "Value"]) for d in sort(unique(df."Experiment"))],
+    )
 
     return ValConvs, ExpConvs
 end
@@ -97,12 +101,7 @@ function plotValLoss(df, title = "")
             losses[val1, val2] = log(fitValLoss(df, [val1, val2]))
         end
     end
-    pl = spy(
-        losses,
-        Guide.xlabel("Fitted valency for f=33"),
-        Guide.ylabel("Fitted valency for f=4"),
-        Guide.title("Log loss for " * title),
-    )
+    pl = spy(losses, Guide.xlabel("Fitted valency for f=33"), Guide.ylabel("Fitted valency for f=4"), Guide.title("Log loss for " * title))
     return pl
 end
 
