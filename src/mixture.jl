@@ -43,11 +43,11 @@ function TwoDFit(X::Matrix, Y::Matrix)
     @assert size(X) == size(Y)
     m, n = size(X)
     f(p::Vector, q::Vector) = sum((reshape([1.0; p], :, 1) .* X .* reshape(q, 1, :) .- Y) .^ 2)
-    f(v::Vector) = f(v[1:(m-1)], v[m:end])
-    init_v = ones(m+n-1)
+    f(v::Vector) = f(v[1:(m - 1)], v[m:end])
+    init_v = ones(m + n - 1)
     od = OnceDifferentiable(f, init_v; autodiff = :forward)
     res = optimize(od, init_v, BFGS()).minimizer
-    return [1.0; res[1:(m-1)]], res[m:end]
+    return [1.0; res[1:(m - 1)]], res[m:end]
 end
 
 
@@ -74,11 +74,11 @@ end
 function MixtureFit(df)
     nv, ne = length(unique(df."Valency")), length(unique(df."Experiment"))
     f(p::Vector, q::Vector) = MixtureFitLoss(df, [1.0; p], q)[1]
-    f(v::Vector) = f(v[1:(nv-1)], v[nv:end])
-    init_v = ones(nv+ne-1)
+    f(v::Vector) = f(v[1:(nv - 1)], v[nv:end])
+    init_v = ones(nv + ne - 1)
     od = OnceDifferentiable(f, init_v; autodiff = :forward)
     res = optimize(od, init_v, BFGS()).minimizer
-    p, q = [1.0; res[1:(nv-1)]], res[nv:end]
+    p, q = [1.0; res[1:(nv - 1)]], res[nv:end]
     res = MixtureFitLoss(df, p, q)
     return Dict("loss" => res[1], "df" => res[2], "ValConv" => p, "ExpConv" => q)
 end
