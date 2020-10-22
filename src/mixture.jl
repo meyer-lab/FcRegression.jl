@@ -161,8 +161,8 @@ function plotMixtures()
     res2 = MixtureFit(loadMixData(); logscale = true)
     println("Log Scale: Fitted ValConv = ", res2["ValConv"], ", ExpConv = ", res2["ExpConv"])
     df2 = res2["df"]
-    #draw(SVG("figure_mixture_valencies_linear.svg", 700px, 300px), plotGrid((1, 1), [plotValLoss(df, "all data"; logscale = false)]))
-    #draw(SVG("figure_mixture_valencies_log.svg", 700px, 300px), plotGrid((1, 1), [plotValLoss(df, "all data"; logscale = true)]))
+    draw(SVG("figure_mixture_valencies_linear.svg", 700px, 300px), plotGrid((1, 1), [plotValLoss(df, "all data"; logscale = false)]))
+    draw(SVG("figure_mixture_valencies_log.svg", 700px, 300px), plotGrid((1, 1), [plotValLoss(df, "all data"; logscale = true)]))
     cells = unique(df1."Cell")
     pairs = unique([r."subclass_1" * "-" * r."subclass_2" for r in eachrow(df1)])
 
