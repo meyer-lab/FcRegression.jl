@@ -1,4 +1,4 @@
-function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, legend = true)
+function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, legend = true, Cellidx = nothing, Recepidx = nothing, Rbound = false)
     if murine
         df = importDepletion(dataType)
         color = (dataType == "HIV") ? "Label" : "Background"
@@ -25,6 +25,8 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
         neutralization = ("Neutralization" in names(df)),
         c1q = ("C1q" in effects.Component),
         dataType = dataType,
+        Cellidx = Cellidx,
+        Recepidx = Recepidx
     )
     p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
     p6 = plotSynergy(L0, f; murine = murine, fit = res, c1q = ("C1q" in effects.Component), neutralization = ("Neutralization" in names(df)))
@@ -129,7 +131,6 @@ end
 function plotSynergy(L0, f; murine::Bool, fit = nothing, Cellidx = nothing, quantity = nothing, c1q = false, neutralization = false)
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
-    ActI = murine ? murineActI : humanActI
 
     if Cellidx == nothing #Not using single cell
         FcExpr = importRtot(; murine = murine)

@@ -5,7 +5,7 @@ function polyfc_ActV(L0, KxStar, f, Rtot::Array, IgGC::Array, Kav::AbstractMatri
     IgGC: ni * nset matrix, nset = # IgGC combinations
     Mix: Specifies that output will be the response to a single IgG input if mix = false
     Output:
-    Matrix of size nct * nset filled with ActV/Rbound (depends on if ActI is provided)
+    Matrix of size nct * nset filled with ActV/Rbound (depends on if Rbound is provided)
     """
     ansType = promote_type(typeof(L0), typeof(KxStar), typeof(f), eltype(Rtot), eltype(IgGC))
     if !Rbound

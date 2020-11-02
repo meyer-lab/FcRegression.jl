@@ -50,7 +50,7 @@ function calcSynergy(
         D2 = reverse(exponential(regressionPred(D2, D2df, fit)))
     else  # single cell activity
         @assert ndims(FcExpr) == 1
-        if !Rbound #binding only
+        if !Rbound #Activity of single cell type
             ActI = murine ? murineActI : humanActI
             D1 = dropdims(D1, dims = 1)
             D2 = dropdims(D2, dims = 1)
@@ -110,4 +110,101 @@ function synergyGrid(L0, f, FcExpr, Kav; murine, fit = nothing, Rbound = false, 
     end
 
     return M
+end
+
+function plotDepletionSynergy(
+    IgGXidx::Int64,
+    IgGYidx::Int64;
+    L0 = 1e-9,
+    f = 4,
+    murine = true,
+    dataType = nothing,
+    fit::Union{optResult, Nothing} = nothing,
+    Cellidx = nothing,
+    c1q = false,
+    neutralization = false,
+    Recepidx = nothing,
+    Rbound = false,
+)
+    if murine
+        if IgGXidx > length(murineIgGFucose) || IgGYidx > length(murineIgGFucose)
+            IgGXidx, IgGYidx = 1, 2
+        end
+    else
+        if IgGXidx > length(humanIgG) || IgGYidx > length(humanIgG)
+            IgGXidx, IgGYidx = 1, 2
+        end
+    end
+    if Cellidx == nothing && Recepidx != nothing
+        @error "Must specify Cellidx AND Recepidx"
+    end
+    @assert IgGXidx != IgGYidx
+    Xname = murine ? murineIgGFucose[IgGXidx] : humanIgG[IgGXidx]
+    Yname = murine ? murineIgGFucose[IgGYidx] : humanIgG[IgGYidx]
+    Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
+    Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
+    Receps = murine ? murineFcgR : humanFcgR
+    nPoints = 100
+
+    if fit != nothing  # use disease model
+        if Recepidx != nothing # look at only one receptor
+            FcExpr = zeros(length(Receps))
+            FcExpr[Recepidx] = importRtot(murine = murine)[Recepidx, Cellidx]
+            title = "$(murine ? murineFcgR[Recepidx] : humanFcgR[Recepidx]) $dataType"
+        elseif Cellidx != nothing # look at only one cell FcExpr
+            FcExpr = importRtot(murine = murine)[:, Cellidx]
+            title = "$(cellTypes[Cellidx]) $dataType"
+        else
+            FcExpr = importRtot(; murine = murine)
+            title = "$dataType"
+        end
+        ylabel = "Depletion"
+        ymax = 1.0
+        D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; murine = murine, fit = fit, c1q = c1q, neutralization = neutralization)
+    elseif Cellidx != nothing 
+        if murine
+            ymax = murineActYmax[Cellidx]
+        else
+            ymax = humanActYmax[Cellidx]
+        end
+        if Recepidx == nothing  # single cell type
+            FcExpr = importRtot(murine = murine)[:, Cellidx]
+            ylabel = "Activity"
+            title = "$(cellTypes[Cellidx])"
+            D1, D2, additive, output =
+                calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; murine = murine, fit = fit, Rbound = Rbound, nPoints = nPoints)
+        else  # bind to one receptor
+            FcExpr = zeros(length(Receps))
+            FcExpr[Recepidx] = importRtot(murine = murine)[Recepidx, Cellidx]
+            D1, D2, additive, output =
+                calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; murine = murine, fit = fit, Rbound = Rbound, nPoints = nPoints)
+            if Rbound
+            ylabel = "$(murine ? murineFcgR[Recepidx] : humanFcgR[Recepidx]) Binding"
+            title = "$(murine ? murineFcgR[Recepidx] : humanFcgR[Recepidx])"
+        end
+    else
+        @error "Not allowed combination of fit/Cellidx/Recepidx."
+    end
+
+    x = range(0.0, 1.0; length = nPoints)
+    @assert length(x) == length(D1)
+    @assert length(x) == length(D2)
+    @assert length(x) == length(additive)
+    @assert length(x) == length(output)
+
+    pl = plot(
+        layer(x = x, y = D1, Geom.line, Theme(default_color = colorant"blue", line_width = 1px)),
+        layer(x = x, y = D2, Geom.line, Theme(default_color = colorant"orange", line_width = 1px)),
+        layer(x = x, y = output, Geom.line, Theme(default_color = colorant"green", line_width = 2px)),
+        layer(x = x, y = additive, Geom.line, Theme(default_color = colorant"red", line_width = 3px)),
+        Scale.x_continuous(labels = n -> "$Xname $(n*100)%\n$Yname $(100-n*100)%"),
+        Guide.xticks(orientation = :horizontal),
+        Guide.xlabel("L0 = $L0", orientation = :horizontal),
+        Guide.ylabel("Predicted $ylabel", orientation = :vertical),
+        Coord.cartesian(ymin = 0, ymax = ymax),
+        Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "orange"]),
+        Guide.title("Predicted effects vs $Xname-$Yname Composition ($title)"),
+        style(key_position = :inside),
+    )
+    return pl
 end
