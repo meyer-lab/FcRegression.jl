@@ -115,7 +115,7 @@ end
 
 function plotMixPrediction(df, title = "")
     @assert "Predict" in names(df)
-    pl = plot(df, x = :Value, y = :Predict, color = :Experiment, shape = :Valency, Guide.title(title), style(key_position = :right))
+    pl = plot(df, x = "Value", y = "Predict", shape = "Experiment", color = "Valency", Guide.title(title), style(key_position = :right))
     return pl
 end
 
@@ -136,16 +136,18 @@ function plotMixContinuous(df; logscale = false)
     preds33 = [predictMix(df33[1, :], IgGXname, IgGYname, i, 1 - i) for i in x]
 
     @assert "Adjusted" in names(df)
+    df[!, "Valency"] .= Symbol.(df[!, "Valency"])
 
+    palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
     pl = plot(
-        layer(x = x, y = preds4, Geom.line, Theme(default_color = colorant"red", line_width = 2px)),
-        layer(x = x, y = preds33, Geom.line, Theme(default_color = colorant"green", line_width = 2px)),
-        layer(df, x = "%_1", y = "Adjusted", color = "Experiment", shape = "Valency"),
+        layer(x = x, y = preds4, Geom.line, Theme(default_color = palette[1], line_width = 2px)),
+        layer(x = x, y = preds33, Geom.line, Theme(default_color = palette[2], line_width = 2px)),
+        layer(df, x = "%_1", y = "Adjusted", color = "Valency", shape = "Experiment"),
         Scale.x_continuous(labels = n -> "$IgGXname $(n*100)%\n$IgGYname $(100-n*100)%"),
         (logscale ? Scale.y_log10 : Scale.y_continuous),
+        Scale.color_discrete_manual(palette[1], palette[2]),
         Guide.xlabel(""),
         Guide.ylabel("Lbound", orientation = :vertical),
-        Guide.manual_color_key("Predictions", ["f = 4", "f = 33"], ["red", "green"]),
         Guide.title("$IgGXname-$IgGYname in $(df[1, "Cell"])"),
     )
 
