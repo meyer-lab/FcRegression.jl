@@ -68,7 +68,7 @@ function calcSynergy(
         end
     else 
         @assert ndims(FcExpr) == 1
-        if !Rbound #Activity of single cell without disease type
+        if !Rbound #Activity of single cell without fit activity
             ActI = murine ? murineActI : humanActI
             D1 = dropdims(D1, dims = 1)
             D2 = dropdims(D2, dims = 1)
@@ -77,7 +77,7 @@ function calcSynergy(
             D2 = (D2' * ActI)
             combine = combine' * ActI
         end
-        D2 = reverse(D2)
+        D2 = reverse(D2) #Binding only
         D1[D1 .<= 0.0] .= 0.0
         D2[D2 .<= 0.0] .= 0.0
         additive = D1 + D2
@@ -137,13 +137,27 @@ function plotDepletionSynergy(
     f = 4,
     murine = true,
     dataType = nothing,
-    fit::Union{optResult, Nothing} = nothing,
     Cellidx = nothing,
     c1q = false,
     neutralization = false,
     Recepidx = nothing,
     Rbound = false,
 )
+    if dataType != nothing
+        if murine
+            df = importDepletion(dataType)
+            color = (dataType == "HIV") ? "Label" : "Background"
+            shape = "Condition"
+        else
+            df = importHumanized(dataType)
+            color = "Genotype"
+            shape = (dataType == "ITP") ? "Condition" : "Concentration"
+        end
+        res, odf, effects, ActI_df = regressionResult(df; L0 = L0, f = f, murine = murine)
+        fit = res
+        @assert all(in(names(odf)).([color, shape]))
+    end
+
     if murine
         if IgGXidx > length(murineIgGFucose) || IgGYidx > length(murineIgGFucose)
             IgGXidx, IgGYidx = 1, 2
