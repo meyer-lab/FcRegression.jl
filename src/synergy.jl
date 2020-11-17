@@ -137,26 +137,13 @@ function plotDepletionSynergy(
     f = 4,
     murine = true,
     dataType = nothing,
+    fit = nothing,
     Cellidx = nothing,
     c1q = false,
     neutralization = false,
     Recepidx = nothing,
     Rbound = false,
 )
-    if dataType != nothing
-        if murine
-            df = importDepletion(dataType)
-            color = (dataType == "HIV") ? "Label" : "Background"
-            shape = "Condition"
-        else
-            df = importHumanized(dataType)
-            color = "Genotype"
-            shape = (dataType == "ITP") ? "Condition" : "Concentration"
-        end
-        res, odf, effects, ActI_df = regressionResult(df; L0 = L0, f = f, murine = murine)
-        fit = res
-        @assert all(in(names(odf)).([color, shape]))
-    end
 
     if murine
         if IgGXidx > length(murineIgGFucose) || IgGYidx > length(murineIgGFucose)

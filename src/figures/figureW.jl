@@ -1,4 +1,5 @@
 function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, legend = true, Cellidx = nothing, Recepidx = nothing, Rbound = false)
+    
     if murine
         df = importDepletion(dataType)
         color = (dataType == "HIV") ? "Label" : "Background"
@@ -9,7 +10,7 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
         shape = (dataType == "ITP") ? "Condition" : "Concentration"
     end
 
-    res, odf, effects, ActI_df = regressionResult(df; L0 = L0, f = f, murine = murine)
+    res, odf, effects, ActI_df = regressionResult(dataType; L0 = L0, f = f, murine = murine)
     @assert all(in(names(odf)).([color, shape]))
 
     p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
@@ -21,15 +22,15 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
         L0 = L0,
         f = f,
         murine = murine,
-        fit = res,
         neutralization = ("Neutralization" in names(df)),
         c1q = ("C1q" in effects.Component),
         dataType = dataType,
+        fit = res,
         Cellidx = Cellidx,
         Recepidx = Recepidx
     )
     p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
-    p6 = plotSynergy(L0, f; murine = murine, fit = res, c1q = ("C1q" in effects.Component), neutralization = ("Neutralization" in names(df)))
+    p6 = plotSynergy(L0, f; murine = murine, fit = res, Cellidx = Cellidx, Recepidx = Recepidx, Rbound = Rbound, c1q = ("C1q" in effects.Component), neutralization = ("Neutralization" in names(df)))
 
     return p1, p2, p3, p4, p5, p6
 end
@@ -128,17 +129,27 @@ function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
     return pl
 end
 
-function plotSynergy(L0, f; murine::Bool, fit = nothing, Cellidx = nothing, quantity = nothing, c1q = false, neutralization = false)
+function plotSynergy(L0, f; murine::Bool, fit = nothing, Cellidx = nothing, Recepidx = false, Rbound = false, quantity = nothing, c1q = false, neutralization = false)
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
 
-    if Cellidx == nothing #Not using single cell
-        FcExpr = importRtot(; murine = murine)
-    else #Using single cell
+    if Recepidx != nothing # look at only one receptor
+        FcExpr = zeros(length(Receps))
+        FcExpr[Recepidx] = importRtot(murine = murine)[Recepidx, Cellidx]
+        ylabel = "Activity"
+    elseif Cellidx != nothing # look at only one cell FcExpr
         FcExpr = importRtot(murine = murine)[:, Cellidx]
+        ylabel = "Activity"
+    else
+        FcExpr = importRtot(; murine = murine)
+    end
+    if fit == nothing
+        title = "Not fit"
+    else
+        tile = "dataType"
     end
 
-    M = synergyGrid(L0, f, FcExpr, Kav; murine = murine, fit = fit, c1q = c1q, neutralization = neutralization)
+    M = synergyGrid(L0, f, FcExpr, Kav; murine = murine, fit = fit, Rbound = Rbound, c1q = c1q, neutralization = neutralization)
 
     h = collect(Iterators.flatten(M))
     if murine
@@ -169,7 +180,7 @@ function plotSynergy(L0, f; murine::Bool, fit = nothing, Cellidx = nothing, quan
         style(key_position = :none),
         Guide.xlabel("Mixture", orientation = :vertical),
         Guide.xlabel("Synergy", orientation = :horizontal),
-        Guide.title("Synergy vs Mixture"),
+        Guide.title("Synergy vs Mixture ($title)"),
     )
     return pl
 end
