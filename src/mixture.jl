@@ -31,6 +31,15 @@ function predictDFRow(dfrow)
     return predictMix(dfrow, Symbol(dfrow."subclass_1"), Symbol(dfrow."subclass_2"), dfrow."%_1", dfrow."%_2")
 end
 
+function predictDF(df)
+    df = copy(df)
+    df[!, "Predict"] .= 0.0
+    for i = 1:size(df)[1]
+        df[i, "Predict"] = predictDFRow(df[i, :])
+    end
+    return df
+end
+
 
 function TwoDFit(X::Matrix, Y::Matrix)
     """
@@ -52,11 +61,6 @@ end
 
 
 function MixtureFitLoss(df, ValConv::Vector, ExpConv::Vector; logscale = false)
-    df = copy(df)
-    df[!, "Predict"] .= 0.0
-    for i = 1:size(df)[1]
-        df[i, "Predict"] = predictDFRow(df[i, :])
-    end
     dtype = promote_type(eltype(df."Value"), eltype(ValConv), eltype(ExpConv))
     df[!, "Adjusted"] .= convert.(dtype, df[!, "Value"])
     df[df[!, "Adjusted"] .<= 1.0, "Adjusted"] .= 1.0
@@ -84,15 +88,46 @@ end
 
 
 function MixtureFit(df; logscale = false)
+    df = predictDF(df)
     nv, ne = length(unique(df."Valency")), length(unique(df."Experiment"))
     f(p::Vector, q::Vector) = MixtureFitLoss(df, [1.0; p], q; logscale = logscale)[1]
     f(v::Vector) = f(v[1:(nv - 1)], v[nv:end])
     init_v = ones(nv + ne - 1)
+    before_loss = MixtureFitLoss(df, [1.0; init_v[1:(nv - 1)]], init_v[nv:end]; logscale = logscale)[1]
     od = OnceDifferentiable(f, init_v; autodiff = :forward)
     res = optimize(od, init_v, BFGS()).minimizer
     p, q = [1.0; res[1:(nv - 1)]], res[nv:end]
     res = MixtureFitLoss(df, p, q; logscale = logscale)
+    #@warn before_loss < res[1] "Mixture Fit loss is not decreasing"
     return Dict("loss" => res[1], "df" => res[2], "ValConv" => p, "ExpConv" => q)
+end
+
+
+function PairFit(df; logscale = false)
+    df = predictDF(df)
+
+    if logscale
+        df[df[!, "Value"] .<= 1.0, "Value"] .= 1.0
+    end
+    df."Adjusted" = copy(df."Value")
+    for pairrow in eachrow(unique(df[!, ["Cell", "subclass_1", "subclass_2"]]))
+        sdf = @view df[(df."Cell" .== pairrow."Cell") .&
+                        (df."subclass_1" .== pairrow."subclass_1") .&
+                        (df."subclass_2" .== pairrow."subclass_2"), :]
+        for val in unique(sdf."Valency")
+            for expr in unique(sdf."Experiment")
+                svdf = @view sdf[(sdf."Valency" .== val) .& (sdf."Experiment" .== expr), :]
+                if logscale
+                    svdf[:, "Adjusted"] .*= exp(mean(log.(svdf[!, "Predict"]) ./ log.(svdf[!, "Value"])))
+                else
+                    predict_avg = mean(svdf[!, "Predict"])
+                    value_avg = mean(svdf[!, "Value"])
+                    svdf[:, "Adjusted"] .*= predict_avg/value_avg
+                end
+            end
+        end
+    end
+    return df
 end
 
 
@@ -105,6 +140,7 @@ function plotValLoss(df, title = ""; logscale = false)
         df[(df."Valency" .== 4), "NewValency"] .= val1
         for val2 = 1:40
             df[(df."Valency" .== 33), "NewValency"] .= val2
+            df = predictDF(df)
             losses[val1, val2] = log(MixtureFit(df; logscale = logscale)["loss"])
         end
     end
@@ -144,7 +180,7 @@ function plotMixContinuous(df; logscale = false)
         layer(x = x, y = preds33, Geom.line, Theme(default_color = palette[2], line_width = 2px)),
         layer(df, x = "%_1", y = "Adjusted", color = "Valency", shape = "Experiment"),
         Scale.x_continuous(labels = n -> "$IgGXname $(n*100)%\n$IgGYname $(100-n*100)%"),
-        (logscale ? Scale.y_log10 : Scale.y_continuous),
+        (logscale ? Scale.y_log10(minvalue = 1, maxvalue = 1e6) : Scale.y_continuous),
         Scale.color_discrete_manual(palette[1], palette[2]),
         Guide.xlabel(""),
         Guide.ylabel("Lbound", orientation = :vertical),
@@ -163,21 +199,32 @@ function plotMixtures()
     res2 = MixtureFit(loadMixData(); logscale = true)
     println("Log Scale: Fitted ValConv = ", res2["ValConv"], ", ExpConv = ", res2["ExpConv"])
     df2 = res2["df"]
-    #draw(SVG("figure_mixture_valencies_linear.svg", 700px, 300px), plotGrid((1, 1), [plotValLoss(df1, "all data"; logscale = false)]))
-    #draw(SVG("figure_mixture_valencies_log.svg", 700px, 300px), plotGrid((1, 1), [plotValLoss(df2, "all data"; logscale = true)]))
+
+    df3 = PairFit(loadMixData(); logscale = false)
+    df4 = PairFit(loadMixData(); logscale = true)
+
     cells = unique(df1."Cell")
     pairs = unique([r."subclass_1" * "-" * r."subclass_2" for r in eachrow(df1)])
 
     pls1 = Matrix(undef, length(cells), length(pairs))
     pls2 = Matrix(undef, length(cells), length(pairs))
+    pls3 = Matrix(undef, length(cells), length(pairs))
+    pls4 = Matrix(undef, length(cells), length(pairs))
     for (i, pair) in enumerate(pairs)
         for (j, cell) in enumerate(cells)
             ndf1 = df1[(df1."Cell" .== cell) .& (df1."subclass_1" .== split(pair, "-")[1]) .& (df1."subclass_2" .== split(pair, "-")[2]), :]
             pls1[j, i] = plotMixContinuous(ndf1; logscale = false)
             ndf2 = df2[(df2."Cell" .== cell) .& (df2."subclass_1" .== split(pair, "-")[1]) .& (df2."subclass_2" .== split(pair, "-")[2]), :]
             pls2[j, i] = plotMixContinuous(ndf2; logscale = true)
+
+            ndf3 = df3[(df3."Cell" .== cell) .& (df3."subclass_1" .== split(pair, "-")[1]) .& (df3."subclass_2" .== split(pair, "-")[2]), :]
+            pls3[j, i] = plotMixContinuous(ndf3; logscale = false)
+            ndf4 = df4[(df4."Cell" .== cell) .& (df4."subclass_1" .== split(pair, "-")[1]) .& (df4."subclass_2" .== split(pair, "-")[2]), :]
+            pls4[j, i] = plotMixContinuous(ndf4; logscale = true)
         end
     end
-    draw(SVG("figure_mixture_continuous_linear.svg", 2500px, 1000px), plotGrid(size(pls1), pls1))
-    draw(SVG("figure_mixture_continuous_log.svg", 2500px, 1000px), plotGrid(size(pls2), pls2))
+    draw(SVG("figure_mixture_fit_linear.svg", 2500px, 1000px), plotGrid(size(pls1), pls1))
+    draw(SVG("figure_mixture_fit_log.svg", 2500px, 1000px), plotGrid(size(pls2), pls2))
+    draw(SVG("figure_mixture_split_linear.svg", 2500px, 1000px), plotGrid(size(pls3), pls3))
+    draw(SVG("figure_mixture_split_log.svg", 2500px, 1000px), plotGrid(size(pls4), pls4))
 end
