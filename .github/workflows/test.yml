@@ -3,17 +3,9 @@ on: [push]
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - '1.5'
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
-        with:
-          version: ${{ matrix.version }}
-          arch: x64
       - uses: actions/cache@v1
         env:
           cache-name: cache-artifacts
