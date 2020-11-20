@@ -64,8 +64,7 @@ end
 
 @testset "Test regressionResult()" begin
     for data in ("ITP", "blood", "bone", "melanoma", "HIV", "Bcell")
-        df = FcRegression.importDepletion(data)
-        res, odf, effects, ActI_df = FcRegression.regressionResult(df; L0 = 1e-9, f = 6, murine = true)
+        res, odf, effects, ActI_df = FcRegression.regressionResult(data; L0 = 1e-9, f = 6, murine = true)
         @test "Fitted" in names(odf)
         @test "LOOPredict" in names(odf)
         @test all(effects[!, "Q10"] .<= effects[!, "Median"])
