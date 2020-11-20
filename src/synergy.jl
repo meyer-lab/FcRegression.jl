@@ -35,6 +35,7 @@ function calcSynergy(
     combinedf = c1q ? DataFrame(C1q = IgGC' * Kav_df[!, :C1q] .* L0) : nothing
 
     if fit != nothing  # using disease model
+        print(ActI)
         if neutralization
             fit = optResult(fit.cellWs, fit.ActI, fit.residual)
             fit.cellWs = fit.cellWs[1:(end - 1)]
@@ -42,7 +43,6 @@ function calcSynergy(
         if ndims(FcExpr) == 1
             if !Rbound #Activity of single cell or receptor with disease type
                 ActI = fit.ActI
-                print(ActI)
                 D1 = dropdims(D1, dims = 1)
                 D2 = dropdims(D2, dims = 1)
                 combine = dropdims(combine, dims = 1)
@@ -184,7 +184,7 @@ function plotDepletionSynergy(
 
     if fit != nothing  # use disease model
         if Recepidx != nothing # look at only one receptor
-            title = "$(murine ? murineFcgR[Recepidx] : humanFcgR[Recepidx]) $dataType"
+            title = "$(cellTypes[Cellidx]) $(murine ? murineFcgR[Recepidx] : humanFcgR[Recepidx]) $dataType"
         elseif Cellidx != nothing # look at only one cell FcExpr
             title = "$(cellTypes[Cellidx]) $dataType"
         else
@@ -225,7 +225,7 @@ function plotDepletionSynergy(
         Guide.ylabel("Predicted $ylabel", orientation = :vertical),
         Coord.cartesian(ymin = 0, ymax = ymax),
         Guide.manual_color_key("", ["Predicted", "Additive", "$Xname only", "$Yname only"], ["green", "red", "blue", "orange"]),
-        Guide.title("$Xname-$Yname Composition ($title)"),
+        Guide.title("$Xname-$Yname ($title)"),
         style(key_position = :inside),
     )
     return pl

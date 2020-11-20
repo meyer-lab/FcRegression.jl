@@ -146,7 +146,7 @@ function plotSynergy(L0, f; murine::Bool, fit = nothing, Cellidx = nothing, Rece
     if fit == nothing
         title = "Not fit"
     else
-        tile = "dataType"
+        title = "dataType"
     end
 
     M = synergyGrid(L0, f, FcExpr, Kav; murine = murine, fit = fit, Rbound = Rbound, c1q = c1q, neutralization = neutralization)
