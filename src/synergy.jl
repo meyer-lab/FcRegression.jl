@@ -35,7 +35,6 @@ function calcSynergy(
     combinedf = c1q ? DataFrame(C1q = IgGC' * Kav_df[!, :C1q] .* L0) : nothing
 
     if fit != nothing  # using disease model
-        print(ActI)
         if neutralization
             fit = optResult(fit.cellWs, fit.ActI, fit.residual)
             fit.cellWs = fit.cellWs[1:(end - 1)]
