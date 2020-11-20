@@ -111,9 +111,7 @@ function PairFit(df; logscale = false)
     end
     df."Adjusted" = copy(df."Value")
     for pairrow in eachrow(unique(df[!, ["Cell", "subclass_1", "subclass_2"]]))
-        sdf = @view df[(df."Cell" .== pairrow."Cell") .&
-                        (df."subclass_1" .== pairrow."subclass_1") .&
-                        (df."subclass_2" .== pairrow."subclass_2"), :]
+        sdf = @view df[(df."Cell" .== pairrow."Cell") .& (df."subclass_1" .== pairrow."subclass_1") .& (df."subclass_2" .== pairrow."subclass_2"), :]
         for val in unique(sdf."Valency")
             for expr in unique(sdf."Experiment")
                 svdf = @view sdf[(sdf."Valency" .== val) .& (sdf."Experiment" .== expr), :]
@@ -122,7 +120,7 @@ function PairFit(df; logscale = false)
                 else
                     predict_avg = mean(svdf[!, "Predict"])
                     value_avg = mean(svdf[!, "Value"])
-                    svdf[:, "Adjusted"] .*= predict_avg/value_avg
+                    svdf[:, "Adjusted"] .*= predict_avg / value_avg
                 end
             end
         end
