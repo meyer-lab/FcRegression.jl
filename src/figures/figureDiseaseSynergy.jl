@@ -1,5 +1,11 @@
 function figureDS(dataType; L0 = 1e-9, f = 4, murine::Bool)
 
+    if murine
+        df = importDepletion(dataType)
+    else
+        df = importHumanized(dataType)
+    end
+    
     res, odf, effects, ActI_df = regressionResult(dataType; L0 = L0, f = f, murine = murine)
 
     setGadflyTheme()
