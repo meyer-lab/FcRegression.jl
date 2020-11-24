@@ -1,13 +1,5 @@
 function figureDS(dataType; L0 = 1e-9, f = 4, murine::Bool)
 
-    if murine
-        color = (dataType == "HIV") ? "Label" : "Background"
-        shape = "Condition"
-    else
-        color = "Genotype"
-        shape = (dataType == "ITP") ? "Condition" : "Concentration"
-    end
-
     res, odf, effects, ActI_df = regressionResult(dataType; L0 = L0, f = f, murine = murine)
 
     setGadflyTheme()
