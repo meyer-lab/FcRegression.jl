@@ -43,7 +43,7 @@ function old_regGenData(df; L0, f, murine::Bool, ActI::Union{Vector, Nothing} = 
 end
 
 
-@testset "Test genRegPred() can take ForwardDiff." begin
+"""@testset "Test genRegPred() can take ForwardDiff." begin
     for data in ("ITP", "melanoma", "blood", "bone")
         df = FcRegression.importDepletion(data)
         Xo, Yo = old_regGenData(df; L0 = 1e-10, f = 6, murine = true)
@@ -60,7 +60,7 @@ end
         f = x -> sum(FcRegression.regressionPred(Xfc, Xdf, x, [1.0, 1, -1, 1]))
         @test isa(ForwardDiff.gradient(f, weights), Vector{Float64})
     end
-end
+end"""
 
 @testset "Test regressionResult()" begin
     for data in ("ITP", "blood", "bone", "melanoma", "HIV", "Bcell")
