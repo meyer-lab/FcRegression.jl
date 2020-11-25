@@ -71,8 +71,7 @@ end
         @test all(effects[!, "Q90"] .>= effects[!, "Median"])
     end
     for data in ("blood", "spleen", "bone")
-        df = FcRegression.importHumanized(data)
-        res, odf, effects, ActI_df = FcRegression.regressionResult(df; L0 = 1e-9, f = 6, murine = false)
+        res, odf, effects, ActI_df = FcRegression.regressionResult(data; L0 = 1e-9, f = 6, murine = false)
         @test "Fitted" in names(odf)
         @test "LOOPredict" in names(odf)
         @test all(effects[!, "Q10"] .<= effects[!, "Median"])
