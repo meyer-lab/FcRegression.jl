@@ -60,7 +60,7 @@ end
         f = x -> sum(FcRegression.regressionPred(Xfc, Xdf, x, [1.0, 1, -1, 1]))
         @test isa(ForwardDiff.gradient(f, weights), Vector{Float64})
     end
-end"""
+end
 
 @testset "Test regressionResult()" begin
     for data in ("ITP", "blood", "bone", "melanoma", "HIV", "Bcell")
@@ -77,4 +77,4 @@ end"""
         @test all(effects[!, "Q10"] .<= effects[!, "Median"])
         @test all(effects[!, "Q90"] .>= effects[!, "Median"])
     end
-end
+end"""
