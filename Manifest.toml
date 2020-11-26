@@ -104,16 +104,21 @@ git-tree-sha1 = "6c9671364c68c1158ac2524ac881536195b7e7bc"
 uuid = "7ad07ef1-bdf2-5661-9d2b-286fd4296dac"
 version = "0.2.0"
 
+[[Crayons]]
+git-tree-sha1 = "3f71217b538d7aaee0b69ab47d9b7724ca8afa0d"
+uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
+version = "4.0.4"
+
 [[DataAPI]]
 git-tree-sha1 = "ad84f52c0b8f05aa20839484dbaf01690b41ff84"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 version = "1.4.0"
 
 [[DataFrames]]
-deps = ["CategoricalArrays", "Compat", "DataAPI", "Future", "InvertedIndices", "IteratorInterfaceExtensions", "Missings", "PooledArrays", "Printf", "REPL", "Reexport", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
-git-tree-sha1 = "ecd850f3d2b815431104252575e7307256121548"
+deps = ["CategoricalArrays", "Compat", "DataAPI", "Future", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "Markdown", "Missings", "PooledArrays", "PrettyTables", "Printf", "REPL", "Reexport", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
+git-tree-sha1 = "20159837c2e5e196793a313cd700b8199fd8f985"
 uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "0.21.8"
+version = "0.22.1"
 
 [[DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
@@ -142,9 +147,9 @@ version = "1.0.2"
 
 [[DiffRules]]
 deps = ["NaNMath", "Random", "SpecialFunctions"]
-git-tree-sha1 = "eb0c34204c8410888844ada5359ac8b96292cfd1"
+git-tree-sha1 = "214c3fcac57755cfda163d91c58893a8723f93e9"
 uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
-version = "1.0.1"
+version = "1.0.2"
 
 [[Distances]]
 deps = ["LinearAlgebra", "Statistics"]
@@ -215,6 +220,12 @@ deps = ["Artifacts", "Bzip2_jll", "Expat_jll", "FreeType2_jll", "JLLWrappers", "
 git-tree-sha1 = "35895cf184ceaab11fd778b4590144034a167a2f"
 uuid = "a3f928ae-7b40-5064-980b-68af3947d34b"
 version = "2.13.1+14"
+
+[[Formatting]]
+deps = ["Printf"]
+git-tree-sha1 = "a0c901c29c0e7c763342751c0a94211d56c0de5c"
+uuid = "59287772-0a20-5a39-b81b-1366585eb4c0"
+version = "0.4.1"
 
 [[ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "NaNMath", "Random", "SpecialFunctions", "StaticArrays"]
@@ -402,9 +413,9 @@ uuid = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
 version = "4.4.1"
 
 [[NaNMath]]
-git-tree-sha1 = "c84c576296d0e2fbb3fc134d3e09086b3ea617cd"
+git-tree-sha1 = "bfe47e760d60b82b66b61d2d44128b62e3a369fb"
 uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
-version = "0.3.4"
+version = "0.3.5"
 
 [[NonNegLeastSquares]]
 deps = ["Distributed", "LinearAlgebra", "SparseArrays"]
@@ -471,6 +482,12 @@ git-tree-sha1 = "127c47b91990c101ee3752291c4f45640eeb03d1"
 uuid = "85a6dd25-e78a-55b7-8502-1745935b8125"
 version = "0.2.3"
 
+[[PrettyTables]]
+deps = ["Crayons", "Formatting", "Markdown", "Reexport", "Tables"]
+git-tree-sha1 = "237170206bf38a66fee4d845f4ae57f63788eeb0"
+uuid = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
+version = "0.10.1"
+
 [[Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
@@ -506,9 +523,9 @@ version = "0.2.0"
 
 [[Requires]]
 deps = ["UUIDs"]
-git-tree-sha1 = "28faf1c963ca1dc3ec87f166d92982e3c4a1f66d"
+git-tree-sha1 = "e05c53ebc86933601d36212a93b39144a2733493"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
-version = "1.1.0"
+version = "1.1.1"
 
 [[Rmath]]
 deps = ["Random", "Rmath_jll"]
@@ -581,9 +598,9 @@ version = "0.33.2"
 
 [[StatsFuns]]
 deps = ["Rmath", "SpecialFunctions"]
-git-tree-sha1 = "04a5a8e6ab87966b43f247920eab053fd5fdc925"
+git-tree-sha1 = "3b9f665c70712af3264b61c27a7e1d62055dafd1"
 uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
-version = "0.9.5"
+version = "0.9.6"
 
 [[StructTypes]]
 deps = ["Dates", "UUIDs"]
@@ -637,7 +654,7 @@ version = "1.2.11+18"
 
 [[polyBindingModel]]
 deps = ["Combinatorics", "LinearAlgebra", "NLsolve"]
-git-tree-sha1 = "f45aa3005332886651d7fdca0c0f229d4d70b58b"
+git-tree-sha1 = "4b343d0f702a9c198a4068d5727f0982fc6e54c6"
 repo-rev = "master"
 repo-url = "https://github.com/meyer-lab/polyBindingModel.jl"
 uuid = "d8b71a59-0ce5-46cb-870e-e9e7240c6f77"
