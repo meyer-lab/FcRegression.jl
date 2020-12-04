@@ -1,7 +1,7 @@
 """ This file builds the depletion manuscript, Figure 1. """
 
 function figureB1()
-    p1 = plotDepletionSynergy(2, 3; L0 = 1e-8, f = 24, murine = false, Cellidx = 2, RecepIdx = 3)
+    p1 = plotDepletionSynergy(1, 3; L0 = 1e-8, f = 24, murine = false, Cellidx = 2, Recepidx = 3)
     p2 = plotDepletionSynergy(2, 4; Cellidx = 2)
     p3 = plotSynL0(4; murine = true, Cellidx = 2, Rbound = true)
     p4 = plotSynf(1e-9; murine = true, Cellidx = 2, Rbound = true)

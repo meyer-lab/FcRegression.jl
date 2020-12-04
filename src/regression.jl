@@ -173,10 +173,19 @@ function bootstrap(Xfc, Xdf, Y; nsample = 100, murine)
     return fitResults
 end
 
+function regressionResult(dataType; L0, f, murine::Bool)
+    if murine
+        df = importDepletion(dataType)
+        upper = [4,4,4,4]
+        lower = [-4,-4,-4,-4]
+    else
+        df = importHumanized(dataType)
+        upper = [4,4,4,4,4,4,4,4,4]
+        lower = [-4,-4,-4,-4,-4,-4,-4,-4,-4]
+    end
 
-function regressionResult(df; L0, f, murine::Bool)
     Xfc, Xdf, Y = modelPred(df; L0 = L0, f = f, murine = murine)
-    res = fitRegression(Xfc, Xdf, Y; murine = murine)
+    res = fitRegression(Xfc, Xdf, Y; murine = murine, upper = upper, lower = lower)
     loo_res = LOOCrossVal(Xfc, Xdf, Y; murine = murine)
     btp_res = bootstrap(Xfc, Xdf, Y; murine = murine)
 
