@@ -56,14 +56,14 @@ function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepA
     ansType = promote_type(eltype(Xfc), eltype(cellWeights), eltype(recepActI))
     noextra = true
     if Xdf == nothing
-        extra = DataFrame([])
+        extra = nothing
         noextra = true
     else
         extra = Xdf[!, in(["C1q", "Neutralization"]).(names(Xdf))]
         noextra = size(extra, 2) == 0
     end
 
-    @assert length(cellWeights) == size(Xfc, 1) + size(extra, 2)
+    @assert length(cellWeights) == size(Xfc, 1) + (noextra ? 0 : size(extra, 2))
     @assert length(recepActI) == size(Xfc, 2)
     if !noextra
         @assert size(Xfc, 3) == size(extra, 1)
@@ -173,10 +173,19 @@ function bootstrap(Xfc, Xdf, Y; nsample = 100, murine)
     return fitResults
 end
 
+function regressionResult(dataType; L0, f, murine::Bool)
+    if murine
+        df = importDepletion(dataType)
+        upper = ones(length(murineActI)) .* 4.0
+        lower = ones(length(murineActI)) .* -4.0
+    else
+        df = importHumanized(dataType)
+        upper = ones(length(humanActI)) .* 4.0
+        lower = ones(length(humanActI)) .* -4.0
+    end
 
-function regressionResult(df; L0, f, murine::Bool)
     Xfc, Xdf, Y = modelPred(df; L0 = L0, f = f, murine = murine)
-    res = fitRegression(Xfc, Xdf, Y; murine = murine)
+    res = fitRegression(Xfc, Xdf, Y; murine = murine, upper = upper, lower = lower)
     loo_res = LOOCrossVal(Xfc, Xdf, Y; murine = murine)
     btp_res = bootstrap(Xfc, Xdf, Y; murine = murine)
 
