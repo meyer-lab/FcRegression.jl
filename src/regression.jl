@@ -176,12 +176,12 @@ end
 function regressionResult(dataType; L0, f, murine::Bool)
     if murine
         df = importDepletion(dataType)
-        upper = [4,4,4,4]
-        lower = [-4,-4,-4,-4]
+        upper = ones(length(murineActI)) .* 4.0
+        lower = ones(length(murineActI)) .* -4.0
     else
         df = importHumanized(dataType)
-        upper = [4,4,4,4,4,4,4,4,4]
-        lower = [-4,-4,-4,-4,-4,-4,-4,-4,-4]
+        upper = ones(length(humanActI)) .* 4.0
+        lower = ones(length(humanActI)) .* -4.0
     end
 
     Xfc, Xdf, Y = modelPred(df; L0 = L0, f = f, murine = murine)
