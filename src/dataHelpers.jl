@@ -12,9 +12,9 @@ function geocmean(x)
 end
 
 const cellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO", "Kupffer", "KupfferHi"]
-const murineIgG = [:IgG1, :IgG2a, :IgG2b, :IgG3]
-const murineIgGFucose = [:IgG1, :IgG2a, :IgG2b, :IgG3, :IgG2bFucose]
-const humanIgG = [:IgG1, :IgG2, :IgG3, :IgG4]
+const murineIgG = ["IgG1", "IgG2a", "IgG2b", "IgG3"]
+const murineIgGFucose = ["IgG1", "IgG2a", "IgG2b", "IgG3", "IgG2bFucose"]
+const humanIgG = ["IgG1", "IgG2", "IgG3", "IgG4"]
 const murineFcgR = ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]
 const humanFcgR =
     ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"]
@@ -81,7 +81,7 @@ end
     IgGlist = copy(murine ? murineIgG : humanIgG)
     FcRecep = copy(murine ? murineFcgR : humanFcgR)
     if IgG2bFucose
-        append!(IgGlist, [:IgG2bFucose])
+        append!(IgGlist, ["IgG2bFucose"])
     end
     if c1q
         append!(FcRecep, ["C1q"])
@@ -160,12 +160,12 @@ function importHumanized(dataType)
         df = CSV.File(joinpath(dataDir, "lux_humanized_CD19.csv"), delim = ",", comment = "#") |> DataFrame!
         df = dropmissing(df, Symbol(dataType), disallowmissing = true)
         df[!, "Target"] = 1.0 .- df[!, Symbol(dataType)] ./ 100.0
-        df[!, "Condition"] .= :IgG1
+        df[!, "Condition"] .= "IgG1"
         df = df[!, ["Genotype", "Concentration", "Condition", "Target"]]
         affinity = importKav(murine = false, c1q = true, retdf = true)
     elseif dataType == "ITP"
         df = CSV.File(joinpath(dataDir, "schwab_ITP_humanized.csv"), delim = ",", comment = "#") |> DataFrame!
-        df = stack(df, [:IgG1, :IgG2, :IgG3, :IgG4])
+        df = stack(df, ["IgG1", "IgG2", "IgG3", "IgG4"])
         df = disallowmissing!(df[completecases(df), :])
         rename!(df, ["variable" => "Condition", "value" => "Target"])
         df[!, "Condition"] .= Symbol.(df.Condition)
