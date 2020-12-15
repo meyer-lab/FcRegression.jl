@@ -88,7 +88,6 @@ end
     end
     df = stack(df; variable_name = "IgG", value_name = "Kav")
     df = unstack(df, "FcgR", "Kav")
-    df[!, "IgG"] = map(Symbol, df[!, "IgG"])
     dropmissing!(df)
     df = df[in(IgGlist).(df.IgG), :]
 
