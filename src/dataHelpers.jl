@@ -122,7 +122,6 @@ function importDepletion(dataType)
     end
 
     df = CSV.File(joinpath(dataDir, filename), delim = ",", comment = "#") |> DataFrame!
-    df[!, "Condition"] .= Symbol.(df[!, "Condition"])
     df[!, "Target"] = 1.0 .- df[!, "Target"] ./ 100.0
     if "Neutralization" in names(df)
         neut = -log.(df[!, "Neutralization"] / 50.0)
@@ -167,10 +166,8 @@ function importHumanized(dataType)
         df = stack(df, ["IgG1", "IgG2", "IgG3", "IgG4"])
         df = disallowmissing!(df[completecases(df), :])
         rename!(df, ["variable" => "Condition", "value" => "Target"])
-        df[!, "Condition"] .= Symbol.(df.Condition)
 
         df[!, "Target"] .= 1.0 .- df.Target ./ 100.0
-        df[!, "Donor"] .= Symbol.(df.Donor)
         affinity = importKav(murine = false, c1q = false, retdf = true)
     else
         @error "Data type not found"
