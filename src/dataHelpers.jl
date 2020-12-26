@@ -11,7 +11,8 @@ function geocmean(x)
     return geomean(x)
 end
 
-const cellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO", "Kupffer", "KupfferHi"]
+const murineCellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO", "Kupffer", "KupfferHi"]
+const humanCellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO"]
 const murineIgG = ["IgG1", "IgG2a", "IgG2b", "IgG3"]
 const murineIgGFucose = ["IgG1", "IgG2a", "IgG2b", "IgG3", "IgG2bFucose"]
 const humanIgG = ["IgG1", "IgG2", "IgG3", "IgG4"]
@@ -30,6 +31,7 @@ const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
     else
         df = CSV.File(joinpath(dataDir, "human-FcgR-abundance.csv"), comment = "#") |> DataFrame!
     end
+    cellTypes = murine ? murineCellTypes : humanCellTypes
     df = combine(groupby(df, ["Cells", "Receptor"]), names(df, "Count") .=> geocmean)
     df = unstack(df, "Receptor", "Cells", "Count_geocmean")
     df = coalesce.(df, 1.0)

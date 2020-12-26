@@ -23,12 +23,18 @@ function predictMix(dfrow, IgGXname, IgGYname, IgGX, IgGY)
     Kav = importKav(; murine = false, retdf = true)
     Kav = Matrix(Kav[!, [recepName[dfrow."Cell"]]])
     val = "NewValency" in names(dfrow) ? dfrow."NewValency" : dfrow."Valency"
-    return polyfc(1e-9, KxConst, val, [recepExp[dfrow."Cell"]], IgGC, Kav).Lbound
+    res = try
+        polyfc(1e-9, KxConst, val, [recepExp[dfrow."Cell"]], IgGC, Kav).Lbound
+    catch e
+        println(val, [recepExp[dfrow."Cell"]], IgGC, Kav)
+        rethrow(e)
+    end
+    return res
 end
 
 
 function predictDFRow(dfrow)
-    return predictMix(dfrow, Symbol(dfrow."subclass_1"), Symbol(dfrow."subclass_2"), dfrow."%_1", dfrow."%_2")
+    return predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2")
 end
 
 function predictDF(df)
@@ -177,8 +183,8 @@ function plotMixContinuous(df; logscale = false)
     @assert length(unique(df."Cell")) == 1
     @assert length(unique(df."subclass_1")) == 1
     @assert length(unique(df."subclass_2")) == 1
-    IgGXname = Symbol(unique(df."subclass_1")[1])
-    IgGYname = Symbol(unique(df."subclass_2")[1])
+    IgGXname = unique(df."subclass_1")[1]
+    IgGYname = unique(df."subclass_2")[1]
 
     x = 0:0.01:1
     df4 = df[(df."Valency" .== 4), :]

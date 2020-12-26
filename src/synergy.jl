@@ -153,6 +153,7 @@ function plotDepletionSynergy(
             IgGXidx, IgGYidx = 1, 2
         end
     end
+    cellTypes = murine ? murineCellTypes : humanCellTypes
 
     if Cellidx == nothing && Recepidx != nothing
         @error "Must specify Cellidx AND Recepidx"
