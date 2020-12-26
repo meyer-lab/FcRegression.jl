@@ -214,7 +214,7 @@ function makeMixturePairSubPlots(df; logscale = false)
     for (i, pairrow) in enumerate(eachrow(pairs))
         for (j, cell) in enumerate(cells)
             ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== pairrow."subclass_1") .& (df."subclass_2" .== pairrow."subclass_2"), :]
-            pls[(j-1) * lpairs + (i-1) + 1] = plotMixContinuous(ndf; logscale = logscale)
+            pls[(j - 1) * lpairs + (i - 1) + 1] = plotMixContinuous(ndf; logscale = logscale)
         end
     end
     return plotGrid((lcells, lpairs), pls)
@@ -241,4 +241,3 @@ function plotMixtures()
     draw(SVG("mixdata_cell_split_linear.svg", 2500px, 1000px), makeMixturePairSubPlots(df5; logscale = false))
     draw(SVG("mixdata_cell_split_log.svg", 2500px, 1000px), makeMixturePairSubPlots(df6; logscale = true))
 end
-
