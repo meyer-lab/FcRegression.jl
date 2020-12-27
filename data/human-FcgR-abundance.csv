@@ -1,4 +1,4 @@
-﻿Cells,Receptor,Count
+Cells,Receptor,Count
 ncMO,FcgRI,6011
 ncMO,FcgRI,3534
 ncMO,FcgRI,5866
@@ -286,3 +286,5 @@ T_Cells,FcgRIIIB,0.00001
 T_Cells,FcgRIIIB,0.00001
 T_Cells,FcgRIIIB,0.00001
 T_Cells,FcgRIIIB,0.00001
+Kupffer,FcgRI,0.00001
+KupfferHi,FcgRI,0.00001

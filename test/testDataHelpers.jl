@@ -6,7 +6,7 @@
         arr_HZF = FcRegression.importRtot(murine = false, genotype = "HZF")
 
         ## Set up mapping
-        receps = string.(FcRegression.humanFcgR)
+        receps = FcRegression.humanFcgR
         idxs = 1:9
         d = Dict(receps .=> idxs)
 
@@ -29,13 +29,11 @@
     @testset "Depletion data can be imported" begin
         for dataType in ["ITP", "blood", "bone", "melanoma", "HIV"]
             df = FcRegression.importDepletion(dataType)
-            @test eltype(propertynames(df)) == Symbol
-            @test eltype(df[!, :Condition]) == Symbol
+            @test sum(Matrix(ismissing.(df))) == 0
         end
         for dataType in ["blood", "spleen", "bone"]
             df = FcRegression.importHumanized(dataType)
-            @test eltype(propertynames(df)) == Symbol
-            @test eltype(df[!, :Condition]) == Symbol
+            @test sum(Matrix(ismissing.(df))) == 0
         end
     end
 

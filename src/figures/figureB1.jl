@@ -31,6 +31,7 @@ const humanreceptorNamesB1 = Symbol.(["IgG1/2", "IgG1/3", "IgG1/4", "IgG2/3", "I
 function plotSynL0(f; murine::Bool, fit = nothing, Cellidx = 2, Rbound = false, c1q = false, neutralization = false)
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
+    cellTypes = murine ? murineCellTypes : humanCellTypes
 
     if Cellidx == nothing #Not using single cell
         FcExpr = importRtot(; murine = murine)
@@ -89,6 +90,7 @@ end
 function plotSynf(L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = false, c1q = false, neutralization = false)
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
+    cellTypes = murine ? murineCellTypes : humanCellTypes
 
     if Cellidx == nothing #Not using single cell
         FcExpr = importRtot(; murine = murine)
@@ -145,6 +147,7 @@ function plotSynFc(f, L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = fal
     """ Figure shows how Fc receptor expression affects synergy """
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
+    cellTypes = murine ? murineCellTypes : humanCellTypes
 
     if Cellidx == nothing #Not using single cell
         FcExpr = importRtot(; murine = murine)
