@@ -35,7 +35,7 @@ const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
     df = combine(groupby(df, ["Cells", "Receptor"]), names(df, "Count") .=> geocmean)
     df = unstack(df, "Receptor", "Cells", "Count_geocmean")
     df = coalesce.(df, 1.0)
-    
+
     if murine
         df = df[in(murineFcgR).(df.Receptor), :]
     else

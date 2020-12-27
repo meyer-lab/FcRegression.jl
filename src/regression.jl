@@ -91,7 +91,8 @@ function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepA
     end
 end
 
-regressionPred(Xfc, Xdf, fit::optResult; showXmat = false, murine = true) = regressionPred(Xfc, Xdf, fit.cellWs, fit.ActI; showXmat = showXmat, murine = murine)
+regressionPred(Xfc, Xdf, fit::optResult; showXmat = false, murine = true) =
+    regressionPred(Xfc, Xdf, fit.cellWs, fit.ActI; showXmat = showXmat, murine = murine)
 
 function nnls_fit(Xfc, extra, Y, ActI)
     cY = inv_exponential.(Y)
