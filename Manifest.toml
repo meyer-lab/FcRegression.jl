@@ -14,9 +14,9 @@ version = "2.3.0"
 
 [[ArrayInterface]]
 deps = ["LinearAlgebra", "Requires", "SparseArrays"]
-git-tree-sha1 = "b7898df8dff4098db4a9494d2451c5c2edd4cb2c"
+git-tree-sha1 = "3b5bd474a90bee86b50f26268bbb044bb4d9ef83"
 uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
-version = "2.14.5"
+version = "2.14.9"
 
 [[Artifacts]]
 deps = ["Pkg"]
@@ -59,9 +59,9 @@ version = "0.10.9"
 
 [[Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "InteractiveUtils", "Reexport"]
-git-tree-sha1 = "008d6bc68dea6beb6303fdc37188cb557391ebf2"
+git-tree-sha1 = "ac5f2213e56ed8a34a3dd2f681f4df1166b34929"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
-version = "0.12.4"
+version = "0.12.6"
 
 [[Combinatorics]]
 git-tree-sha1 = "08c8b6831dc00bfea825826be0bc8336fc369860"
@@ -187,9 +187,9 @@ version = "1.2.4"
 
 [[FFTW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "f10c3009373a2d5c4349b8a2932d8accb892892d"
+git-tree-sha1 = "5a0d4b6a22a34d17d53543bd124f4b08ed78e8b0"
 uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
-version = "3.3.9+6"
+version = "3.3.9+7"
 
 [[FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays"]
@@ -427,9 +427,9 @@ version = "0.2.0"
 
 [[OffsetArrays]]
 deps = ["Adapt"]
-git-tree-sha1 = "45d5e495ab559357aee8cb1dfb8c12b0787d4545"
+git-tree-sha1 = "b0cc1c42b63e30b759f4e1cf045ad8a51069d6cc"
 uuid = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
-version = "1.4.1"
+version = "1.4.2"
 
 [[OpenSpecFun_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
