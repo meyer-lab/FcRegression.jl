@@ -1,3 +1,6 @@
+using Gadfly
+using Compose
+
 """
 Whenever making a plot with Gadfly, use `style()` instead of `Theme()` to add effects
 """

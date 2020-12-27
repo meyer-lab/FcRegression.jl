@@ -9,65 +9,43 @@ function loadMixData()
     df[!, "%_1"] ./= 100.0
     df[!, "%_2"] ./= 100.0
 
+    replace!(df."Cell", "hFcgRIIA-131His" => "FcgRIIA-131H")
+    replace!(df."Cell", "hFcgRIIB" => "FcgRIIB-232I")
+    replace!(df."Cell", "hFcgRIIIA-131Val" => "FcgRIIIA-158V")
+
     return df
 end
 
 
-function predictMix(dfrow, IgGXname, IgGYname, IgGX, IgGY)
+const measuredRecepExp = Dict("FcgRIIA-131H" => 445141, "FcgRIIB-232I" => 31451, "FcgRIIIA-158V" => 657219)  # geometric mean
+
+function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp)
     IgGC = zeros(size(humanIgG))
     IgGC[IgGXname .== humanIgG] .= IgGX
     IgGC[IgGYname .== humanIgG] .= IgGY
 
-    recepExp = Dict("hFcgRIIA-131His" => 445141, "hFcgRIIB" => 31451, "hFcgRIIIA-131Val" => 657219)  # geometric mean
-    recepName = Dict("hFcgRIIA-131His" => "FcgRIIA-131H", "hFcgRIIB" => "FcgRIIB-232I", "hFcgRIIIA-131Val" => "FcgRIIIA-158V")
     Kav = importKav(; murine = false, retdf = true)
-    Kav = Matrix(Kav[!, [recepName[dfrow."Cell"]]])
+    Kav = Matrix(Kav[!, [dfrow."Cell"]])
     val = "NewValency" in names(dfrow) ? dfrow."NewValency" : dfrow."Valency"
-    res = try
-        polyfc(1e-9, KxConst, val, [recepExp[dfrow."Cell"]], IgGC, Kav).Lbound
-    catch e
-        println(val, [recepExp[dfrow."Cell"]], IgGC, Kav)
-        rethrow(e)
-    end
-    return res
+    return polyfc(1e-9, KxConst, val, [recepExp[dfrow."Cell"]], IgGC, Kav).Lbound
 end
 
+predictMix(dfrow::DataFrameRow; recepExp = measuredRecepExp) = predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; recepExp = recepExp)
 
-function predictDFRow(dfrow)
-    return predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2")
-end
-
-function predictDF(df)
+function predictMix(df::DataFrame; recepExp = measuredRecepExp)
     """ will return another df object """
     df = copy(df)
     df[!, "Predict"] .= 0.0
     for i = 1:size(df)[1]
-        df[i, "Predict"] = predictDFRow(df[i, :])
+        df[i, "Predict"] = predictMix(df[i, :]; recepExp = recepExp)
     end
     return df
 end
 
 
-function TwoDFit(X::Matrix, Y::Matrix)
-    """
-    Fit X_ij * p_i * q_j ≈ Y_ij
-    p[1] == 1 (fixed)
-    length(p) == size(X, 1) - 1 == m
-    length(q) == size(X, 2) == n
-    v == vcat(p, q)
-    """
-    @assert size(X) == size(Y)
-    m, n = size(X)
-    f(p::Vector, q::Vector) = sum((reshape([1.0; p], :, 1) .* X .* reshape(q, 1, :) .- Y) .^ 2)
-    f(v::Vector) = f(v[1:(m - 1)], v[m:end])
-    init_v = ones(m + n - 1)
-    od = OnceDifferentiable(f, init_v; autodiff = :forward)
-    res = optimize(od, init_v, BFGS()).minimizer
-    return [1.0; res[1:(m - 1)]], res[m:end]
-end
-
-
 function MixtureFitLoss(df, ValConv::Vector, ExpConv::Vector; logscale = false)
+    """ Loss function to be optimized given the conversion factors, called only by MixtureFit() """
+    df = copy(df)
     dtype = promote_type(eltype(df."Value"), eltype(ValConv), eltype(ExpConv))
     df[!, "Adjusted"] .= convert.(dtype, df[!, "Value"])
     df[df[!, "Adjusted"] .<= 1.0, "Adjusted"] .= 1.0
@@ -96,7 +74,7 @@ end
 
 function MixtureFit(df; logscale = false)
     """ Two-way fitting for valency and experiment (day) """
-    df = predictDF(df)
+    df = predictMix(df)
     nv, ne = length(unique(df."Valency")), length(unique(df."Experiment"))
     f(p::Vector, q::Vector) = MixtureFitLoss(df, [1.0; p], q; logscale = logscale)[1]
     f(v::Vector) = f(v[1:(nv - 1)], v[nv:end])
@@ -106,11 +84,14 @@ function MixtureFit(df; logscale = false)
     res = optimize(od, init_v, BFGS()).minimizer
     p, q = [1.0; res[1:(nv - 1)]], res[nv:end]
     res = MixtureFitLoss(df, p, q; logscale = logscale)
-    #@warn before_loss < res[1] "Mixture Fit loss is not decreasing"
-    return Dict("loss" => res[1], "df" => res[2], "ValConv" => p, "ExpConv" => q)
+    @warn before_loss < res[1] "Mixture Fit loss is not decreasing"
+    return Dict("loss" => res[1], "df" => res[2], 
+        "ValConv" => Dict([(name, p[i]) for (i, name) in enumerate(unique(df."Valency"))]), 
+        "ExpConv" => Dict([(name, q[i]) for (i, name) in enumerate(unique(df."Experiment"))]))
 end
 
 function MixtureCellSeparateFit(df; logscale = false)
+    """ Split the cells/receptors and fit valency/exp conv-fac by themselves """
     ndf = nothing
     for cell in unique(df."Cell")
         xdf = MixtureFit(df[df."Cell" .== cell, :]; logscale = logscale)["df"]
@@ -124,33 +105,6 @@ function MixtureCellSeparateFit(df; logscale = false)
 end
 
 
-function PairFit(df; logscale = false)
-    """ Fit within each subplot, each valency and each experiment """
-    df = predictDF(df)
-
-    if logscale
-        df[df[!, "Value"] .<= 1.0, "Value"] .= 1.0
-    end
-    df."Adjusted" = copy(df."Value")
-    for pairrow in eachrow(unique(df[!, ["Cell", "subclass_1", "subclass_2"]]))
-        sdf = @view df[(df."Cell" .== pairrow."Cell") .& (df."subclass_1" .== pairrow."subclass_1") .& (df."subclass_2" .== pairrow."subclass_2"), :]
-        for val in unique(sdf."Valency")
-            for expr in unique(sdf."Experiment")
-                svdf = @view sdf[(sdf."Valency" .== val) .& (sdf."Experiment" .== expr), :]
-                if logscale
-                    svdf[:, "Adjusted"] .*= exp(mean(log.(svdf[!, "Predict"]) ./ log.(svdf[!, "Value"])))
-                else
-                    predict_avg = mean(svdf[!, "Predict"])
-                    value_avg = mean(svdf[!, "Value"])
-                    svdf[:, "Adjusted"] .*= predict_avg / value_avg
-                end
-            end
-        end
-    end
-    return df
-end
-
-
 function plotValLoss(df, title = ""; logscale = false)
     df = copy(df)
     df[!, "NewValency"] .= 0
@@ -160,7 +114,7 @@ function plotValLoss(df, title = ""; logscale = false)
         df[(df."Valency" .== 4), "NewValency"] .= val1
         for val2 = 1:40
             df[(df."Valency" .== 33), "NewValency"] .= val2
-            df = predictDF(df)
+            df = predictMix(df)
             losses[val1, val2] = log(MixtureFit(df; logscale = logscale)["loss"])
         end
     end
@@ -169,16 +123,8 @@ function plotValLoss(df, title = ""; logscale = false)
 end
 
 
-function plotMixPrediction(df, title = "")
-    """ Everything in one plot, not very useful """
-    @assert "Predict" in names(df)
-    pl = plot(df, x = "Value", y = "Predict", shape = "Experiment", color = "Valency", Guide.title(title), style(key_position = :right))
-    return pl
-end
-
-
-""" Use for only one pair of IgG subclasses and cell line / Fc receptor"""
 function plotMixContinuous(df; logscale = false)
+    """ Use for df with only one pair of IgG subclasses and cell line / Fc receptor """
     df = copy(df)
     @assert length(unique(df."Cell")) == 1
     @assert length(unique(df."subclass_1")) == 1
@@ -204,10 +150,9 @@ function plotMixContinuous(df; logscale = false)
         (logscale ? Scale.y_log10(minvalue = 1, maxvalue = 1e6) : Scale.y_continuous),
         Scale.color_discrete_manual(palette[1], palette[2]),
         Guide.xlabel(""),
-        Guide.ylabel("Lbound", orientation = :vertical),
+        Guide.ylabel("RFU", orientation = :vertical),
         Guide.title("$IgGXname-$IgGYname in $(df[1, "Cell"])"),
     )
-
     return pl
 end
 
@@ -236,15 +181,11 @@ function plotMixtures()
     println("Log Scale: Fitted ValConv = ", res2["ValConv"], ", ExpConv = ", res2["ExpConv"])
     df2 = res2["df"]
 
-    df3 = PairFit(loadMixData(); logscale = false)
-    df4 = PairFit(loadMixData(); logscale = true)
     df5 = MixtureCellSeparateFit(loadMixData(); logscale = false)
     df6 = MixtureCellSeparateFit(loadMixData(); logscale = true)
 
-    draw(SVG("mixdata_global_fit_linear.svg", 2500px, 1000px), makeMixturePairSubPlots(df1; logscale = false))
-    draw(SVG("mixdata_global_log.svg", 2500px, 1000px), makeMixturePairSubPlots(df2; logscale = true))
-    draw(SVG("mixdata_subplotwise_linear.svg", 2500px, 1000px), makeMixturePairSubPlots(df3; logscale = false))
-    draw(SVG("mixdata_subplotwise_log.svg", 2500px, 1000px), makeMixturePairSubPlots(df4; logscale = true))
-    draw(SVG("mixdata_cell_split_linear.svg", 2500px, 1000px), makeMixturePairSubPlots(df5; logscale = false))
-    draw(SVG("mixdata_cell_split_log.svg", 2500px, 1000px), makeMixturePairSubPlots(df6; logscale = true))
+    draw(SVG("mix_global_fit_linear.svg", 2500px, 1000px), makeMixturePairSubPlots(df1; logscale = false))
+    draw(SVG("mix_global_log.svg", 2500px, 1000px), makeMixturePairSubPlots(df2; logscale = true))
+    draw(SVG("mix_cell_split_linear.svg", 2500px, 1000px), makeMixturePairSubPlots(df5; logscale = false))
+    draw(SVG("mix_cell_split_log.svg", 2500px, 1000px), makeMixturePairSubPlots(df6; logscale = true))
 end
