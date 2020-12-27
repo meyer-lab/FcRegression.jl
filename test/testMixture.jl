@@ -1,4 +1,4 @@
-function TwoDFit(X::Matrix, Y::Matrix)
+"""function TwoDFit(X::Matrix, Y::Matrix)
     """
     Fit X_ij * p_i * q_j ≈ Y_ij
     p[1] == 1 (fixed)
@@ -24,4 +24,4 @@ end
     p0, q0 = TwoDFit(X, Y)
     @test all(p ./ p[1] .≈ p0)
     @test all(q .* p[1] .≈ q0)
-end
+end"""
