@@ -84,7 +84,7 @@ function MixtureFit(df; logscale = false)
     res = optimize(od, init_v, BFGS()).minimizer
     p, q = [1.0; res[1:(nv - 1)]], res[nv:end]
     res = MixtureFitLoss(df, p, q; logscale = logscale)
-    @warn before_loss < res[1] "Mixture Fit loss is not decreasing"
+    #@warn before_loss < res[1] "Mixture Fit loss is not decreasing"
     return Dict("loss" => res[1], "df" => res[2], 
         "ValConv" => Dict([(name, p[i]) for (i, name) in enumerate(unique(df."Valency"))]), 
         "ExpConv" => Dict([(name, q[i]) for (i, name) in enumerate(unique(df."Experiment"))]))

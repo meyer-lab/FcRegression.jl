@@ -1,12 +1,23 @@
+""" Figure 2: we can accurately account for mixed ICs """
+
 function figure2()
     setGadflyTheme()
-    fig_melanoma = figureW("melanoma"; IgGX = 2, IgGY = 3, L0 = 1e-9, f = 6, murine = true, legend = false)
-    fig_ITP = figureW("ITP"; IgGX = 1, IgGY = 2, L0 = 1e-9, f = 6, murine = true, legend = true)
 
-    draw(SVG("figure2.svg", 7inch, 7inch), plotGrid((2, 2), [fig_melanoma[1] fig_ITP[1] fig_melanoma[3] fig_ITP[3]]; widths = [3 4; 1 1]))
+    df = MixtureCellSeparateFit(loadMixData(); logscale = false)
+    df[!, "Valency"] .= Symbol.(df[!, "Valency"])
 
-    draw(
-        SVG("figureS2.svg", 9inch, 6inch),
-        plotGrid((2, 2), [fig_melanoma[2] fig_melanoma[5]; fig_ITP[2] fig_ITP[5]], widths = [3 4; 1 1], heights = [2, 1]),
+    pl = plot(
+        df,
+        x = "Adjusted",
+        y = "Predict",
+        color = "Valency",
+        shape = "Cell",
+        Guide.xlabel("Actual"),
+        Guide.ylabel("Predicted", orientation = :vertical),
+        Scale.x_log10,
+        Scale.y_log10,
+        Scale.color_discrete_manual(Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]),
     )
+
+    draw(SVG("figure2.svg", 1300px, 600px), plotGrid((1, 2), [nothing, pl]))
 end
