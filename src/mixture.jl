@@ -74,7 +74,9 @@ end
 
 function MixtureFit(df; logscale = false)
     """ Two-way fitting for valency and experiment (day) """
-    df = predictMix(df)
+    if !("Predict" in names(df))
+        df = predictMix(df)
+    end
     nv, ne = length(unique(df."Valency")), length(unique(df."Experiment"))
     f(p::Vector, q::Vector) = MixtureFitLoss(df, [1.0; p], q; logscale = logscale)[1]
     f(v::Vector) = f(v[1:(nv - 1)], v[nv:end])
@@ -84,7 +86,6 @@ function MixtureFit(df; logscale = false)
     res = optimize(od, init_v, BFGS()).minimizer
     p, q = [1.0; res[1:(nv - 1)]], res[nv:end]
     res = MixtureFitLoss(df, p, q; logscale = logscale)
-    #@warn before_loss < res[1] "Mixture Fit loss is not decreasing"
     return Dict("loss" => res[1], "df" => res[2], 
         "ValConv" => Dict([(name, p[i]) for (i, name) in enumerate(unique(df."Valency"))]), 
         "ExpConv" => Dict([(name, q[i]) for (i, name) in enumerate(unique(df."Experiment"))]))
@@ -173,6 +174,7 @@ function makeMixturePairSubPlots(df; logscale = false)
 end
 
 function plotMixtures()
+    """ Plot various fitting options """
     setGadflyTheme()
     res1 = MixtureFit(loadMixData(); logscale = false)
     println("Linear Scale: Fitted ValConv = ", res1["ValConv"], ", ExpConv = ", res1["ExpConv"])

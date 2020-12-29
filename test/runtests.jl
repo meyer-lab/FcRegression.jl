@@ -7,7 +7,7 @@ using ForwardDiff
 using DataFrames
 
 include("testDataHelpers.jl")
-#include("testMixture.jl")
+include("testMixture.jl")
 
 #include("testSynergy.jl")
 #include("testRegression.jl")
