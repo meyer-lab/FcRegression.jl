@@ -18,6 +18,7 @@ end
 function modelPred(df; L0, f, murine::Bool = true)
     df = copy(df)
     FcRecep = murine ? murineFcgR : humanFcgR
+    cellTypes = murine ? murineCellTypes : humanCellTypes
 
     if "Concentration" in names(df)
         df[!, "Concentration"] .*= L0
@@ -52,19 +53,20 @@ function modelPred(df; L0, f, murine::Bool = true)
 end
 
 
-function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepActI; showXmat = false)
+function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepActI; showXmat = false, murine = true)
     ansType = promote_type(eltype(Xfc), eltype(cellWeights), eltype(recepActI))
     noextra = true
     if Xdf == nothing
-        extra = DataFrame([])
+        extra = nothing
         noextra = true
     else
         extra = Xdf[!, in(["C1q", "Neutralization"]).(names(Xdf))]
         noextra = size(extra, 2) == 0
     end
 
-    @assert length(cellWeights) == size(Xfc, 1) + size(extra, 2)
+    @assert length(cellWeights) == size(Xfc, 1) + (noextra ? 0 : size(extra, 2))
     @assert length(recepActI) == size(Xfc, 2)
+    cellTypes = murine ? murineCellTypes : humanCellTypes
     if !noextra
         @assert size(Xfc, 3) == size(extra, 1)
         Xmat = DataFrame(repeat([ansType], length(cellWeights)), vcat(cellTypes, names(extra)))
@@ -89,9 +91,9 @@ function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepA
     end
 end
 
-regressionPred(Xfc, Xdf, fit::optResult; showXmat = false) = regressionPred(Xfc, Xdf, fit.cellWs, fit.ActI; showXmat = showXmat)
+regressionPred(Xfc, Xdf, fit::optResult; showXmat = false, murine = true) = regressionPred(Xfc, Xdf, fit.cellWs, fit.ActI; showXmat = showXmat, murine = murine)
 
-function old_opt(Xfc, extra, Y, ActI)
+function nnls_fit(Xfc, extra, Y, ActI)
     cY = inv_exponential.(Y)
     ansType = promote_type(eltype(Xfc), eltype(Y), eltype(ActI))
     Xmat = Matrix{ansType}(undef, size(Xfc, 3), size(Xfc, 1))
@@ -113,6 +115,11 @@ function old_opt(Xfc, extra, Y, ActI)
     return w, residual
 end
 
+function fitRegression_wActI(Xfc, Xdf, Y, ActI)
+    extra = Xdf[!, in(["C1q", "Neutralization"]).(names(Xdf))]
+    cellWs, residual = nnls_fit(Xfc, extra, Y, ActI)
+    return optResult(cellWs, ActI, residual)
+end
 
 function fitRegression(Xfc, Xdf, Y; murine::Bool = true, upper = nothing, lower = nothing, init = nothing)
     extra = Xdf[!, in(["C1q", "Neutralization"]).(names(Xdf))]
@@ -131,35 +138,43 @@ function fitRegression(Xfc, Xdf, Y; murine::Bool = true, upper = nothing, lower 
     lower .-= eps()
     @assert all(lower .<= upper)
 
-    func = x -> old_opt(Xfc, extra, Y, x)[2]
+    func = x -> nnls_fit(Xfc, extra, Y, x)[2]
     opt = optimize(func, lower, upper, init)
     ActI = opt.minimizer
 
-    cellWs, residual = old_opt(Xfc, extra, Y, ActI)
-    res = optResult(cellWs, ActI, residual)
-    return res
+    return fitRegression_wActI(Xfc, Xdf, Y, ActI)
 end
 
 
-function LOOCrossVal(Xfc, Xdf, Y; murine)
+function LOOCrossVal(Xfc, Xdf, Y; murine, ActI::Union{Nothing, Vector} = nothing)
     n = size(Xdf, 1)
     fitResults = Vector{optResult}(undef, n)
     LOOindex = LOOCV(n)
-    for (i, idx) in enumerate(LOOindex)
-        fitResults[i] = fitRegression(Xfc[:, :, idx], Xdf[idx, :], Y[idx]; murine = murine)
+    if ActI == nothing
+        for (i, idx) in enumerate(LOOindex)
+            fitResults[i] = fitRegression(Xfc[:, :, idx], Xdf[idx, :], Y[idx]; murine = murine)
+        end
+    else
+        for (i, idx) in enumerate(LOOindex)
+            fitResults[i] = fitRegression_wActI(Xfc[:, :, idx], Xdf[idx, :], Y[idx], ActI)
+        end
     end
     return fitResults
 end
 
 
-function bootstrap(Xfc, Xdf, Y; nsample = 100, murine)
+function bootstrap(Xfc, Xdf, Y; nsample = 100, murine, ActI::Union{Nothing, Vector} = nothing)
     n = size(Xdf, 1)
     fitResults = Vector{optResult}(undef, nsample)
     for i = 1:nsample
         for j = 1:5
             idx = sample(1:n, n, replace = true)
             fit = try
-                fitRegression(Xfc[:, :, idx], Xdf[idx, :], Y[idx]; murine = murine)
+                if ActI == nothing
+                    fitRegression(Xfc[:, :, idx], Xdf[idx, :], Y[idx]; murine = murine)
+                else
+                    fitRegression_wActI(Xfc[:, :, idx], Xdf[idx, :], Y[idx], ActI)
+                end
             catch e
                 @warn "This bootstrapping set failed at fitRegression"
                 nothing
@@ -173,18 +188,27 @@ function bootstrap(Xfc, Xdf, Y; nsample = 100, murine)
     return fitResults
 end
 
+function regressionResult(dataType; L0, f, murine::Bool)
+    if murine
+        df = importDepletion(dataType)
+        upper = ones(length(murineActI)) .* 4.0
+        lower = ones(length(murineActI)) .* -4.0
+    else
+        df = importHumanized(dataType)
+        upper = ones(length(humanActI)) .* 4.0
+        lower = ones(length(humanActI)) .* -4.0
+    end
 
-function regressionResult(df; L0, f, murine::Bool)
     Xfc, Xdf, Y = modelPred(df; L0 = L0, f = f, murine = murine)
-    res = fitRegression(Xfc, Xdf, Y; murine = murine)
-    loo_res = LOOCrossVal(Xfc, Xdf, Y; murine = murine)
-    btp_res = bootstrap(Xfc, Xdf, Y; murine = murine)
+    res = fitRegression(Xfc, Xdf, Y; murine = murine, upper = upper, lower = lower)
+    loo_res = LOOCrossVal(Xfc, Xdf, Y; murine = murine, ActI = res.ActI)
+    btp_res = bootstrap(Xfc, Xdf, Y; murine = murine, ActI = res.ActI)
 
     odf = df[!, in(["Condition", "Background"]).(names(df))]
     odf[!, "Concentration"] .= ("Concentration" in names(df)) ? (df[!, "Concentration"] .* L0) : L0
     odf[!, "Y"] = Y
-    odf[!, "Fitted"] = exponential(regressionPred(Xfc, Xdf, res))
-    odf[!, "LOOPredict"] = exponential([regressionPred(Xfc[:, :, ii], Xdf[[ii], :], loo_res[ii])[1] for ii = 1:length(loo_res)])
+    odf[!, "Fitted"] = exponential(regressionPred(Xfc, Xdf, res; murine = murine))
+    odf[!, "LOOPredict"] = exponential([regressionPred(Xfc[:, :, ii], Xdf[[ii], :], loo_res[ii]; murine = murine)[1] for ii = 1:length(loo_res)])
     if "Label" in names(df)
         odf[!, "Label"] .= df[!, "Label"]
     end
@@ -204,7 +228,7 @@ function regressionResult(df; L0, f, murine::Bool)
     end
     rename!(wildtype, "IgG" => "Condition")
     wtXfc, wtXdf, wtY = modelPred(wildtype; L0 = L0, f = f, murine = murine)
-    Xmat, _ = regressionPred(wtXfc, wtXdf, res.cellWs, res.ActI; showXmat = true)
+    Xmat, _ = regressionPred(wtXfc, wtXdf, res.cellWs, res.ActI; showXmat = true, murine = murine)
     Xmat = Xmat .* res.cellWs'
     Xmat[!, "Condition"] = wtXdf[!, "Condition"]
     effects = stack(Xmat, Not("Condition"))
@@ -212,7 +236,7 @@ function regressionResult(df; L0, f, murine::Bool)
 
     # Assemble bootstrap results
     for bres in btp_res
-        Xmatb, _ = regressionPred(wtXfc, wtXdf, bres; showXmat = true)
+        Xmatb, _ = regressionPred(wtXfc, wtXdf, bres; showXmat = true, murine = murine)
         Xmatb = Xmatb .* bres.cellWs'
         Xmatb[!, "Condition"] = wtXdf[!, "Condition"]
         effects = innerjoin(effects, stack(Xmatb, Not("Condition")), on = [:Condition, :variable], makeunique = true)

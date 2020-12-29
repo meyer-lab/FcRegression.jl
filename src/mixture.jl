@@ -23,15 +23,22 @@ function predictMix(dfrow, IgGXname, IgGYname, IgGX, IgGY)
     Kav = importKav(; murine = false, retdf = true)
     Kav = Matrix(Kav[!, [recepName[dfrow."Cell"]]])
     val = "NewValency" in names(dfrow) ? dfrow."NewValency" : dfrow."Valency"
-    return polyfc(1e-9, KxConst, val, [recepExp[dfrow."Cell"]], IgGC, Kav).Lbound
+    res = try
+        polyfc(1e-9, KxConst, val, [recepExp[dfrow."Cell"]], IgGC, Kav).Lbound
+    catch e
+        println(val, [recepExp[dfrow."Cell"]], IgGC, Kav)
+        rethrow(e)
+    end
+    return res
 end
 
 
 function predictDFRow(dfrow)
-    return predictMix(dfrow, Symbol(dfrow."subclass_1"), Symbol(dfrow."subclass_2"), dfrow."%_1", dfrow."%_2")
+    return predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2")
 end
 
 function predictDF(df)
+    """ will return another df object """
     df = copy(df)
     df[!, "Predict"] .= 0.0
     for i = 1:size(df)[1]
@@ -88,6 +95,7 @@ end
 
 
 function MixtureFit(df; logscale = false)
+    """ Two-way fitting for valency and experiment (day) """
     df = predictDF(df)
     nv, ne = length(unique(df."Valency")), length(unique(df."Experiment"))
     f(p::Vector, q::Vector) = MixtureFitLoss(df, [1.0; p], q; logscale = logscale)[1]
@@ -102,8 +110,22 @@ function MixtureFit(df; logscale = false)
     return Dict("loss" => res[1], "df" => res[2], "ValConv" => p, "ExpConv" => q)
 end
 
+function MixtureCellSeparateFit(df; logscale = false)
+    ndf = nothing
+    for cell in unique(df."Cell")
+        xdf = MixtureFit(df[df."Cell" .== cell, :]; logscale = logscale)["df"]
+        if ndf == nothing
+            ndf = xdf
+        else
+            append!(ndf, xdf)
+        end
+    end
+    return ndf
+end
+
 
 function PairFit(df; logscale = false)
+    """ Fit within each subplot, each valency and each experiment """
     df = predictDF(df)
 
     if logscale
@@ -148,6 +170,7 @@ end
 
 
 function plotMixPrediction(df, title = "")
+    """ Everything in one plot, not very useful """
     @assert "Predict" in names(df)
     pl = plot(df, x = "Value", y = "Predict", shape = "Experiment", color = "Valency", Guide.title(title), style(key_position = :right))
     return pl
@@ -160,8 +183,8 @@ function plotMixContinuous(df; logscale = false)
     @assert length(unique(df."Cell")) == 1
     @assert length(unique(df."subclass_1")) == 1
     @assert length(unique(df."subclass_2")) == 1
-    IgGXname = Symbol(unique(df."subclass_1")[1])
-    IgGYname = Symbol(unique(df."subclass_2")[1])
+    IgGXname = unique(df."subclass_1")[1]
+    IgGYname = unique(df."subclass_2")[1]
 
     x = 0:0.01:1
     df4 = df[(df."Valency" .== 4), :]
@@ -188,6 +211,21 @@ function plotMixContinuous(df; logscale = false)
     return pl
 end
 
+function makeMixturePairSubPlots(df; logscale = false)
+    cells = unique(df."Cell")
+    pairs = unique(df[!, ["subclass_1", "subclass_2"]])
+    lcells = length(cells)
+    lpairs = size(pairs, 1)
+    pls = Vector(undef, lcells * lpairs)
+
+    for (i, pairrow) in enumerate(eachrow(pairs))
+        for (j, cell) in enumerate(cells)
+            ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== pairrow."subclass_1") .& (df."subclass_2" .== pairrow."subclass_2"), :]
+            pls[(j - 1) * lpairs + (i - 1) + 1] = plotMixContinuous(ndf; logscale = logscale)
+        end
+    end
+    return plotGrid((lcells, lpairs), pls)
+end
 
 function plotMixtures()
     setGadflyTheme()
@@ -200,29 +238,13 @@ function plotMixtures()
 
     df3 = PairFit(loadMixData(); logscale = false)
     df4 = PairFit(loadMixData(); logscale = true)
+    df5 = MixtureCellSeparateFit(loadMixData(); logscale = false)
+    df6 = MixtureCellSeparateFit(loadMixData(); logscale = true)
 
-    cells = unique(df1."Cell")
-    pairs = unique([r."subclass_1" * "-" * r."subclass_2" for r in eachrow(df1)])
-
-    pls1 = Matrix(undef, length(cells), length(pairs))
-    pls2 = Matrix(undef, length(cells), length(pairs))
-    pls3 = Matrix(undef, length(cells), length(pairs))
-    pls4 = Matrix(undef, length(cells), length(pairs))
-    for (i, pair) in enumerate(pairs)
-        for (j, cell) in enumerate(cells)
-            ndf1 = df1[(df1."Cell" .== cell) .& (df1."subclass_1" .== split(pair, "-")[1]) .& (df1."subclass_2" .== split(pair, "-")[2]), :]
-            pls1[j, i] = plotMixContinuous(ndf1; logscale = false)
-            ndf2 = df2[(df2."Cell" .== cell) .& (df2."subclass_1" .== split(pair, "-")[1]) .& (df2."subclass_2" .== split(pair, "-")[2]), :]
-            pls2[j, i] = plotMixContinuous(ndf2; logscale = true)
-
-            ndf3 = df3[(df3."Cell" .== cell) .& (df3."subclass_1" .== split(pair, "-")[1]) .& (df3."subclass_2" .== split(pair, "-")[2]), :]
-            pls3[j, i] = plotMixContinuous(ndf3; logscale = false)
-            ndf4 = df4[(df4."Cell" .== cell) .& (df4."subclass_1" .== split(pair, "-")[1]) .& (df4."subclass_2" .== split(pair, "-")[2]), :]
-            pls4[j, i] = plotMixContinuous(ndf4; logscale = true)
-        end
-    end
-    draw(SVG("figure_mixture_fit_linear.svg", 2500px, 1000px), plotGrid(size(pls1), pls1))
-    draw(SVG("figure_mixture_fit_log.svg", 2500px, 1000px), plotGrid(size(pls2), pls2))
-    draw(SVG("figure_mixture_split_linear.svg", 2500px, 1000px), plotGrid(size(pls3), pls3))
-    draw(SVG("figure_mixture_split_log.svg", 2500px, 1000px), plotGrid(size(pls4), pls4))
+    draw(SVG("mixdata_global_fit_linear.svg", 2500px, 1000px), makeMixturePairSubPlots(df1; logscale = false))
+    draw(SVG("mixdata_global_log.svg", 2500px, 1000px), makeMixturePairSubPlots(df2; logscale = true))
+    draw(SVG("mixdata_subplotwise_linear.svg", 2500px, 1000px), makeMixturePairSubPlots(df3; logscale = false))
+    draw(SVG("mixdata_subplotwise_log.svg", 2500px, 1000px), makeMixturePairSubPlots(df4; logscale = true))
+    draw(SVG("mixdata_cell_split_linear.svg", 2500px, 1000px), makeMixturePairSubPlots(df5; logscale = false))
+    draw(SVG("mixdata_cell_split_log.svg", 2500px, 1000px), makeMixturePairSubPlots(df6; logscale = true))
 end

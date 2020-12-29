@@ -66,7 +66,7 @@ function calcSynergy(
             D1 = exponential(regressionPred(D1, D1df, fit))
             D2 = reverse(exponential(regressionPred(D2, D2df, fit)))
         end
-    else 
+    else
         @assert ndims(FcExpr) == 1
         if !Rbound #Activity of single cell without fit activity
             ActI = murine ? murineActI : humanActI
@@ -170,7 +170,7 @@ function plotDepletionSynergy(
     Receps = murine ? murineFcgR : humanFcgR
     nPoints = 100
     ymax = nothing
-    
+
     if Recepidx != nothing # look at only one receptor
         FcExpr = zeros(length(Receps))
         FcExpr[Recepidx] = importRtot(murine = murine)[Recepidx, Cellidx]
@@ -200,12 +200,13 @@ function plotDepletionSynergy(
         @error "Not allowed combination of fit/Cellidx/Recepidx."
     end
 
-    D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; murine = murine, fit = fit, Rbound = Rbound, c1q = c1q, neutralization = neutralization)
+    D1, D2, additive, output =
+        calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; murine = murine, fit = fit, Rbound = Rbound, c1q = c1q, neutralization = neutralization)
     if Rbound
         ylabel = "Binding"
     end
     if ymax == nothing
-        ymax = 1.1*maximum(additive)
+        ymax = 1.1 * maximum(additive)
     end
 
     x = range(0.0, 1.0; length = nPoints)

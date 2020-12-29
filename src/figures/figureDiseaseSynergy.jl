@@ -6,7 +6,7 @@ function figureDS(dataType; L0 = 1e-9, f = 4, murine::Bool)
         df = importHumanized(dataType)
     end
 
-    res, odf, effects, ActI_df = regressionResult(df; L0 = L0, f = f, murine = murine)
+    res, odf, effects, ActI_df = regressionResult(dataType; L0 = L0, f = f, murine = murine)
 
     setGadflyTheme()
     p1 = plotDepletionSynergy(

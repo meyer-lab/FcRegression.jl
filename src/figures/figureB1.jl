@@ -1,7 +1,7 @@
 """ This file builds the depletion manuscript, Figure 1. """
 
 function figureB1()
-    p1 = plotDepletionSynergy(2, 3; L0 = 1e-8, f = 24, murine = false, Cellidx = 2, RecepIdx = 3)
+    p1 = plotDepletionSynergy(1, 3; L0 = 1e-8, f = 24, murine = false, Cellidx = 2, Recepidx = 3)
     p2 = plotDepletionSynergy(2, 4; Cellidx = 2)
     p3 = plotSynL0(4; murine = true, Cellidx = 2, Rbound = true)
     p4 = plotSynf(1e-9; murine = true, Cellidx = 2, Rbound = true)
@@ -31,6 +31,7 @@ const humanreceptorNamesB1 = Symbol.(["IgG1/2", "IgG1/3", "IgG1/4", "IgG2/3", "I
 function plotSynL0(f; murine::Bool, fit = nothing, Cellidx = 2, Rbound = false, c1q = false, neutralization = false)
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
+    cellTypes = murine ? murineCellTypes : humanCellTypes
 
     if Cellidx == nothing #Not using single cell
         FcExpr = importRtot(; murine = murine)
@@ -89,6 +90,7 @@ end
 function plotSynf(L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = false, c1q = false, neutralization = false)
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
+    cellTypes = murine ? murineCellTypes : humanCellTypes
 
     if Cellidx == nothing #Not using single cell
         FcExpr = importRtot(; murine = murine)
@@ -145,6 +147,7 @@ function plotSynFc(f, L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = fal
     """ Figure shows how Fc receptor expression affects synergy """
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
+    cellTypes = murine ? murineCellTypes : humanCellTypes
 
     if Cellidx == nothing #Not using single cell
         FcExpr = importRtot(; murine = murine)
