@@ -22,18 +22,20 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
         L0 = L0,
         f = f,
         murine = murine,
-        neutralization = ("Neutralization" in names(df)),
         c1q = ("C1q" in effects.Component),
         dataType = dataType,
         fit = res,
         Cellidx = Cellidx,
         Recepidx = Recepidx,
+        Rbound = Rbound,
+        neutralization = ("Neutralization" in names(df)),
     )
     p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
     p6 = plotSynergy(
         L0,
         f;
         murine = murine,
+        dataType = dataType,
         fit = res,
         Cellidx = Cellidx,
         Recepidx = Recepidx,
@@ -143,6 +145,7 @@ function plotSynergy(
     L0,
     f;
     murine::Bool,
+    dataType = nothing,
     fit = nothing,
     Cellidx = nothing,
     Recepidx = false,
@@ -165,9 +168,12 @@ function plotSynergy(
         FcExpr = importRtot(; murine = murine)
     end
     if fit == nothing
-        title = "Not fit"
+        title = "ActI not Fit"
     else
-        title = "dataType"
+        title = "$dataType"
+    end
+    if Rbound
+        title = "$title Rbound"
     end
 
     M = synergyGrid(L0, f, FcExpr, Kav; murine = murine, fit = fit, Rbound = Rbound, c1q = c1q, neutralization = neutralization)
