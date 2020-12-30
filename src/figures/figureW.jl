@@ -10,12 +10,12 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
         shape = (dataType == "ITP") ? "Condition" : "Concentration"
     end
 
-    res, odf, effects, ActI_df = regressionResult(dataType; L0 = L0, f = f, murine = murine)
+    res, odf, Cell_df, ActI_df = regressionResult(dataType; L0 = L0, f = f, murine = murine)
     @assert all(in(names(odf)).([color, shape]))
 
     p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
     p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
-    p3 = plotCellTypeEffects(effects, dataType; legend = legend)
+    p3 = plotCellTypeEffects(Cell_df, dataType; legend = legend)
     p4 = plotDepletionSynergy(
         IgGX,
         IgGY;
@@ -23,14 +23,15 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
         f = f,
         murine = murine,
         neutralization = ("Neutralization" in names(df)),
-        c1q = ("C1q" in effects.Component),
+        c1q = ("C1q" in Cell_df.Component),
         dataType = dataType,
         fit = res,
         Cellidx = Cellidx,
         Recepidx = Recepidx,
     )
-    p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
-    p6 = plotSynergy(
+    p5 = plotReceptorActivities(ActI_df, dataType)
+    #=p6 = nothingL0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
+    p7 = plotSynergy(
         L0,
         f;
         murine = murine,
@@ -38,11 +39,11 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
         Cellidx = Cellidx,
         Recepidx = Recepidx,
         Rbound = Rbound,
-        c1q = ("C1q" in effects.Component),
+        c1q = ("C1q" in Cell_df.Component),
         neutralization = ("Neutralization" in names(df)),
-    )
+    )=#
 
-    return p1, p2, p3, p4, p5, p6
+    return p1, p2, p3, p4, p5
 end
 
 
@@ -87,23 +88,33 @@ function plotActualvPredict(odf, dataType, colorL::Union{Symbol, String}, shapeL
 end
 
 
-function plotCellTypeEffects(wdf, dataType; legend = true)
+function plotCellTypeEffects(Cell_df, dataType; legend = true)
     pl = plot(
-        wdf,
+        Cell_df,
         x = "Condition",
         y = "Weight",
         color = "Component",
-        Guide.colorkey(pos = [0.05w, -0.3h]),
+        Guide.colorkey(pos = [0.65w, -0.15h]),
         Geom.bar(position = :dodge),
-        Scale.x_discrete(levels = unique(wdf.Condition)),
+        Scale.x_discrete(levels = unique(Cell_df.Condition)),
         Scale.y_continuous(minvalue = 0.0),
-        Scale.color_discrete(levels = unique(wdf.Component)),
-        ymin = "Q10",
-        ymax = "Q90",
-        Geom.errorbar,
-        Stat.dodge,
+        Scale.color_discrete(levels = unique(Cell_df.Component)),
         Guide.title("Predicted cell type weights for $dataType"),
         style(key_position = legend ? :right : :none),
+    )
+    return pl
+end
+
+function plotReceptorActivities(ActI_df, dataType)
+    pl = plot(
+        ActI_df,
+        x = "Receptor",
+        y = "Activity",
+        Geom.bar(position = :dodge),
+        Scale.x_discrete(),
+        Scale.y_continuous(minvalue = 0.0),
+        Guide.title("Predicted receptor activities for $dataType"),
+        style(bar_spacing=5mm),
     )
     return pl
 end
