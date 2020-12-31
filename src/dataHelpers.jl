@@ -1,6 +1,5 @@
-using DataFrames
 import CSV
-import StatsBase.geomean
+import StatsBase.geomean, Statistics.std
 using Memoize
 
 const KxConst = 6.31e-13 # 10^(-12.2)

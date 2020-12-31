@@ -16,6 +16,58 @@ function loadMixData()
     return df
 end
 
+function mixNormalExpBatch()
+    """ Normalize data without knowing predictions, only by experiment"""
+    df = loadMixData()
+    meanval = combine(groupby(df, "Experiment"), "Value" => geocmean)
+    df = innerjoin(df, meanval, on = "Experiment")
+    df[!, "Adjusted"] .= df[!, "Value"] ./ df[!, "Value_geocmean"] .* geocmean(df."Value")
+    median(x) = quantile(x, 0.5)
+    lower(x) = quantile(x, 0.2)
+    upper(x) = quantile(x, 0.8)
+    df = combine(groupby(df, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]), "Adjusted" => median, "Adjusted" => lower, "Adjusted" => upper)
+    rename!(df, "Adjusted_median" => "Value")
+    rename!(df, "Adjusted_lower" => "ymin")
+    rename!(df, "Adjusted_upper" => "ymax")
+    return df
+end
+
+function plotMixOriginalData()
+    df = mixNormalExpBatch()
+    cells = unique(df."Cell")
+    pairs = unique(df[!, ["subclass_1", "subclass_2"]])
+    lcells = length(cells)
+    lpairs = size(pairs, 1)
+    pls = Vector(undef, lcells * lpairs)
+    palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
+
+    for (i, pairrow) in enumerate(eachrow(pairs))
+        for (j, cell) in enumerate(cells)
+            IgGXname, IgGYname = pairrow."subclass_1", pairrow."subclass_2"
+            ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== IgGXname) .& (df."subclass_2" .== IgGYname), :]
+            pl = plot(
+                ndf,
+                x = "%_1", 
+                y = "Value",
+                ymin = "ymin",
+                ymax = "ymax",
+                color = "Valency", 
+                Geom.point,
+                Geom.line,
+                Geom.errorbar,
+                Scale.x_continuous(labels = n -> "$IgGXname $(n*100)%\n$IgGYname $(100-n*100)%"),
+                Scale.y_continuous,
+                Scale.color_discrete_manual(palette[1], palette[2]),
+                Guide.xlabel(""),
+                Guide.ylabel("RFU", orientation = :vertical),
+                Guide.title("$IgGXname-$IgGYname in $(df[1, "Cell"])"),
+            )
+            pls[(j - 1) * lpairs + (i - 1) + 1] = pl
+        end
+    end
+    return plotGrid((lcells, lpairs), pls)
+end
+
 
 const measuredRecepExp = Dict("FcgRIIA-131H" => 445141, "FcgRIIB-232I" => 31451, "FcgRIIIA-158V" => 657219)  # geometric mean
 
@@ -109,24 +161,6 @@ function MixtureCellSeparateFit(df; logscale = false)
         end
     end
     return ndf
-end
-
-
-function plotValLoss(df, title = ""; logscale = false)
-    df = copy(df)
-    df[!, "NewValency"] .= 0
-
-    losses = zeros(10, 40)
-    for val1 = 1:10
-        df[(df."Valency" .== 4), "NewValency"] .= val1
-        for val2 = 1:40
-            df[(df."Valency" .== 33), "NewValency"] .= val2
-            df = predictMix(df)
-            losses[val1, val2] = log(MixtureFit(df; logscale = logscale)["loss"])
-        end
-    end
-    pl = spy(losses, Guide.xlabel("Fitted valency for f=33"), Guide.ylabel("Fitted valency for f=4"), Guide.title("Log loss for " * title))
-    return pl
 end
 
 

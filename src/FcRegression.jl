@@ -3,6 +3,7 @@ using LinearAlgebra
 import Distances
 using polyBindingModel
 using Optim
+using DataFrames
 
 include("figures/figureCommon.jl")
 
@@ -31,7 +32,7 @@ function figureAll()
     figure2()
     figure3()
     figure4()
-    
+
     figureS1()
     figureS2()
     figureS3()
