@@ -1,5 +1,16 @@
 @testset "dataHelpers.jl tests" begin
-    @testset "Testing human FcgR abundance import" begin
+    @testset "Testing importRtot()" begin
+        @test FcRegression.importRtot(; murine = true, retdf = false) isa Matrix
+        @test FcRegression.importRtot(; murine = false, retdf = false) isa Matrix 
+        @test FcRegression.importRtot(; murine = true, retdf = true) isa DataFrame
+        @test FcRegression.importRtot(; murine = false, retdf = true) isa DataFrame
+        @test FcRegression.importKav(; murine = true, retdf = false) isa Matrix
+        @test FcRegression.importKav(; murine = false, retdf = false) isa Matrix
+        @test FcRegression.importKav(; murine = true, retdf = true) isa DataFrame
+        @test FcRegression.importKav(; murine = false, retdf = true) isa DataFrame
+    end
+
+    @testset "Testing human FcgR abundance import for genotypes" begin
         arr_HIV = FcRegression.importRtot(murine = false)
         arr_heterozygote = FcRegression.importRtot(murine = false, genotype = "ZZZ")
         arr_RTF = FcRegression.importRtot(murine = false, genotype = "RTF")

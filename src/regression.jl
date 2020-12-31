@@ -16,6 +16,12 @@ mutable struct optResult{T}
 end
 
 function modelPred(df; L0, f, murine::Bool = true)
+    """
+    Return model predictions on depletion data
+    Xfc = 3D array, cellTypes * FcRecep * items
+    Xfc = Dataframe, items * [Concentration, (C1q), (Neutralization)]
+    Y = Vector, items
+    """
     df = copy(df)
     FcRecep = murine ? murineFcgR : humanFcgR
     cellTypes = murine ? murineCellTypes : humanCellTypes
@@ -54,6 +60,7 @@ end
 
 
 function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepActI; showXmat = false, murine = true)
+    """ Derive Ypred from all Xs, not exponentially transformed. Used only when having weights ready """
     ansType = promote_type(eltype(Xfc), eltype(cellWeights), eltype(recepActI))
     noextra = true
     if Xdf == nothing
@@ -121,22 +128,13 @@ function fitRegression_wActI(Xfc, Xdf, Y, ActI)
     return optResult(cellWs, ActI, residual)
 end
 
-function fitRegression(Xfc, Xdf, Y; murine::Bool = true, upper = nothing, lower = nothing, init = nothing)
+function fitRegression(Xfc, Xdf, Y; murine::Bool = true)
     extra = Xdf[!, in(["C1q", "Neutralization"]).(names(Xdf))]
     cellWlen = size(Xfc, 1) + size(extra, 2)
 
-    if upper == nothing
-        upper = Float64.(murine ? murineActI : humanActI)
-    end
-    if lower == nothing
-        lower = Float64.(murine ? murineActI : humanActI)
-    end
-    if init == nothing
-        init = Float64.(murine ? murineActI : humanActI)
-    end
-    upper .+= eps()
-    lower .-= eps()
-    @assert all(lower .<= upper)
+    upper = ones(length(murine ? murineActI : humanActI)) .* 4.0
+    lower = ones(length(murine ? murineActI : humanActI)) .* -4.0
+    init = Float64.(murine ? murineActI : humanActI)
 
     func = x -> nnls_fit(Xfc, extra, Y, x)[2]
     opt = optimize(func, lower, upper, init)
@@ -151,10 +149,12 @@ function LOOCrossVal(Xfc, Xdf, Y; murine, ActI::Union{Nothing, Vector} = nothing
     fitResults = Vector{optResult}(undef, n)
     LOOindex = LOOCV(n)
     if ActI == nothing
+        # need to fit ActI
         for (i, idx) in enumerate(LOOindex)
             fitResults[i] = fitRegression(Xfc[:, :, idx], Xdf[idx, :], Y[idx]; murine = murine)
         end
     else
+        # ActI values known
         for (i, idx) in enumerate(LOOindex)
             fitResults[i] = fitRegression_wActI(Xfc[:, :, idx], Xdf[idx, :], Y[idx], ActI)
         end
@@ -163,46 +163,12 @@ function LOOCrossVal(Xfc, Xdf, Y; murine, ActI::Union{Nothing, Vector} = nothing
 end
 
 
-function bootstrap(Xfc, Xdf, Y; nsample = 100, murine, ActI::Union{Nothing, Vector} = nothing)
-    n = size(Xdf, 1)
-    fitResults = Vector{optResult}(undef, nsample)
-    for i = 1:nsample
-        for j = 1:5
-            idx = sample(1:n, n, replace = true)
-            fit = try
-                if ActI == nothing
-                    fitRegression(Xfc[:, :, idx], Xdf[idx, :], Y[idx]; murine = murine)
-                else
-                    fitRegression_wActI(Xfc[:, :, idx], Xdf[idx, :], Y[idx], ActI)
-                end
-            catch e
-                @warn "This bootstrapping set failed at fitRegression"
-                nothing
-            end
-            if fit != nothing
-                fitResults[i] = fit
-                break
-            end
-        end
-    end
-    return fitResults
-end
-
 function regressionResult(dataType; L0, f, murine::Bool)
-    if murine
-        df = importDepletion(dataType)
-        upper = ones(length(murineActI)) .* 4.0
-        lower = ones(length(murineActI)) .* -4.0
-    else
-        df = importHumanized(dataType)
-        upper = ones(length(humanActI)) .* 4.0
-        lower = ones(length(humanActI)) .* -4.0
-    end
+    df = murine ? importDepletion(dataType) : importHumanized(dataType)
 
     Xfc, Xdf, Y = modelPred(df; L0 = L0, f = f, murine = murine)
-    res = fitRegression(Xfc, Xdf, Y; murine = murine, upper = upper, lower = lower)
+    res = fitRegression(Xfc, Xdf, Y; murine = murine)
     loo_res = LOOCrossVal(Xfc, Xdf, Y; murine = murine, ActI = res.ActI)
-    btp_res = bootstrap(Xfc, Xdf, Y; murine = murine, ActI = res.ActI)
 
     odf = df[!, in(["Condition", "Background"]).(names(df))]
     odf[!, "Concentration"] .= ("Concentration" in names(df)) ? (df[!, "Concentration"] .* L0) : L0
@@ -231,31 +197,12 @@ function regressionResult(dataType; L0, f, murine::Bool)
     Xmat, _ = regressionPred(wtXfc, wtXdf, res.cellWs, res.ActI; showXmat = true, murine = murine)
     Xmat = Xmat .* res.cellWs'
     Xmat[!, "Condition"] = wtXdf[!, "Condition"]
-    effects = stack(Xmat, Not("Condition"))
-    rename!(effects, "value" => "Weight")
-
-    # Assemble bootstrap results
-    for bres in btp_res
-        Xmatb, _ = regressionPred(wtXfc, wtXdf, bres; showXmat = true, murine = murine)
-        Xmatb = Xmatb .* bres.cellWs'
-        Xmatb[!, "Condition"] = wtXdf[!, "Condition"]
-        effects = innerjoin(effects, stack(Xmatb, Not("Condition")), on = [:Condition, :variable], makeunique = true)
-    end
-    rename!(effects, "variable" => "Component")
-
-    btp_qtlmat = Matrix(effects[!, Not(["Condition", "Component"])])
-    effects = effects[!, ["Condition", "Component", "Weight"]]
-    btp_qtl = mapslices(x -> quantile(x, [0.1, 0.5, 0.9]), btp_qtlmat, dims = [2])
-    effects[!, :Q10] .= vec(btp_qtl[:, 1])
-    effects[!, :Median] .= vec(btp_qtl[:, 2])
-    effects[!, :Q90] .= vec(btp_qtl[:, 3])
-    effects = effects[effects[!, "Component"] .!= "Neutralization", :]
+    Cell_df = stack(Xmat, Not("Condition"))
+    rename!(Cell_df, "value" => "Weight")
+    rename!(Cell_df, "variable" => "Component")
 
     # ActI interval
-    ActI_btp = hcat([bres.ActI for bres in btp_res]...)
-    ActI_qtl = mapslices(x -> quantile(x, [0.1, 0.5, 0.9]), ActI_btp, dims = [2])
-    ActI_df = DataFrame(Q10 = ActI_qtl[:, 1], Median = ActI_qtl[:, 2], Q90 = ActI_qtl[:, 3])
-    ActI_df[!, "Receptor"] = murine ? murineFcgR : humanFcgR
+    ActI_df = DataFrame(Receptor = (murine ? murineFcgR : humanFcgR), Activity = res.ActI)
 
-    return res, odf, effects, ActI_df
-end
+    return res, odf, Cell_df, ActI_df
+end 

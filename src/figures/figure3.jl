@@ -1,6 +1,13 @@
+""" Figure 3: predicting in vivo effect """
+
 function figure3()
     setGadflyTheme()
-    fig_ITP = figureW("ITP"; IgGX = 1, IgGY = 2, L0 = 1e-9, f = 6, murine = true, legend = true)
 
-    draw(SVG("figure3.svg", 7inch, 7inch), plotGrid((2, 2), [fig_ITP[4] fig_ITP[6]];))
+    df = MixtureCellSeparateFit(loadMixData(); logscale = false)
+    df[!, "Valency"] .= Symbol.(df[!, "Valency"])
+
+    avp_mel, _, cell_mel, _, recep_mel = figureW("melanoma"; L0 = 1e-9, f = 6, murine = true)
+    avp_itp, _, cell_itp, _, recep_itp = figureW("ITP"; L0 = 1e-8, f = 10, murine = true)
+
+    draw(SVG("figure3.svg", 1300px, 600px), plotGrid((2, 4), [nothing, avp_mel, cell_mel, recep_mel, nothing, avp_itp, cell_itp, recep_itp]))
 end
