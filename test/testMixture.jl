@@ -29,9 +29,9 @@ end
     rename!(df, "value" => "Value")
     df[!, "Predict"] .= vec(Y)
     xdf = FcRegression.MixtureFitLoss(df, p, q)[2]
-    @test all(xdf[!, "Predict"] .≈ xdf[!, "Adjusted"]) 
+    @test all(xdf[!, "Predict"] .≈ xdf[!, "Adjusted"])
 
     res = FcRegression.MixtureFit(df)
-    @test norm(p ./ p[1] .- [res["ValConv"][i] for i in 1:5], 2) < 1e-12
-    @test norm(q .* p[1] .- [res["ExpConv"]["x" * string(i)] for i in 1:10], 2) < 1e-12
+    @test norm(p ./ p[1] .- [res["ValConv"][i] for i = 1:5], 2) < 1e-12
+    @test norm(q .* p[1] .- [res["ExpConv"]["x" * string(i)] for i = 1:10], 2) < 1e-12
 end
