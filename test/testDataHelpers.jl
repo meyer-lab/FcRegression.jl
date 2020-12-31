@@ -38,12 +38,8 @@
     end
 
     @testset "Depletion data can be imported" begin
-        for dataType in ["ITP", "blood", "bone", "melanoma", "HIV"]
+        for dataType in ["ITP", "melanoma"]
             df = FcRegression.importDepletion(dataType)
-            @test sum(Matrix(ismissing.(df))) == 0
-        end
-        for dataType in ["blood", "spleen", "bone"]
-            df = FcRegression.importHumanized(dataType)
             @test sum(Matrix(ismissing.(df))) == 0
         end
     end
