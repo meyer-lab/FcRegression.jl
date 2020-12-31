@@ -27,7 +27,13 @@ function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; recepEx
     Kav = importKav(; murine = false, retdf = true)
     Kav = Matrix(Kav[!, [dfrow."Cell"]])
     val = "NewValency" in names(dfrow) ? dfrow."NewValency" : dfrow."Valency"
-    return polyfc(1e-9, KxConst, val, [recepExp[dfrow."Cell"]], IgGC, Kav).Lbound
+    res = try
+        polyfc(1e-9, KxConst, val, [recepExp[dfrow."Cell"]], IgGC, Kav).Lbound
+    catch e
+        println(val, [recepExp[dfrow."Cell"]], IgGC, Kav)
+        rethrow(e)
+    end
+    return res
 end
 
 predictMix(dfrow::DataFrameRow; recepExp = measuredRecepExp) = predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; recepExp = recepExp)
