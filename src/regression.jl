@@ -85,9 +85,9 @@ function nnls_fit(Xfc, Y, ActI)
 end
 
 function fitRegression(Xfc, Y; ActI::Union{Nothing, Vector} = nothing)
-    upper = ones(length(murineActI)) .* 4.0
-    lower = ones(length(murineActI)) .* -4.0
-    init = Float64.(murineActI)
+    upper = ones(length(murineActI)) .* 2.0
+    lower = ones(length(murineActI)) .* -2.0
+    init = ones(length(murineActI)) .* 1.0
 
     if ActI == nothing
         func = x -> nnls_fit(Xfc, Y, x)[2]

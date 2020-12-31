@@ -60,7 +60,7 @@ function plotMixOriginalData()
                 Scale.color_discrete_manual(palette[1], palette[2]),
                 Guide.xlabel(""),
                 Guide.ylabel("RFU", orientation = :vertical),
-                Guide.title("$IgGXname-$IgGYname in $(df[1, "Cell"])"),
+                Guide.title("$IgGXname-$IgGYname in $cell"),
             )
             pls[(j - 1) * lpairs + (i - 1) + 1] = pl
         end
