@@ -65,7 +65,7 @@ const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
     if retdf
         return df[!, ["Receptor"; names(df)[in(cellTypes).(names(df))]]]
     else
-        return convert(Matrix{Float64}, df[!, cellTypes])
+        return convert(Matrix{Float64}, df[!, names(df)[in(cellTypes).(names(df))]])
     end
 end
 
