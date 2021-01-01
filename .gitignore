@@ -4,3 +4,4 @@ FcgR.sublime-workspace
 venv
 *.svg
 
+cache/requests-cache.sqlite
