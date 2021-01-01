@@ -114,7 +114,7 @@ function plotReceptorActivities(ActI_df, dataType)
         Scale.x_discrete(),
         Scale.y_continuous(minvalue = 0.0),
         Guide.title("Predicted receptor activities for $dataType"),
-        style(bar_spacing=5mm),
+        style(bar_spacing = 5mm),
     )
     return pl
 end

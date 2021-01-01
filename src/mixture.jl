@@ -36,7 +36,8 @@ function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; recepEx
     return res
 end
 
-predictMix(dfrow::DataFrameRow; recepExp = measuredRecepExp) = predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; recepExp = recepExp)
+predictMix(dfrow::DataFrameRow; recepExp = measuredRecepExp) =
+    predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; recepExp = recepExp)
 
 function predictMix(df::DataFrame; recepExp = measuredRecepExp)
     """ will return another df object """
@@ -92,9 +93,12 @@ function MixtureFit(df; logscale = false)
     res = optimize(od, init_v, BFGS()).minimizer
     p, q = [1.0; res[1:(nv - 1)]], res[nv:end]
     res = MixtureFitLoss(df, p, q; logscale = logscale)
-    return Dict("loss" => res[1], "df" => res[2], 
-        "ValConv" => Dict([(name, p[i]) for (i, name) in enumerate(unique(df."Valency"))]), 
-        "ExpConv" => Dict([(name, q[i]) for (i, name) in enumerate(unique(df."Experiment"))]))
+    return Dict(
+        "loss" => res[1],
+        "df" => res[2],
+        "ValConv" => Dict([(name, p[i]) for (i, name) in enumerate(unique(df."Valency"))]),
+        "ExpConv" => Dict([(name, q[i]) for (i, name) in enumerate(unique(df."Experiment"))]),
+    )
 end
 
 function MixtureCellSeparateFit(df; logscale = false)
