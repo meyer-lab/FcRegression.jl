@@ -142,4 +142,4 @@ function regressionResult(dataType; L0, f)
     ActI_df = DataFrame(Receptor = murineFcgR, Activity = res.ActI)
 
     return res, odf, Cell_df, ActI_df
-end 
+end

@@ -18,7 +18,7 @@ function figure2()
         Scale.x_log10,
         Scale.y_log10,
         Scale.color_discrete_manual(Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]),
-        Geom.abline(color="green"),
+        Geom.abline(color = "green"),
     )
 
     draw(SVG("figure2.svg", 1300px, 600px), plotGrid((1, 2), [nothing, pl]))

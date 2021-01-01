@@ -27,7 +27,7 @@ include("figures/figureS3.jl")
 
 function figureAll()
     setGadflyTheme()
-    
+
     figure1()
     figure2()
     figure3()

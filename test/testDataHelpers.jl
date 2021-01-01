@@ -1,7 +1,7 @@
 @testset "dataHelpers.jl tests" begin
     @testset "Testing importRtot()" begin
         @test FcRegression.importRtot(; murine = true, retdf = false) isa Matrix
-        @test FcRegression.importRtot(; murine = false, retdf = false) isa Matrix 
+        @test FcRegression.importRtot(; murine = false, retdf = false) isa Matrix
         @test FcRegression.importRtot(; murine = true, retdf = true) isa DataFrame
         @test FcRegression.importRtot(; murine = false, retdf = true) isa DataFrame
         @test FcRegression.importKav(; murine = true, retdf = false) isa Matrix
