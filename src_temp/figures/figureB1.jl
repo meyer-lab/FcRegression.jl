@@ -53,8 +53,7 @@ function plotSynL0(f; murine::Bool, fit = nothing, Cellidx = 2, Rbound = false, 
             S[ii, 8:9] = h[14:15]
             S[ii, 10] = h[20]
         end
-        S = convert(DataFrame, S)
-        rename!(S, receptorNamesB1)
+        S = DataFrame(Tables.table(S, header = receptorNamesB1))
     else
         index = length(humanreceptorNamesB1)
         S = zeros(length(L0), index)
@@ -65,8 +64,7 @@ function plotSynL0(f; murine::Bool, fit = nothing, Cellidx = 2, Rbound = false, 
             S[ii, 4:5] = h[7:8]
             S[ii, 6] = h[12]
         end
-        S = convert(DataFrame, S)
-        rename!(S, humanreceptorNamesB1)
+        S = DataFrame(Tables.table(S, header = humanreceptorNamesB1))
     end
     S = stack(S)
 
@@ -112,8 +110,7 @@ function plotSynf(L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = false, 
             S[ii, 8:9] = h[14:15]
             S[ii, 10] = h[20]
         end
-        S = convert(DataFrame, S)
-        rename!(S, receptorNamesB1)
+        S = DataFrame(Tables.table(S, header = receptorNamesB1))
     else
         index = length(humanreceptorNamesB1)
         S = zeros(length(f), index)
@@ -124,8 +121,7 @@ function plotSynf(L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = false, 
             S[ii, 4:5] = h[7:8]
             S[ii, 6] = h[12]
         end
-        S = convert(DataFrame, S)
-        rename!(S, humanreceptorNamesB1)
+        S = DataFrame(Tables.table(S, header = humanreceptorNamesB1))
     end
     S = stack(S)
 
@@ -170,8 +166,7 @@ function plotSynFc(f, L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = fal
             S[ii, 8:9] = h[14:15]
             S[ii, 10] = h[20]
         end
-        S = convert(DataFrame, S)
-        rename!(S, receptorNamesB1)
+        S = DataFrame(Tables.table(S, header = receptorNamesB1))
     else
         index = length(humanreceptorNamesB1)
         S = zeros(length(multiplier), index)
@@ -182,8 +177,7 @@ function plotSynFc(f, L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = fal
             S[ii, 4:5] = h[7:8]
             S[ii, 6] = h[12]
         end
-        S = convert(DataFrame, S)
-        rename!(S, humanreceptorNamesB1)
+        S = DataFrame(Tables.table(S, header = humanreceptorNamesB1))
     end
     S = stack(S)
 

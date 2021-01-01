@@ -1,5 +1,5 @@
 function loadMixData()
-    df = CSV.File(joinpath(dataDir, "lux-mixture.csv"), comment = "#") |> DataFrame!
+    df = DataFrame(CSV.File(joinpath(dataDir, "lux-mixture.csv"), comment = "#"))
     df = stack(df, 7:size(df)[2])
     df = dropmissing(df)
     rename!(df, "variable" => "Experiment")
