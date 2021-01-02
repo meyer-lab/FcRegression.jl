@@ -5,22 +5,24 @@ using Compose
 Whenever making a plot with Gadfly, use `style()` instead of `Theme()` to add effects
 """
 function setGadflyTheme()
-    Gadfly.push_theme(Theme(
-        background_color = nothing,
-        grid_line_style = :dot,
-        panel_stroke = colorant"black",
-        plot_padding = [0.02w, 0.02w, 0.07h, 0.0pt],
-        major_label_font = "Helvetica",
-        major_label_color = colorant"black",
-        minor_label_font = "Helvetica",
-        minor_label_color = colorant"black",
-        key_title_font = "Helvetica",
-        key_title_color = colorant"black",
-        key_label_font = "Helvetica",
-        key_label_color = colorant"black",
-        point_label_font = "Helvetica",
-        point_label_color = colorant"black",
-    ))
+    Gadfly.push_theme(
+        Theme(
+            background_color = nothing,
+            grid_line_style = :dot,
+            panel_stroke = colorant"black",
+            plot_padding = [0.02w, 0.02w, 0.07h, 0.0pt],
+            major_label_font = "Helvetica",
+            major_label_color = colorant"black",
+            minor_label_font = "Helvetica",
+            minor_label_color = colorant"black",
+            key_title_font = "Helvetica",
+            key_title_color = colorant"black",
+            key_label_font = "Helvetica",
+            key_label_color = colorant"black",
+            point_label_font = "Helvetica",
+            point_label_color = colorant"black",
+        ),
+    )
 end
 
 
