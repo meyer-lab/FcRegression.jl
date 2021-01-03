@@ -1,5 +1,6 @@
-""" This file builds the translation manuscript, Figure 1. """
-
 function figure1()
-    println("Nothing here yet.")
+    setGadflyTheme()
+    df3 = PairFit(loadMixData(); logscale = false)
+
+    draw(SVG("figure1.svg", 2500px, 1000px), makeMixturePairSubPlots(df3; logscale = false))
 end
