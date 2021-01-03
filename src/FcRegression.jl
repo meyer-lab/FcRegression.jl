@@ -17,14 +17,31 @@ include("figures/figureW.jl")
 include("figures/figure1.jl")
 include("figures/figure2.jl")
 include("figures/figure3.jl")
+include("figures/figure4.jl")
+include("figures/figureS1.jl")
+include("figures/figureS2.jl")
+include("figures/figureS3.jl")
+#include("figures/figureB1.jl")
+#include("figures/figureS.jl")
+include("figures/figureDiseaseSpecific.jl")
+include("figures/figureCelltypeSynergy.jl")
+include("figures/figureDiseaseSynergy.jl")
 
 
 function figureAll()
     setGadflyTheme()
 
+    #figureB1()
     figure1()
     figure2()
     figure3()
+    figure4()
+    figureS1()
+    figureS2()
+
+    figure_MSyn_melanoma()
+    figure_MSyn_ITP()
+
 end
 
 export polyfc, polyfc_ActV
