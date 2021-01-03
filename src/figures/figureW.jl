@@ -22,12 +22,8 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
         L0 = L0,
         f = f,
         murine = murine,
-<<<<<<< HEAD
         neutralization = ("Neutralization" in names(df)),
         c1q = ("C1q" in Cell_df.Component),
-=======
-        c1q = ("C1q" in effects.Component),
->>>>>>> NewFigureFormat
         dataType = dataType,
         fit = res,
         Cellidx = Cellidx,
