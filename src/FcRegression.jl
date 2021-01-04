@@ -22,10 +22,6 @@ include("figures/figureS1.jl")
 include("figures/figureS2.jl")
 #include("figures/figureB1.jl")
 #include("figures/figureS.jl")
-include("figures/figureDiseaseSpecific.jl")
-include("figures/figureCelltypeSynergy.jl")
-include("figures/figureDiseaseSynergy.jl")
-
 
 function figureAll()
     setGadflyTheme()
@@ -38,8 +34,8 @@ function figureAll()
     figureS1()
     figureS2()
 
-    figure_MSyn_melanoma()
-    figure_MSyn_ITP()
+    #figure_MSyn_melanoma()
+    #figure_MSyn_ITP()
 
 end
 
