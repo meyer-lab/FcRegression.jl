@@ -176,15 +176,13 @@ function plotSynergy(
         S[5:7] = h[8:10]
         S[8:9] = h[14:15]
         S[10] = h[20]
-        S = convert(DataFrame, S')
-        rename!(S, receptorNamesB1)
+        S = DataFrame(Tables.table(S', header = receptorNamesB1))
     else
         S = zeros(length(humanreceptorNamesB1))
         S[1:3] = h[2:4]
         S[4:5] = h[7:8]
         S[6] = h[12]
-        S = convert(DataFrame, S')
-        rename!(S, humanreceptorNamesB1)
+        S = DataFrame(Tables.table(S', header = humanreceptorNamesB1))
     end
 
     S = stack(S)

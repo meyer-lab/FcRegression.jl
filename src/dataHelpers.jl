@@ -24,9 +24,9 @@ const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
 @memoize function importRtot(; murine = true, genotype = "HIV", retdf = false)
     if murine
-        df = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame!
+        df = DataFrame(CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#"))
     else
-        df = CSV.File(joinpath(dataDir, "human-FcgR-abundance.csv"), comment = "#") |> DataFrame!
+        df = DataFrame(CSV.File(joinpath(dataDir, "human-FcgR-abundance.csv"), comment = "#"))
     end
     
     df = combine(groupby(df, ["Cells", "Receptor"]), names(df, "Count") .=> geocmean)
@@ -72,9 +72,9 @@ end
 """ Import human or murine affinity data. """
 @memoize function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = false)
     if murine
-        df = CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#") |> DataFrame!
+        df = DataFrame(CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#"))
     else
-        df = CSV.File(joinpath(dataDir, "human-affinities.csv"), comment = "#") |> DataFrame!
+        df = DataFrame(CSV.File(joinpath(dataDir, "human-affinities.csv"), comment = "#"))
     end
 
     IgGlist = copy(murine ? murineIgG : humanIgG)
@@ -108,7 +108,7 @@ function importDepletion(dataType)
         @error "Data type not found"
     end
 
-    df = CSV.File(joinpath(dataDir, filename), delim = ",", comment = "#") |> DataFrame!
+    df = DataFrame(CSV.File(joinpath(dataDir, filename), delim = ",", comment = "#"))
     df[!, "Target"] = 1.0 .- df[!, "Target"] ./ 100.0
 
     affinity = importKav(murine = true, IgG2bFucose = true, retdf = true)

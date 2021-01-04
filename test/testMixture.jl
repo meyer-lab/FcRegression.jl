@@ -3,7 +3,7 @@
     p = rand(5) .* 2 .+ 1
     q = rand(10) .* 2 .+ 1
     Y = X .* reshape(p, :, 1) .* reshape(q, 1, :)
-    df = convert(DataFrame, X)
+    df = DataFrame(Tables.table(X, header = Symbol.(:x, axes(X, 2))))
 
     df[!, "Valency"] .= 1:5
     df = stack(df, 1:10)
