@@ -3,6 +3,7 @@ using LinearAlgebra
 import Distances
 using polyBindingModel
 using Optim
+using DataFrames
 
 include("figures/figureCommon.jl")
 
@@ -20,7 +21,9 @@ include("figures/figure3.jl")
 include("figures/figure4.jl")
 include("figures/figureS1.jl")
 include("figures/figureS2.jl")
-#include("figures/figureS.jl")
+include("figures/figureS3.jl")
+
+
 
 function figureAll()
     setGadflyTheme()
@@ -29,12 +32,10 @@ function figureAll()
     figure2()
     figure3()
     figure4()
+
     figureS1()
     figureS2()
-
-    #figure_MSyn_melanoma()
-    #figure_MSyn_ITP()
-
+    figureS3()
 end
 
 export polyfc, polyfc_ActV

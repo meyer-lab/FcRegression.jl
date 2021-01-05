@@ -1,6 +1,5 @@
-using DataFrames
 import CSV
-import StatsBase.geomean
+import StatsBase.geomean, Statistics.std
 using Memoize
 
 const KxConst = 6.31e-13 # 10^(-12.2)
@@ -11,8 +10,7 @@ function geocmean(x)
     return geomean(x)
 end
 
-const murineCellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO", "Kupffer", "KupfferHi"]
-const humanCellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO"]
+const cellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO", "Kupffer", "KupfferHi"]
 const murineIgG = ["IgG1", "IgG2a", "IgG2b", "IgG3"]
 const murineIgGFucose = ["IgG1", "IgG2a", "IgG2b", "IgG3", "IgG2bFucose"]
 const humanIgG = ["IgG1", "IgG2", "IgG3", "IgG4"]
@@ -22,7 +20,6 @@ const humanFcgR =
 const murineActI = [1, -1, 1, 1]
 #const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
 #const humanActYmax = [5.5e4, 1.5e5, 4.5e4, 3.5e4, 3e3] # ymax for synergy plots
-const humanActI = [1, 1, 1, -1, -1, 1, 1, 1, 1]
 const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
 @memoize function importRtot(; murine = true, genotype = "HIV", retdf = false)
@@ -31,7 +28,7 @@ const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
     else
         df = DataFrame(CSV.File(joinpath(dataDir, "human-FcgR-abundance.csv"), comment = "#"))
     end
-    cellTypes = murine ? murineCellTypes : humanCellTypes
+    
     df = combine(groupby(df, ["Cells", "Receptor"]), names(df, "Count") .=> geocmean)
     df = unstack(df, "Receptor", "Cells", "Count_geocmean")
     df = coalesce.(df, 1.0)
@@ -67,7 +64,7 @@ const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
     if retdf
         return df[!, ["Receptor"; names(df)[in(cellTypes).(names(df))]]]
     else
-        return convert(Matrix{Float64}, df[!, cellTypes])
+        return convert(Matrix{Float64}, df[!, names(df)[in(cellTypes).(names(df))]])
     end
 end
 
@@ -103,40 +100,19 @@ end
 
 """ Import cell depletion data. """
 function importDepletion(dataType)
-    c1q = false
     if dataType == "ITP"
         filename = "nimmerjahn-ITP.csv"
-    elseif dataType == "blood"
-        filename = "nimmerjahn-CD20-blood.csv"
-        c1q = true
-    elseif dataType == "bone"
-        filename = "nimmerjahn-CD20-bone.csv"
-        c1q = true
     elseif dataType == "melanoma"
         filename = "nimmerjahn-melanoma.csv"
-    elseif dataType == "HIV"
-        filename = "elsevier-HIV.csv"
-    elseif dataType == "Bcell"
-        filename = "Lux_et_al_C57BL6.csv"
-        c1q = true
     else
         @error "Data type not found"
     end
 
     df = DataFrame(CSV.File(joinpath(dataDir, filename), delim = ",", comment = "#"))
     df[!, "Target"] = 1.0 .- df[!, "Target"] ./ 100.0
-    if "Neutralization" in names(df)
-        neut = -log.(df[!, "Neutralization"] / 50.0)
-        df[!, "Neutralization"] .= replace!(neut, Inf => 0.0)
-    end
 
-    affinity = importKav(murine = true, c1q = c1q, IgG2bFucose = true, retdf = true)
+    affinity = importKav(murine = true, IgG2bFucose = true, retdf = true)
     df = leftjoin(df, affinity, on = "Condition" => "IgG")
-
-    # The mG053 antibody doesn't bind to the virus
-    if dataType == "HIV"
-        df[df[:, "Label"] .== "mG053", ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]] .= 0.0
-    end
 
     df[df[:, "Background"] .== "R1KO", "FcgRI"] .= 0.0
     df[df[:, "Background"] .== "R2KO", "FcgRIIB"] .= 0.0
@@ -153,28 +129,3 @@ function importDepletion(dataType)
     return df
 end
 
-
-""" Humanized mice data from Lux 2014, Schwab 2015 """
-function importHumanized(dataType)
-    if dataType in ["blood", "spleen", "bone"]
-        df = DataFrame(CSV.File(joinpath(dataDir, "lux_humanized_CD19.csv"), delim = ",", comment = "#"))
-        df = dropmissing(df, Symbol(dataType), disallowmissing = true)
-        df[!, "Target"] = 1.0 .- df[!, Symbol(dataType)] ./ 100.0
-        df[!, "Condition"] .= "IgG1"
-        df = df[!, ["Genotype", "Concentration", "Condition", "Target"]]
-        affinity = importKav(murine = false, c1q = true, retdf = true)
-    elseif dataType == "ITP"
-        df = DataFrame(CSV.File(joinpath(dataDir, "schwab_ITP_humanized.csv"), delim = ",", comment = "#"))
-        df = stack(df, ["IgG1", "IgG2", "IgG3", "IgG4"])
-        df = disallowmissing!(df[completecases(df), :])
-        rename!(df, ["variable" => "Condition", "value" => "Target"])
-
-        df[!, "Target"] .= 1.0 .- df.Target ./ 100.0
-        affinity = importKav(murine = false, c1q = false, retdf = true)
-    else
-        @error "Data type not found"
-    end
-
-    df = leftjoin(df, affinity, on = "Condition" => "IgG")
-    return df
-end

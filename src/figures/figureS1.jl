@@ -1,4 +1,6 @@
+""" Figure S1 """
+
 function figureS1()
     setGadflyTheme()
-    return
+
 end

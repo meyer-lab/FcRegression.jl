@@ -1,22 +1,12 @@
-function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, legend = true, Cellidx = nothing, Recepidx = nothing, Rbound = false)
+function figureW(dataType; L0 = 1e-9, f = 4, IgGX = 2, IgGY = 3, legend = true, Cellidx = nothing, Recepidx = nothing, Rbound = false)
+    df = importDepletion(dataType)
+    res, odf, Cell_df, ActI_df = regressionResult(dataType; L0 = L0, f = f)
 
-    if murine
-        df = importDepletion(dataType)
-        color = (dataType == "HIV") ? "Label" : "Background"
-        shape = "Condition"
-    else
-        df = importHumanized(dataType)
-        color = "Genotype"
-        shape = (dataType == "ITP") ? "Condition" : "Concentration"
-    end
-
-    res, odf, Cell_df, ActI_df = regressionResult(dataType; L0 = L0, f = f, murine = murine)
-    @assert all(in(names(odf)).([color, shape]))
-
-    p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
-    p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
+    p1 = plotActualvFit(odf, dataType; legend = legend)
+    p2 = plotActualvPredict(odf, dataType; legend = legend)
     p3 = plotCellTypeEffects(Cell_df, dataType; legend = legend)
-    p4 = plotDepletionSynergy(
+    p4 = plotReceptorActivities(ActI_df, dataType)
+    #=p5 = plotDepletionSynergy(
         IgGX,
         IgGY;
         L0 = L0,
@@ -30,8 +20,7 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
         Rbound = Rbound,
         neutralization = ("Neutralization" in names(df)),
     )
-    p5 = plotReceptorActivities(ActI_df, dataType)
-    #=p6 = nothingL0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
+    p6 = nothingL0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
     p7 = plotSynergy(
         L0,
         f;
@@ -45,18 +34,18 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
         neutralization = ("Neutralization" in names(df)),
     )=#
 
-    return p1, p2, p3, p4, p5
+    return p1, p2, p3, p4
 end
 
 
-function plotActualvFit(odf, dataType, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}; legend = true)
+function plotActualvFit(odf, dataType; legend = true)
     pl = plot(
         odf,
         x = "Y",
         y = "Fitted",
         Geom.point,
-        color = colorL,
-        shape = shapeL,
+        color = "Background",
+        shape = "Condition",
         Guide.colorkey(),
         Guide.shapekey(),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
@@ -70,14 +59,14 @@ function plotActualvFit(odf, dataType, colorL::Union{Symbol, String}, shapeL::Un
 end
 
 
-function plotActualvPredict(odf, dataType, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}; legend = true)
+function plotActualvPredict(odf, dataType; legend = true)
     pl = plot(
         odf,
         x = "Y",
         y = "LOOPredict",
         Geom.point,
-        color = colorL,
-        shape = shapeL,
+        color = "Background",
+        shape = "Condition",
         Guide.colorkey(),
         Guide.shapekey(),
         Geom.abline(color = "red"),
@@ -122,14 +111,14 @@ function plotReceptorActivities(ActI_df, dataType)
 end
 
 
-function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
+function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax)
     concs = exp10.(range(clmin, stop = clmax, length = clmax - clmin + 1))
     valencies = [2:vmax;]
     minima = zeros(length(concs), length(valencies))
     for (i, L0) in enumerate(concs)
         for (j, v) in enumerate(valencies)
-            Xfc, Xdf, Y = modelPred(df; L0 = L0, f = v, murine = murine)
-            fit = fitRegression(Xfc, Xdf, Y; murine = murine)
+            Xfc, Xdf, Y = modelPred(df; L0 = L0, f = v)
+            fit = fitRegression(Xfc, Xdf, Y)
             minima[i, j] = fit.residual
         end
     end
@@ -144,7 +133,7 @@ function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
         minima,
         Guide.xlabel("Valencies"),
         Guide.ylabel("L<sub>0</sub> Concentrations"),
-        Guide.title("L<sub>0</sub> and f exploration in $(murine ? "murine" : "human") $dataType data"),
+        Guide.title("L<sub>0</sub> and f exploration in murine $dataType data"),
         Scale.x_discrete(labels = i -> valencies[i]),
         Scale.y_discrete(labels = i -> concs[i]),
         Scale.color_continuous(minvalue = llim, maxvalue = ulim),
