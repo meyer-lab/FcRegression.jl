@@ -28,7 +28,7 @@ const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
     else
         df = DataFrame(CSV.File(joinpath(dataDir, "human-FcgR-abundance.csv"), comment = "#"))
     end
-    
+
     df = combine(groupby(df, ["Cells", "Receptor"]), names(df, "Count") .=> geocmean)
     df = unstack(df, "Receptor", "Cells", "Count_geocmean")
     df = coalesce.(df, 1.0)
@@ -128,4 +128,3 @@ function importDepletion(dataType)
     end
     return df
 end
-

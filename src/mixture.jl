@@ -25,7 +25,12 @@ function mixNormalExpBatch()
     median(x) = quantile(x, 0.5)
     lower(x) = quantile(x, 0.2)
     upper(x) = quantile(x, 0.8)
-    df = combine(groupby(df, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]), "Adjusted" => median, "Adjusted" => lower, "Adjusted" => upper)
+    df = combine(
+        groupby(df, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]),
+        "Adjusted" => median,
+        "Adjusted" => lower,
+        "Adjusted" => upper,
+    )
     rename!(df, "Adjusted_median" => "Value")
     rename!(df, "Adjusted_lower" => "ymin")
     rename!(df, "Adjusted_upper" => "ymax")
@@ -47,11 +52,11 @@ function plotMixOriginalData()
             ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== IgGXname) .& (df."subclass_2" .== IgGYname), :]
             pl = plot(
                 ndf,
-                x = "%_1", 
+                x = "%_1",
                 y = "Value",
                 ymin = "ymin",
                 ymax = "ymax",
-                color = "Valency", 
+                color = "Valency",
                 Geom.point,
                 Geom.line,
                 Geom.errorbar,
