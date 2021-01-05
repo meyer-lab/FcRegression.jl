@@ -1,11 +1,11 @@
 function figure4()
 
     setGadflyTheme()
-
+    
+    dataType = "ITP"
     df = importDepletion(dataType)
     color = (dataType == "HIV") ? "Label" : "Background"
     shape = "Condition"
-    dataType = "ITP"
     L0 = 1e-9
     f = 4
     murine = true
