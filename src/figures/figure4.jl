@@ -10,7 +10,7 @@ function figure4()
     f = 4
     murine = true
 
-    res, odf, Cell_df, ActI_df = regressionResult(dataType; L0 = L0, f = f, murine = murine)
+    res, odf, Cell_df, ActI_df = regressionResult(dataType; L0 = L0, f = f)
     @assert all(in(names(odf)).([color, shape]))
 
     ITP_Dep = plotDepletionSynergy(IgGX = 2, IgGY = 4; L0 = L0, f = f, murine = murine, c1q = ("C1q" in Cell_df.Component), dataType = "ITP", fit = res, neutralization = ("Neutralization" in names(df)))
