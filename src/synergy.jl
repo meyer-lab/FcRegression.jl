@@ -181,6 +181,7 @@ function plotDepletionSynergy(
         calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; fit = fit, Rbound = Rbound)
     if Rbound
         ylabel = "Binding"
+        title = "$title Rbound"
     end
     if ymax == nothing
         ymax = 1.1 * maximum(additive)
