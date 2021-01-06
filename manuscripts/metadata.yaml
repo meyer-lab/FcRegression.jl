@@ -9,10 +9,11 @@ lang: en-US
 authors:
   -
     github: cyrillustan
-    name: Cyrillus Tan
+    name: Zhixin Cyrillus Tan
     initials: CT
+    orcid: 0000-0002-5498-5509
     affiliations:
-      - Department of Bioinformatics, University of California, Los Angeles
+      - Bioinformatics Interdepartmental Program, University of California, Los Angeles
   -
     name: Stephen Lees
     initials: SL
@@ -32,6 +33,6 @@ authors:
     email: ameyer@asmlab.org
     affiliations:
       - Department of Bioengineering, University of California, Los Angeles
-      - Department of Bioinformatics, University of California, Los Angeles
+      - Bioinformatics Interdepartmental Program, University of California, Los Angeles
       - Jonsson Comprehensive Cancer Center, University of California, Los Angeles
       - Eli and Edythe Broad Center of Regenerative Medicine and Stem Cell Research, University of California, Los Angeles
