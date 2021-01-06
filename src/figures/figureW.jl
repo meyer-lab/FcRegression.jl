@@ -6,7 +6,7 @@ function figureW(dataType; L0 = 1e-9, f = 4, IgGX = 2, IgGY = 3, legend = true, 
     p2 = plotActualvPredict(odf, dataType; legend = legend)
     p3 = plotCellTypeEffects(Cell_df, dataType; legend = legend)
     p4 = plotReceptorActivities(ActI_df, dataType)
-    #=p5 = plotDepletionSynergy(
+    p5 = plotDepletionSynergy(
         IgGX,
         IgGY;
         L0 = L0,
@@ -17,8 +17,7 @@ function figureW(dataType; L0 = 1e-9, f = 4, IgGX = 2, IgGY = 3, legend = true, 
         Recepidx = Recepidx,
         Rbound = Rbound,
     )
-    p6 = nothingL0fSearchHeatmap(df, dataType, 24, -12, -6)
-    p7 = plotSynergy(
+    p6 = plotSynergy(
         L0,
         f;
         dataType = dataType,
@@ -26,9 +25,9 @@ function figureW(dataType; L0 = 1e-9, f = 4, IgGX = 2, IgGY = 3, legend = true, 
         Cellidx = Cellidx,
         Recepidx = Recepidx,
         Rbound = Rbound,
-    )=#
+    )
 
-    return p1, p2, p3, p4
+    return p1, p2, p3, p4, p5, p6
 end
 
 
