@@ -6,26 +6,8 @@ function figureW(dataType; L0 = 1e-9, f = 4, IgGX = 2, IgGY = 3, legend = true, 
     p2 = plotActualvPredict(odf, dataType; legend = legend)
     p3 = plotCellTypeEffects(Cell_df, dataType; legend = legend)
     p4 = plotReceptorActivities(ActI_df, dataType)
-    p5 = plotDepletionSynergy(
-        IgGX,
-        IgGY;
-        L0 = L0,
-        f = f,
-        dataType = dataType,
-        fit = res,
-        Cellidx = Cellidx,
-        Recepidx = Recepidx,
-        Rbound = Rbound,
-    )
-    p6 = plotSynergy(
-        L0,
-        f;
-        dataType = dataType,
-        fit = res,
-        Cellidx = Cellidx,
-        Recepidx = Recepidx,
-        Rbound = Rbound,
-    )
+    p5 = plotDepletionSynergy(IgGX, IgGY; L0 = L0, f = f, dataType = dataType, fit = res, Cellidx = Cellidx, Recepidx = Recepidx, Rbound = Rbound)
+    p6 = plotSynergy(L0, f; dataType = dataType, fit = res, Cellidx = Cellidx, Recepidx = Recepidx, Rbound = Rbound)
 
     return p1, p2, p3, p4, p5, p6
 end
@@ -148,16 +130,7 @@ const receptorNamesB1 =
         "IgG3/2b-Fucose",
     ])
 
-function plotSynergy(
-    L0,
-    f;
-    dataType = nothing,
-    fit = nothing,
-    Cellidx = nothing,
-    Recepidx = nothing,
-    Rbound = false,
-    quantity = nothing,
-)
+function plotSynergy(L0, f; dataType = nothing, fit = nothing, Cellidx = nothing, Recepidx = nothing, Rbound = false, quantity = nothing)
     Kav_df = importKav(; murine = true, IgG2bFucose = true, c1q = false, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murineFcgR])
 

@@ -1,14 +1,5 @@
 """Calculate the single, mixed drug, and additive responses for one IgG pair"""
-function calcSynergy(
-    IgGXidx::Int64,
-    IgGYidx::Int64,
-    L0,
-    f,
-    FcExpr = nothing;
-    fit::Union{optResult, Nothing} = nothing,
-    Rbound = false,
-    nPoints = 100,
-)
+function calcSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, FcExpr = nothing; fit::Union{optResult, Nothing} = nothing, Rbound = false, nPoints = 100)
     Kav_df = importKav(; murine = true, IgG2bFucose = true, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murineFcgR])
     if FcExpr == nothing
@@ -80,8 +71,7 @@ end
 """Calculate the IgG mixture at the point of maximum synergy or antagonism for a pair of IgGs"""
 function maxSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, FcExpr; fit = nothing, Rbound = false, nPoints = 100)
 
-    D1, D2, additive, output =
-        calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; fit = fit, Rbound = Rbound, nPoints = nPoints)
+    D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; fit = fit, Rbound = Rbound, nPoints = nPoints)
     sampleAxis = range(0, stop = 1, length = length(output))
 
     # Subtract a line
@@ -98,16 +88,7 @@ function synergyGrid(L0, f, FcExpr, Kav; fit = nothing, Rbound = false)
     nPoints = 100
     for i = 1:size(Kav)[1]
         for j = 1:(i - 1)
-            D1, D2, additive, output = calcSynergy(
-                i,
-                j,
-                L0,
-                f,
-                FcExpr;
-                fit = fit,
-                Rbound = Rbound,
-                nPoints = nPoints,
-            )
+            D1, D2, additive, output = calcSynergy(i, j, L0, f, FcExpr; fit = fit, Rbound = Rbound, nPoints = nPoints)
             synergy = sum((output - additive) / nPoints)
             M[i, j] = synergy
         end
@@ -177,8 +158,7 @@ function plotDepletionSynergy(
         @error "Not allowed combination of fit/Cellidx/Recepidx."
     end
 
-    D1, D2, additive, output =
-        calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; fit = fit, Rbound = Rbound)
+    D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; fit = fit, Rbound = Rbound)
     if Rbound
         ylabel = "Binding"
         title = "$title Rbound"
