@@ -179,3 +179,53 @@ function plotSynergy(L0, f; dataType = nothing, fit = nothing, Cellidx = nothing
     )
     return pl
 end
+
+    function plotEC50(L0, f; dataType = nothing, fit = nothing, Cellidx = nothing, Recepidx = nothing, Rbound = false)
+        Kav_df = importKav(; murine = true, IgG2bFucose = true, c1q = false, retdf = true)
+        Kav = Matrix{Float64}(Kav_df[!, murineFcgR])
+        display(Kav)
+    
+        if Recepidx != nothing # look at only one receptor
+            FcExpr = zeros(length(murineFcgR))
+            FcExpr[Recepidx] = importRtot(; murine = true)[Recepidx, Cellidx]
+            ylabel = "Activity"
+        elseif Cellidx != nothing # look at only one cell FcExpr
+            FcExpr = importRtot(; murine = true)[:, Cellidx]
+            ylabel = "Activity"
+        else
+            FcExpr = importRtot(; murine = true)
+        end
+        if fit == nothing
+            title = "ActI not Fit"
+        else
+            title = "$dataType"
+        end
+        if Rbound
+            title = "$title Rbound"
+        end
+    
+        M = EC50Grid(L0, f, FcExpr, Kav; fit = fit, Rbound = Rbound)
+    
+        h = collect(Iterators.flatten(M))
+        S = zeros(length(receptorNamesB1))
+        S[1:4] = h[2:5]
+        S[5:7] = h[8:10]
+        S[8:9] = h[14:15]
+        S[10] = h[20]
+        S = DataFrame(Tables.table(S', header = receptorNamesB1))
+    
+        S = stack(S)
+    
+        pl = plot(
+            S,
+            y = :value,
+            x = :variable,
+            color = :variable,
+            Geom.bar(position = :dodge),
+            style(key_position = :none),
+            Guide.xlabel("Mixture", orientation = :vertical),
+            Guide.xlabel("Synergy", orientation = :horizontal),
+            Guide.title("Synergy vs Mixture ($title)"),
+        )
+        return pl
+end
