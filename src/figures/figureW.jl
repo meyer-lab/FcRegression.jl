@@ -204,7 +204,15 @@ end
             title = "$title Rbound"
         end
     
-        M = EC50Grid(L0, f, FcExpr, Kav; fit = fit, Rbound = Rbound)
+        RecepKav = Kav[:, Recepidx]
+        M, AffM = EC50Grid(L0, f, FcExpr, Kav, RecepKav; fit = fit, Rbound = Rbound)
+
+        flat = collect(Iterators.flatten(AffM))
+        Affinity = zeros(length(receptorNamesB1))
+        Affinity[1:4] = flat[2:5]
+        Affinity[5:7] = flat[8:10]
+        Affinity[8:9] = flat[14:15]
+        Affinity[10] = flat[20]
     
         h = collect(Iterators.flatten(M))
         S = zeros(length(receptorNamesB1))
@@ -213,19 +221,19 @@ end
         S[8:9] = h[14:15]
         S[10] = h[20]
         S = DataFrame(Tables.table(S', header = receptorNamesB1))
-    
         S = stack(S)
     
         pl = plot(
             S,
             y = :value,
-            x = :variable,
+            x = Affinity,
+            Geom.point,
             color = :variable,
-            Geom.bar(position = :dodge),
-            style(key_position = :none),
-            Guide.xlabel("Mixture", orientation = :vertical),
-            Guide.xlabel("Synergy", orientation = :horizontal),
-            Guide.title("Synergy vs Mixture ($title)"),
+            Guide.colorkey(),
+            Guide.xlabel("Actual effect"),
+            Guide.ylabel("Fitted effect"),
+            Guide.title("Actual vs fitted effect for $dataType"),
+            style(point_size = 5px, key_position = :right),
         )
         return pl
 end

@@ -115,20 +115,31 @@ function EC50(
     diff = output .- EC50value
     EC50index = findmin(abs.(diff))[2]
     Xpercent = sampleAxis[EC50index]
+    Ypercent = 1 - sampleAxis[EC50index]
 
-    return Xpercent
+    return Xpercent, Ypercent, IgGXidx, IgGYidx
 end
 
 """ Calculate the EC50 for all pairs of IgG """
-function EC50Grid(L0, f, FcExpr, Kav; fit = nothing, Rbound = false)
+function EC50Grid(L0, f, FcExpr, Kav, RecepKav; fit = nothing, Rbound = false)
     M = zeros(size(Kav)[1], size(Kav)[1])
+    Affinity = zeros(size(Kav)[1], size(Kav)[1])
     for i = 1:size(Kav)[1]
         for j = 1:(i - 1)
-            M[i, j] = EC50(i, j, L0, f, FcExpr; fit = fit, Rbound = Rbound)
+            x, y, xIg, yIg = EC50(i, j, L0, f, FcExpr; fit = fit, Rbound = Rbound)
+            if x > y
+                EC = x
+                Aff = RecepKav[xIg]
+            else
+                EC = y
+                Aff = RecepKav[yIg]
+            end
+            M[i, j] = EC
+            Affinity[i, j] = Aff
         end
     end
 
-    return M
+    return M, Affinity
 end
 
 
