@@ -45,6 +45,7 @@ function plotMixOriginalData()
     lpairs = size(pairs, 1)
     pls = Vector(undef, lcells * lpairs)
     palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
+    ymax = Dict("FcgRIIA-131H" => 1.2e4, "FcgRIIB-232I" => 4e3, "FcgRIIIA-158V" => 1.5e4)
 
     for (i, pairrow) in enumerate(eachrow(pairs))
         for (j, cell) in enumerate(cells)
@@ -61,7 +62,7 @@ function plotMixOriginalData()
                 Geom.line,
                 Geom.errorbar,
                 Scale.x_continuous(labels = n -> "$IgGXname $(n*100)%\n$IgGYname $(100-n*100)%"),
-                Scale.y_continuous,
+                Scale.y_continuous(; maxvalue = ymax[cell]),
                 Scale.color_discrete_manual(palette[1], palette[2]),
                 Guide.xlabel(""),
                 Guide.ylabel("RFU", orientation = :vertical),
