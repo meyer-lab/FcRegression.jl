@@ -76,16 +76,19 @@ end
 function mixEC50()
     df = mixNormalExpBatch()
     cells = unique(df."Cell")
-    display(cells)
     pairs = unique(df[!, ["subclass_1", "subclass_2"]])
     lcells = length(cells)
     lpairs = size(pairs, 1)
-    pls = Vector(undef, lcells * lpairs)
+
+    PercentMix = Vector(undef, lcells * lpairs)
     Ka = Vector(undef, lcells * lpairs)
     Combos = Vector(undef, lcells * lpairs)
+    Combos = Vector(undef, lcells * lpairs)
+    Cells = Vector(undef, lcells * lpairs)
+
     palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
     Kav = importKav(; murine = false, retdf = true)
-    display(Kav)
+    #display(Kav)
 
     for (i, pairrow) in enumerate(eachrow(pairs))
         for (j, cell) in enumerate(cells)
@@ -98,23 +101,29 @@ function mixEC50()
             EC50value = 0.5*maximum(y)
             diff = y .- EC50value
             EC50index = findmin(abs.(diff))[2]
-            Xpercent = x[EC50index]
-            Ypercent = 1 - x[EC50index]
-            pls[(j - 1) * lpairs + (i - 1) + 1] = Xpercent
-            Ka[(j - 1) * lpairs + (i - 1) + 1] = Kav[j,2^j]
-            Combos[[(j - 1) * lpairs + (i - 1) + 1]] .= "$IgGXname/$IgGYname"
+            if Kav[j,(2^j)+1] < Kav[j+1,(2^j)+1]
+                PercentBinding = 1 - x[EC50index]
+                Ka[(j - 1) * lpairs + (i - 1) + 1] = Kav[j+1,(2^j)+ 1]
+            else
+                PercentBinding = x[EC50index]
+                Ka[(j - 1) * lpairs + (i - 1) + 1] = Kav[j,(2^j)+ 1]
+            end
+            PercentMix[(j - 1) * lpairs + (i - 1) + 1] = PercentBinding
+            Combos[(j - 1) * lpairs + (i - 1) + 1] = "$IgGXname/$IgGYname"
+            Cells[(j - 1) * lpairs + (i - 1) + 1] = cells[j]
         end
     end
     
-    display(Ka)
-    display(Combos)
+    #display(Ka)
+    #display(Combos)
     #sampleAxis = range(0, stop = 1, length = length(pls))
     p1 = plot(
         x = Ka,
-        y = pls,
+        y = PercentMix,
         color = Combos,
+        shape = Cells,
         Geom.point,
-        Scale.x_log10,
+        #Scale.x_log10,
         Scale.y_continuous,
         Scale.color_discrete_manual(palette[1], palette[2]),
         Guide.xlabel("Kav"),
