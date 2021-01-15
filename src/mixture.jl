@@ -73,6 +73,56 @@ function plotMixOriginalData()
     return plotGrid((lcells, lpairs), pls)
 end
 
+function mixEC50()
+    df = mixNormalExpBatch()
+    cells = unique(df."Cell")
+    display(cells)
+    pairs = unique(df[!, ["subclass_1", "subclass_2"]])
+    lcells = length(cells)
+    lpairs = size(pairs, 1)
+    pls = Vector(undef, lcells * lpairs)
+    Ka = Vector(undef, lcells * lpairs)
+    Combos = Vector(undef, lcells * lpairs)
+    palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
+    Kav = importKav(; murine = false, retdf = true)
+    display(Kav)
+
+    for (i, pairrow) in enumerate(eachrow(pairs))
+        for (j, cell) in enumerate(cells)
+            IgGXname, IgGYname = pairrow."subclass_1", pairrow."subclass_2"
+            ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== IgGXname) .& (df."subclass_2" .== IgGYname), :]
+            values = ndf["Value"]
+            y = values
+            #y = interpolate(values)
+            x = ndf["%_1"]
+            EC50value = 0.5*maximum(y)
+            diff = y .- EC50value
+            EC50index = findmin(abs.(diff))[2]
+            Xpercent = x[EC50index]
+            Ypercent = 1 - x[EC50index]
+            pls[(j - 1) * lpairs + (i - 1) + 1] = Xpercent
+            Ka[(j - 1) * lpairs + (i - 1) + 1] = Kav[j,2^j]
+            Combos[[(j - 1) * lpairs + (i - 1) + 1]] .= "$IgGXname/$IgGYname"
+        end
+    end
+    
+    display(Ka)
+    display(Combos)
+    #sampleAxis = range(0, stop = 1, length = length(pls))
+    p1 = plot(
+        x = Ka,
+        y = pls,
+        color = Combos,
+        Geom.point,
+        Scale.x_log10,
+        Scale.y_continuous,
+        Scale.color_discrete_manual(palette[1], palette[2]),
+        Guide.xlabel("Kav"),
+        Guide.ylabel("EC50 Concentration (for IgGx)", orientation = :vertical),
+    )
+    return p1
+end
+
 
 const measuredRecepExp = Dict("FcgRIIA-131H" => 445141, "FcgRIIB-232I" => 31451, "FcgRIIIA-158V" => 657219)  # geometric mean
 
