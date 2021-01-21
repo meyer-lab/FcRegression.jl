@@ -50,10 +50,16 @@ function plotMixOriginalData()
         for (j, cell) in enumerate(cells)
             IgGXname, IgGYname = pairrow."subclass_1", pairrow."subclass_2"
             ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== IgGXname) .& (df."subclass_2" .== IgGYname), :]
+            sort!(df, ["Value", "%_1"])
+            y = ndf["Value"]
+            x = ndf["%_1"]
+            display(ndf)
+            sp = Spline1D(x, y; w=ones(length(x)), k=1, bc="nearest", s=0.0)
+            display(sp)
             pl = plot(
                 ndf,
                 x = "%_1",
-                y = "Value",
+                y = sp,
                 ymin = "ymin",
                 ymax = "ymax",
                 color = "Valency",
@@ -88,7 +94,7 @@ function mixEC50()
 
     palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
     Kav = importKav(; murine = false, retdf = true)
-    #display(Kav)
+    display(Kav)
 
     for (i, pairrow) in enumerate(eachrow(pairs))
         for (j, cell) in enumerate(cells)
@@ -96,38 +102,38 @@ function mixEC50()
             ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== IgGXname) .& (df."subclass_2" .== IgGYname), :]
             values = ndf["Value"]
             y = values
-            #y = interpolate(values)
             x = ndf["%_1"]
+            y = interpolate(y, BSpline(Linear()))
             EC50value = 0.5*maximum(y)
             diff = y .- EC50value
             EC50index = findmin(abs.(diff))[2]
             if Kav[j,(2^j)+1] < Kav[j+1,(2^j)+1]
                 PercentBinding = 1 - x[EC50index]
                 Ka[(j - 1) * lpairs + (i - 1) + 1] = Kav[j+1,(2^j)+ 1]
+                Cells[(j - 1) * lpairs + (i - 1) + 1] = string(IgGYname, " ", cells[j])
             else
                 PercentBinding = x[EC50index]
                 Ka[(j - 1) * lpairs + (i - 1) + 1] = Kav[j,(2^j)+ 1]
+                Cells[(j - 1) * lpairs + (i - 1) + 1] = string(IgGXname, " ", cells[j])
             end
             PercentMix[(j - 1) * lpairs + (i - 1) + 1] = PercentBinding
             Combos[(j - 1) * lpairs + (i - 1) + 1] = "$IgGXname/$IgGYname"
-            Cells[(j - 1) * lpairs + (i - 1) + 1] = cells[j]
         end
     end
     
-    #display(Ka)
-    #display(Combos)
-    #sampleAxis = range(0, stop = 1, length = length(pls))
+    display(Ka)
     p1 = plot(
         x = Ka,
         y = PercentMix,
         color = Combos,
         shape = Cells,
         Geom.point,
-        #Scale.x_log10,
+        style(point_size = 16pt),
+        Scale.x_log10,
         Scale.y_continuous,
         Scale.color_discrete_manual(palette[1], palette[2]),
         Guide.xlabel("Kav"),
-        Guide.ylabel("EC50 Concentration (for IgGx)", orientation = :vertical),
+        Guide.ylabel("EC50 (% Total Concentration)", orientation = :vertical),
     )
     return p1
 end
