@@ -1,3 +1,5 @@
+using Dierckx
+
 function loadMixData()
     df = DataFrame(CSV.File(joinpath(dataDir, "lux-mixture.csv"), comment = "#"))
     df = stack(df, 7:size(df)[2])
@@ -50,16 +52,16 @@ function plotMixOriginalData()
         for (j, cell) in enumerate(cells)
             IgGXname, IgGYname = pairrow."subclass_1", pairrow."subclass_2"
             ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== IgGXname) .& (df."subclass_2" .== IgGYname), :]
-            sort!(df, ["Value", "%_1"])
+            sort!(ndf, ["%_1"])
             y = ndf["Value"]
             x = ndf["%_1"]
-            display(ndf)
-            sp = Spline1D(x, y; w=ones(length(x)), k=1, bc="nearest", s=0.0)
-            display(sp)
+            sp = Spline1D(x, y)
+            x = 0:0.01:1
+            y = sp(x)
             pl = plot(
                 ndf,
-                x = "%_1",
-                y = sp,
+                x = x,
+                y = y,
                 ymin = "ymin",
                 ymax = "ymax",
                 color = "Valency",
@@ -94,16 +96,18 @@ function mixEC50()
 
     palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
     Kav = importKav(; murine = false, retdf = true)
-    display(Kav)
 
     for (i, pairrow) in enumerate(eachrow(pairs))
         for (j, cell) in enumerate(cells)
             IgGXname, IgGYname = pairrow."subclass_1", pairrow."subclass_2"
             ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== IgGXname) .& (df."subclass_2" .== IgGYname), :]
-            values = ndf["Value"]
-            y = values
+            sort!(ndf, ["%_1"])
+            y = ndf["Value"]
             x = ndf["%_1"]
-            y = interpolate(y, BSpline(Linear()))
+            sp = Spline1D(x, y)
+            x = 0:0.01:1.0
+            y = sp(x)
+            println(y)
             EC50value = 0.5*maximum(y)
             diff = y .- EC50value
             EC50index = findmin(abs.(diff))[2]
@@ -121,14 +125,13 @@ function mixEC50()
         end
     end
     
-    display(Ka)
     p1 = plot(
         x = Ka,
         y = PercentMix,
         color = Combos,
         shape = Cells,
         Geom.point,
-        style(point_size = 16pt),
+        style(point_size = 4pt),
         Scale.x_log10,
         Scale.y_continuous,
         Scale.color_discrete_manual(palette[1], palette[2]),
