@@ -47,21 +47,16 @@ function plotMixOriginalData()
     lpairs = size(pairs, 1)
     pls = Vector(undef, lcells * lpairs)
     palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
+    ymax = Dict("FcgRIIA-131H" => 1.2e4, "FcgRIIB-232I" => 4e3, "FcgRIIIA-158V" => 1.5e4)
 
     for (i, pairrow) in enumerate(eachrow(pairs))
         for (j, cell) in enumerate(cells)
             IgGXname, IgGYname = pairrow."subclass_1", pairrow."subclass_2"
             ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== IgGXname) .& (df."subclass_2" .== IgGYname), :]
-            sort!(ndf, ["%_1"])
-            y = ndf["Value"]
-            x = ndf["%_1"]
-            sp = Spline1D(x, y)
-            x = 0:0.01:1
-            y = sp(x)
             pl = plot(
                 ndf,
-                x = x,
-                y = y,
+                x = "%_1",
+                y = "Value",
                 ymin = "ymin",
                 ymax = "ymax",
                 color = "Valency",
@@ -69,7 +64,7 @@ function plotMixOriginalData()
                 Geom.line,
                 Geom.errorbar,
                 Scale.x_continuous(labels = n -> "$IgGXname $(n*100)%\n$IgGYname $(100-n*100)%"),
-                Scale.y_continuous,
+                Scale.y_continuous(; maxvalue = ymax[cell]),
                 Scale.color_discrete_manual(palette[1], palette[2]),
                 Guide.xlabel(""),
                 Guide.ylabel("RFU", orientation = :vertical),
@@ -100,14 +95,13 @@ function mixEC50()
     for (i, pairrow) in enumerate(eachrow(pairs))
         for (j, cell) in enumerate(cells)
             IgGXname, IgGYname = pairrow."subclass_1", pairrow."subclass_2"
-            ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== IgGXname) .& (df."subclass_2" .== IgGYname), :]
+            ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== IgGXname) .& (df."Valency" .== 4) .& (df."subclass_2" .== IgGYname), :]
             sort!(ndf, ["%_1"])
             y = ndf["Value"]
             x = ndf["%_1"]
             sp = Spline1D(x, y)
             x = 0:0.01:1.0
             y = sp(x)
-            println(y)
             EC50value = 0.5*maximum(y)
             diff = y .- EC50value
             EC50index = findmin(abs.(diff))[2]

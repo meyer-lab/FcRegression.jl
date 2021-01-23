@@ -15,6 +15,6 @@ function figureS1()
     p1 = mixEC50()
     draw(
         SVG("figureS1.svg", 10inch, 8inch),
-        plotGrid((1, 2), [p1]; widths = [3 3]),
+        plotGrid((1,1), [p1]; widths = [3]),
     )
 end
