@@ -125,12 +125,12 @@ function mixEC50()
         color = Combos,
         shape = Cells,
         Geom.point,
-        style(point_size = 4pt),
         Scale.x_log10,
         Scale.y_continuous,
         Scale.color_discrete_manual(palette[1], palette[2]),
         Guide.xlabel("Kav"),
         Guide.ylabel("EC50 (% Total Concentration)", orientation = :vertical),
+        style(point_size = 5px, key_position = :right),
     )
     return p1
 end

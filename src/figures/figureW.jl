@@ -180,21 +180,14 @@ function plotSynergy(L0, f; dataType = nothing, fit = nothing, Cellidx = nothing
     return pl
 end
 
-    function plotEC50(L0, f; dataType = nothing, fit = nothing, Cellidx = nothing, Recepidx = nothing, Rbound = false)
+    function plotEC50(L0, f, Cellidx, Recepidx; dataType = nothing, fit = nothing, Rbound = false)
         Kav_df = importKav(; murine = true, IgG2bFucose = true, c1q = false, retdf = true)
         Kav = Matrix{Float64}(Kav_df[!, murineFcgR])
-        display(Kav)
     
-        if Recepidx != nothing # look at only one receptor
-            FcExpr = zeros(length(murineFcgR))
-            FcExpr[Recepidx] = importRtot(; murine = true)[Recepidx, Cellidx]
-            ylabel = "Activity"
-        elseif Cellidx != nothing # look at only one cell FcExpr
-            FcExpr = importRtot(; murine = true)[:, Cellidx]
-            ylabel = "Activity"
-        else
-            FcExpr = importRtot(; murine = true)
-        end
+        FcExpr = zeros(length(murineFcgR))
+        FcExpr[Recepidx] = importRtot(; murine = true)[Recepidx, Cellidx]
+        ylabel = "Activity"
+        RecepKav = Kav[:, Recepidx]
         if fit == nothing
             title = "ActI not Fit"
         else
@@ -204,8 +197,7 @@ end
             title = "$title Rbound"
         end
     
-        RecepKav = Kav[:, Recepidx]
-        M, AffM = EC50Grid(L0, f, FcExpr, Kav, RecepKav; fit = fit, Rbound = Rbound)
+        M, AffM, Index = EC50Grid(L0, f, FcExpr, Kav, RecepKav; fit = fit, Rbound = Rbound)
 
         flat = collect(Iterators.flatten(AffM))
         Affinity = zeros(length(receptorNamesB1))
@@ -213,6 +205,17 @@ end
         Affinity[5:7] = flat[8:10]
         Affinity[8:9] = flat[14:15]
         Affinity[10] = flat[20]
+
+        flat = collect(Iterators.flatten(Index))
+        idx = Array{Int64}(undef, length(receptorNamesB1))
+        idx[1:4] = flat[2:5]
+        idx[5:7] = flat[8:10]
+        idx[8:9] = flat[14:15]
+        idx[10] = flat[20]
+        Ig = Vector(undef, 10)
+        for i = 1:10
+            Ig[i] = (murineIgGFucose[idx[i]])
+        end
     
         h = collect(Iterators.flatten(M))
         S = zeros(length(receptorNamesB1))
@@ -222,6 +225,7 @@ end
         S[10] = h[20]
         S = DataFrame(Tables.table(S', header = receptorNamesB1))
         S = stack(S)
+        display(S)
     
         pl = plot(
             S,
@@ -229,10 +233,12 @@ end
             x = Affinity,
             Geom.point,
             color = :variable,
+            shape = Ig,
             Guide.colorkey(),
-            Guide.xlabel("Actual effect"),
-            Guide.ylabel("Fitted effect"),
-            Guide.title("Actual vs fitted effect for $dataType"),
+            Scale.x_log10,
+            Guide.xlabel("Kav"),
+            Guide.ylabel("Predicted EC50 (% Mixture Concentration"),
+            Guide.title("EC50 vs Kav: $(cellTypes[Cellidx]) $(murineFcgR[Recepidx]) $dataType"),
             style(point_size = 5px, key_position = :right),
         )
         return pl
