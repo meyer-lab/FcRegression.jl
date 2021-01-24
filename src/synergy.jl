@@ -115,7 +115,6 @@ function EC50(
     diff = output .- EC50value
     EC50index = findmin(abs.(diff))[2]
     Xpercent = sampleAxis[EC50index]
-
     return Xpercent
 end
 
@@ -141,7 +140,6 @@ function EC50Grid(L0, f, FcExpr, Kav, RecepKav; fit = nothing, Rbound = false)
         end
     end
 
-    display(RecepKav)
     return M, Affinity, Idx
 end
 

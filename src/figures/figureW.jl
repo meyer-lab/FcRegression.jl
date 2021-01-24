@@ -225,7 +225,6 @@ end
         S[10] = h[20]
         S = DataFrame(Tables.table(S', header = receptorNamesB1))
         S = stack(S)
-        display(S)
     
         pl = plot(
             S,
