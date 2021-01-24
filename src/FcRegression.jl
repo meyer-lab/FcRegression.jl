@@ -4,6 +4,7 @@ import Distances
 using polyBindingModel
 using Optim
 using DataFrames
+using Dierckx
 
 include("figures/figureCommon.jl")
 
