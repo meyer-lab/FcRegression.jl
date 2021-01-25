@@ -1,4 +1,5 @@
 using Dierckx
+using MultivariateStats
 
 function loadMixData()
     df = DataFrame(CSV.File(joinpath(dataDir, "lux-mixture.csv"), comment = "#"))
@@ -301,4 +302,19 @@ function plotMixtures()
     draw(SVG("mix_global_log.svg", 2500px, 1000px), makeMixturePairSubPlots(df2; logscale = true))
     draw(SVG("mix_cell_split_linear.svg", 2500px, 1000px), makeMixturePairSubPlots(df5; logscale = false))
     draw(SVG("mix_cell_split_log.svg", 2500px, 1000px), makeMixturePairSubPlots(df6; logscale = true))
+end
+
+
+function PCAData()
+    df = loadMixData()
+    exps = ["6/23/20", "6/30/20", "7/14/20", "7/23/20", "9/11/20"]
+    df = df[in(exps).(df."Experiment"), :]
+    widedf = unstack(df, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"], "Experiment", "Value")
+    widedf = coalesce.(widedf, 0)
+    mat = transpose(Matrix(widedf[!, exps]))
+    M = fit(PCA, mat; maxoutdim=2)
+    matPCs = transpose(MultivariateStats.transform(M, mat))
+    widedf[!, "PC1"] = matPCs[:, 1]
+    widedf[!, "PC2"] = matPCs[:, 2]
+    return plot(widedf, x="PC1", y="PC2", color="subclass_1")
 end
