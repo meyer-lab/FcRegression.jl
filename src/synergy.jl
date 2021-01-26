@@ -98,20 +98,12 @@ function synergyGrid(L0, f, FcExpr, Kav; fit = nothing, Rbound = false)
 end
 
 """Calculate EC50"""
-function EC50(
-    IgGXidx::Int64,
-    IgGYidx::Int64,
-    L0 = 1e-9,
-    f = 4,
-    FcExpr = nothing;
-    fit = nothing,
-    Rbound = true,
-    )
+function EC50(IgGXidx::Int64, IgGYidx::Int64, L0 = 1e-9, f = 4, FcExpr = nothing; fit = nothing, Rbound = true)
 
     D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; fit = fit, Rbound = Rbound, nPoints = 100)
     sampleAxis = range(0, stop = 1, length = length(output))
 
-    EC50value = 0.5*maximum(output)
+    EC50value = 0.5 * maximum(output)
     diff = output .- EC50value
     EC50index = findmin(abs.(diff))[2]
     Xpercent = sampleAxis[EC50index]
