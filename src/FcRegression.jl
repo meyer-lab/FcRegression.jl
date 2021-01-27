@@ -34,7 +34,6 @@ function figureAll()
 
     figureS1()
     figureS2()
-    figureS3()
 end
 
 export polyfc, polyfc_ActV
