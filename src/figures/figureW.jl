@@ -179,3 +179,61 @@ function plotSynergy(L0, f; dataType = nothing, fit = nothing, Cellidx = nothing
     )
     return pl
 end
+
+function plotEC50(L0, f; dataType = nothing, fit = nothing, Cellidx = nothing, Recepidx = nothing, Rbound = false)
+    Kav_df = importKav(; murine = true, IgG2bFucose = true, c1q = false, retdf = true)
+    Kav = Matrix{Float64}(Kav_df[!, murineFcgR])
+    display(Kav)
+
+    if Recepidx != nothing # look at only one receptor
+        FcExpr = zeros(length(murineFcgR))
+        FcExpr[Recepidx] = importRtot(; murine = true)[Recepidx, Cellidx]
+        ylabel = "Activity"
+    elseif Cellidx != nothing # look at only one cell FcExpr
+        FcExpr = importRtot(; murine = true)[:, Cellidx]
+        ylabel = "Activity"
+    else
+        FcExpr = importRtot(; murine = true)
+    end
+    if fit == nothing
+        title = "ActI not Fit"
+    else
+        title = "$dataType"
+    end
+    if Rbound
+        title = "$title Rbound"
+    end
+
+    RecepKav = Kav[:, Recepidx]
+    M, AffM = EC50Grid(L0, f, FcExpr, Kav, RecepKav; fit = fit, Rbound = Rbound)
+
+    flat = collect(Iterators.flatten(AffM))
+    Affinity = zeros(length(receptorNamesB1))
+    Affinity[1:4] = flat[2:5]
+    Affinity[5:7] = flat[8:10]
+    Affinity[8:9] = flat[14:15]
+    Affinity[10] = flat[20]
+
+    h = collect(Iterators.flatten(M))
+    S = zeros(length(receptorNamesB1))
+    S[1:4] = h[2:5]
+    S[5:7] = h[8:10]
+    S[8:9] = h[14:15]
+    S[10] = h[20]
+    S = DataFrame(Tables.table(S', header = receptorNamesB1))
+    S = stack(S)
+
+    pl = plot(
+        S,
+        y = :value,
+        x = Affinity,
+        Geom.point,
+        color = :variable,
+        Guide.colorkey(),
+        Guide.xlabel("Actual effect"),
+        Guide.ylabel("Fitted effect"),
+        Guide.title("Actual vs fitted effect for $dataType"),
+        style(point_size = 5px, key_position = :right),
+    )
+    return pl
+end
