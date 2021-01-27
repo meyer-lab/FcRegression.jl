@@ -97,54 +97,6 @@ function synergyGrid(L0, f, FcExpr, Kav; fit = nothing, Rbound = false)
     return M
 end
 
-"""Calculate EC50"""
-function EC50(
-    IgGXidx::Int64,
-    IgGYidx::Int64,
-    L0 = 1e-9,
-    f = 4,
-    FcExpr = nothing;
-    fit = nothing,
-    Rbound = true,
-    )
-
-    D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; fit = fit, Rbound = Rbound, nPoints = 100)
-    sampleAxis = range(0, stop = 1, length = length(output))
-
-    EC50value = 0.5*maximum(output)
-    diff = output .- EC50value
-    EC50index = findmin(abs.(diff))[2]
-    Xpercent = sampleAxis[EC50index]
-
-    return Xpercent
-end
-
-""" Calculate the EC50 for all pairs of IgG """
-function EC50Grid(L0, f, FcExpr, Kav, RecepKav; fit = nothing, Rbound = false)
-    M = zeros(size(Kav)[1], size(Kav)[1])
-    Affinity = zeros(size(Kav)[1], size(Kav)[1])
-    Idx = Array{Int64}(undef, size(Kav)[1], size(Kav)[1])
-    for i = 1:size(Kav)[1]
-        for j = 1:(i - 1)
-            xPercent = EC50(i, j, L0, f, FcExpr; fit = fit, Rbound = Rbound)
-            if xPercent > 0.5
-                EC = xPercent
-                Aff = RecepKav[i]
-                Idx[i,j] = i
-            else
-                EC = 1 - xPercent
-                Aff = RecepKav[j]
-                Idx[i,j] = j
-            end
-            M[i, j] = EC
-            Affinity[i, j] = Aff
-        end
-    end
-
-    return M, Affinity, Idx
-end
-
-
 function plotDepletionSynergy(
     IgGXidx::Int64,
     IgGYidx::Int64;
