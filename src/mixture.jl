@@ -20,7 +20,7 @@ function loadMixData()
     return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
 end
 
-function mixNormalExpBatch(df)
+function mixNormalExpBatch(df=loadMixData())
     """ Normalize data without knowing predictions, only by experiment"""
     meanval = combine(groupby(df, "Experiment"), "Value" => geocmean)
     df = innerjoin(df, meanval, on = "Experiment")
@@ -40,7 +40,7 @@ function mixNormalExpBatch(df)
     return df
 end
 
-function plotMixOriginalData(df)
+function plotMixOriginalData(df=loadMixData())
     df = mixNormalExpBatch(df)
     cells = unique(df."Cell")
     pairs = unique(df[!, ["subclass_1", "subclass_2"]])
