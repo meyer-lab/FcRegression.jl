@@ -22,8 +22,6 @@ include("figures/figure3.jl")
 include("figures/figure4.jl")
 include("figures/figureS1.jl")
 include("figures/figureS2.jl")
-include("figures/figureS3.jl")
-
 
 
 function figureAll()
@@ -36,7 +34,6 @@ function figureAll()
 
     figureS1()
     figureS2()
-    figureS3()
 end
 
 export polyfc, polyfc_ActV
