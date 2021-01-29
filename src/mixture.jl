@@ -20,7 +20,7 @@ function loadMixData()
     return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
 end
 
-function mixNormalExpBatch(df=loadMixData())
+function mixNormalExpBatch(df = loadMixData())
     """ Normalize data without knowing predictions, only by experiment"""
     meanval = combine(groupby(df, "Experiment"), "Value" => geocmean)
     df = innerjoin(df, meanval, on = "Experiment")
@@ -40,7 +40,7 @@ function mixNormalExpBatch(df=loadMixData())
     return df
 end
 
-function plotMixOriginalData(df=loadMixData())
+function plotMixOriginalData(df = loadMixData())
     df = mixNormalExpBatch(df)
     cells = unique(df."Cell")
     pairs = unique(df[!, ["subclass_1", "subclass_2"]])
@@ -119,7 +119,7 @@ function mixEC50()
             Combos[(j - 1) * lpairs + (i - 1) + 1] = "$IgGXname/$IgGYname"
         end
     end
-  
+
     p1 = plot(
         x = Ka,
         y = PercentMix,
@@ -317,10 +317,10 @@ function PCAData(; cutoff = 0.9)
 
         # Perform PCA
         mat = Matrix(widedf[!, exps])
-        mat[mat .<1.0] .= 1.0
-        M = fit(PCA, mat; maxoutdim=2)
+        mat[mat .< 1.0] .= 1.0
+        M = fit(PCA, mat; maxoutdim = 2)
         recon = reconstruct(M, MultivariateStats.transform(M, mat))
-        error = ((recon .- mat).^2) ./ mat
+        error = ((recon .- mat) .^ 2) ./ mat
 
         # Impute by SVD
         matmiss = convert(Array{Union{Float64, Missing}}, mat)
