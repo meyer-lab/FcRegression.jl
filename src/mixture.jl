@@ -318,15 +318,16 @@ function PCAData(; cutoff = 0.9)
         # Perform PCA
         mat = Matrix(widedf[!, exps])
         mat[mat .< 1.0] .= 1.0
+        mat = log.(mat)
         M = fit(PCA, mat; maxoutdim = 2)
         recon = reconstruct(M, MultivariateStats.transform(M, mat))
-        error = ((recon .- mat) .^ 2) ./ mat
+        error = ((recon .- mat) .^ 2)
 
         # Impute by SVD
         matmiss = convert(Array{Union{Float64, Missing}}, mat)
         matmiss[error .> quantile(reshape(error, :), [cutoff])] .= missing
         Impute.impute!(matmiss, Impute.SVD())
-        widedf[!, exps] .= matmiss
+        widedf[!, exps] .= exp.(matmiss)
 
         ndf = stack(widedf, exps)
         rename!(ndf, "variable" => "Experiment")
