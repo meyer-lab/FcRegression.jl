@@ -1,13 +1,13 @@
-function figureW(dataType; L0 = 1e-9, f = 4, IgGX = 2, IgGY = 3, legend = true, Cellidx = nothing, Recepidx = nothing, Rbound = false)
+function figureW(dataType; L0 = 1e-9, f = 4, IgGX = 2, IgGY = 3, murine = true, legend = true, Cellidx = nothing, Recepidx = nothing, Rbound = false)
     df = importDepletion(dataType)
-    res, odf, Cell_df, ActI_df = regressionResult(dataType; L0 = L0, f = f)
+    res, odf, Cell_df, ActI_df = regressionResult(dataType; L0 = L0, f = f, murine = murine)
 
     p1 = plotActualvFit(odf, dataType; legend = legend)
     p2 = plotActualvPredict(odf, dataType; legend = legend)
     p3 = plotCellTypeEffects(Cell_df, dataType; legend = legend)
     p4 = plotReceptorActivities(ActI_df, dataType)
     p5 = plotDepletionSynergy(IgGX, IgGY; L0 = L0, f = f, dataType = dataType, fit = res, Cellidx = Cellidx, Recepidx = Recepidx, Rbound = Rbound)
-    p6 = plotSynergy(L0, f; dataType = dataType, fit = res, Cellidx = Cellidx, Recepidx = Recepidx, Rbound = Rbound)
+    p6 = plotSynergy(L0, f; dataType = dataType, fit = res, murine = murine, Cellidx = Cellidx, Recepidx = Recepidx, Rbound = Rbound)
 
     return p1, p2, p3, p4, p5, p6
 end
@@ -130,7 +130,7 @@ const receptorNamesB1 =
         "IgG3/2b-Fucose",
     ])
 
-function plotSynergy(L0, f; dataType = nothing, fit = nothing, Cellidx = nothing, Recepidx = nothing, Rbound = false, quantity = nothing)
+function plotSynergy(L0, f; dataType = nothing, fit = nothing, murine = true, Cellidx = nothing, Recepidx = nothing, Rbound = false, quantity = nothing)
     Kav_df = importKav(; murine = true, IgG2bFucose = true, c1q = false, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murineFcgR])
 
@@ -153,7 +153,7 @@ function plotSynergy(L0, f; dataType = nothing, fit = nothing, Cellidx = nothing
         title = "$title Rbound"
     end
 
-    M = synergyGrid(L0, f, FcExpr, Kav; fit = fit, Rbound = Rbound)
+    M = synergyGrid(L0, f, FcExpr, Kav; fit = fit, Rbound = Rbound, murine = murine)
 
     h = collect(Iterators.flatten(M))
     S = zeros(length(receptorNamesB1))
