@@ -37,11 +37,4 @@
         @test(arr_RTF[d["FcgRIIB-232T"], :] == arr_HZF[d["FcgRIIB-232I"], :] .+ arr_HZF[d["FcgRIIB-232T"], :])
     end
 
-    @testset "Depletion data can be imported" begin
-        for dataType in ["ITP", "melanoma"]
-            df = FcRegression.importDepletion(dataType)
-            @test sum(Matrix(ismissing.(df))) == 0
-        end
-    end
-
 end

@@ -7,3 +7,6 @@ function figure1()
     draw(SVG("figure1B.svg", 2500px, 1000px), plotMixOriginalData(PCAData(; cutoff = 0.9)))
     draw(SVG("figure1C.svg", 2500px, 1000px), plotMixOriginalData(PCAData(; cutoff = 0.8)))
 end
+
+
+""
