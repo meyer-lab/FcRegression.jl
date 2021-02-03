@@ -1,5 +1,5 @@
 import MLBase.LOOCV
-import Statistics: mean, quantile
+import Statistics: mean, quantile, std
 import Distributions: cdf, Exponential
 import StatsBase: sample, mode
 using NonNegLeastSquares
