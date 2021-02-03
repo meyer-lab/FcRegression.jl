@@ -13,6 +13,7 @@ include("dataHelpers.jl")
 include("mixture.jl")
 include("regression.jl")
 include("synergy.jl")
+include("ExtraFunctions")
 
 include("figures/figureW.jl")
 
