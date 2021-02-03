@@ -130,7 +130,17 @@ const receptorNamesB1 =
         "IgG3/2b-Fucose",
     ])
 
-function plotSynergy(L0, f; dataType = nothing, fit = nothing, murine = true, Cellidx = nothing, Recepidx = nothing, Rbound = false, quantity = nothing)
+function plotSynergy(
+    L0,
+    f;
+    dataType = nothing,
+    fit = nothing,
+    murine = true,
+    Cellidx = nothing,
+    Recepidx = nothing,
+    Rbound = false,
+    quantity = nothing,
+)
     Kav_df = importKav(; murine = true, IgG2bFucose = true, c1q = false, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murineFcgR])
 

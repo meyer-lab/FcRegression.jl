@@ -1,18 +1,10 @@
 """Calculate EC50"""
-function EC50(
-    IgGXidx::Int64,
-    IgGYidx::Int64,
-    L0 = 1e-9,
-    f = 4,
-    FcExpr = nothing;
-    fit = nothing,
-    Rbound = true,
-    murine = true)
+function EC50(IgGXidx::Int64, IgGYidx::Int64, L0 = 1e-9, f = 4, FcExpr = nothing; fit = nothing, Rbound = true, murine = true)
 
     D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; murine = murine, fit = fit, Rbound = Rbound, nPoints = 100)
     sampleAxis = range(0, stop = 1, length = length(output))
 
-    EC50value = 0.5*maximum(output)
+    EC50value = 0.5 * maximum(output)
     diff = output .- EC50value
     EC50index = findmin(abs.(diff))[2]
     Xpercent = sampleAxis[EC50index]
@@ -31,11 +23,11 @@ function EC50Grid(L0, f, FcExpr, Kav, RecepKav; murine = true, fit = nothing, Rb
             if xPercent > 0.5
                 EC = xPercent
                 Aff = RecepKav[i]
-                Idx[i,j] = i
+                Idx[i, j] = i
             else
                 EC = 1 - xPercent
                 Aff = RecepKav[j]
-                Idx[i,j] = j
+                Idx[i, j] = j
             end
             M[i, j] = EC
             Affinity[i, j] = Aff
