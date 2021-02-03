@@ -104,7 +104,7 @@ function plotEC50(L0, f, Cellidx, Recepidx; murine = true, dataType = nothing, f
         Scale.x_log10,
         Guide.xlabel("Kav"),
         Guide.ylabel("Predicted EC50 (% Mixture Concentration"),
-        Guide.title("EC50 vs Kav: $(cellTypes[Cellidx]) $(murineFcgR[Recepidx]) $dataType"),
+        Guide.title("EC50 vs Kav: $(murineCellTypes[Cellidx]) $(murineFcgR[Recepidx]) $dataType"),
         style(point_size = 5px, key_position = :right),
     )
     return pl
