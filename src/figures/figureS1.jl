@@ -12,7 +12,7 @@ function figureS1()
 
     res, odf, Cell_df, ActI_df = regressionResult(dataType; L0 = L0, f = f, murine = murine)
 
-    p1 = plotEC50(L0, f; dataType = dataType, fit = res, Cellidx = 6, Recepidx = 2, Rbound = true)
+    p1 = plotEC50(L0, f, 6, 2; dataType = dataType, fit = res, Rbound = true)
     #p1 = mixEC50()
     draw(
         SVG("figureS1.svg", 10inch, 8inch),
