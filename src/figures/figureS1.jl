@@ -8,8 +8,9 @@ function figureS1()
     df = importDepletion(dataType)
     L0 = 1e-9
     f = 4
+    murine = true
 
-    res, odf, Cell_df, ActI_df = regressionResult(dataType; L0 = L0, f = f)
+    res, odf, Cell_df, ActI_df = regressionResult(dataType; L0 = L0, f = f, murine = murine)
 
     p1 = plotEC50(L0, f; dataType = dataType, fit = res, Cellidx = 6, Recepidx = 2, Rbound = true)
     #p1 = mixEC50()
