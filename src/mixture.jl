@@ -223,14 +223,9 @@ end
 
 function MixtureCellSeparateFit(df; logscale = false)
     """ Split the cells/receptors and fit valency/exp conv-fac by themselves """
-    ndf = nothing
+    ndf = DataFrame()
     for cell in unique(df."Cell")
-        xdf = MixtureFit(df[df."Cell" .== cell, :]; logscale = logscale)["df"]
-        if ndf == nothing
-            ndf = xdf
-        else
-            append!(ndf, xdf)
-        end
+        append!(ndf, MixtureFit(df[df."Cell" .== cell, :]; logscale = logscale)["df"])
     end
     return ndf
 end
