@@ -3,7 +3,7 @@
 function figure2()
     setGadflyTheme()
 
-    df = MixtureCellSeparateFit(loadMixData(); logscale = false)
+    df = MixtureCellSeparateFit(loadMixData(); logscale = true)
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
 
     pl = plot(
