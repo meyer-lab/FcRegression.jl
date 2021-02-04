@@ -34,7 +34,7 @@ function EC50Grid(L0, f, FcExpr, Kav, RecepKav; murine = true, fit = nothing, Rb
         end
     end
 
-    display(RecepKav)
+    #display(RecepKav)
     return M, Affinity, Idx
 end
 
@@ -83,7 +83,7 @@ function plotEC50(L0, f, Cellidx, Recepidx; murine = true, dataType = nothing, f
     S[10] = h[20]
     S = DataFrame(Tables.table(S', header = receptorNamesB1))
     S = stack(S)
-    display(S)
+    #display(S)
 
     pl = plot(
         S,
