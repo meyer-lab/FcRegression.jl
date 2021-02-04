@@ -1,26 +1,66 @@
-function figureW(dataType; L0 = 1e-9, f = 4, IgGX = 2, IgGY = 3, murine = true, legend = true, Cellidx = nothing, Recepidx = nothing, Rbound = false)
-    df = importDepletion(dataType)
-    res, odf, Cell_df, ActI_df = regressionResult(dataType; L0 = L0, f = f, murine = murine)
+function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, legend = true, Cellidx = nothing, Recepidx = nothing, Rbound = false)
 
-    p1 = plotActualvFit(odf, dataType; legend = legend)
-    p2 = plotActualvPredict(odf, dataType; legend = legend)
+    if murine
+        df = importDepletion(dataType)
+        if dataType == "HIV"
+            color = "Label"
+        elseif dataType == "Bcell"
+            color = "Condition"
+        else
+            color = "Background"
+        end
+        shape = "Condition"
+    else
+        df = importHumanized(dataType)
+        color = "Genotype"
+        shape = (dataType == "ITP") ? "Condition" : "Concentration"
+    end
+
+    res, odf, Cell_df, ActI_df = regressionResult(dataType; L0 = L0, f = f, murine = murine)
+    @assert all(in(names(odf)).([color, shape]))
+
+
+    p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
+    p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
     p3 = plotCellTypeEffects(Cell_df, dataType; legend = legend)
     p4 = plotReceptorActivities(ActI_df, dataType)
-    p5 = plotDepletionSynergy(IgGX, IgGY; L0 = L0, f = f, dataType = dataType, fit = res, Cellidx = Cellidx, Recepidx = Recepidx, Rbound = Rbound)
-    p6 = plotSynergy(L0, f; dataType = dataType, fit = res, murine = murine, Cellidx = Cellidx, Recepidx = Recepidx, Rbound = Rbound)
+    p5 = plotDepletionSynergy(
+        IgGX,
+        IgGY;
+        L0 = L0,
+        f = f,
+        murine = murine,
+        neutralization = ("Neutralization" in names(df)),
+        c1q = ("C1q" in Cell_df.Component),
+        dataType = dataType,
+        fit = res,
+        Cellidx = Cellidx,
+        Recepidx = Recepidx,
+    )
+    #p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
+    p6 = plotSynergy(
+        L0,
+        f;
+        murine = murine,
+        fit = res,
+        Cellidx = Cellidx,
+        Recepidx = Recepidx,
+        Rbound = Rbound,
+        c1q = ("C1q" in Cell_df.Component),
+        neutralization = ("Neutralization" in names(df)),
+    )
 
     return p1, p2, p3, p4, p5, p6
 end
 
-
-function plotActualvFit(odf, dataType; legend = true)
+function plotActualvFit(odf, dataType, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}; legend = true)
     pl = plot(
         odf,
         x = "Y",
         y = "Fitted",
         Geom.point,
-        color = "Background",
-        shape = "Condition",
+        color = colorL,
+        shape = shapeL,
         Guide.colorkey(),
         Guide.shapekey(),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
@@ -34,14 +74,14 @@ function plotActualvFit(odf, dataType; legend = true)
 end
 
 
-function plotActualvPredict(odf, dataType; legend = true)
+function plotActualvPredict(odf, dataType, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}; legend = true)
     pl = plot(
         odf,
         x = "Y",
         y = "LOOPredict",
         Geom.point,
-        color = "Background",
-        shape = "Condition",
+        color = colorL,
+        shape = shapeL,
         Guide.colorkey(),
         Guide.shapekey(),
         Geom.abline(color = "red"),
@@ -86,14 +126,14 @@ function plotReceptorActivities(ActI_df, dataType)
 end
 
 
-function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax)
+function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
     concs = exp10.(range(clmin, stop = clmax, length = clmax - clmin + 1))
     valencies = [2:vmax;]
     minima = zeros(length(concs), length(valencies))
     for (i, L0) in enumerate(concs)
         for (j, v) in enumerate(valencies)
-            Xfc, Xdf, Y = modelPred(df; L0 = L0, f = v)
-            fit = fitRegression(Xfc, Xdf, Y)
+            Xfc, Xdf, Y = modelPred(df; L0 = L0, f = v, murine = murine)
+            fit = fitRegression(Xfc, Xdf, Y; murine = murine)
             minima[i, j] = fit.residual
         end
     end
@@ -108,7 +148,7 @@ function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax)
         minima,
         Guide.xlabel("Valencies"),
         Guide.ylabel("L<sub>0</sub> Concentrations"),
-        Guide.title("L<sub>0</sub> and f exploration in murine $dataType data"),
+        Guide.title("L<sub>0</sub> and f exploration in $(murine ? "murine" : "human") $dataType data"),
         Scale.x_discrete(labels = i -> valencies[i]),
         Scale.y_discrete(labels = i -> concs[i]),
         Scale.color_continuous(minvalue = llim, maxvalue = ulim),
@@ -130,32 +170,36 @@ const receptorNamesB1 =
         "IgG3/2b-Fucose",
     ])
 
+
 function plotSynergy(
     L0,
     f;
-    dataType = nothing,
-    fit = nothing,
     murine = true,
+    fit = nothing,
+    dataType = "",
     Cellidx = nothing,
     Recepidx = nothing,
     Rbound = false,
     quantity = nothing,
+    c1q = false,
+    neutralization = false,
 )
-    Kav_df = importKav(; murine = true, IgG2bFucose = true, c1q = false, retdf = true)
-    Kav = Matrix{Float64}(Kav_df[!, murineFcgR])
+    Receps = murine ? murineFcgR : humanFcgR
+    Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
+    Kav = Matrix{Float64}(Kav_df[!, Receps])
 
     if Recepidx != nothing # look at only one receptor
-        FcExpr = zeros(length(murineFcgR))
-        FcExpr[Recepidx] = importRtot(; murine = true)[Recepidx, Cellidx]
+        FcExpr = zeros(length(Receps))
+        FcExpr[Recepidx] = importRtot(murine = murine)[Recepidx, Cellidx]
         ylabel = "Activity"
     elseif Cellidx != nothing # look at only one cell FcExpr
-        FcExpr = importRtot(; murine = true)[:, Cellidx]
+        FcExpr = importRtot(murine = murine)[:, Cellidx]
         ylabel = "Activity"
     else
-        FcExpr = importRtot(; murine = true)
+        FcExpr = importRtot(; murine = murine)
     end
     if fit == nothing
-        title = "ActI not Fit"
+        title = "Not fit"
     else
         title = "$dataType"
     end
@@ -163,16 +207,25 @@ function plotSynergy(
         title = "$title Rbound"
     end
 
-    M = synergyGrid(L0, f, FcExpr, Kav; fit = fit, Rbound = Rbound, murine = murine)
+    M = synergyGrid(L0, f, FcExpr, Kav; murine = murine, fit = fit, Rbound = Rbound, c1q = c1q, neutralization = neutralization)
 
     h = collect(Iterators.flatten(M))
-    S = zeros(length(receptorNamesB1))
-    S[1:4] = h[2:5]
-    S[5:7] = h[8:10]
-    S[8:9] = h[14:15]
-    S[10] = h[20]
-    S = DataFrame(Tables.table(S', header = receptorNamesB1))
-
+    if murine
+        S = zeros(length(receptorNamesB1))
+        S[1:4] = h[2:5]
+        S[5:7] = h[8:10]
+        S[8:9] = h[14:15]
+        S[10] = h[20]
+        S = convert(DataFrame, S')
+        rename!(S, receptorNamesB1)
+    else
+        S = zeros(length(humanreceptorNamesB1))
+        S[1:3] = h[2:4]
+        S[4:5] = h[7:8]
+        S[6] = h[12]
+        S = convert(DataFrame, S')
+        rename!(S, humanreceptorNamesB1)
+    end
 
     S = stack(S)
 
