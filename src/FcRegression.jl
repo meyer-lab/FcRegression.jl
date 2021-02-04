@@ -24,6 +24,11 @@ include("figures/figure4.jl")
 include("figures/figureS1.jl")
 include("figures/figureS2.jl")
 
+include("figures/extra/figureS.jl")
+include("figures/extra/figureCelltypeSynergy.jl")
+include("figures/extra/figureDiseaseSpecific.jl")
+include("figures/extra/figureDiseaseSynergy.jl")
+
 
 function figureAll()
     setGadflyTheme()
