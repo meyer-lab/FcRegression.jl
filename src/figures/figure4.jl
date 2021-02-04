@@ -22,6 +22,6 @@ function figure4()
 
     draw(
         SVG("figure4.svg", 10inch, 8inch),
-        plotGrid((2, 3), [ITP_Dep ITP_Kupffer_Act ITP_Kupffer_Bound ITP_Dep_All ITP_Kupffer_Act_All ITP_Kupffer_Bound_All])
+        plotGrid((2, 3), [ITP_Dep ITP_Kupffer_Act ITP_Kupffer_Bound ITP_Dep_All ITP_Kupffer_Act_All ITP_Kupffer_Bound_All]),
     )
 end
