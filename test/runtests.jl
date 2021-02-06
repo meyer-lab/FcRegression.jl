@@ -3,7 +3,6 @@ using Profile
 using FcRegression
 using Random
 using LinearAlgebra
-using ForwardDiff
 using DataFrames
 
 include("testDataHelpers.jl")
