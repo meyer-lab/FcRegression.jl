@@ -91,7 +91,7 @@ function plotEC50(L0, f, Cellidx, Recepidx; murine = true, dataType = nothing, f
         Guide.colorkey(),
         Scale.x_log10,
         Guide.xlabel("Kav"),
-        Guide.ylabel("Predicted EC50 (% Mixture Concentration"),
+        Guide.ylabel("Predicted EC50 Rbound"),
         Guide.title("EC50 vs Kav: $(murineCellTypes[Cellidx]) $(murineFcgR[Recepidx]) $dataType"),
         style(point_size = 5px, key_position = :right),
     )
