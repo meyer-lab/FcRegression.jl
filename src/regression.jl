@@ -140,7 +140,7 @@ function fitRegression(Xfc, Xdf, Y; murine::Bool = true, upper = nothing, lower 
     @assert all(lower .<= upper)
 
     func = x -> nnls_fit(Xfc, extra, Y, x)[2]
-    opt = optimize(func, lower, upper, init)
+    opt = optimize(func, lower, upper, init; autodiff = :forward)
     ActI = opt.minimizer
 
     return fitRegression_woActI(Xfc, Xdf, Y, ActI)
