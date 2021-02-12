@@ -84,7 +84,7 @@ function mixEC50()
     lcells = length(cells)
     lpairs = size(pairs, 1)
 
-    PercentMix = Vector(undef, lcells * lpairs)
+    Bound = Vector(undef, lcells * lpairs)
     Ka = Vector(undef, lcells * lpairs)
     Combos = Vector(undef, lcells * lpairs)
     Combos = Vector(undef, lcells * lpairs)
@@ -105,24 +105,22 @@ function mixEC50()
             y = sp(x)
             EC50value = 0.5 * maximum(y)
             diff = y .- EC50value
-            EC50index = findmin(abs.(diff))[2]
+            Value, EC50index = findmin(abs.(diff))
             if Kav[j, (2^j) + 1] < Kav[j + 1, (2^j) + 1]
-                PercentBinding = 1 - x[EC50index]
                 Ka[(j - 1) * lpairs + (i - 1) + 1] = Kav[j + 1, (2^j) + 1]
                 Cells[(j - 1) * lpairs + (i - 1) + 1] = string(IgGYname, " ", cells[j])
             else
-                PercentBinding = x[EC50index]
                 Ka[(j - 1) * lpairs + (i - 1) + 1] = Kav[j, (2^j) + 1]
                 Cells[(j - 1) * lpairs + (i - 1) + 1] = string(IgGXname, " ", cells[j])
             end
-            PercentMix[(j - 1) * lpairs + (i - 1) + 1] = PercentBinding
+            Bound[(j - 1) * lpairs + (i - 1) + 1] = Value
             Combos[(j - 1) * lpairs + (i - 1) + 1] = "$IgGXname/$IgGYname"
         end
     end
 
     p1 = plot(
         x = Ka,
-        y = PercentMix,
+        y = Bound,
         color = Combos,
         shape = Cells,
         Geom.point,
@@ -130,7 +128,7 @@ function mixEC50()
         Scale.y_continuous,
         Scale.color_discrete_manual(palette[1], palette[2]),
         Guide.xlabel("Kav"),
-        Guide.ylabel("EC50 (% Total Concentration)", orientation = :vertical),
+        Guide.ylabel("EC50 Rbound", orientation = :vertical),
         style(point_size = 5px, key_position = :right),
     )
     return p1

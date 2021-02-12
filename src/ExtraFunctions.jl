@@ -6,44 +6,40 @@ function EC50(IgGXidx::Int64, IgGYidx::Int64, L0 = 1e-9, f = 4, FcExpr = nothing
 
     EC50value = 0.5 * (maximum(output) - minimum(output))
     diff = output .- EC50value
-    EC50index = findmin(abs.(diff))[2]
+    Value, EC50index = findmin(abs.(diff))
     Xpercent = sampleAxis[EC50index]
 
-    return Xpercent
+    return Xpercent, Value
 end
 
 """ Calculate the EC50 for all pairs of IgG """
-function EC50Grid(L0, f, FcExpr, Kav, RecepKav; murine = true, fit = nothing, Rbound = false)
+function EC50Grid(L0, f, FcExpr, Kav, RecepKav; murine = true, fit = nothing, Rbound = true)
     M = zeros(size(Kav)[1], size(Kav)[1])
     Affinity = zeros(size(Kav)[1], size(Kav)[1])
     Idx = Array{Int64}(undef, size(Kav)[1], size(Kav)[1])
     for i = 1:size(Kav)[1]
         for j = 1:(i - 1)
-            xPercent = EC50(i, j, L0, f, FcExpr; murine = murine, fit = fit, Rbound = Rbound)
+            xPercent, binding = EC50(i, j, L0, f, FcExpr; murine = murine, fit = fit, Rbound = Rbound)
             if xPercent > 0.5
-                EC = xPercent
                 Aff = RecepKav[i]
                 Idx[i, j] = i
             else
-                EC = 1 - xPercent
                 Aff = RecepKav[j]
                 Idx[i, j] = j
             end
-            M[i, j] = EC
+            M[i, j] = binding
             Affinity[i, j] = Aff
         end
     end
-
-    #display(RecepKav)
     return M, Affinity, Idx
 end
 
-function plotEC50(L0, f, Cellidx, Recepidx; murine = true, dataType = nothing, fit = nothing, Rbound = false)
-    Kav_df = importKav(; murine = true, IgG2bFucose = true, c1q = false, retdf = true)
+function plotEC50(L0, f, Cellidx, Recepidx; murine = true, dataType = nothing, fit = nothing, Rbound = true)
+    Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = false, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murineFcgR])
 
     FcExpr = zeros(length(murineFcgR))
-    FcExpr[Recepidx] = importRtot(; murine = true)[Recepidx, Cellidx]
+    FcExpr[Recepidx] = importRtot(; murine = murine)[Recepidx, Cellidx]
     ylabel = "Activity"
     RecepKav = Kav[:, Recepidx]
     if fit == nothing
@@ -95,7 +91,7 @@ function plotEC50(L0, f, Cellidx, Recepidx; murine = true, dataType = nothing, f
         Guide.colorkey(),
         Scale.x_log10,
         Guide.xlabel("Kav"),
-        Guide.ylabel("Predicted EC50 (% Mixture Concentration"),
+        Guide.ylabel("Predicted EC50 Rbound"),
         Guide.title("EC50 vs Kav: $(murineCellTypes[Cellidx]) $(murineFcgR[Recepidx]) $dataType"),
         style(point_size = 5px, key_position = :right),
     )
