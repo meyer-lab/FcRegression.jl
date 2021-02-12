@@ -4,7 +4,7 @@ function EC50(IgGXidx::Int64, IgGYidx::Int64, L0 = 1e-9, f = 4, FcExpr = nothing
     D1, D2, additive, output = calcSynergy(IgGXidx, IgGYidx, L0, f, FcExpr; murine = murine, fit = fit, Rbound = Rbound, nPoints = 100)
     sampleAxis = range(0, stop = 1, length = length(output))
 
-    EC50value = 0.5 * maximum(output)
+    EC50value = 0.5 * (maximum(output) - minimum(output))
     diff = output .- EC50value
     Value, EC50index = findmin(abs.(diff))
     Xpercent = sampleAxis[EC50index]
