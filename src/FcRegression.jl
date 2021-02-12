@@ -17,6 +17,7 @@ include("ExtraFunctions.jl")
 
 include("figures/figureW.jl")
 
+include("figures/figureB1.jl")
 include("figures/figure1.jl")
 include("figures/figure2.jl")
 include("figures/figure3.jl")
@@ -33,6 +34,7 @@ include("figures/extra/figureDiseaseSynergy.jl")
 function figureAll()
     setGadflyTheme()
 
+    figureB1()
     figure1()
     figure2()
     figure3()
