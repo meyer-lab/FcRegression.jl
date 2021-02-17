@@ -1,6 +1,8 @@
 Condition,Background,Target
 IgG1,wt,53.1
+IgG1,cMOKO,53.1
 IgG2a,wt,11.1
+IgG2a,cMOKO,11.1
 IgG2a,NeuKO,11.1
 IgG2a,EOKO,11.1
 IgG2b,wt,16.9
@@ -15,6 +17,7 @@ IgG2a,R3KO,9.1
 IgG2b,R3KO,14.7
 IgG1,R1/3KO,93.7
 IgG2a,R1/3KO,21.0
+IgG2a,R1/4KO,53.0
 IgG2b,R1/3KO,10.6
 IgG1,R4block,51.6
 IgG2a,R4block,45.6

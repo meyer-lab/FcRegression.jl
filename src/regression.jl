@@ -36,6 +36,8 @@ function modelPred(df; L0, f, murine::Bool = true)
                 Rtot[:, "Neu" .== cellTypes] .= 0.0
             elseif df[k, "Background"] == "ncMOKO"
                 Rtot[:, "ncMO" .== cellTypes] .= 0.0
+            elseif df[k, "Background"] == "cMOKO"
+                Rtot[:, "cMO" .== cellTypes] .= 0.0
             elseif df[k, "Background"] == "EOKO"
                 Rtot[:, "EO" .== cellTypes] .= 0.0
             end
