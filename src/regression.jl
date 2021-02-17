@@ -94,7 +94,7 @@ end
 regressionPred(Xfc, Xdf, fit::optResult; showXmat = false, murine = true) =
     regressionPred(Xfc, Xdf, fit.cellWs, fit.ActI; showXmat = showXmat, murine = murine)
 
-function nnls_fit(Xfc, extra, Y, ActI)
+function nnls_fit(Xfc, extra, Y::AbstractVector, ActI::AbstractVector)
     cY = inv_exponential.(Y)
     ansType = promote_type(eltype(Xfc), eltype(Y), eltype(ActI))
     Xmat = Matrix{ansType}(undef, size(Xfc, 3), size(Xfc, 1))
@@ -109,7 +109,9 @@ function nnls_fit(Xfc, extra, Y, ActI)
         @assert size(extraM, 1) == size(Xfc, 3)
         Xmat = hcat(Xmat, extraM)
     end
-    w = vec(nonneg_lsq(Xmat, cY))
+
+    cY = convert(Vector{ansType}, cY)
+    w = vec(nonneg_lsq(Xmat, cY; alg=:nnls))
     Yr = Xmat * w
     residual = norm(cY - Yr, 2) / length(Y)
 
@@ -122,26 +124,27 @@ function fitRegression_woActI(Xfc, Xdf, Y, ActI)
     return optResult(cellWs, ActI, residual)
 end
 
-function fitRegression(Xfc, Xdf, Y; murine::Bool = true, upper = nothing, lower = nothing, init = nothing)
+function fitRegression(Xfc, Xdf, Y; murine::Bool = true, upper = nothing, lower = nothing)
     extra = Xdf[!, in(["C1q", "Neutralization"]).(names(Xdf))]
     cellWlen = size(Xfc, 1) + size(extra, 2)
+    ActIL = length(murine ? murineActI : humanActI)
 
-    if upper == nothing
-        upper = ones(length(murine ? murineActI : humanActI)) .* 2.0
+    if upper === nothing
+        upper = fill(2.0, ActIL)
     end
-    if lower == nothing
-        lower = ones(length(murine ? murineActI : humanActI)) .* -2.0
+    if lower === nothing
+        lower = fill(-2.0, ActIL)
     end
-    if init == nothing
-        init = ones(length(murine ? murineActI : humanActI)) .* 1.0
-    end
+
+    init = ones(ActIL)
     upper .+= eps()
     lower .-= eps()
     @assert all(lower .<= upper)
 
     func = x -> nnls_fit(Xfc, extra, Y, x)[2]
-    opt = optimize(func, lower, upper, init; autodiff = :forward)
+    opt = optimize(func, lower, upper, init, Fminbox(LBFGS(manifold = Optim.Sphere())); autodiff = :forward)
     ActI = opt.minimizer
+    println(ActI)
 
     return fitRegression_woActI(Xfc, Xdf, Y, ActI)
 end
@@ -151,7 +154,7 @@ function LOOCrossVal(Xfc, Xdf, Y; murine, ActI::Union{Nothing, Vector} = nothing
     n = size(Xdf, 1)
     fitResults = Vector{optResult}(undef, n)
     LOOindex = LOOCV(n)
-    if ActI == nothing
+    if ActI === nothing
         for (i, idx) in enumerate(LOOindex)
             fitResults[i] = fitRegression(Xfc[:, :, idx], Xdf[idx, :], Y[idx]; murine = murine)
         end

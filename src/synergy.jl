@@ -155,10 +155,10 @@ function plotDepletionSynergy(
     end
     cellTypes = murine ? murineCellTypes : humanCellTypes
 
-    if Cellidx == nothing && Recepidx != nothing
+    if Cellidx === nothing && Recepidx !== nothing
         @error "Must specify Cellidx AND Recepidx"
     end
-    if dataType != nothing && fit == nothing
+    if dataType !== nothing && fit === nothing
         @error "Fit must be provided with dataType"
     end
     @assert IgGXidx != IgGYidx
@@ -171,11 +171,11 @@ function plotDepletionSynergy(
     nPoints = 100
     ymax = nothing
 
-    if Recepidx != nothing # look at only one receptor
+    if Recepidx !== nothing # look at only one receptor
         FcExpr = zeros(length(Receps))
         FcExpr[Recepidx] = importRtot(murine = murine)[Recepidx, Cellidx]
         ylabel = "Activity"
-    elseif Cellidx != nothing # look at only one cell FcExpr
+    elseif Cellidx !== nothing # look at only one cell FcExpr
         FcExpr = importRtot(murine = murine)[:, Cellidx]
         ylabel = "Activity"
     else

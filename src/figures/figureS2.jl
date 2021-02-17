@@ -3,7 +3,7 @@
 function figureS2()
     setGadflyTheme()
 
-    df1 = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame!
+    df1 = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame
     df1 = combine(groupby(df1, ["Cells", "Receptor"]), names(df1, :Count) .=> geocmean, names(df1, :Count) .=> std)
     rename!(df1, :"Count_geocmean" => "Abundance")
     df1[!, "ymin"] .= df1[!, "Abundance"] .- df1[!, "Count_std"]
@@ -25,7 +25,7 @@ function figureS2()
         Guide.title("Murine immune cell FcR expression"),
     )
 
-    df2 = CSV.File(joinpath(dataDir, "human-FcgR-abundance.csv"), comment = "#") |> DataFrame!
+    df2 = CSV.File(joinpath(dataDir, "human-FcgR-abundance.csv"), comment = "#") |> DataFrame
     df2 = combine(groupby(df2, ["Cells", "Receptor"]), names(df2, :Count) .=> geocmean, names(df2, :Count) .=> std)
     rename!(df2, :"Count_geocmean" => "Abundance")
     df2[!, "ymin"] .= df2[!, "Abundance"] .- df2[!, "Count_std"]
