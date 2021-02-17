@@ -14,7 +14,7 @@ function calcSynergy(
 )
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
-    if FcExpr == nothing
+    if FcExpr === nothing
         FcExpr = importRtot(; murine = murine)
     end
 
@@ -34,7 +34,7 @@ function calcSynergy(
     combine = polyfc_ActV(L0, KxConst, f, FcExpr, IgGC, Kav, Rbound;)  # size: celltype * nPoints
     combinedf = c1q ? DataFrame(C1q = IgGC' * Kav_df[!, :C1q] .* L0) : nothing
 
-    if fit != nothing  # using disease model
+    if fit !== nothing  # using disease model
         if neutralization
             fit = optResult(fit.cellWs, fit.ActI, fit.residual)
             fit.cellWs = fit.cellWs[1:(end - 1)]
@@ -155,10 +155,10 @@ function plotDepletionSynergy(
     end
     cellTypes = murine ? murineCellTypes : humanCellTypes
 
-    if Cellidx == nothing && Recepidx != nothing
+    if Cellidx === nothing && Recepidx !== nothing
         @error "Must specify Cellidx AND Recepidx"
     end
-    if dataType != nothing && fit == nothing
+    if dataType !== nothing && fit === nothing
         @error "Fit must be provided with dataType"
     end
     @assert IgGXidx != IgGYidx
@@ -171,30 +171,30 @@ function plotDepletionSynergy(
     nPoints = 100
     ymax = nothing
 
-    if Recepidx != nothing # look at only one receptor
+    if Recepidx !== nothing # look at only one receptor
         FcExpr = zeros(length(Receps))
         FcExpr[Recepidx] = importRtot(murine = murine)[Recepidx, Cellidx]
         ylabel = "Activity"
-    elseif Cellidx != nothing # look at only one cell FcExpr
+    elseif Cellidx !== nothing # look at only one cell FcExpr
         FcExpr = importRtot(murine = murine)[:, Cellidx]
         ylabel = "Activity"
     else
         FcExpr = importRtot(; murine = murine)
     end
 
-    if fit != nothing  # use disease model
-        if Recepidx != nothing # look at only one receptor
+    if fit !== nothing  # use disease model
+        if Recepidx !== nothing # look at only one receptor
             title = "$(cellTypes[Cellidx]) $(murine ? murineFcgR[Recepidx] : humanFcgR[Recepidx]) $dataType"
-        elseif Cellidx != nothing # look at only one cell FcExpr
+        elseif Cellidx !== nothing # look at only one cell FcExpr
             title = "$(cellTypes[Cellidx]) $dataType"
         else
             ylabel = "Depletion"
             title = "$dataType"
             ymax = 1.0
         end
-    elseif Recepidx != nothing  # bind to one receptor
+    elseif Recepidx !== nothing  # bind to one receptor
         title = "$(murine ? murineFcgR[Recepidx] : humanFcgR[Recepidx]), $(cellTypes[Cellidx])"
-    elseif Cellidx != nothing  # bind to one cell type
+    elseif Cellidx !== nothing  # bind to one cell type
         title = "$(cellTypes[Cellidx])"
     else
         @error "Not allowed combination of fit/Cellidx/Recepidx."
@@ -205,7 +205,7 @@ function plotDepletionSynergy(
     if Rbound
         ylabel = "Binding"
     end
-    if ymax == nothing
+    if ymax === nothing
         ymax = 1.1 * maximum(additive)
     end
 

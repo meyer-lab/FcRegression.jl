@@ -31,7 +31,7 @@ function plotSynL0(f; murine::Bool, fit = nothing, Cellidx = 2, Rbound = false, 
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     cellTypes = murine ? murineCellTypes : humanCellTypes
 
-    if Cellidx == nothing #Not using single cell
+    if Cellidx === nothing #Not using single cell
         FcExpr = importRtot(; murine = murine)
     else #Using single cell
         Cell = cellTypes[Cellidx]
@@ -88,7 +88,7 @@ function plotSynf(L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = false, 
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     cellTypes = murine ? murineCellTypes : humanCellTypes
 
-    if Cellidx == nothing #Not using single cell
+    if Cellidx === nothing #Not using single cell
         FcExpr = importRtot(; murine = murine)
     else #Using single cell
         Cell = cellTypes[Cellidx]
@@ -143,7 +143,7 @@ function plotSynFc(f, L0; murine::Bool, fit = nothing, Cellidx = 2, Rbound = fal
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     cellTypes = murine ? murineCellTypes : humanCellTypes
 
-    if Cellidx == nothing #Not using single cell
+    if Cellidx === nothing #Not using single cell
         FcExpr = importRtot(; murine = murine)
     else #Using single cell
         Cell = cellTypes[Cellidx]
