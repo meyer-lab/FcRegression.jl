@@ -42,7 +42,7 @@ function plotEC50(L0, f, Cellidx, Recepidx; murine = true, dataType = nothing, f
     FcExpr[Recepidx] = importRtot(; murine = murine)[Recepidx, Cellidx]
     ylabel = "Activity"
     RecepKav = Kav[:, Recepidx]
-    if fit == nothing
+    if fit === nothing
         title = "ActI not Fit"
     else
         title = "$dataType"
