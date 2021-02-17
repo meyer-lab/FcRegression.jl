@@ -1,6 +1,8 @@
 Condition,Background,Target
 IgG1,wt,53.1
 IgG2a,wt,11.1
+IgG2a,NeuKO,11.1
+IgG2a,EOKO,11.1
 IgG2b,wt,16.9
 IgG1,gcKO,92.9
 IgG2a,gcKO,78.9
@@ -21,3 +23,4 @@ IgG1,R2KO,15.9
 IgG2a,R2KO,7.8
 IgG2b,R2KO,11.8
 # R2KO cases are approximate. From Nimmerjahn, Science, 2005
+# IgG2a,NeuKO and EOKO duplicated from IgG2a,wt, based on 10.1016/j.immuni.2011.11.009
