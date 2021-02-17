@@ -124,27 +124,15 @@ function fitRegression_woActI(Xfc, Xdf, Y, ActI)
     return optResult(cellWs, ActI, residual)
 end
 
-function fitRegression(Xfc, Xdf, Y; murine::Bool = true, upper = nothing, lower = nothing)
+function fitRegression(Xfc, Xdf, Y; murine::Bool = true)
     extra = Xdf[!, in(["C1q", "Neutralization"]).(names(Xdf))]
     cellWlen = size(Xfc, 1) + size(extra, 2)
     ActIL = length(murine ? murineActI : humanActI)
-
-    if upper === nothing
-        upper = fill(2.0, ActIL)
-    end
-    if lower === nothing
-        lower = fill(-2.0, ActIL)
-    end
-
     init = ones(ActIL)
-    upper .+= eps()
-    lower .-= eps()
-    @assert all(lower .<= upper)
 
     func = x -> nnls_fit(Xfc, extra, Y, x)[2]
-    opt = optimize(func, lower, upper, init, Fminbox(LBFGS(manifold = Optim.Sphere())); autodiff = :forward)
+    opt = optimize(func, init; autodiff = :forward, method = LBFGS(manifold = Optim.Sphere()))
     ActI = opt.minimizer
-    println(ActI)
 
     return fitRegression_woActI(Xfc, Xdf, Y, ActI)
 end
