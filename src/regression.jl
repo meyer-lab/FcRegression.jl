@@ -115,7 +115,7 @@ function nnls_fit(Xfc, extra, Y::AbstractVector, ActI::AbstractVector)
     end
 
     cY = convert(Vector{ansType}, cY)
-    w = vec(nonneg_lsq(Xmat, cY; alg=:nnls))
+    w = vec(nonneg_lsq(Xmat, cY; alg = :nnls))
     Yr = Xmat * w
     residual = norm(cY - Yr, 2) / length(Y)
 
