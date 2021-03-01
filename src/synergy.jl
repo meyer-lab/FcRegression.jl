@@ -98,7 +98,7 @@ function maxSynergy(IgGXidx::Int64, IgGYidx::Int64, L0, f, FcExpr; fit = nothing
     diff = output - additive
     maxValue, maxIndex = findmax(abs.(diff))
 
-    return 1 - sampleAxis[maxIndex], sampleAxis[maxIndex], diff[maxIndex]
+    return sampleAxis[maxIndex], diff[maxIndex]
 end
 
 

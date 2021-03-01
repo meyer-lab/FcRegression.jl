@@ -34,6 +34,27 @@ function EC50Grid(L0, f, FcExpr, Kav, RecepKav; murine = true, fit = nothing, Rb
     return M, Affinity, Idx
 end
 
+""" Calculate the synergy metric for all pairs of IgG. """
+function maxSynergyGrid(L0, f, FcExpr, Kav; murine, fit = nothing, Rbound = false, c1q = false, neutralization = false)
+    M = zeros(size(Kav)[1], size(Kav)[1])
+    nPoints = 100
+    for i = 1:size(Kav)[1]
+        for j = 1:(i - 1)
+            
+            D1, D2, additive, output = calcSynergy(i, j, L0, f, FcExpr; murine = murine, fit = fit, Rbound = Rbound, c1q = c1q, neutralization = neutralization, nPoints = nPoints,)
+            sampleAxis = range(0, stop = 1, length = length(output))
+
+            # Subtract a line
+            diff = output - additive
+            maxValue, maxIndex = findmax(abs.(diff))
+
+            M[i, j] = maxIndex
+        end
+    end
+
+    return M
+end
+
 function plotEC50(L0, f, Cellidx, Recepidx; murine = true, dataType = nothing, fit = nothing, Rbound = true)
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = false, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murineFcgR])
@@ -94,6 +115,81 @@ function plotEC50(L0, f, Cellidx, Recepidx; murine = true, dataType = nothing, f
         Guide.ylabel("Predicted EC50 Rbound"),
         Guide.title("EC50 vs Kav: $(murineCellTypes[Cellidx]) $(murineFcgR[Recepidx]) $dataType"),
         style(point_size = 5px, key_position = :right),
+    )
+    return pl
+end
+
+function maxSynergyBar(L0, f; Cellidx = nothing, Recepidx = nothing, murine = true, dataType = nothing, fit = nothing, Rbound = false)
+
+    Receps = murine ? murineFcgR : humanFcgR
+    Kav_df = importKav(; murine = murine, IgG2bFucose = murine, retdf = true)
+    Kav = Matrix{Float64}(Kav_df[!, Receps])
+
+    if Rbound
+        title = "$title Rbound"
+    end
+
+    if Recepidx !== nothing # look at only one receptor
+        FcExpr = zeros(length(Receps))
+        FcExpr[Recepidx] = importRtot(murine = murine)[Recepidx, Cellidx]
+        ylabel = "Activity"
+    elseif Cellidx !== nothing # look at only one cell FcExpr
+        FcExpr = importRtot(murine = murine)[:, Cellidx]
+        ylabel = "Activity"
+    else
+        FcExpr = importRtot(; murine = murine)
+    end
+
+    if fit !== nothing  # use disease model
+        if Recepidx !== nothing # look at only one receptor
+            title = "$(cellTypes[Cellidx]) $(murine ? murineFcgR[Recepidx] : humanFcgR[Recepidx]) $dataType"
+        elseif Cellidx !== nothing # look at only one cell FcExpr
+            title = "$(cellTypes[Cellidx]) $dataType"
+        else
+            ylabel = "Depletion"
+            title = "$dataType"
+            ymax = 1.0
+        end
+    elseif Recepidx !== nothing  # bind to one receptor
+        title = "$(murine ? murineFcgR[Recepidx] : humanFcgR[Recepidx]), $(cellTypes[Cellidx])"
+    elseif Cellidx !== nothing  # bind to one cell type
+        title = "$(cellTypes[Cellidx])"
+    else
+        @error "Not allowed combination of fit/Cellidx/Recepidx."
+    end
+
+    M = maxSynergyGrid(L0, f, FcExpr, Kav; murine = murine, fit = fit, Rbound = Rbound)
+
+    h = collect(Iterators.flatten(M))
+    if murine
+        S = zeros(length(receptorNamesB1))
+        S[1:4] = h[2:5]
+        S[5:7] = h[8:10]
+        S[8:9] = h[14:15]
+        S[10] = h[20]
+        S = convert(DataFrame, S')
+        rename!(S, receptorNamesB1)
+    else
+        S = zeros(length(humanreceptorNamesB1))
+        S[1:3] = h[2:4]
+        S[4:5] = h[7:8]
+        S[6] = h[12]
+        S = convert(DataFrame, S')
+        rename!(S, humanreceptorNamesB1)
+    end
+
+    S = stack(S)
+
+    pl = plot(
+        S,
+        y = :value,
+        x = :variable,
+        color = :variable,
+        Geom.bar(position = :dodge),
+        style(key_position = :none),
+        Guide.xlabel("Mixture", orientation = :vertical),
+        Guide.xlabel("Synergy", orientation = :horizontal),
+        Guide.title("Synergy vs Mixture ($title)"),
     )
     return pl
 end
