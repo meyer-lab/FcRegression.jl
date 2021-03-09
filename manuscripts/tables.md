@@ -43,3 +43,25 @@
 | IgG2bFucose | wt       | 30.0     | 10.1126/science.1118948 | Fig3F? |
 | IgG2a     | NeuKO      | 5.0      | 10.1126/sciimmunol.aah6413 | Fig1E |
 | IgG2a     | ncMOKO     | 10.0     | 10.1126/sciimmunol.aah6413 | Fig4C |
+
+| FcgR | IgG1 | IgG2 | IgG3 | IgG4 | DOI | Figure |
+| ---- | ---- | ---- | ---- | ---- | --- | ------ |
+| FcgRI | 6E7 | 0    | 6E7  | 3E7  | 10.1038/nri3582 | Table1 |
+| FcgRIIA-131H | 5E6 | 4E5 | 9E5 | 2E5 | 10.1038/nri3582 | Table1 |
+| FcgRIIA-131R | 3E6 | 1E5 | 9E5 | 2E5 | 10.1038/nri3582 | Table1 |
+| FcgRIIB-232I | 1E5 | 2E4 | 2E5 | 2E5 | 10.1038/nri3582 | Table1 |
+| FcgRIIB-232T | 1E5 | 2E4 | 2E5 | 2E5 | 10.1038/nri3582 | Table1 |
+| FcgRIIC-13N | 1E5  | 2E4 | 2E5 | 2E5 | 10.1038/nri3582 | Table1 |
+| FcgRIIIA-158V | 2E5 | 7E4 | 1E7 | 2E5 | 10.1038/nri3582 | Table1 |
+| FcgRIIIA-158F | 1E5 | 3E4 | 8E6 | 2E5 | 10.1038/nri3582 | Table1 |
+| FcgRIIIB | 2E5 | 0 | 1E6 | 0 | 10.1038/nri3582 | Table1 |
+| TRIM21 | 5E6 | 5E6 | 2E6 | 5E6 | 10.1038/nri3582 | Table1 |
+| C1q  | 1.2E7 | 5.2E6 | 1.1E7 | 4.5E6 | 10.1016/j.ab.2015.03.012 | In-text |
+
+| FcgR | IgG1 | IgG2a | IgG2b | IgG3 | IgG2bFucose | DOI | Figure |
+| ---- | ---- | ----- | ----- | ---- | ----------- | --- | ------ |
+|FcgRI | 0    | 1.00E+08 | 1.00E+05 | 2.00E+07 | 1.00E+05 | 10.1038/nri3582+PMID:9551950+10.1126/science.1118948 | Table2+In-text+TableS2 |
+|FcgRIIB | 3.00E+06 | 4.00E+05 | 2.00E+06 | 0 | 1.00E+07 | 10.1038/nri3582+10.1126/science.1118948 | Table2+TableS2 |
+|FcgRIII | 3.00E+05 | 7.00E+05 | 6.00E+05 | 0 | 1.10E+06 | 10.1038/nri3582+10.1126/science.1118948 | Table2+TableS2 |
+|FcgRIV | 0   | 3.00E+07 | 2.00E+07 | 0 | 2.00E+08 | 10.1038/nri3582+10.1126/science.1118948 | Table2+TableS2 |
+|C1q   | 0    | 1.60E+09 | 3.80E+09 | 3.80E+09* | 3.80E+09 | 10.1126/science.1118948 | TableS2+*dummy-value |
