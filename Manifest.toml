@@ -795,7 +795,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 
 [[polyBindingModel]]
 deps = ["BenchmarkTools", "LinearAlgebra", "NLsolve"]
-git-tree-sha1 = "3b9227dfda19f1df17d4b98270da6227db919b8a"
+git-tree-sha1 = "539112aa56395ff7738e01a8ecdf67c3f05e2fbe"
 repo-rev = "master"
 repo-url = "https://github.com/meyer-lab/polyBindingModel.jl"
 uuid = "d8b71a59-0ce5-46cb-870e-e9e7240c6f77"
