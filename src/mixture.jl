@@ -3,7 +3,7 @@ using MultivariateStats
 using Impute
 
 function loadMixData()
-    df = DataFrame(CSV.File(joinpath(dataDir, "lux-mixture.csv"), comment = "#"))
+    df = CSV.File(joinpath(FcRegression.dataDir, "lux_mixture_mar2021.csv"), comment = "#") |> DataFrame
     df = stack(df, 7:size(df)[2])
     df = dropmissing(df)
     rename!(df, "variable" => "Experiment")
@@ -13,9 +13,12 @@ function loadMixData()
     df[!, "%_1"] ./= 100.0
     df[!, "%_2"] ./= 100.0
 
-    replace!(df."Cell", "hFcgRIIA-131His" => "FcgRIIA-131H")
-    replace!(df."Cell", "hFcgRIIB" => "FcgRIIB-232I")
-    replace!(df."Cell", "hFcgRIIIA-131Val" => "FcgRIIIA-158V")
+    replace!(df."Cell", "CHO-hFcgRIIA-131His" => "FcgRIIA-131H")
+    replace!(df."Cell", "CHO-hFcgRIIB" => "FcgRIIB")
+    replace!(df."Cell", "CHO-hFcgRIIIA-131Val" => "FcgRIIIA-158V")
+    replace!(df."Cell", "CHO-FcgRIA" => "FcgRIA")
+    replace!(df."Cell", "CHO-hFcgRIIA-131Arg" => "FcgRIIA-131R")
+    replace!(df."Cell", "CHO-hFcgRIIIA-158Phe" => "FcgRIIIA-158F")
 
     return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
 end
@@ -24,7 +27,7 @@ function mixNormalExpBatch(df = loadMixData())
     """ Normalize data without knowing predictions, only by experiment"""
     meanval = combine(groupby(df, "Experiment"), "Value" => geocmean)
     df = innerjoin(df, meanval, on = "Experiment")
-    df[!, "Adjusted"] .= df[!, "Value"] ./ df[!, "Value_geocmean"] .* geocmean(df."Value")
+    df[!, "Adjusted"] .= df[!, "Value"] #./ df[!, "Value_geocmean"] .* geocmean(df."Value")
     median(x) = quantile(x, 0.5)
     lower(x) = quantile(x, 0.2)
     upper(x) = quantile(x, 0.8)
@@ -48,7 +51,12 @@ function plotMixOriginalData(df = loadMixData())
     lpairs = size(pairs, 1)
     pls = Vector(undef, lcells * lpairs)
     palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
-    ymax = Dict("FcgRIIA-131H" => 1.2e4, "FcgRIIB-232I" => 4e3, "FcgRIIIA-158V" => 1.5e4)
+    ymax = Dict("FcgRIA" => 8e3,
+        "FcgRIIA-131H" => 2.5e4,
+        "FcgRIIA-131R" => 2.5e4,
+        "FcgRIIB" => 3e3,
+        "FcgRIIIA-158F" => 2e4,
+        "FcgRIIIA-158V" => 1.5e4)
 
     for (i, pairrow) in enumerate(eachrow(pairs))
         for (j, cell) in enumerate(cells)
@@ -67,14 +75,15 @@ function plotMixOriginalData(df = loadMixData())
                 Scale.x_continuous(labels = n -> "$IgGXname $(n*100)%\n$IgGYname $(100-n*100)%"),
                 Scale.y_continuous(; maxvalue = ymax[cell]),
                 Scale.color_discrete_manual(palette[1], palette[2]),
-                Guide.xlabel(""),
+                Guide.xlabel("", orientation = :horizontal),
                 Guide.ylabel("RFU", orientation = :vertical),
+                Guide.xticks(orientation = :horizontal),
                 Guide.title("$IgGXname-$IgGYname in $cell"),
             )
             pls[(j - 1) * lpairs + (i - 1) + 1] = pl
         end
     end
-    return plotGrid((lcells, lpairs), pls)
+    return plotGrid((lcells, lpairs), pls; sublabel = false)
 end
 
 function mixEC50()
@@ -135,7 +144,13 @@ function mixEC50()
 end
 
 
-const measuredRecepExp = Dict("FcgRIIA-131H" => 445141, "FcgRIIB-232I" => 31451, "FcgRIIIA-158V" => 657219)  # geometric mean
+const measuredRecepExp = Dict("FcgRIA" => 101493.689,
+    "FcgRIIA-131H" => 1006302.484,
+    "FcgRIIA-131R" => 190432.6753,
+    "FcgRIIB" => 75085.07599,
+    "FcgRIIIA-158F" => 634324.0675,
+    "FcgRIIIA-158V" => 979451.9884)  # geometric mean
+
 
 function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp)
     IgGC = zeros(size(humanIgG))
