@@ -13,7 +13,7 @@ function figure1()
 
     df3 = mixNormalExpBatch()
     df3 = df3[!, Not(["ymin", "ymax"])]
-    df3[!,"Experiment"] .= "median"
+    df3[!, "Experiment"] .= "median"
     res = MixtureFit(df3; logscale = true)
     pl_pred = makeMixturePairSubPlots(res["df"])
     draw(SVG("figure1_median.svg", 20inch, 16inch), pl_pred)
