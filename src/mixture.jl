@@ -14,9 +14,9 @@ function loadMixData()
     df[!, "%_2"] ./= 100.0
 
     replace!(df."Cell", "CHO-hFcgRIIA-131His" => "FcgRIIA-131H")
-    replace!(df."Cell", "CHO-hFcgRIIB" => "FcgRIIB")
+    replace!(df."Cell", "CHO-hFcgRIIB" => "FcgRIIB-232I")
     replace!(df."Cell", "CHO-hFcgRIIIA-131Val" => "FcgRIIIA-158V")
-    replace!(df."Cell", "CHO-FcgRIA" => "FcgRIA")
+    replace!(df."Cell", "CHO-FcgRIA" => "FcgRI")
     replace!(df."Cell", "CHO-hFcgRIIA-131Arg" => "FcgRIIA-131R")
     replace!(df."Cell", "CHO-hFcgRIIIA-158Phe" => "FcgRIIIA-158F")
 
@@ -25,8 +25,8 @@ end
 
 function mixNormalExpBatch(df = loadMixData())
     """ Normalize data without knowing predictions, only by experiment"""
-    meanval = combine(groupby(df, "Experiment"), "Value" => geocmean)
-    df = innerjoin(df, meanval, on = "Experiment")
+    #meanval = combine(groupby(df, "Experiment"), "Value" => geocmean)
+    #df = innerjoin(df, meanval, on = "Experiment")
     df[!, "Adjusted"] .= df[!, "Value"] #./ df[!, "Value_geocmean"] .* geocmean(df."Value")
     median(x) = quantile(x, 0.5)
     lower(x) = quantile(x, 0.2)
@@ -51,10 +51,10 @@ function plotMixOriginalData(df = loadMixData())
     lpairs = size(pairs, 1)
     pls = Vector(undef, lcells * lpairs)
     palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
-    ymax = Dict("FcgRIA" => 8e3,
+    ymax = Dict("FcgRI" => 8e3,
         "FcgRIIA-131H" => 2.5e4,
         "FcgRIIA-131R" => 2.5e4,
-        "FcgRIIB" => 3e3,
+        "FcgRIIB-232I" => 3e3,
         "FcgRIIIA-158F" => 2e4,
         "FcgRIIIA-158V" => 1.5e4)
 
@@ -144,10 +144,10 @@ function mixEC50()
 end
 
 
-const measuredRecepExp = Dict("FcgRIA" => 101493.689,
+const measuredRecepExp = Dict("FcgRI" => 101493.689,
     "FcgRIIA-131H" => 1006302.484,
     "FcgRIIA-131R" => 190432.6753,
-    "FcgRIIB" => 75085.07599,
+    "FcgRIIB-232I" => 75085.07599,
     "FcgRIIIA-158F" => 634324.0675,
     "FcgRIIIA-158V" => 979451.9884)  # geometric mean
 
@@ -175,10 +175,11 @@ predictMix(dfrow::DataFrameRow; recepExp = measuredRecepExp) =
 function predictMix(df::DataFrame; recepExp = measuredRecepExp)
     """ will return another df object """
     df = copy(df)
-    df[!, "Predict"] .= 0.0
+    df[!, "Predict"] .= 1.0
     for i = 1:size(df)[1]
         df[i, "Predict"] = predictMix(df[i, :]; recepExp = recepExp)
     end
+    df[df."Predict" .< 1.0, "Predict"] .= 1.0
     return df
 end
 
