@@ -51,12 +51,14 @@ function plotMixOriginalData(df = loadMixData())
     lpairs = size(pairs, 1)
     pls = Vector(undef, lcells * lpairs)
     palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
-    ymax = Dict("FcgRI" => 8e3,
+    ymax = Dict(
+        "FcgRI" => 8e3,
         "FcgRIIA-131H" => 2.5e4,
         "FcgRIIA-131R" => 2.5e4,
         "FcgRIIB-232I" => 3e3,
         "FcgRIIIA-158F" => 2e4,
-        "FcgRIIIA-158V" => 1.5e4)
+        "FcgRIIIA-158V" => 1.5e4,
+    )
 
     for (i, pairrow) in enumerate(eachrow(pairs))
         for (j, cell) in enumerate(cells)
@@ -144,12 +146,14 @@ function mixEC50()
 end
 
 
-const measuredRecepExp = Dict("FcgRI" => 101493.689,
+const measuredRecepExp = Dict(
+    "FcgRI" => 101493.689,
     "FcgRIIA-131H" => 1006302.484,
     "FcgRIIA-131R" => 190432.6753,
     "FcgRIIB-232I" => 75085.07599,
     "FcgRIIIA-158F" => 634324.0675,
-    "FcgRIIIA-158V" => 979451.9884)  # geometric mean
+    "FcgRIIIA-158V" => 979451.9884,
+)  # geometric mean
 
 
 function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp)
