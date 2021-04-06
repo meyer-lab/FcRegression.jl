@@ -187,24 +187,39 @@ function plotSynergy(
     Receps = murine ? murineFcgR : humanFcgR
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, Receps])
-
-    if Recepidx !== nothing # look at only one receptor
-        FcExpr = zeros(length(Receps))
-        FcExpr[Recepidx] = importRtot(murine = murine)[Recepidx, Cellidx]
-        ylabel = "Activity"
-    elseif Cellidx !== nothing # look at only one cell FcExpr
-        FcExpr = importRtot(murine = murine)[:, Cellidx]
-        ylabel = "Activity"
-    else
-        FcExpr = importRtot(; murine = murine)
-    end
     if fit === nothing
         title = "Not fit"
     else
         title = "$dataType"
     end
+
+    if Recepidx !== nothing # look at only one receptor
+        FcExpr = zeros(length(Receps))
+        FcExpr[Recepidx] = importRtot(murine = murine)[Recepidx, Cellidx]
+        if murine
+            Cell = "$(murineCellTypes[Cellidx])"
+            Fc = "$(murineFcgR[Recepidx])"
+        else
+            Cell = "$(humanCellTypes[Cellidx])"
+            Fc = "$(humanFcgR[Recepidx])"
+        end
+        ylabel = "Activity"
+        title = "$title $Cell $Fc"
+    elseif Cellidx !== nothing # look at only one cell FcExpr
+        FcExpr = importRtot(murine = murine)[:, Cellidx]
+        if murine
+            Cell = "$(murineCellTypes[Cellidx])"
+        else
+            Cell = "$(humanCellTypes[Cellidx])"
+        end
+        ylabel = "Activity"
+        title = "$title $Cell"
+    else
+        FcExpr = importRtot(; murine = murine)
+        ylabel = "Depletion"
+    end
     if Rbound
-        title = "$title Rbound"
+        ylabel = "Binding"
     end
 
     M = synergyGrid(L0, f, FcExpr, Kav; murine = murine, fit = fit, Rbound = Rbound, c1q = c1q, neutralization = neutralization)
@@ -236,8 +251,8 @@ function plotSynergy(
         color = :variable,
         Geom.bar(position = :dodge),
         style(key_position = :none),
-        Guide.xlabel("Mixture", orientation = :vertical),
-        Guide.xlabel("Synergy", orientation = :horizontal),
+        Guide.xlabel("Mixture", orientation = :horizontal),
+        Guide.ylabel("Predicted $ylabel Synergy", orientation = :vertical),
         Guide.title("Synergy vs Mixture ($title)"),
     )
     return pl
