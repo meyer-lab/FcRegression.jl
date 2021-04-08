@@ -26,7 +26,7 @@ function setGadflyTheme()
 end
 
 
-function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], heights = [])
+function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], heights = [], sublabel = true)
     @assert length(grid_dim) == 2
     nplots = prod(grid_dim)
     if length(pls) != nplots
@@ -61,12 +61,24 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
             if pls[i] === nothing
                 grid[yi][xi] = compose(
                     context(0, 0, widths[yi, xi], 1),
-                    (context(), text(0.0, 0.0, 'a' - 1 + i, hleft, vtop), font("Helvetica-Bold"), fontsize(30pt), fill(colorant"black")),
+                    (
+                        context(),
+                        text(0.0, 0.0, sublabel ? 'a' - 1 + i : "", hleft, vtop),
+                        font("Helvetica-Bold"),
+                        fontsize(30pt),
+                        fill(colorant"black"),
+                    ),
                 )
             else
                 grid[yi][xi] = compose(
                     context(0, 0, widths[yi, xi], 1),
-                    (context(), text(0.0, 0.0, 'a' - 1 + i, hleft, vtop), font("Helvetica-Bold"), fontsize(30pt), fill(colorant"black")),
+                    (
+                        context(),
+                        text(0.0, 0.0, sublabel ? 'a' - 1 + i : "", hleft, vtop),
+                        font("Helvetica-Bold"),
+                        fontsize(30pt),
+                        fill(colorant"black"),
+                    ),
                     (context(), render(pls[i])),
                 )
             end
