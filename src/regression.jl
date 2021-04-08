@@ -28,7 +28,7 @@ function modelPred(df; L0, f, murine::Bool = true)
     # Xfc = cellTypes * FcRecep * items
     Xfc = Array{Float64}(undef, length(cellTypes), length(FcRecep), size(df, 1))
     for k = 1:size(Xfc, 3)    # dataframe row
-        Kav = convert(Vector{Float64}, df[k, FcRecep])
+        Kav = Vector{Float64}(df[k, FcRecep])
         Kav = reshape(Kav, 1, :)
         Rtot = copy(importRtot(; murine = murine, genotype = murine ? "NA" : df[k, :Genotype]))
         if "Background" in names(df)
