@@ -11,7 +11,7 @@ function figure2b()
     data = data[data[!,"%_1"].!=90,:]
     data[!, "%_1"] ./= 100.0
     df = MixtureCellSeparateFit(data; logscale = true, adjusted = false)
-    df[!, "Value"] = abs.(df[!, "Value"])
+    df[(df[!, "Value"]) .< 1.0, "Value"] .= 1.0
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
 
     pl = plot(
