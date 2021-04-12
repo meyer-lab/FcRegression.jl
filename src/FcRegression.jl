@@ -19,6 +19,7 @@ include("figures/figureW.jl")
 
 include("figures/figure1.jl")
 include("figures/figure2.jl")
+include("figures/figure2b.jl")
 include("figures/figure3.jl")
 include("figures/figure4.jl")
 include("figures/figureS1.jl")
@@ -35,6 +36,7 @@ function figureAll()
 
     figure1()
     figure2()
+    figure2b()
     figure3()
     figure4()
 

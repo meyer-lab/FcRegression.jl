@@ -4,6 +4,7 @@ function figure2()
     setGadflyTheme()
 
     df = MixtureCellSeparateFit(loadMixData(); logscale = true)
+    df[!, "%_1"] ./= 100.0
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
 
     pl = plot(
