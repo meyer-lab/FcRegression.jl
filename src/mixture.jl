@@ -10,7 +10,7 @@ function loadMixData()
     rename!(df, "value" => "Value")
     df[!, "Value"] = convert.(Float64, df[!, "Value"])
 
-    df[!, "%_1"] ./= 100.0
+    #df[!, "%_1"] ./= 100.0
     df[!, "%_2"] ./= 100.0
 
     replace!(df."Cell", "CHO-hFcgRIIA-131His" => "FcgRIIA-131H")
@@ -217,7 +217,7 @@ function MixtureFitLoss(df, ValConv::Vector, ExpConv::Vector; logscale = false)
 end
 
 
-function MixtureFit(df; logscale = false)
+function MixtureFit(df; logscale = false, adjusted = true)
     """ Two-way fitting for valency and experiment (day) """
     if !("Predict" in names(df))
         df = predictMix(df)
@@ -231,19 +231,24 @@ function MixtureFit(df; logscale = false)
     res = optimize(od, init_v, BFGS()).minimizer
     p, q = [1.0; res[1:(nv - 1)]], res[nv:end]
     res = MixtureFitLoss(df, p, q; logscale = logscale)
+    if adjusted
+        df = res[2]
+    else
+        df = df
+    end
     return Dict(
         "loss" => res[1],
-        "df" => res[2],
+        "df" => df,
         "ValConv" => Dict([(name, p[i]) for (i, name) in enumerate(unique(df."Valency"))]),
         "ExpConv" => Dict([(name, q[i]) for (i, name) in enumerate(unique(df."Experiment"))]),
     )
 end
 
-function MixtureCellSeparateFit(df; logscale = false)
+function MixtureCellSeparateFit(df; logscale = false, adjusted = true)
     """ Split the cells/receptors and fit valency/exp conv-fac by themselves """
     ndf = DataFrame()
     for cell in unique(df."Cell")
-        append!(ndf, MixtureFit(df[df."Cell" .== cell, :]; logscale = logscale)["df"])
+        append!(ndf, MixtureFit(df[df."Cell" .== cell, :]; logscale = logscale, adjusted = adjusted)["df"])
     end
     return ndf
 end
