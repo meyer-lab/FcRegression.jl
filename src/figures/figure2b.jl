@@ -4,11 +4,11 @@ function figure2b()
     setGadflyTheme()
 
     data = loadMixData()
-    data = data[data[!,"%_1"].!=0,:]
-    data = data[data[!,"%_1"].!=10,:]
-    data = data[data[!,"%_1"].!=33,:]
-    data = data[data[!,"%_1"].!=66,:]
-    data = data[data[!,"%_1"].!=90,:]
+    data = data[data[!, "%_1"] .!= 0, :]
+    data = data[data[!, "%_1"] .!= 10, :]
+    data = data[data[!, "%_1"] .!= 33, :]
+    data = data[data[!, "%_1"] .!= 66, :]
+    data = data[data[!, "%_1"] .!= 90, :]
     data[!, "%_1"] ./= 100.0
     df = MixtureCellSeparateFit(data; logscale = true, adjusted = false)
     df[(df[!, "Value"]) .< 1.0, "Value"] .= 1.0
