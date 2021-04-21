@@ -1,5 +1,6 @@
 using Dierckx
 using MultivariateStats
+using Statistics
 using Impute
 
 function loadMixData()
@@ -155,6 +156,12 @@ const measuredRecepExp = Dict(
     "FcgRIIIA-158V" => 979451.9884,
 )  # geometric mean
 
+function R2(Actual, Predicted)
+    SS = sum((log.(Actual) .- mean(log.(Actual))).^2)
+    SSR = sum((log.(Predicted) .- (log.(Actual))).^2)
+    R2 = 1- (SSR / SS)
+    return R2
+end
 
 function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp)
     IgGC = zeros(size(humanIgG))
@@ -249,6 +256,9 @@ function MixtureCellSeparateFit(df; logscale = false, adjusted = true)
     ndf = DataFrame()
     for cell in unique(df."Cell")
         append!(ndf, MixtureFit(df[df."Cell" .== cell, :]; logscale = logscale, adjusted = adjusted)["df"])
+        else
+            append!(ndf, MixtureFit(df[df."Cell" .== cell, :]; logscale = logscale, adjusted = adjusted)["df"])
+        end
     end
     return ndf
 end
