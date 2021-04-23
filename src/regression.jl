@@ -73,9 +73,9 @@ function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepA
     cellTypes = murine ? murineCellTypes : humanCellTypes
     if !noextra
         @assert size(Xfc, 3) == size(extra, 1)
-        Xmat = DataFrame(repeat([ansType], length(cellWeights)), vcat(cellTypes, names(extra)))
+        Xmat = DataFrame([colName => Float64[] for colName in vcat(cellTypes, names(extra))])
     else
-        Xmat = DataFrame(repeat([ansType], length(cellWeights)), cellTypes)
+        Xmat = DataFrame([colName => Float64[] for colName in cellTypes])
     end
 
     Ypred = Array{ansType}(undef, size(Xfc, 3))
