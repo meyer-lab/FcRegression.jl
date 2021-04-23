@@ -10,7 +10,7 @@ function loadMixData()
     rename!(df, "value" => "Value")
     df[!, "Value"] = convert.(Float64, df[!, "Value"])
 
-    #df[!, "%_1"] ./= 100.0
+    df[!, "%_1"] ./= 100.0
     df[!, "%_2"] ./= 100.0
 
     replace!(df."Cell", "CHO-hFcgRIIA-131His" => "FcgRIIA-131H")
@@ -269,7 +269,9 @@ function plotMixContinuous(df; logscale = false)
     df33 = df[(df."Valency" .== 33), :]
     preds33 = [predictMix(df33[1, :], IgGXname, IgGYname, i, 1 - i) for i in x]
 
-    @assert "Adjusted" in names(df)
+    if !("Adjusted" in names(df))
+        df[!, "Adjusted"] .= df[!, "Value"]
+    end
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
 
     palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
@@ -282,6 +284,7 @@ function plotMixContinuous(df; logscale = false)
         Scale.color_discrete_manual(palette[1], palette[2]),
         Guide.xlabel(""),
         Guide.ylabel("RFU", orientation = :vertical),
+        Guide.xticks(orientation = :horizontal),
         Guide.title("$IgGXname-$IgGYname in $(df[1, "Cell"])"),
     )
     return pl
