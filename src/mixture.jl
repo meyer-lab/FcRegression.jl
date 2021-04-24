@@ -1,6 +1,5 @@
 using Dierckx
 using MultivariateStats
-using Statistics
 using Impute
 
 function loadMixData()
@@ -11,7 +10,7 @@ function loadMixData()
     rename!(df, "value" => "Value")
     df[!, "Value"] = convert.(Float64, df[!, "Value"])
 
-    #df[!, "%_1"] ./= 100.0
+    df[!, "%_1"] ./= 100.0
     df[!, "%_2"] ./= 100.0
 
     replace!(df."Cell", "CHO-hFcgRIIA-131His" => "FcgRIIA-131H")
@@ -157,9 +156,9 @@ const measuredRecepExp = Dict(
 )  # geometric mean
 
 function R2(Actual, Predicted)
-    SS = sum((log.(Actual) .- mean(log.(Actual))).^2)
-    SSR = sum((log.(Predicted) .- (log.(Actual))).^2)
-    R2 = 1- (SSR / SS)
+    RSS = sum((log.(Actual) .- (log.(Predicted))).^2)
+    TSS = sum((log.(Actual) .- mean(log.(Actual))).^2)
+    R2 = 1 - (RSS / TSS)
     return R2
 end
 
@@ -224,7 +223,7 @@ function MixtureFitLoss(df, ValConv::Vector, ExpConv::Vector; logscale = false)
 end
 
 
-function MixtureFit(df; logscale = false, adjusted = true)
+function MixtureFit(df; logscale = false)
     """ Two-way fitting for valency and experiment (day) """
     if !("Predict" in names(df))
         df = predictMix(df)
@@ -238,27 +237,19 @@ function MixtureFit(df; logscale = false, adjusted = true)
     res = optimize(od, init_v, BFGS()).minimizer
     p, q = [1.0; res[1:(nv - 1)]], res[nv:end]
     res = MixtureFitLoss(df, p, q; logscale = logscale)
-    if adjusted
-        df = res[2]
-    else
-        df = df
-    end
     return Dict(
         "loss" => res[1],
-        "df" => df,
+        "df" => res[2],
         "ValConv" => Dict([(name, p[i]) for (i, name) in enumerate(unique(df."Valency"))]),
         "ExpConv" => Dict([(name, q[i]) for (i, name) in enumerate(unique(df."Experiment"))]),
     )
 end
 
-function MixtureCellSeparateFit(df; logscale = false, adjusted = true)
+function MixtureCellSeparateFit(df; logscale = false)
     """ Split the cells/receptors and fit valency/exp conv-fac by themselves """
     ndf = DataFrame()
     for cell in unique(df."Cell")
-        append!(ndf, MixtureFit(df[df."Cell" .== cell, :]; logscale = logscale, adjusted = adjusted)["df"])
-        else
-            append!(ndf, MixtureFit(df[df."Cell" .== cell, :]; logscale = logscale, adjusted = adjusted)["df"])
-        end
+        append!(ndf, MixtureFit(df[df."Cell" .== cell, :]; logscale = logscale)["df"])
     end
     return ndf
 end
@@ -279,7 +270,9 @@ function plotMixContinuous(df; logscale = false)
     df33 = df[(df."Valency" .== 33), :]
     preds33 = [predictMix(df33[1, :], IgGXname, IgGYname, i, 1 - i) for i in x]
 
-    @assert "Adjusted" in names(df)
+    if !("Adjusted" in names(df))
+        df[!, "Adjusted"] .= df[!, "Value"]
+    end
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
 
     palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
@@ -292,6 +285,7 @@ function plotMixContinuous(df; logscale = false)
         Scale.color_discrete_manual(palette[1], palette[2]),
         Guide.xlabel(""),
         Guide.ylabel("RFU", orientation = :vertical),
+        Guide.xticks(orientation = :horizontal),
         Guide.title("$IgGXname-$IgGYname in $(df[1, "Cell"])"),
     )
     return pl
