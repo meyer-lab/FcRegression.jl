@@ -3,14 +3,19 @@
 function figure2b()
     setGadflyTheme()
     Cellfit = false
-    adjusted = false
+    adjusted = true
     IgGx_Only = true
 
     data = loadMixData()
 
     if IgGx_Only
-        data[data[!, "%_1"] .<= 1.0, "%_1"] .= 0
+        data[!, "%_1"] .*= 100.0
         data = data[data[!, "%_1"] .!= 0, :]
+        data = data[data[!, "%_1"] .!= 10, :]
+        data = data[data[!, "%_1"] .!= 33, :]
+        data = data[data[!, "%_1"] .!= 66, :]
+        data = data[data[!, "%_1"] .!= 90, :]
+        data[!, "%_1"] ./= 100.0    
     end
 
     if Cellfit
@@ -33,7 +38,6 @@ function figure2b()
     end
 
     r2 = R2((df[!, xvar]), (df[!, "Predict"]))
-    display(df)
 
     pl = plot(
         df,
