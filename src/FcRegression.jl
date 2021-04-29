@@ -37,6 +37,7 @@ function figureAll()
     figure1()
     figure2()
     figure2b()
+    figure2c()
     figure3()
     figure4()
 
