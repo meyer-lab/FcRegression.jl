@@ -3,10 +3,10 @@
 function figure2b()
     data = loadMixData()
     data = data[data[!, "%_1"] .!= 0, :]
-    data = data[data[!, "%_1"] .!= 10/100, :]
-    data = data[data[!, "%_1"] .!= 33/100, :]
-    data = data[data[!, "%_1"] .!= 66/100, :]
-    data = data[data[!, "%_1"] .!= 90/100, :]
+    data = data[data[!, "%_1"] .!= 10 / 100, :]
+    data = data[data[!, "%_1"] .!= 33 / 100, :]
+    data = data[data[!, "%_1"] .!= 66 / 100, :]
+    data = data[data[!, "%_1"] .!= 90 / 100, :]
 
     df = MixtureCellSeparateFit(data; logscale = true, adjusted = false)
     draw(SVG("figure2b.svg", 700px, 600px), plotPredvsMeasured(df, "Value"))
