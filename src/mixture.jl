@@ -2,6 +2,7 @@ using Dierckx
 using MultivariateStats
 using Impute
 using StatsBase
+using GLM
 
 function loadMixData()
     df = CSV.File(joinpath(FcRegression.dataDir, "lux_mixture_mar2021.csv"), comment = "#") |> DataFrame
@@ -157,9 +158,9 @@ const measuredRecepExp = Dict(
 )  # geometric mean
 
 function R2(Actual, Predicted)
-    RSS = sum((log.(Actual) .- (log.(Predicted))).^2)
-    TSS = sum((log.(Actual) .- mean(log.(Actual))).^2)
-    R2 = 1 - (RSS / TSS)
+    df = DataFrame(A=Actual, B=Predicted)
+    ols = lm(@formula(B ~ A + 0), df)
+    R2 = r2(ols)
     return R2
 end
 
