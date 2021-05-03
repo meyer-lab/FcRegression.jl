@@ -148,12 +148,21 @@ end
 
 
 const measuredRecepExp = Dict(
-    "FcgRI" => 232871.607, #101493.689 (after Robinett)
-    "FcgRIIA-131H" => 1605371.923, #1006302.484
-    "FcgRIIA-131R" => 318818.901, #190432.6753
-    "FcgRIIB-232I" => 394556.044, #75085.07599
-    "FcgRIIIA-158F" => 4677645.042, #634324.0675
-    "FcgRIIIA-158V" => 3680707.938, #979451.9884
+    "FcgRI" => 101493.689,
+    "FcgRIIA-131H" => 1006302.484,
+    "FcgRIIA-131R" => 190432.6753,
+    "FcgRIIB-232I" => 75085.07599,
+    "FcgRIIIA-158F" => 634324.0675,
+    "FcgRIIIA-158V" => 979451.9884,
+)  # geometric mean
+
+const RobMeasuredRecepExp = Dict(
+    "FcgRI" => 232871.607, 
+    "FcgRIIA-131H" => 1605371.923, 
+    "FcgRIIA-131R" => 318818.901, 
+    "FcgRIIB-232I" => 394556.044, 
+    "FcgRIIIA-158F" => 4677645.042, 
+    "FcgRIIIA-158V" => 3680707.938, 
 )  # geometric mean
 
 
