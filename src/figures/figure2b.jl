@@ -17,22 +17,19 @@ function figure2b()
 
     if Cellfit
         df = MixtureCellSeparateFit(data; logscale = true)
+        xvar = "Adjusted"
+        df[(df[!, "Adjusted"]) .< 1.0, "Adjusted"] .= 1.0
     elseif adjusted
-        dict = MixtureFit(data; logscale = true)
-        df = dict["df"]
-    else
-        df = predictMix(data)
-    end
-
-    df[!, "Valency"] .= Symbol.(df[!, "Valency"])
-
-    if adjusted || Cellfit
+        df = MixtureFit(data; logscale = true)["df"]
         xvar = "Adjusted"
         df[(df[!, "Adjusted"]) .< 1.0, "Adjusted"] .= 1.0
     else
+        df = predictMix(data)
         xvar = "Value"
         df[(df[!, "Value"]) .< 1.0, "Value"] .= 1.0
     end
+
+    df[!, "Valency"] .= Symbol.(df[!, "Valency"])
 
     r2 = R2((df[!, xvar]), (df[!, "Predict"]))
 
