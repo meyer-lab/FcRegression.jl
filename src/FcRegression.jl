@@ -14,6 +14,7 @@ include("mixture.jl")
 include("regression.jl")
 include("synergy.jl")
 include("ExtraFunctions.jl")
+include("robinett.jl")
 
 include("figures/figureW.jl")
 

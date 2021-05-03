@@ -12,6 +12,6 @@ function figure2b()
 end
 
 function figure2c()
-    pl = plotPredvsMeasured(PCA_dimred(), "PCA", "Predict", "Actual on imputed PC1")
+    pl = plotPredvsMeasured(PCA_dimred(), xx="PCA", yy="Predict", xxlabel="Actual on imputed PC1")
     draw(SVG("figure2c.svg", 700px, 600px), pl)
 end

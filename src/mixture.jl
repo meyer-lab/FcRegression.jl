@@ -3,8 +3,8 @@ using MultivariateStats
 using Impute
 using StatsBase
 
-function loadMixData()
-    df = CSV.File(joinpath(FcRegression.dataDir, "lux_mixture_mar2021.csv"), comment = "#") |> DataFrame
+function loadMixData(fn = "lux_mixture_mar2021.csv")
+    df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
     df = stack(df, 7:size(df)[2])
     df = dropmissing(df)
     rename!(df, "variable" => "Experiment")
@@ -154,15 +154,6 @@ const measuredRecepExp = Dict(
     "FcgRIIB-232I" => 75085.07599,
     "FcgRIIIA-158F" => 634324.0675,
     "FcgRIIIA-158V" => 979451.9884,
-)  # geometric mean
-
-const RobMeasuredRecepExp = Dict(
-    "FcgRI" => 232871.607, 
-    "FcgRIIA-131H" => 1605371.923, 
-    "FcgRIIA-131R" => 318818.901, 
-    "FcgRIIB-232I" => 394556.044, 
-    "FcgRIIIA-158F" => 4677645.042, 
-    "FcgRIIIA-158V" => 3680707.938, 
 )  # geometric mean
 
 
