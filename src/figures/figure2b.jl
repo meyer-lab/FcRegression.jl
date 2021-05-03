@@ -2,7 +2,6 @@
 
 function figure2b()
     data = loadMixData()
-    data = data[data[!, "%_1"] .!= 0, :]
     data = data[data[!, "%_1"] .!= 10 / 100, :]
     data = data[data[!, "%_1"] .!= 33 / 100, :]
     data = data[data[!, "%_1"] .!= 66 / 100, :]
