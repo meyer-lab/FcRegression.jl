@@ -9,13 +9,10 @@ function figure2b()
     data = loadMixData()
 
     if IgGx_Only
-        data[!, "%_1"] .*= 100.0
-        data = data[data[!, "%_1"] .!= 0, :]
-        data = data[data[!, "%_1"] .!= 10, :]
-        data = data[data[!, "%_1"] .!= 33, :]
-        data = data[data[!, "%_1"] .!= 66, :]
-        data = data[data[!, "%_1"] .!= 90, :]
-        data[!, "%_1"] ./= 100.0    
+        data = data[data[!, "%_1"] .!= 10 / 100, :]
+        data = data[data[!, "%_1"] .!= 33 / 100, :]
+        data = data[data[!, "%_1"] .!= 66 / 100, :]
+        data = data[data[!, "%_1"] .!= 90 / 100, :]
     end
 
     if Cellfit
@@ -39,21 +36,10 @@ function figure2b()
 
     r2 = R2((df[!, xvar]), (df[!, "Predict"]))
 
-    pl = plot(
-        df,
-        x = xvar,
-        y = "Predict",
-        color = "Valency",
-        shape = "Cell",
-        Geom.point,
-        Guide.xlabel("Actual"),
-        Guide.ylabel("Predicted", orientation = :vertical),
-        Guide.title("R^2: $r2"),
-        Scale.x_log10,
-        Scale.y_log10,
-        Scale.color_discrete_manual(Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]),
-        Geom.abline(color = "green"),
-    )
+    draw(SVG("figure2b.svg", 700px, 600px), plotPredvsMeasured(df, "Value", r2))
+end
 
-    draw(SVG("figure2b.svg", 1300px, 600px), plotGrid((1, 2), [nothing, pl]))
+function figure2c()
+    pl = plotPredvsMeasured(PCA_dimred(), "PCA", "Predict", "Actual on imputed PC1")
+    draw(SVG("figure2c.svg", 700px, 600px), pl)
 end

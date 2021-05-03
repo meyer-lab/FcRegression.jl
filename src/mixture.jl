@@ -1,6 +1,7 @@
 using Dierckx
 using MultivariateStats
 using Impute
+using StatsBase
 
 function loadMixData()
     df = CSV.File(joinpath(FcRegression.dataDir, "lux_mixture_mar2021.csv"), comment = "#") |> DataFrame
@@ -358,4 +359,24 @@ function PCAData(; cutoff = 0.9)
         append!(retdf, ndf)
     end
     return sort!(retdf, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
+end
+
+
+function PCA_dimred()
+    df = loadMixData()
+    mdf = unstack(df, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"], "Experiment", "Value")
+    mat = Matrix(mdf[!, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"])])
+    Impute.impute!(mat, Impute.SVD())
+
+    # to change Matrix type without Missing
+    rmat = zeros(size(mat))
+    rmat .= mat
+
+    M = fit(PCA, rmat; maxoutdim = 1)
+    mdf = mdf[!, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]]
+    mdf."PCA" = projection(M)[:, 1]
+    mdf = predictMix(mdf)
+    mdf."PCA" *= mean(mdf."Predict") / mean(mdf."PCA")
+    mdf[mdf."PCA" .< 1.0, "PCA"] .= 1.0
+    return mdf
 end
