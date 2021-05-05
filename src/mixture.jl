@@ -2,6 +2,7 @@ using Dierckx
 using MultivariateStats
 using Impute
 using StatsBase
+using GLM
 
 function loadMixData(fn = "lux_mixture_mar2021.csv")
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
@@ -156,6 +157,7 @@ const measuredRecepExp = Dict(
     "FcgRIIIA-158V" => 979451.9884,
 )  # geometric mean
 
+
 function R2(Actual, Predicted)
     df = DataFrame(A=Actual, B=Predicted)
     ols = lm(@formula(B ~ A + 0), df)
@@ -241,17 +243,17 @@ function MixtureFit(df; logscale = false)
     res = MixtureFitLoss(df, p, q; logscale = logscale)
     return Dict(
         "loss" => res[1],
-        "df" => df,
+        "df" => res[2],
         "ValConv" => Dict([(name, p[i]) for (i, name) in enumerate(unique(df."Valency"))]),
         "ExpConv" => Dict([(name, q[i]) for (i, name) in enumerate(unique(df."Experiment"))]),
     )
 end
 
-function MixtureCellSeparateFit(df; logscale = false, adjusted = true)
+function MixtureCellSeparateFit(df; logscale = false)
     """ Split the cells/receptors and fit valency/exp conv-fac by themselves """
     ndf = DataFrame()
     for cell in unique(df."Cell")
-        append!(ndf, MixtureFit(df[df."Cell" .== cell, :]; logscale = logscale, adjusted = adjusted)["df"])
+        append!(ndf, MixtureFit(df[df."Cell" .== cell, :]; logscale = logscale)["df"])
     end
     return ndf
 end

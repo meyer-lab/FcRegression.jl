@@ -25,8 +25,6 @@ function figure2b()
         xvar = "Value"
     end
 
-    r2 = R2((df[!, xvar]), (df[!, "Predict"]))
-
     draw(SVG("figure2b.svg", 700px, 600px), plotPredvsMeasured(df, xvar))
 end
 
