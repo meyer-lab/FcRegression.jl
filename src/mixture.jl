@@ -156,6 +156,13 @@ const measuredRecepExp = Dict(
     "FcgRIIIA-158V" => 979451.9884,
 )  # geometric mean
 
+function R2(Actual, Predicted)
+    df = DataFrame(A=Actual, B=Predicted)
+    ols = lm(@formula(B ~ A + 0), df)
+    R2 = r2(ols)
+    return R2
+end
+
 
 function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp)
     IgGC = zeros(size(humanIgG))
@@ -218,7 +225,7 @@ function MixtureFitLoss(df, ValConv::Vector, ExpConv::Vector; logscale = false)
 end
 
 
-function MixtureFit(df; logscale = false, adjusted = true)
+function MixtureFit(df; logscale = false)
     """ Two-way fitting for valency and experiment (day) """
     if !("Predict" in names(df))
         df = predictMix(df)
@@ -232,11 +239,6 @@ function MixtureFit(df; logscale = false, adjusted = true)
     res = optimize(od, init_v, BFGS()).minimizer
     p, q = [1.0; res[1:(nv - 1)]], res[nv:end]
     res = MixtureFitLoss(df, p, q; logscale = logscale)
-    if adjusted
-        df = res[2]
-    else
-        df = df
-    end
     return Dict(
         "loss" => res[1],
         "df" => df,
