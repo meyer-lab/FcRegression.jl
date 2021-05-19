@@ -3,9 +3,11 @@
 function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict", 
         xxlabel = "Actual", yylabel = "Predicted", color = "Valency", shape = "Cell")
     setGadflyTheme()
-    df[!, "Valency"] .= Symbol.(df[!, "Valency"])
+    df[!, color] .= Symbol.(df[!, color])
+    df[!, shape] .= Symbol.(df[!, shape])
     df[(df[!, xx]) .< 1.0, xx] .= 1.0
     df[(df[!, yy]) .< 1.0, yy] .= 1.0
+    
 
     r2 = R2((df[!, xx]), (df[!, yy]))
 
@@ -29,6 +31,6 @@ end
 
 
 function figure2()
-    df = MixtureCellSeparateFit(loadMixData(); logscale = true)
+    df = MixtureCellSeparateFit(loadMixData(avg=true); logscale = true)
     draw(SVG("figure2.svg", 1300px, 600px), plotGrid((1, 2), [nothing, plotPredvsMeasured(df)]))
 end

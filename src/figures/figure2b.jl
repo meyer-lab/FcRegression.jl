@@ -1,11 +1,11 @@
 """ Figure 2: we can accurately account for mixed ICs """
 
 function figure2b()
-    Cellfit = false
-    adjusted = false
+    Cellfit = true
+    adjusted = true
     IgGx_Only = true
 
-    data = loadMixData()
+    data = loadMixData(avg=true)
 
     if IgGx_Only
         data = data[data[!, "%_1"] .!= 10 / 100, :]
@@ -25,7 +25,7 @@ function figure2b()
         xvar = "Value"
     end
 
-    draw(SVG("figure2b.svg", 700px, 600px), plotPredvsMeasured(df, xvar))
+    draw(SVG("figure2b.svg", 700px, 600px), plotPredvsMeasured(df; xx = xvar))
 end
 
 function figure2c()

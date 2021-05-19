@@ -4,8 +4,20 @@ using Impute
 using StatsBase
 using GLM
 
-function loadMixData(fn = "lux_mixture_mar2021.csv")
+function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = false)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
+
+    #appends average column
+    if avg
+        av_df = copy(df)
+        for col in eachcol(av_df)
+            replace!(col,missing => 0)
+        end
+        av = (sum(eachcol(av_df[:,7:ncol(av_df)])) ./(ncol(av_df)-6))
+        df = df[:,1:6]
+        df[!, :average] = av
+    end
+
     df = stack(df, 7:size(df)[2])
     df = dropmissing(df)
     rename!(df, "variable" => "Experiment")
@@ -159,8 +171,9 @@ const measuredRecepExp = Dict(
 
 
 function R2(Actual, Predicted)
-    df = DataFrame(A=Actual, B=Predicted)
+    df = DataFrame(A=log10.(Actual), B=log10.(Predicted))
     ols = lm(@formula(B ~ A + 0), df)
+    display(ols)
     R2 = r2(ols)
     return R2
 end
