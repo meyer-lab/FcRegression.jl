@@ -52,9 +52,9 @@ uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
 [[BenchmarkTools]]
 deps = ["JSON", "Logging", "Printf", "Statistics", "UUIDs"]
-git-tree-sha1 = "068fda9b756e41e6c75da7b771e6f89fa8a43d15"
+git-tree-sha1 = "01ca3823217f474243cc2c8e6e1d1f45956fe872"
 uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
-version = "0.7.0"
+version = "1.0.0"
 
 [[BinaryProvider]]
 deps = ["Libdl", "Logging", "SHA"]
@@ -70,9 +70,9 @@ version = "1.0.8+0"
 
 [[CSV]]
 deps = ["Dates", "Mmap", "Parsers", "PooledArrays", "SentinelArrays", "Tables", "Unicode"]
-git-tree-sha1 = "6d4242ef4cb1539e7ede8e01a47a32365e0a34cd"
+git-tree-sha1 = "b83aa3f513be680454437a0eee21001607e5d983"
 uuid = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
-version = "0.8.4"
+version = "0.8.5"
 
 [[CategoricalArrays]]
 deps = ["DataAPI", "Future", "JSON", "Missings", "Printf", "RecipesBase", "Statistics", "StructTypes", "Unicode"]
@@ -82,9 +82,9 @@ version = "0.10.0"
 
 [[ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "9b0375dc013ab0fc472b37cb8b18eed66b83f76b"
+git-tree-sha1 = "b391f22252b8754f4440de1f37ece49d8a7314bb"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "0.9.43"
+version = "0.9.44"
 
 [[ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
@@ -106,9 +106,9 @@ version = "0.3.0"
 
 [[Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "0900bc19193b8e672d9cd477e6cd92d9e7c02f99"
+git-tree-sha1 = "e4e2b39db08f967cc1360951f01e8a75ec441cab"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "3.29.0"
+version = "3.30.0"
 
 [[CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -441,9 +441,9 @@ version = "0.5.3"
 
 [[LogExpFunctions]]
 deps = ["DocStringExtensions", "LinearAlgebra"]
-git-tree-sha1 = "ed26854d7c2c867d143f0e07c198fc9e8b721d10"
+git-tree-sha1 = "1ba664552f1ef15325e68dc4c05c3ef8c2d5d885"
 uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
-version = "0.2.3"
+version = "0.2.4"
 
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
@@ -721,9 +721,9 @@ uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [[SpecialFunctions]]
 deps = ["ChainRulesCore", "LogExpFunctions", "OpenSpecFun_jll"]
-git-tree-sha1 = "9146da51b38e9705b9f5ccfadc3ab10a482cae36"
+git-tree-sha1 = "c467f25b6ec4167ea3a9a4351c66c2e1cba5da33"
 uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
-version = "1.4.0"
+version = "1.4.1"
 
 [[Static]]
 deps = ["IfElse"]
