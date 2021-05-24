@@ -2,9 +2,26 @@ using Dierckx
 using MultivariateStats
 using Impute
 using StatsBase
+using GLM
 
-function loadMixData()
-    df = CSV.File(joinpath(FcRegression.dataDir, "lux_mixture_mar2021.csv"), comment = "#") |> DataFrame
+function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = true)
+    df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
+
+    #appends average column
+    if avg
+        av_df = copy(df)[:,7:end]
+        divisor = zeros(size(av_df)[1])
+        for col in eachcol(av_df)
+            replace!(col,missing => 0)
+        end
+        for i in 1:size(av_df)[1]
+            divisor[i] = count(!iszero, av_df[i, :])
+        end
+        av = (sum(eachcol(av_df[:,1:size(av_df)[2]])) ./ divisor)
+        df = df[:,1:6]
+        df[!, :average] = av
+    end
+
     df = stack(df, 7:size(df)[2])
     df = dropmissing(df)
     rename!(df, "variable" => "Experiment")
@@ -157,6 +174,15 @@ const measuredRecepExp = Dict(
 )  # geometric mean
 
 
+function R2(Actual, Predicted)
+    df = DataFrame(A=log10.(Actual), B=log10.(Predicted))
+    ols = lm(@formula(B ~ A + 0), df)
+    display(ols)
+    R2 = r2(ols)
+    return R2
+end
+
+
 function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp)
     IgGC = zeros(size(humanIgG))
     IgGC[IgGXname .== humanIgG] .= IgGX
@@ -218,7 +244,7 @@ function MixtureFitLoss(df, ValConv::Vector, ExpConv::Vector; logscale = false)
 end
 
 
-function MixtureFit(df; logscale = false, adjusted = true)
+function MixtureFit(df; logscale = false)
     """ Two-way fitting for valency and experiment (day) """
     if !("Predict" in names(df))
         df = predictMix(df)
@@ -232,24 +258,19 @@ function MixtureFit(df; logscale = false, adjusted = true)
     res = optimize(od, init_v, BFGS()).minimizer
     p, q = [1.0; res[1:(nv - 1)]], res[nv:end]
     res = MixtureFitLoss(df, p, q; logscale = logscale)
-    if adjusted
-        df = res[2]
-    else
-        df = df
-    end
     return Dict(
         "loss" => res[1],
-        "df" => df,
+        "df" => res[2],
         "ValConv" => Dict([(name, p[i]) for (i, name) in enumerate(unique(df."Valency"))]),
         "ExpConv" => Dict([(name, q[i]) for (i, name) in enumerate(unique(df."Experiment"))]),
     )
 end
 
-function MixtureCellSeparateFit(df; logscale = false, adjusted = true)
+function MixtureCellSeparateFit(df; logscale = false)
     """ Split the cells/receptors and fit valency/exp conv-fac by themselves """
     ndf = DataFrame()
     for cell in unique(df."Cell")
-        append!(ndf, MixtureFit(df[df."Cell" .== cell, :]; logscale = logscale, adjusted = adjusted)["df"])
+        append!(ndf, MixtureFit(df[df."Cell" .== cell, :]; logscale = logscale)["df"])
     end
     return ndf
 end
