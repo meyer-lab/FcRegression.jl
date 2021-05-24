@@ -4,16 +4,20 @@ using Impute
 using StatsBase
 using GLM
 
-function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = false)
+function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = true)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
 
     #appends average column
     if avg
-        av_df = copy(df)
+        av_df = copy(df)[:,7:end]
+        divisor = zeros(size(av_df)[1])
         for col in eachcol(av_df)
             replace!(col,missing => 0)
         end
-        av = (sum(eachcol(av_df[:,7:ncol(av_df)])) ./(ncol(av_df)-6))
+        for i in 1:size(av_df)[1]
+            divisor[i] = count(!iszero, av_df[i, :])
+        end
+        av = (sum(eachcol(av_df[:,1:size(av_df)[2]])) ./ divisor)
         df = df[:,1:6]
         df[!, :average] = av
     end
