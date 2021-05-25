@@ -8,6 +8,9 @@ function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict",
     df[!, shape] .= Symbol.(df[!, shape])
     df[(df[!, xx]) .< 1.0, xx] .= 1.0
     df[(df[!, yy]) .< 1.0, yy] .= 1.0
+    
+
+    r2 = R2((df[!, xx]), (df[!, yy]))
 
     xmins = df[!, xx] .- df[!, error]
     xmaxs = df[!, xx] .+ df[!, error]

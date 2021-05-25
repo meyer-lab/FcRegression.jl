@@ -9,7 +9,7 @@ function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = true)
     av_df = copy(df)[:,7:end]
     errors = zeros(size(av_df)[1])
 
-    #appends average column
+    #appends average column and sds
     if avg
         av = zeros(size(av_df)[1])
         for col in eachcol(av_df)
@@ -22,10 +22,10 @@ function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = true)
             errors[i] = std(a)
             av[i] = (sum(a) ./ length(a))
         end
-        #av = (sum(eachcol(av_df[:,1:size(av_df)[2]])) ./ divisor)
         df = df[:,1:6]
         df[!, :average] = av
     end
+  
     df = stack(df, 7:size(df)[2])
     df = dropmissing(df)
     rename!(df, "variable" => "Experiment")
