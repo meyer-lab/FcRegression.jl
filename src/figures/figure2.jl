@@ -1,23 +1,30 @@
 """ Figure 2: we can accurately account for mixed ICs """
 
 function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict", 
-        xxlabel = "Actual", yylabel = "Predicted", color = "Valency", shape = "Cell")
+        xxlabel = "Actual", yylabel = "Predicted", error = "StdDev", color = "Valency", shape = "Cell")
     setGadflyTheme()
+
     df[!, color] .= Symbol.(df[!, color])
     df[!, shape] .= Symbol.(df[!, shape])
     df[(df[!, xx]) .< 1.0, xx] .= 1.0
     df[(df[!, yy]) .< 1.0, yy] .= 1.0
-    
+
+    xmins = df[!, xx] .- df[!, error]
+    xmaxs = df[!, xx] .+ df[!, error]
+    xmins[xmins .< 0] .= 1.0
+    xmaxs[xmaxs .< 0] .= 1.0
 
     r2 = R2((df[!, xx]), (df[!, yy]))
-
     return plot(
         df,
         x = xx,
         y = yy,
+        xmin = xmins,
+        xmax = xmaxs,
         color = color,
         shape = shape,
         Geom.point,
+        Geom.errorbar,
         Guide.xlabel(xxlabel),
         Guide.ylabel(yylabel, orientation = :vertical),
         Guide.title("R^2: $r2"),
@@ -30,10 +37,7 @@ function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict",
 end
 
 
-function figure2()
-    Cellfit = true
-    adjusted = true
-    IgGx_Only = false
+function figure2(Cellfit = true, adjusted = true, IgGx_Only = false)
 
     if Cellfit == true && adjusted == false 
         @assert (Cellfit === adjusted) "Adjusted must be true if Cellfit is true"

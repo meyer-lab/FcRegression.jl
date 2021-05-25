@@ -6,22 +6,26 @@ using GLM
 
 function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = true)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
+    av_df = copy(df)[:,7:end]
+    errors = zeros(size(av_df)[1])
 
     #appends average column
     if avg
-        av_df = copy(df)[:,7:end]
-        divisor = zeros(size(av_df)[1])
+        av = zeros(size(av_df)[1])
         for col in eachcol(av_df)
             replace!(col,missing => 0)
         end
+        Mat = Matrix(av_df)
         for i in 1:size(av_df)[1]
-            divisor[i] = count(!iszero, av_df[i, :])
+            a = Mat[i, :]
+            a = filter(!iszero, a)
+            errors[i] = std(a)
+            av[i] = (sum(a) ./ length(a))
         end
-        av = (sum(eachcol(av_df[:,1:size(av_df)[2]])) ./ divisor)
+        #av = (sum(eachcol(av_df[:,1:size(av_df)[2]])) ./ divisor)
         df = df[:,1:6]
         df[!, :average] = av
     end
-
     df = stack(df, 7:size(df)[2])
     df = dropmissing(df)
     rename!(df, "variable" => "Experiment")
@@ -37,8 +41,9 @@ function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = true)
     replace!(df."Cell", "CHO-FcgRIA" => "FcgRI")
     replace!(df."Cell", "CHO-hFcgRIIA-131Arg" => "FcgRIIA-131R")
     replace!(df."Cell", "CHO-hFcgRIIIA-158Phe" => "FcgRIIIA-158F")
+    df[!, :StdDev] = errors
 
-    return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
+    return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2", "StdDev"])
 end
 
 function mixNormalExpBatch(df = loadMixData())
