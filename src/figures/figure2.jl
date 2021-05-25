@@ -1,13 +1,12 @@
 """ Figure 2: we can accurately account for mixed ICs """
 
-function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict", 
-        xxlabel = "Actual", yylabel = "Predicted", color = "Valency", shape = "Cell")
+function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict", xxlabel = "Actual", yylabel = "Predicted", color = "Valency", shape = "Cell")
     setGadflyTheme()
     df[!, color] .= Symbol.(df[!, color])
     df[!, shape] .= Symbol.(df[!, shape])
     df[(df[!, xx]) .< 1.0, xx] .= 1.0
     df[(df[!, yy]) .< 1.0, yy] .= 1.0
-    
+
 
     r2 = R2((df[!, xx]), (df[!, yy]))
 
@@ -23,8 +22,12 @@ function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict",
         Guide.title("R^2: $r2"),
         Scale.x_log10,
         Scale.y_log10,
-        Scale.color_discrete_manual(Scale.color_discrete().f(10)[1], Scale.color_discrete().f(10)[3], 
-            Scale.color_discrete().f(10)[2], Scale.color_discrete().f(10)[4:end]...),
+        Scale.color_discrete_manual(
+            Scale.color_discrete().f(10)[1],
+            Scale.color_discrete().f(10)[3],
+            Scale.color_discrete().f(10)[2],
+            Scale.color_discrete().f(10)[4:end]...,
+        ),
         Geom.abline(color = "green"),
     )
 end
@@ -35,11 +38,11 @@ function figure2()
     adjusted = true
     IgGx_Only = false
 
-    if Cellfit == true && adjusted == false 
+    if Cellfit == true && adjusted == false
         @assert (Cellfit === adjusted) "Adjusted must be true if Cellfit is true"
     end
-    
-    data = loadMixData(avg=true)
+
+    data = loadMixData(avg = true)
 
     if IgGx_Only
         data = data[data[!, "%_1"] .!= 10 / 100, :]
@@ -63,6 +66,6 @@ function figure2()
 end
 
 function figure2c()
-    pl = plotPredvsMeasured(PCA_dimred(), xx="PCA", yy="Predict", xxlabel="Actual on imputed PC1")
+    pl = plotPredvsMeasured(PCA_dimred(), xx = "PCA", yy = "Predict", xxlabel = "Actual on imputed PC1")
     draw(SVG("figure2c.svg", 700px, 600px), pl)
 end
