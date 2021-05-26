@@ -7,10 +7,10 @@ using GLM
 function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = true)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
     av_df = copy(df)[:,7:end]
-    errors = zeros(size(av_df)[1])
 
     #appends average column and sds
     if avg
+        errors = zeros(size(av_df)[1])
         av = zeros(size(av_df)[1])
         for col in eachcol(av_df)
             replace!(col,missing => 0)
@@ -23,10 +23,15 @@ function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = true)
             av[i] = (sum(a) ./ length(a))
         end
         df = df[:,1:6]
-        df[!, :average] = av
+        df[!, :value] = av
+        df = stack(df, 7:size(df)[2])
+        df[!, :StdDev] = errors
+    else
+        df = stack(df, 7:size(df)[2])
+        errors = zeros(size(df)[1])
+        df[!, :StdDev] = errors
     end
-  
-    df = stack(df, 7:size(df)[2])
+
     df = dropmissing(df)
     rename!(df, "variable" => "Experiment")
     rename!(df, "value" => "Value")
@@ -41,7 +46,6 @@ function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = true)
     replace!(df."Cell", "CHO-FcgRIA" => "FcgRI")
     replace!(df."Cell", "CHO-hFcgRIIA-131Arg" => "FcgRIIA-131R")
     replace!(df."Cell", "CHO-hFcgRIIIA-158Phe" => "FcgRIIIA-158F")
-    df[!, :StdDev] = errors
 
     return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2", "StdDev"])
 end
@@ -182,7 +186,6 @@ const measuredRecepExp = Dict(
 function R2(Actual, Predicted)
     df = DataFrame(A=log10.(Actual), B=log10.(Predicted))
     ols = lm(@formula(B ~ A + 0), df)
-    display(ols)
     R2 = r2(ols)
     return R2
 end
@@ -387,10 +390,10 @@ function PCAData(; cutoff = 0.9)
 end
 
 
-function PCA_dimred(avg=true)
-    df = loadMixData(avg)
-    mdf = unstack(df, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"], "Experiment", "Value")
-    mat = Matrix(mdf[!, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"])])
+function PCA_dimred(;avg=false)
+    df = loadMixData(avg=avg)
+    mdf = unstack(df, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2", "StdDev"], "Experiment", "Value")
+    mat = Matrix(mdf[!, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2", "StdDev"])])
     Impute.impute!(mat, Impute.SVD())
 
     # to change Matrix type without Missing
@@ -398,7 +401,7 @@ function PCA_dimred(avg=true)
     rmat .= mat
 
     M = fit(PCA, rmat; maxoutdim = 1)
-    mdf = mdf[!, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]]
+    mdf = mdf[!, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2", "StdDev"]]
     mdf."PCA" = projection(M)[:, 1]
     mdf = predictMix(mdf)
     mdf."PCA" *= mean(mdf."Predict") / mean(mdf."PCA")
