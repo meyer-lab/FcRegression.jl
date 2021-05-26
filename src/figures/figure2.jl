@@ -46,7 +46,7 @@ function figure2(Cellfit = true, adjusted = true, IgGx_Only = false)
         @assert (Cellfit === adjusted) "Adjusted must be true if Cellfit is true"
     end
     
-    data = loadMixData(avg=false)
+    data = loadMixData(avg=true)
 
     if IgGx_Only
         data = data[data[!, "%_1"] .!= 10 / 100, :]
