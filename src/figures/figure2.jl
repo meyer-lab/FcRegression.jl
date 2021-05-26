@@ -46,7 +46,7 @@ function figure2(Cellfit = true, adjusted = true, IgGx_Only = false)
         @assert (Cellfit === adjusted) "Adjusted must be true if Cellfit is true"
     end
     
-    data = loadMixData(avg=true)
+    data = loadMixData(avg=false)
 
     if IgGx_Only
         data = data[data[!, "%_1"] .!= 10 / 100, :]
@@ -70,6 +70,6 @@ function figure2(Cellfit = true, adjusted = true, IgGx_Only = false)
 end
 
 function figure2c()
-    pl = plotPredvsMeasured(PCA_dimred(avg=true), xx="PCA", yy="Predict", xxlabel="Actual on imputed PC1")
+    pl = plotPredvsMeasured(PCA_dimred(;avg=false), xx="PCA", yy="Predict", xxlabel="Actual on imputed PC1")
     draw(SVG("figure2c.svg", 700px, 600px), pl)
 end
