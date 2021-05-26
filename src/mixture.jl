@@ -13,7 +13,7 @@ function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = true)
         errors = zeros(size(av_df)[1])
         av = zeros(size(av_df)[1])
         for col in eachcol(av_df)
-            replace!(col,missing => 0)
+            replace!(col, missing => 0)
         end
         Mat = Matrix(av_df)
         for i in 1:size(av_df)[1]
@@ -184,7 +184,7 @@ const measuredRecepExp = Dict(
 
 
 function R2(Actual, Predicted)
-    df = DataFrame(A=log10.(Actual), B=log10.(Predicted))
+    df = DataFrame(A = log10.(Actual), B = log10.(Predicted))
     ols = lm(@formula(B ~ A + 0), df)
     R2 = r2(ols)
     return R2
