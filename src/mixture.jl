@@ -9,16 +9,16 @@ function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = true)
 
     #appends average column
     if avg
-        av_df = copy(df)[:,7:end]
+        av_df = copy(df)[:, 7:end]
         divisor = zeros(size(av_df)[1])
         for col in eachcol(av_df)
-            replace!(col,missing => 0)
+            replace!(col, missing => 0)
         end
-        for i in 1:size(av_df)[1]
+        for i = 1:size(av_df)[1]
             divisor[i] = count(!iszero, av_df[i, :])
         end
-        av = (sum(eachcol(av_df[:,1:size(av_df)[2]])) ./ divisor)
-        df = df[:,1:6]
+        av = (sum(eachcol(av_df[:, 1:size(av_df)[2]])) ./ divisor)
+        df = df[:, 1:6]
         df[!, :average] = av
     end
 
@@ -175,7 +175,7 @@ const measuredRecepExp = Dict(
 
 
 function R2(Actual, Predicted)
-    df = DataFrame(A=log10.(Actual), B=log10.(Predicted))
+    df = DataFrame(A = log10.(Actual), B = log10.(Predicted))
     ols = lm(@formula(B ~ A + 0), df)
     display(ols)
     R2 = r2(ols)

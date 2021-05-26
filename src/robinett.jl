@@ -1,10 +1,10 @@
 const RobMeasuredRecepExp = Dict(
-    "FcgRI" => 232871.607, 
-    "FcgRIIA-131H" => 1605371.923, 
-    "FcgRIIA-131R" => 318818.901, 
-    "FcgRIIB-232I" => 394556.044, 
-    "FcgRIIIA-158F" => 4677645.042, 
-    "FcgRIIIA-158V" => 3680707.938, 
+    "FcgRI" => 232871.607,
+    "FcgRIIA-131H" => 1605371.923,
+    "FcgRIIA-131R" => 318818.901,
+    "FcgRIIB-232I" => 394556.044,
+    "FcgRIIIA-158F" => 4677645.042,
+    "FcgRIIIA-158V" => 3680707.938,
 )  # geometric mean
 
 function figure2d()
