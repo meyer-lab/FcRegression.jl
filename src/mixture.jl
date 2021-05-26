@@ -387,8 +387,8 @@ function PCAData(; cutoff = 0.9)
 end
 
 
-function PCA_dimred()
-    df = loadMixData()
+function PCA_dimred(avg=true)
+    df = loadMixData(avg)
     mdf = unstack(df, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"], "Experiment", "Value")
     mat = Matrix(mdf[!, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"])])
     Impute.impute!(mat, Impute.SVD())
