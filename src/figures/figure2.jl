@@ -70,6 +70,6 @@ function figure2(Cellfit = true, adjusted = true, IgGx_Only = false)
 end
 
 function figure2c()
-    pl = plotPredvsMeasured(PCA_dimred(), xx="PCA", yy="Predict", xxlabel="Actual on imputed PC1")
+    pl = plotPredvsMeasured(PCA_dimred(avg=true), xx="PCA", yy="Predict", xxlabel="Actual on imputed PC1")
     draw(SVG("figure2c.svg", 700px, 600px), pl)
 end
