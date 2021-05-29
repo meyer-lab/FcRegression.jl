@@ -6,37 +6,8 @@ using GLM
 
 function loadMixData(fn = "lux_mixture_mar2021.csv";)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
-<<<<<<< HEAD
 
     df = stack(df, 7:size(df)[2])
-=======
-    av_df = copy(df)[:,7:end]
-
-    #appends average column and sds
-    if avg
-        errors = zeros(size(av_df)[1])
-        av = zeros(size(av_df)[1])
-        for col in eachcol(av_df)
-            replace!(col, missing => 0)
-        end
-        Mat = Matrix(av_df)
-        for i in 1:size(av_df)[1]
-            a = Mat[i, :]
-            a = filter(!iszero, a)
-            errors[i] = std(a)
-            av[i] = (sum(a) ./ length(a))
-        end
-        df = df[:,1:6]
-        df[!, :value] = av
-        df = stack(df, 7:size(df)[2])
-        df[!, :StdDev] = errors
-    else
-        df = stack(df, 7:size(df)[2])
-        errors = zeros(size(df)[1])
-        df[!, :StdDev] = errors
-    end
-
->>>>>>> 54a2223af5255fbd5b94683efe5bb47c9ca93dd2
     df = dropmissing(df)
     rename!(df, "variable" => "Experiment")
     rename!(df, "value" => "Value")
@@ -52,7 +23,6 @@ function loadMixData(fn = "lux_mixture_mar2021.csv";)
     replace!(df."Cell", "CHO-FcgRIA" => "FcgRI")
     replace!(df."Cell", "CHO-hFcgRIIA-131Arg" => "FcgRIIA-131R")
     replace!(df."Cell", "CHO-hFcgRIIIA-158Phe" => "FcgRIIIA-158F")
-<<<<<<< HEAD
 
     return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
 end
@@ -78,8 +48,6 @@ function averageData(df)
     df[!, :value] = av
     df = stack(df, 7:size(df)[2])
     df[!, :StdDev] = errors
-=======
->>>>>>> 54a2223af5255fbd5b94683efe5bb47c9ca93dd2
 
     df = dropmissing(df)
     rename!(df, "variable" => "Experiment")
@@ -441,17 +409,10 @@ function PCAData(; cutoff = 0.9)
 end
 
 
-<<<<<<< HEAD
 function PCA_dimred()
     df = loadMixData()
     mdf = unstack(df, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"], "Experiment", "Value")
     mat = Matrix(mdf[!, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"])])
-=======
-function PCA_dimred(;avg=false)
-    df = loadMixData(avg=avg)
-    mdf = unstack(df, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2", "StdDev"], "Experiment", "Value")
-    mat = Matrix(mdf[!, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2", "StdDev"])])
->>>>>>> 54a2223af5255fbd5b94683efe5bb47c9ca93dd2
     Impute.impute!(mat, Impute.SVD())
 
     # to change Matrix type without Missing
