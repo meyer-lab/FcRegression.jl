@@ -1,18 +1,14 @@
 """ Figure 2: we can accurately account for mixed ICs """
 
 function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict", 
-        xxlabel = "Actual", yylabel = "Predicted", error = "StdDev", color = "Valency", shape = "Cell")
+    xxlabel = "Actual", yylabel = "Predicted", color = "Valency", shape = "Cell")
     setGadflyTheme()
 
-    df[!, color] .= Symbol.(df[!, color])
-    df[!, shape] .= Symbol.(df[!, shape])
+    df[!, "Valency"] .= Symbol.(df[!, "Valency"])
     df[(df[!, xx]) .< 1.0, xx] .= 1.0
     df[(df[!, yy]) .< 1.0, yy] .= 1.0
 
-    xmins = df[!, xx] .- df[!, error]
-    xmaxs = df[!, xx] .+ df[!, error]
-    xmins[xmins .< 0] .= 1.0
-    xmaxs[xmaxs .< 0] .= 1.0
+    xmins, xmaxs = errorBars(df; xx)
 
     r2 = R2((df[!, xx]), (df[!, yy]))
     return plot(
@@ -30,20 +26,23 @@ function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict",
         Guide.title("R^2: $r2"),
         Scale.x_log10,
         Scale.y_log10,
-        Scale.color_discrete_manual(Scale.color_discrete().f(10)[1], Scale.color_discrete().f(10)[3], 
-            Scale.color_discrete().f(10)[2], Scale.color_discrete().f(10)[4:end]...),
+        Scale.color_discrete_manual(Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]),
         Geom.abline(color = "green"),
     )
 end
 
 
-function figure2(Cellfit = true, adjusted = true, IgGx_Only = false)
+function figure2(Cellfit = true, adjusted = true, IgGx_Only = false, avg = true)
 
-    if Cellfit == true && adjusted == false 
+    if Cellfit == true && adjusted == false
         @assert (Cellfit === adjusted) "Adjusted must be true if Cellfit is true"
     end
-    
-    data = loadMixData(avg=true)
+
+    if avg
+        data = averageData(loadMixData())
+    else
+        data = loadMixData()
+    end
 
     if IgGx_Only
         data = data[data[!, "%_1"] .!= 10 / 100, :]
@@ -67,6 +66,6 @@ function figure2(Cellfit = true, adjusted = true, IgGx_Only = false)
 end
 
 function figure2c()
-    pl = plotPredvsMeasured(PCA_dimred(avg=true), xx="PCA", yy="Predict", xxlabel="Actual on imputed PC1")
+    pl = plotPredvsMeasured(PCA_dimred(); xx="PCA", yy="Predict", xxlabel="Actual on imputed PC1")
     draw(SVG("figure2c.svg", 700px, 600px), pl)
 end

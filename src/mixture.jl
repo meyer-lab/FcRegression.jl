@@ -4,33 +4,15 @@ using Impute
 using StatsBase
 using GLM
 
-function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = true)
+function loadMixData(fn = "lux_mixture_mar2021.csv";)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
-    av_df = copy(df)[:,7:end]
-    errors = zeros(size(av_df)[1])
 
-    #appends average column
-    if avg
-        av = zeros(size(av_df)[1])
-        for col in eachcol(av_df)
-            replace!(col,missing => 0)
-        end
-        Mat = Matrix(av_df)
-        for i in 1:size(av_df)[1]
-            a = Mat[i, :]
-            a = filter(!iszero, a)
-            errors[i] = std(a)
-            av[i] = (sum(a) ./ length(a))
-        end
-        #av = (sum(eachcol(av_df[:,1:size(av_df)[2]])) ./ divisor)
-        df = df[:,1:6]
-        df[!, :average] = av
-    end
     df = stack(df, 7:size(df)[2])
     df = dropmissing(df)
     rename!(df, "variable" => "Experiment")
     rename!(df, "value" => "Value")
     df[!, "Value"] = convert.(Float64, df[!, "Value"])
+    df[(df[!, "Value"]) .< 1.0, "Value"] .= 1.0
 
     df[!, "%_1"] ./= 100.0
     df[!, "%_2"] ./= 100.0
@@ -41,9 +23,50 @@ function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = true)
     replace!(df."Cell", "CHO-FcgRIA" => "FcgRI")
     replace!(df."Cell", "CHO-hFcgRIIA-131Arg" => "FcgRIIA-131R")
     replace!(df."Cell", "CHO-hFcgRIIIA-158Phe" => "FcgRIIIA-158F")
+
+    return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
+end
+
+function averageData(df)
+    #appends average column and sds
+    df = unstack(df, :Experiment, :Value, allowduplicates=true)
+    av_df = copy(df)[:,7:end]
+    errors = zeros(size(av_df)[1])
+    av = zeros(size(av_df)[1])
+    for col in eachcol(av_df)
+        replace!(col, missing => 0)
+    end
+    Mat = Matrix(av_df)
+    for i in 1:size(av_df)[1]
+        a = Mat[i, :]
+        a = filter(!iszero, a)
+        errors[i] = std(a)
+        #av[i] = mean(a)
+        av[i] = (geomean(a))
+    end
+    df = df[:,1:6]
+    df[!, :value] = av
+    df = stack(df, 7:size(df)[2])
     df[!, :StdDev] = errors
 
+    df = dropmissing(df)
+    rename!(df, "variable" => "Experiment")
+    rename!(df, "value" => "Value")
+
     return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2", "StdDev"])
+end
+
+function errorBars(df; xx = "Adjusted")
+    if "StdDev" in names(df)
+        xmins = df[!, xx] .- df[!, "StdDev"]
+        xmaxs = df[!, xx] .+ df[!, "StdDev"]
+        xmins[xmins .< 0] .= 1.0
+        xmaxs[xmaxs .< 0] .= 1.0
+    else
+        xmins = df[!, xx]
+        xmaxs = xmins
+    end
+    return(xmins, xmaxs)
 end
 
 function mixNormalExpBatch(df = loadMixData())
@@ -182,7 +205,6 @@ const measuredRecepExp = Dict(
 function R2(Actual, Predicted)
     df = DataFrame(A=log10.(Actual), B=log10.(Predicted))
     ols = lm(@formula(B ~ A + 0), df)
-    display(ols)
     R2 = r2(ols)
     return R2
 end
@@ -387,8 +409,8 @@ function PCAData(; cutoff = 0.9)
 end
 
 
-function PCA_dimred(avg=true)
-    df = loadMixData(avg)
+function PCA_dimred()
+    df = loadMixData()
     mdf = unstack(df, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"], "Experiment", "Value")
     mat = Matrix(mdf[!, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"])])
     Impute.impute!(mat, Impute.SVD())
