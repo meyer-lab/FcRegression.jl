@@ -7,6 +7,10 @@ function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict",
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
     df[(df[!, xx]) .< 1.0, xx] .= 1.0
     df[(df[!, yy]) .< 1.0, yy] .= 1.0
+<<<<<<< HEAD
+=======
+
+>>>>>>> 54a2223af5255fbd5b94683efe5bb47c9ca93dd2
 
     xmins, xmaxs = errorBars(df; xx)
 
@@ -26,7 +30,16 @@ function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict",
         Guide.title("R^2: $r2"),
         Scale.x_log10,
         Scale.y_log10,
+<<<<<<< HEAD
         Scale.color_discrete_manual(Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]),
+=======
+        Scale.color_discrete_manual(
+            Scale.color_discrete().f(10)[1],
+            Scale.color_discrete().f(10)[3],
+            Scale.color_discrete().f(10)[2],
+            Scale.color_discrete().f(10)[4:end]...,
+        ),
+>>>>>>> 54a2223af5255fbd5b94683efe5bb47c9ca93dd2
         Geom.abline(color = "green"),
     )
 end
@@ -38,11 +51,15 @@ function figure2(Cellfit = true, adjusted = true, IgGx_Only = false, avg = true)
         @assert (Cellfit === adjusted) "Adjusted must be true if Cellfit is true"
     end
 
+<<<<<<< HEAD
     if avg
         data = averageData(loadMixData())
     else
         data = loadMixData()
     end
+=======
+    data = loadMixData(avg = true)
+>>>>>>> 54a2223af5255fbd5b94683efe5bb47c9ca93dd2
 
     if IgGx_Only
         data = data[data[!, "%_1"] .!= 10 / 100, :]
@@ -66,6 +83,10 @@ function figure2(Cellfit = true, adjusted = true, IgGx_Only = false, avg = true)
 end
 
 function figure2c()
+<<<<<<< HEAD
     pl = plotPredvsMeasured(PCA_dimred(); xx="PCA", yy="Predict", xxlabel="Actual on imputed PC1")
+=======
+    pl = plotPredvsMeasured(PCA_dimred(;avg=false), xx="PCA", yy="Predict", xxlabel="Actual on imputed PC1")
+>>>>>>> 54a2223af5255fbd5b94683efe5bb47c9ca93dd2
     draw(SVG("figure2c.svg", 700px, 600px), pl)
 end
