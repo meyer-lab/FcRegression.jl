@@ -420,7 +420,7 @@ function PCA_dimred()
     rmat .= mat
 
     M = fit(PCA, rmat; maxoutdim = 1)
-    mdf = mdf[!, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2", "StdDev"]]
+    mdf = mdf[!, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]]
     mdf."PCA" = projection(M)[:, 1]
     mdf = predictMix(mdf)
     mdf."PCA" *= mean(mdf."Predict") / mean(mdf."PCA")
