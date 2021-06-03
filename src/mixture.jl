@@ -56,19 +56,6 @@ function averageData(df)
     return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2", "StdDev"])
 end
 
-function errorBars(df; xx = "Adjusted")
-    if "StdDev" in names(df)
-        xmins = df[!, xx] .- df[!, "StdDev"]
-        xmaxs = df[!, xx] .+ df[!, "StdDev"]
-        xmins[xmins .< 0] .= 1.0
-        xmaxs[xmaxs .< 0] .= 1.0
-    else
-        xmins = df[!, xx]
-        xmaxs = xmins
-    end
-    return(xmins, xmaxs)
-end
-
 function mixNormalExpBatch(df = loadMixData())
     """ Normalize data without knowing predictions, only by experiment"""
     #meanval = combine(groupby(df, "Experiment"), "Value" => geocmean)

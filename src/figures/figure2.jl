@@ -8,7 +8,10 @@ function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict",
     df[(df[!, xx]) .< 1.0, xx] .= 1.0
     df[(df[!, yy]) .< 1.0, yy] .= 1.0
 
-    xmins, xmaxs = errorBars(df; xx)
+    xmins = "StdDev" in names(df) ? (df[!, xx] .- df[!, "StdDev"]) : df[!, xx]
+    xmaxs = "StdDev" in names(df) ? (df[!, xx] .+ df[!, "StdDev"]) : xmins
+    xmins[xmins .< 0] .= 1.0
+    xmaxs[xmaxs .< 0] .= 1.0
 
     r2 = R2((df[!, xx]), (df[!, yy]))
     return plot(
