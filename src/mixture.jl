@@ -4,7 +4,7 @@ using Impute
 using StatsBase
 using GLM
 
-function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = true)
+function loadMixData(fn = "lux_mixture_mar2021.csv"; avg = false)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
 
     #appends average column
@@ -182,8 +182,8 @@ function R2(Actual, Predicted)
     return R2
 end
 
-
-function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp)
+function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; 
+        recepExp = measuredRecepExp, KxStar = KxConst)
     IgGC = zeros(size(humanIgG))
     IgGC[IgGXname .== humanIgG] .= IgGX
     IgGC[IgGYname .== humanIgG] .= IgGY
@@ -192,7 +192,7 @@ function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; recepEx
     Kav = Matrix(Kav[!, [dfrow."Cell"]])
     val = "NewValency" in names(dfrow) ? dfrow."NewValency" : dfrow."Valency"
     res = try
-        polyfc(1e-9, KxConst, val, [recepExp[dfrow."Cell"]], IgGC, Kav).Lbound
+        polyfc(1e-9, KxStar, val, [recepExp[dfrow."Cell"]], IgGC, Kav).Lbound
     catch e
         println(val, [recepExp[dfrow."Cell"]], IgGC, Kav)
         rethrow(e)
@@ -200,15 +200,16 @@ function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; recepEx
     return res
 end
 
-predictMix(dfrow::DataFrameRow; recepExp = measuredRecepExp) =
-    predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; recepExp = recepExp)
+predictMix(dfrow::DataFrameRow; recepExp = measuredRecepExp, KxStar = KxConst) =
+    predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; 
+        recepExp = recepExp, KxStar = KxStar)
 
-function predictMix(df::DataFrame; recepExp = measuredRecepExp)
+function predictMix(df::DataFrame; recepExp = measuredRecepExp, KxStar = KxConst)
     """ will return another df object """
     df = copy(df)
-    df[!, "Predict"] .= 1.0
-    for i = 1:size(df)[1]
-        df[i, "Predict"] = predictMix(df[i, :]; recepExp = recepExp)
+    df[!, "Predict"] .= predictMix(df[1, :]; recepExp = recepExp, KxStar = KxStar)
+    for i = 2:size(df)[1]
+        df[i, "Predict"] = predictMix(df[i, :]; recepExp = recepExp, KxStar = KxStar)
     end
     df[df."Predict" .< 1.0, "Predict"] .= 1.0
     return df
