@@ -40,7 +40,8 @@ function averageData(df)
     for i in 1:size(av_df)[1]
         a = Mat[i, :]
         a = filter(!iszero, a)
-        errors[i] = std(a)
+        #errors[i] = std(a)
+        errors[i] = exp(std(log.(a)))
         #av[i] = mean(a)
         av[i] = (geomean(a))
     end
