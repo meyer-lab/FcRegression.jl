@@ -10,8 +10,8 @@ function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict",
 
     xmins = "StdDev" in names(df) ? (df[!, xx] .- df[!, "StdDev"]) : df[!, xx]
     xmaxs = "StdDev" in names(df) ? (df[!, xx] .+ df[!, "StdDev"]) : xmins
-    xmins[xmins .< 0] .= 1.0
-    xmaxs[xmaxs .< 0] .= 1.0
+    xmins[xmins .< 1.0] .= 1.0
+    xmaxs[xmaxs .< 1.0] .= 1.0
 
     r2 = R2((df[!, xx]), (df[!, yy]))
     return plot(
