@@ -113,11 +113,9 @@ function fitMixMaster()
 
     lb = fitMixX0Bound(optDict; max = false)
     ub = fitMixX0Bound(optDict)
-    initial_x = fitMixX0(optDict)
-    od = OnceDifferentiable(f, g!, initial_x)
-
-    fminbox(DifferentiableFunction(f), x0, lb, ub)
+    x0 = fitMixX0(optDict)
+    res = optimize(x -> fitMixFunc(x, optDict, df), x0)
 
 
-    results = optimize(od, initial_x, lower, upper, Fminbox{GradientDescent}())
+    
 end
