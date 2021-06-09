@@ -1,22 +1,29 @@
 """ Figure 2: we can accurately account for mixed ICs """
 
-function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict", xxlabel = "Actual", yylabel = "Predicted", color = "Valency", shape = "Cell")
+function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict", 
+    xxlabel = "Actual", yylabel = "Predicted", color = "Valency", shape = "Cell")
     setGadflyTheme()
-    df[!, color] .= Symbol.(df[!, color])
-    df[!, shape] .= Symbol.(df[!, shape])
+
+    df[!, "Valency"] .= Symbol.(df[!, "Valency"])
     df[(df[!, xx]) .< 1.0, xx] .= 1.0
     df[(df[!, yy]) .< 1.0, yy] .= 1.0
 
+    xmins = "StdDev" in names(df) ? (df[!, xx] .- df[!, "StdDev"]) : df[!, xx]
+    xmaxs = "StdDev" in names(df) ? (df[!, xx] .+ df[!, "StdDev"]) : xmins
+    xmins[xmins .< 1.0] .= 1.0
+    xmaxs[xmaxs .< 1.0] .= 1.0
 
     r2 = R2((df[!, xx]), (df[!, yy]))
-
     return plot(
         df,
         x = xx,
         y = yy,
+        xmin = xmins,
+        xmax = xmaxs,
         color = color,
         shape = shape,
         Geom.point,
+        "StdDev" in names(df) ? Geom.errorbar : 
         Guide.xlabel(xxlabel),
         Guide.ylabel(yylabel, orientation = :vertical),
         Guide.title("R^2: $r2"),
@@ -33,16 +40,8 @@ function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict", xxlabel = "Actu
 end
 
 
-function figure2()
-    Cellfit = true
-    adjusted = true
-    IgGx_Only = false
-
-    if Cellfit == true && adjusted == false
-        @assert (Cellfit === adjusted) "Adjusted must be true if Cellfit is true"
-    end
-
-    data = loadMixData(avg = true)
+function figure2(adjusted = true, IgGx_Only = false, avg = true)
+    data = avg ? averageData(loadMixData()) : loadMixData()
 
     if IgGx_Only
         data = data[data[!, "%_1"] .!= 10 / 100, :]
@@ -51,10 +50,7 @@ function figure2()
         data = data[data[!, "%_1"] .!= 90 / 100, :]
     end
 
-    if Cellfit
-        df = MixtureCellSeparateFit(data; logscale = true)
-        xvar = "Adjusted"
-    elseif adjusted
+    if adjusted
         df = MixtureFit(data; logscale = true)["df"]
         xvar = "Adjusted"
     else
@@ -66,6 +62,6 @@ function figure2()
 end
 
 function figure2c()
-    pl = plotPredvsMeasured(PCA_dimred(), xx = "PCA", yy = "Predict", xxlabel = "Actual on imputed PC1")
+    pl = plotPredvsMeasured(PCA_dimred(); xx="PCA", yy="Predict", xxlabel="Actual on imputed PC1")
     draw(SVG("figure2c.svg", 700px, 600px), pl)
 end
