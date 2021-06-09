@@ -40,12 +40,7 @@ function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict",
 end
 
 
-function figure2(Cellfit = true, adjusted = true, IgGx_Only = false, avg = true)
-
-    if Cellfit == true && adjusted == false
-        @assert (Cellfit === adjusted) "Adjusted must be true if Cellfit is true"
-    end
-
+function figure2(adjusted = true, IgGx_Only = false, avg = true)
     data = avg ? averageData(loadMixData()) : loadMixData()
 
     if IgGx_Only
@@ -55,10 +50,7 @@ function figure2(Cellfit = true, adjusted = true, IgGx_Only = false, avg = true)
         data = data[data[!, "%_1"] .!= 90 / 100, :]
     end
 
-    if Cellfit
-        df = MixtureCellSeparateFit(data; logscale = true)
-        xvar = "Adjusted"
-    elseif adjusted
+    if adjusted
         df = MixtureFit(data; logscale = true)["df"]
         xvar = "Adjusted"
     else
