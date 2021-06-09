@@ -2,7 +2,11 @@ using Optim
 
 function mixSqLoss(df; logscale = false)
     # square root differences of model prediction and adjusted measurements
-    adj = logscale ? log.(df."Adjusted") : df."Adjusted"
+    if "Adjusted" in names(df)
+        adj = logscale ? log.(df."Adjusted") : df."Adjusted"
+    else
+        adj = logscale ? log.(df."Value") : df."Value"
+    end
     pred = logscale ? log.(df."Predict") : df."Predict"
     return sum((adj .- pred) .^ 2)
 end
