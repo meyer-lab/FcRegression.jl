@@ -29,15 +29,15 @@ end
 
 function averageData(df)
     #appends average column and sds
-    df = unstack(df, :Experiment, :Value, allowduplicates=true)
-    av_df = copy(df)[:,7:end]
+    df = unstack(df, :Experiment, :Value, allowduplicates = true)
+    av_df = copy(df)[:, 7:end]
     errors = zeros(size(av_df)[1])
     av = zeros(size(av_df)[1])
     for col in eachcol(av_df)
         replace!(col, missing => 0)
     end
     Mat = Matrix(av_df)
-    for i in 1:size(av_df)[1]
+    for i = 1:size(av_df)[1]
         a = Mat[i, :]
         a = filter(!iszero, a)
         #errors[i] = std(a)
@@ -45,7 +45,7 @@ function averageData(df)
         #av[i] = mean(a)
         av[i] = (geomean(a))
     end
-    df = df[:,1:6]
+    df = df[:, 1:6]
     df[!, :value] = av
     df = stack(df, 7:size(df)[2])
     df[!, :StdDev] = errors
