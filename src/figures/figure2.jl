@@ -1,7 +1,6 @@
 """ Figure 2: we can accurately account for mixed ICs """
 
-function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict", 
-    xxlabel = "Actual", yylabel = "Predicted", color = "Valency", shape = "Cell")
+function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict", xxlabel = "Actual", yylabel = "Predicted", color = "Valency", shape = "Cell")
     setGadflyTheme()
 
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
@@ -23,8 +22,7 @@ function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict",
         color = color,
         shape = shape,
         Geom.point,
-        "StdDev" in names(df) ? Geom.errorbar : 
-        Guide.xlabel(xxlabel),
+        "StdDev" in names(df) ? Geom.errorbar : Guide.xlabel(xxlabel),
         Guide.ylabel(yylabel, orientation = :vertical),
         Guide.title("R^2: $r2"),
         Scale.x_log10,
@@ -62,6 +60,6 @@ function figure2(adjusted = true, IgGx_Only = false, avg = true)
 end
 
 function figure2c()
-    pl = plotPredvsMeasured(PCA_dimred(); xx="PCA", yy="Predict", xxlabel="Actual on imputed PC1")
+    pl = plotPredvsMeasured(PCA_dimred(); xx = "PCA", yy = "Predict", xxlabel = "Actual on imputed PC1")
     draw(SVG("figure2c.svg", 700px, 600px), pl)
 end
