@@ -8,7 +8,7 @@ const RobMeasuredRecepExp = Dict(
 )  # geometric mean
 
 function figure2d()
-    df = loadMixData("robinett/Luxetal2013-Fig2BRef.csv", avg = true)
+    df = averageData(loadMixData("robinett/Luxetal2013-Fig2BRef.csv"))
     df = predictMix(df; recepExp = RobMeasuredRecepExp)
     df."Adjusted" = df."Value" .* (geocmean(df."Predict") / geocmean(df."Value"))
     draw(SVG("figure2d.svg", 1300px, 600px), plotGrid((1, 2), [nothing, plotPredvsMeasured(df)]))

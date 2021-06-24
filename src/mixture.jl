@@ -41,7 +41,7 @@ function averageData(df)
         a = Mat[i, :]
         a = filter(!iszero, a)
         #errors[i] = std(a)
-        errors[i] = 10 ^ (std(log10.(a)))
+        errors[i] = exp(std(log.(a)))
         #av[i] = mean(a)
         av[i] = (geomean(a))
     end
@@ -169,7 +169,7 @@ function mixEC50()
         color = Combos,
         shape = Cells,
         Geom.point,
-        Scale.x_log10,
+        Scale.x_log,
         Scale.y_continuous,
         Scale.color_discrete_manual(palette[1], palette[2]),
         Guide.xlabel("Kav"),
@@ -191,7 +191,7 @@ const measuredRecepExp = Dict(
 
 
 function R2(Actual, Predicted)
-    df = DataFrame(A = log10.(Actual), B = log10.(Predicted))
+    df = DataFrame(A = log.(Actual), B = log.(Predicted))
     ols = lm(@formula(B ~ A + 0), df)
     R2 = r2(ols)
     return R2
@@ -318,7 +318,7 @@ function plotMixContinuous(df; logscale = false)
         layer(x = x, y = preds33, Geom.line, Theme(default_color = palette[2], line_width = 2px)),
         layer(df, x = "%_1", y = "Adjusted", color = "Valency", shape = "Experiment"),
         Scale.x_continuous(labels = n -> "$IgGXname $(n*100)%\n$IgGYname $(100-n*100)%"),
-        (logscale ? Scale.y_log10(minvalue = 1, maxvalue = 1e6) : Scale.y_continuous),
+        (logscale ? Scale.y_log(minvalue = 1, maxvalue = 1e6) : Scale.y_continuous),
         Scale.color_discrete_manual(palette[1], palette[2]),
         Guide.xlabel(""),
         Guide.ylabel("RFU", orientation = :vertical),
@@ -377,7 +377,7 @@ function PCAData(; cutoff = 0.9)
         # Perform PCA
         mat = Matrix(widedf[!, exps])
         mat[mat .< 1.0] .= 1.0
-        mat = log10.(mat)
+        mat = log.(mat)
         M = fit(PCA, mat; maxoutdim = 2)
         recon = reconstruct(M, MultivariateStats.transform(M, mat))
         error = ((recon .- mat) .^ 2)
