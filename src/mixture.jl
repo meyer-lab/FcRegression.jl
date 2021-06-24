@@ -263,7 +263,7 @@ end
 function MixtureFit(df; logscale = false)
     """ Two-way fitting for valency and experiment (day) """
     if !("Predict" in names(df))
-        df = predictMix(df; recepExp = [5624, 70300, 111699, 303827, 76508, 48764])
+        df = predictMix(df; recepExp = measuredRecepExp)
     end
     nv, ne = length(unique(df."Valency")), length(unique(df."Experiment"))
     f(p::Vector, q::Vector) = MixtureFitLoss(df, [1.0; p], q; logscale = logscale)[1]
