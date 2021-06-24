@@ -1,6 +1,6 @@
 using Optim
 
-function mixSqLoss(df; logscale = false)
+function mixSqLoss(df; logscale = true)
     # square root differences of model prediction and adjusted measurements
     adj = logscale ? log.(df."Adjusted") : df."Adjusted"
     pred = logscale ? log.(df."Predict") : df."Predict"
@@ -10,9 +10,6 @@ end
 function fit_experiments(conversion_facs, df)
     # called by fit coordinator, fit experiment conversion factors
     ansType = promote_type(eltype(df."Value"), eltype(conversion_facs))
-    if !("Adjusted" in names(df))
-        df."Adjusted" = convert.(ansType, df."Value")
-    end
     exps = sort(unique(df."Experiment"))
     @assert length(conversion_facs) == length(exps)
     for (ii, exp) in enumerate(exps)
@@ -34,7 +31,7 @@ function fit_valencies(new_vals, df)
     return df
 end
 
-function fitMixFunc(x, optDict::Dict, df = loadMixData())
+function fitMixFunc(x, optDict::Dict, df = averageData(loadMixData()))
     # order: experiments (log), valencies (log), receptor amounts (log), Kx* (log)
     df = copy(df)
     iidx = 0
@@ -103,19 +100,22 @@ end
 
 
 function fitMixMaster()
-    df = loadMixData(; avg = false)
+    df = averageData(loadMixData())
     optDict = Dict(
-        "Experiment" => length(unique(df."Experiment")),
+        "Experiment" => 0,
         "Valency" => 2,
         "Receptor" => length(measuredRecepExp),
         "KxStar" => 0,
     )
 
+    if !("Adjusted" in names(df))
+        df."Adjusted" = df."Value"
+    end
+
     lb = fitMixX0Bound(optDict; max = false)
     ub = fitMixX0Bound(optDict)
     x0 = fitMixX0(optDict)
-    res = optimize(x -> fitMixFunc(x, optDict, df), x0)
-
-
+    res = optimize(x -> fitMixFunc(x, optDict, df), lb, ub, x0)
+    return lb, ub, x0, res
     
 end
