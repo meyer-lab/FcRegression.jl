@@ -106,10 +106,10 @@ end
 function fitMixMaster()
     df = averageData(loadMixData())
     optDict = Dict(
-        "Experiment" => 0,
+        "Experiment" => 0, #length(unique(df."Experiment")),
         "Valency" => 2,
         "Receptor" => length(measuredRecepExp),
-        "KxStar" => 0,
+        "KxStar" => 1
     )
 
     if !("Adjusted" in names(df))
