@@ -1,7 +1,7 @@
 using ForwardDiffus
 
 @testset "" begin
-    df = FcRegression.loadMixData(; avg = false)
+    df = FcRegression.loadMixData()
     optDict = Dict(
         "Experiment" => length(unique(df."Experiment")),
         "Valency" => 2,
