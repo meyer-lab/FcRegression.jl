@@ -169,7 +169,7 @@ function mixEC50()
         color = Combos,
         shape = Cells,
         Geom.point,
-        Scale.x_log,
+        Scale.x_log10,
         Scale.y_continuous,
         Scale.color_discrete_manual(palette[1], palette[2]),
         Guide.xlabel("Kav"),
