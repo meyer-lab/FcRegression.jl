@@ -1,4 +1,4 @@
-using ForwardDiffus
+using ForwardDiff
 
 @testset "" begin
     df = FcRegression.loadMixData()
