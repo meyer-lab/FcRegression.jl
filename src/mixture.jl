@@ -217,7 +217,7 @@ end
 
 predictMix(dfrow::DataFrameRow; recepExp = measuredRecepExp, KxStar = KxConst) =
     predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; 
-        recepExp = recepExp, KxStar = KxStar)
+        recepExp = recepExp, KxStar = KxConst)
 
 function predictMix(df::DataFrame; recepExp = measuredRecepExp, KxStar = KxConst)
     """ will return another df object """
@@ -318,7 +318,7 @@ function plotMixContinuous(df; logscale = false)
         layer(x = x, y = preds33, Geom.line, Theme(default_color = palette[2], line_width = 2px)),
         layer(df, x = "%_1", y = "Adjusted", color = "Valency", shape = "Experiment"),
         Scale.x_continuous(labels = n -> "$IgGXname $(n*100)%\n$IgGYname $(100-n*100)%"),
-        (logscale ? Scale.y_log(minvalue = 1, maxvalue = 1e6) : Scale.y_continuous),
+        (logscale ? Scale.y_log10(minvalue = 1, maxvalue = 1e6) : Scale.y_continuous),
         Scale.color_discrete_manual(palette[1], palette[2]),
         Guide.xlabel(""),
         Guide.ylabel("RFU", orientation = :vertical),
