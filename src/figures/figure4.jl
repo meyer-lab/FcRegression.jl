@@ -1,4 +1,4 @@
-""" Figure 4: validating the in vivo effect of mixtures """
+""" Figure 4: analyze synergism in IgG mixture """
 
 function figure4()
 
