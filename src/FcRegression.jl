@@ -3,7 +3,10 @@ using LinearAlgebra
 import Distances
 using polyBindingModel
 using Optim
+using StatsBase
+import StatsBase: geomean, std
 using DataFrames
+using Memoize
 using Dierckx
 
 include("figures/figureCommon.jl")

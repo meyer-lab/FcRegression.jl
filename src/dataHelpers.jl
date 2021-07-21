@@ -1,7 +1,5 @@
 using DataFrames
 import CSV
-import StatsBase.geomean
-using Memoize
 
 const KxConst = 6.31e-13 # 10^(-12.2)
 
@@ -9,6 +7,15 @@ function geocmean(x)
     x = convert(Vector, x)
     x[x .<= 1.0] .= 1.0
     return geomean(x)
+end
+
+function geocstd(x)
+    x = convert(Vector, x)
+    x[x .<= 1.0] .= 1.0
+    if length(x) <= 1
+        return 0.0
+    end
+    return exp(std(log.(x)))
 end
 
 const murineCellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO", "Kupffer", "KupfferHi"]

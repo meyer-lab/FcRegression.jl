@@ -1,16 +1,15 @@
 using Dierckx
 using MultivariateStats
 using Impute
-using StatsBase
 using GLM
 
-function loadMixData(fn = "lux_mixture_mar2021.csv";)
+""" Load mixture in vitro binding data """
+@memoize function loadMixData(fn = "lux_mixture_mar2021.csv";)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
 
-    df = stack(df, 7:size(df)[2])
+    df = stack(df, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]), 
+        variable_name = "Experiment", value_name = "Value")
     df = dropmissing(df)
-    rename!(df, "variable" => "Experiment")
-    rename!(df, "value" => "Value")
     df[!, "Value"] = convert.(Float64, df[!, "Value"])
     df[(df[!, "Value"]) .< 1.0, "Value"] .= 1.0
 

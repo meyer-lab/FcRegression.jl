@@ -1,6 +1,7 @@
 """ Figure 2: we can accurately account for mixed ICs """
 
-function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict", xxlabel = "Actual", yylabel = "Predicted", color = "Valency", shape = "Cell")
+function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict", xxlabel = "Actual", 
+    yylabel = "Predicted", color = "Valency", shape = "Cell")
     setGadflyTheme()
 
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
