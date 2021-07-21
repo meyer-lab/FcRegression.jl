@@ -37,7 +37,7 @@ function fit_valencies(new_vals, df)
     return df
 end
 
-function fitMixFunc(x, optDict::Dict, df = averageData(loadMixData()))
+function fitMixFunc(x, optDict::Dict, df = averageMixData(loadMixData()))
     # order: experiments (log), valencies (log), receptor amounts (log), Kx* (log)
     df = copy(df)
     iidx = 0
@@ -106,7 +106,7 @@ end
 
 
 function fitMixMaster()
-    df = averageData(loadMixData())
+    df = averageMixData(loadMixData())
     optDict = Dict(
         "Experiment" => 0, #length(unique(df."Experiment")),
         "Valency" => 2,
@@ -124,4 +124,60 @@ function fitMixMaster()
     res = optimize(x -> fitMixFunc(x, optDict, df), lb, ub, x0)
     return lb, ub, x0, res
     
+end
+
+
+
+
+function PCAData(; cutoff = 0.9)
+    df = loadMixData()
+    exps_sets = [["6/23/20", "6/30/20", "7/14/20", "7/23/20", "9/11/20"], ["5/15/20", "5/20/20", "5/28/20", "6/2/20", "9/2/20"]]
+    retdf = DataFrame()
+
+    for (i, exps) in enumerate(exps_sets)
+        ndf = df[in(exps).(df."Experiment"), :]
+        widedf = unstack(ndf, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"], "Experiment", "Value")
+        widedf = coalesce.(widedf, 0)
+
+        # Perform PCA
+        mat = Matrix(widedf[!, exps])
+        mat[mat .< 1.0] .= 1.0
+        mat = log.(mat)
+        M = fit(PCA, mat; maxoutdim = 2)
+        recon = reconstruct(M, MultivariateStats.transform(M, mat))
+        error = ((recon .- mat) .^ 2)
+
+        # Impute by SVD
+        matmiss = convert(Array{Union{Float64, Missing}}, mat)
+        matmiss[error .> quantile(reshape(error, :), [cutoff])] .= missing
+        Impute.impute!(matmiss, Impute.SVD())
+        widedf[!, exps] .= exp.(matmiss)
+
+        ndf = stack(widedf, exps)
+        rename!(ndf, "variable" => "Experiment")
+        rename!(ndf, "value" => "Value")
+
+        append!(retdf, ndf)
+    end
+    return sort!(retdf, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
+end
+
+
+function PCA_dimred()
+    df = loadMixData()
+    mdf = unstack(df, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"], "Experiment", "Value")
+    mat = Matrix(mdf[!, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"])])
+    Impute.impute!(mat, Impute.SVD())
+
+    # to change Matrix type without Missing
+    rmat = zeros(size(mat))
+    rmat .= mat
+
+    M = fit(PCA, rmat; maxoutdim = 1)
+    mdf = mdf[!, ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]]
+    mdf."PCA" = projection(M)[:, 1]
+    mdf = predictMix(mdf)
+    mdf."PCA" *= mean(mdf."Predict") / mean(mdf."PCA")
+    mdf[mdf."PCA" .< 1.0, "PCA"] .= 1.0
+    return mdf
 end
