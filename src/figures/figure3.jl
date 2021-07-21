@@ -1,4 +1,4 @@
-""" Figure 3: predicting in vivo effect """
+""" Figure 3: deconvolve the receptor and cell type functionality """
 
 function figure3()
     setGadflyTheme()
