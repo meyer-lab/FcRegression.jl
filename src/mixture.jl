@@ -80,6 +80,12 @@ const measuredRecepExp = Dict(
 )  # geometric mean precalculated
 
 
+function ols(Actual, Predicted)
+    df = DataFrame(A = log.(Actual), B = log.(Predicted))
+    ols = lm(@formula(B ~ A + 0), df)
+    return ols
+end
+
 function R2(Actual, Predicted)
     df = DataFrame(A = log10.(Actual), B = log10.(Predicted))
     ols = lm(@formula(B ~ A + 0), df)
@@ -87,7 +93,7 @@ function R2(Actual, Predicted)
     return R2
 end
 
-""" Three overloaded functions below provide model predictions"""
+""" Three predictMix() below provide model predictions"""
 function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; 
         recepExp = measuredRecepExp, KxStar = KxConst)
     IgGC = zeros(size(humanIgG))
@@ -106,16 +112,16 @@ function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY;
     return res
 end
 
-predictMix(dfrow::DataFrameRow; recepExp = measuredRecepExp) =
+predictMix(dfrow::DataFrameRow; recepExp = measuredRecepExp, KxStar = KxConst) =
     predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; 
-        recepExp = recepExp, KxStar = KxConst)
+        recepExp = recepExp, KxStar = KxStar)
 
 function predictMix(df::DataFrame; recepExp = measuredRecepExp, KxStar = KxConst)
     """ will return another df object """
     df = copy(df)
     df[!, "Predict"] .= 1.0
     for i = 1:size(df)[1]
-        df[i, "Predict"] = predictMix(df[i, :]; recepExp = recepExp, KxStar = KxConst)
+        df[i, "Predict"] = predictMix(df[i, :]; recepExp = recepExp, KxStar = KxStar)
     end
     df[df."Predict" .< 1.0, "Predict"] .= 1.0
     return df
@@ -173,7 +179,22 @@ function MixtureFit(df; logscale = false)
     )
 end
 
+function fitExperiment(df; recepExp = measuredRecepExp, KxStar = KxConst)
+    exps = sort(unique(df."Experiment"))
+    factors = zeros(length(exps))
+    df = predictMix(df; recepExp = recepExp, KxStar = KxStar)
 
+    if !("Adjusted" in names(df))
+        df[!, "Adjusted"] .= df[!, "Value"]
+    end
+
+    for (ii, expmt) in enumerate(exps)
+        ndf = df[df."Experiment" .== expmt, :]
+        factors[ii] = coef(ols(ndf."Value", ndf."Predict"))[1]
+        ndf[:, "Adjusted"] .= ndf[:, "Value"] .* factors[ii]
+    end
+    return factors, df
+end
 
 
 

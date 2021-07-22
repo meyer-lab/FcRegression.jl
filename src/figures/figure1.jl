@@ -75,7 +75,6 @@ function figure1()
     setGadflyTheme()
     draw(SVG("figure1.svg", 20inch, 16inch), plotMixSubplots(splot_origData, loadMixData(); avg = true))
     draw(SVG("figure1_pred.svg", 25inch, 16inch), plotMixSubplots(splot_contPred, loadMixData(); logscale = false))
-
 end
 
 
