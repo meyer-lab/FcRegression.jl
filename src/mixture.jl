@@ -1,7 +1,7 @@
 using Dierckx
 using MultivariateStats
 using Impute
-using GLM
+import GLM: lm, coef, r2
 
 """ Load mixture in vitro binding data """
 @memoize function loadMixData(fn = "lux_mixture_mar2021.csv";)
@@ -11,6 +11,7 @@ using GLM
         variable_name = "Experiment", value_name = "Value")
     df = dropmissing(df)
     df[!, "Value"] = convert.(Float64, df[!, "Value"])
+    df = df[df[!, "Value"] .> 100, :]   # discard small measurements
     df[(df[!, "Value"]) .< 1.0, "Value"] .= 1.0
 
     df[!, "%_1"] ./= 100.0
@@ -80,18 +81,16 @@ const measuredRecepExp = Dict(
 )  # geometric mean precalculated
 
 
-function ols(Actual, Predicted)
-    df = DataFrame(A = log.(Actual), B = log.(Predicted))
+function ols(Actual, Predicted; logscale = true)
+    if logscale
+        df = DataFrame(A = log.(Actual), B = log.(Predicted))
+    else
+        df = DataFrame(A = log.(Actual), B = log.(Predicted))
+    end
     ols = lm(@formula(B ~ A + 0), df)
-    return ols
+    return coef(ols)[1], r2(ols)
 end
 
-function R2(Actual, Predicted)
-    df = DataFrame(A = log10.(Actual), B = log10.(Predicted))
-    ols = lm(@formula(B ~ A + 0), df)
-    R2 = r2(ols)
-    return R2
-end
 
 """ Three predictMix() below provide model predictions"""
 function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; 
@@ -195,63 +194,3 @@ function fitExperiment(df; recepExp = measuredRecepExp, KxStar = KxConst)
     end
     return factors, df
 end
-
-
-
-function mixEC50()
-    df = averageMixData()
-    cells = unique(df."Cell")
-    pairs = unique(df[!, ["subclass_1", "subclass_2"]])
-    lcells = length(cells)
-    lpairs = size(pairs, 1)
-
-    Bound = Vector(undef, lcells * lpairs)
-    Ka = Vector(undef, lcells * lpairs)
-    Combos = Vector(undef, lcells * lpairs)
-    Combos = Vector(undef, lcells * lpairs)
-    Cells = Vector(undef, lcells * lpairs)
-
-    palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
-    Kav = importKav(; murine = false, retdf = true)
-
-    for (i, pairrow) in enumerate(eachrow(pairs))
-        for (j, cell) in enumerate(cells)
-            IgGXname, IgGYname = pairrow."subclass_1", pairrow."subclass_2"
-            ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== IgGXname) .& (df."Valency" .== 4) .& (df."subclass_2" .== IgGYname), :]
-            sort!(ndf, ["%_1"])
-            y = ndf["Value"]
-            x = ndf["%_1"]
-            sp = Spline1D(x, y)
-            x = 0:0.01:1.0
-            y = sp(x)
-            EC50value = 0.5 * maximum(y)
-            diff = y .- EC50value
-            Value, EC50index = findmin(abs.(diff))
-            if Kav[j, (2^j) + 1] < Kav[j + 1, (2^j) + 1]
-                Ka[(j - 1) * lpairs + (i - 1) + 1] = Kav[j + 1, (2^j) + 1]
-                Cells[(j - 1) * lpairs + (i - 1) + 1] = string(IgGYname, " ", cells[j])
-            else
-                Ka[(j - 1) * lpairs + (i - 1) + 1] = Kav[j, (2^j) + 1]
-                Cells[(j - 1) * lpairs + (i - 1) + 1] = string(IgGXname, " ", cells[j])
-            end
-            Bound[(j - 1) * lpairs + (i - 1) + 1] = Value
-            Combos[(j - 1) * lpairs + (i - 1) + 1] = "$IgGXname/$IgGYname"
-        end
-    end
-
-    p1 = plot(
-        x = Ka,
-        y = Bound,
-        color = Combos,
-        shape = Cells,
-        Geom.point,
-        Scale.x_log10,
-        Scale.y_continuous,
-        Scale.color_discrete_manual(palette[1], palette[2]),
-        Guide.xlabel("Kav"),
-        Guide.ylabel("EC50 Rbound", orientation = :vertical),
-        style(point_size = 5px, key_position = :right),
-    )
-    return p1
-end
-
