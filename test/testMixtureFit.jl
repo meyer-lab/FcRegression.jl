@@ -1,6 +1,6 @@
 using ForwardDiff
 
-@testset "" begin
+@testset "fitMixX0() can take ForwardDiff" begin
     df = FcRegression.loadMixData()
     optDict = Dict(
         "Experiment" => length(unique(df."Experiment")),
