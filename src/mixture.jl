@@ -1,7 +1,7 @@
 using Dierckx
 using MultivariateStats
 using Impute
-import GLM: lm, coef, r2
+using GLM
 
 """ Load mixture in vitro binding data """
 @memoize function loadMixData(fn = "lux_mixture_mar2021.csv";)
@@ -176,21 +176,4 @@ function MixtureFit(df; logscale = false)
         "ValConv" => Dict([(name, p[i]) for (i, name) in enumerate(unique(df."Valency"))]),
         "ExpConv" => Dict([(name, q[i]) for (i, name) in enumerate(unique(df."Experiment"))]),
     )
-end
-
-function fitExperiment(df; recepExp = measuredRecepExp, KxStar = KxConst)
-    exps = sort(unique(df."Experiment"))
-    factors = zeros(length(exps))
-    df = predictMix(df; recepExp = recepExp, KxStar = KxStar)
-
-    if !("Adjusted" in names(df))
-        df[!, "Adjusted"] .= df[!, "Value"]
-    end
-
-    for (ii, expmt) in enumerate(exps)
-        ndf = df[df."Experiment" .== expmt, :]
-        factors[ii] = coef(ols(ndf."Value", ndf."Predict"))[1]
-        ndf[:, "Adjusted"] .= ndf[:, "Value"] .* factors[ii]
-    end
-    return factors, df
 end
