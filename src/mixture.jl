@@ -31,12 +31,13 @@ end
 function averageMixData(df = loadMixData())
     lower(x) = quantile(x, 0.25)
     upper(x) = quantile(x, 0.75)
+    valname = "Adjusted" in names(df) ? "Adjusted" : "Value"
     return combine(groupby(df, ["Valency", "Cell", "subclass_1", "subclass_2", "%_1", "%_2"]), 
-        "Value" => geocmean => "Value",
-        "Value" => geocstd => "std",
-        "Value" => StatsBase.median => "Median",
-        "Value" => lower => "ymin",
-        "Value" => upper => "ymax",
+        valname => geocmean => valname,
+        valname => geocstd => "std",
+        valname => StatsBase.median => "Median",
+        valname => lower => "ymin",
+        valname => upper => "ymax",
         )
 end
 
@@ -118,7 +119,7 @@ predictMix(dfrow::DataFrameRow; recepExp = measuredRecepExp, KxStar = KxConst) =
 function predictMix(df::DataFrame; recepExp = measuredRecepExp, KxStar = KxConst)
     """ will return another df object """
     df = copy(df)
-    df[!, "Predict"] .= 1.0
+    df[!, "Predict"] .= convert(typeof(KxStar), 1.0)
     for i = 1:size(df)[1]
         df[i, "Predict"] = predictMix(df[i, :]; recepExp = recepExp, KxStar = KxStar)
     end
