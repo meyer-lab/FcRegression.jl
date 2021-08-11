@@ -5,7 +5,7 @@ import Statistics: cor
 using GLM
 
 """ Load mixture in vitro binding data """
-@memoize function loadMixData(fn = "lux_mixture_mar2021.csv";)
+function loadMixData(fn = "lux_mixture_mar2021.csv";)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
 
     df = stack(df, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]), 

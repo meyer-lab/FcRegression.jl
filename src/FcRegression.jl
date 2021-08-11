@@ -6,7 +6,6 @@ using Optim
 using StatsBase
 import StatsBase: geomean, std
 using DataFrames
-using Memoize
 
 include("figures/figureCommon.jl")
 
