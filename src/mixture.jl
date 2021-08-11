@@ -1,8 +1,7 @@
-using Dierckx
 using MultivariateStats
 using Impute
 using StatsBase
-using GLM
+import Statistics: cor
 
 function loadMixData(fn = "lux_mixture_mar2021.csv";)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
@@ -191,10 +190,7 @@ const measuredRecepExp = Dict(
 
 
 function R2(Actual, Predicted)
-    df = DataFrame(A = log.(Actual), B = log.(Predicted))
-    ols = lm(@formula(B ~ A + 0), df)
-    R2 = r2(ols)
-    return R2
+    return cor(log10.(Actual), log10.(Predicted)) ^ 2.0
 end
 
 function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; 
