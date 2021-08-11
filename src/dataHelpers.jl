@@ -1,7 +1,5 @@
 using DataFrames
 import CSV
-import StatsBase.geomean
-using Memoize
 
 const KxConst = 6.31e-13 # 10^(-12.2)
 
@@ -9,6 +7,15 @@ function geocmean(x)
     x = convert(Vector, x)
     x[x .<= 1.0] .= 1.0
     return geomean(x)
+end
+
+function geocstd(x)
+    x = convert(Vector, x)
+    x[x .<= 1.0] .= 1.0
+    if length(x) <= 1
+        return 0.0
+    end
+    return exp(std(log.(x)))
 end
 
 const murineCellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO", "Kupffer", "KupfferHi"]
@@ -25,7 +32,7 @@ const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
 const humanActYmax = [5.5e4, 1.5e5, 4.5e4, 3.5e4, 3e3] # ymax for synergy plots
 const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
-@memoize function importRtot(; murine = true, genotype = "HIV", retdf = false)
+function importRtot(; murine = true, genotype = "HIV", retdf = false)
     if murine
         df = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame
     else
@@ -73,7 +80,7 @@ end
 
 
 """ Import human or murine affinity data. """
-@memoize function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = false)
+function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = false)
     if murine
         df = CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#") |> DataFrame
     else
