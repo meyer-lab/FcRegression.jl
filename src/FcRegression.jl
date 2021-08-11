@@ -7,7 +7,6 @@ using StatsBase
 import StatsBase: geomean, std
 using DataFrames
 using Memoize
-using Dierckx
 
 include("figures/figureCommon.jl")
 
@@ -17,7 +16,6 @@ include("mixture.jl")
 include("mixtureFit.jl")
 include("regression.jl")
 include("synergy.jl")
-include("ExtraFunctions.jl")
 
 include("figures/figureW.jl")
 
@@ -26,8 +24,6 @@ include("figures/figure2.jl")
 include("robinett.jl")
 include("figures/figure3.jl")
 include("figures/figure4.jl")
-include("figures/figure5.jl")
-include("figures/figureS1.jl")
 include("figures/figureS2.jl")
 
 include("figures/extra/figureS.jl")
@@ -47,7 +43,6 @@ function figureAll()
     figure4()
     figure5()
 
-    figureS1()
     figureS2()
 end
 
