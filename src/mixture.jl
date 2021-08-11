@@ -87,12 +87,14 @@ function ols(Actual, Predicted; logscale = true)
     if logscale
         df = DataFrame(A = log.(Actual), B = log.(Predicted))
     else
-        df = DataFrame(A = log.(Actual), B = log.(Predicted))
+        df = DataFrame(A = Actual, B = Predicted)
     end
-    ols = lm(@formula(B ~ A + 0), df)
-    return coef(ols)[1], r2(ols)
+    return coef(lm(@formula(B ~ A + 0), df))[1]
 end
 
+function R2(Actual, Predicted)
+    return cor(log10.(Actual), log10.(Predicted)) ^ 2.0
+end
 
 """ Three predictMix() below provide model predictions"""
 function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; 

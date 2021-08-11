@@ -50,14 +50,8 @@ function figure2(IgGx_Only = false)
     if !("Adjusted" in names(data))
         data[!, "Adjusted"] .= data[!, "Value"]
     end
-    if adjusted
-        df = MixtureFit(data; logscale = true)["df"]
-        xvar = "Adjusted"
-    else
-        df = predictMix(data)
-        xvar = "Value"
-    end
+    df = predictMix(data)
 
-    draw(SVG("figure2.svg", 1300px, 600px), plotGrid((1, 2), [nothing, plotPredvsMeasured(df; xx = xvar)]))
+    draw(SVG("figure2.svg", 1300px, 600px), plotGrid((1, 2), [nothing, plotPredvsMeasured(df; xx = "Value")]))
 end
 

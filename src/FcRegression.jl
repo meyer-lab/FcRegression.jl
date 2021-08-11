@@ -36,12 +36,10 @@ function figureAll()
 
     figure1()
     figure2()
-    figure2c()
-    figure2d()
     figure3()
     figure4()
     figure5()
-
+    
     figureS2()
 end
 

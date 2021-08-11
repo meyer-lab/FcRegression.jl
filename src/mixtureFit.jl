@@ -23,7 +23,7 @@ function fitExperiment(df; recepExp = measuredRecepExp, KxStar = KxConst)
     end
 
     for (ii, exp) in enumerate(exps)
-        factors[ii] = ols(df[df."Experiment" .== exp, "Adjusted"], df[df."Experiment" .== exp, "Predict"])[1]
+        factors[ii] = ols(df[df."Experiment" .== exp, "Adjusted"], df[df."Experiment" .== exp, "Predict"])
         df[df."Experiment" .== exp, "Adjusted"] .*= factors[ii]
     end
     return factors, df
