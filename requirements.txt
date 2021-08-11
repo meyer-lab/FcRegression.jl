@@ -1,5 +1,5 @@
-manubot==0.5.0
-panflute==1.12
+manubot==0.5.1
+panflute==1.12.5
 pandoc-fignos==2.4.0
 pandoc-eqnos==2.5.0
 pandoc-tablenos==2.3.0
