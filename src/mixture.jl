@@ -1,6 +1,7 @@
 using MultivariateStats
 using Impute
 using StatsBase
+import Statistics: cor
 
 function loadMixData(fn = "lux_mixture_mar2021.csv";)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
@@ -189,7 +190,7 @@ const measuredRecepExp = Dict(
 
 
 function R2(Actual, Predicted)
-    return Statistics.cor(log10.(Actual), log10.(Predicted)) ^ 2.0
+    return cor(log10.(Actual), log10.(Predicted)) ^ 2.0
 end
 
 
