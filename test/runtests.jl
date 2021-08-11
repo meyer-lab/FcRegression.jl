@@ -8,5 +8,5 @@ using DataFrames
 include("testDataHelpers.jl")
 include("testRegression.jl")
 include("testMixture.jl")
-include("testMixtureFit.jl")
+#include("testMixtureFit.jl")
 #include("testSynergy.jl")
