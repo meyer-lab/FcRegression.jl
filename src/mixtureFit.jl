@@ -36,7 +36,7 @@ function fitMixFunc2(x, df)
 
     cells = sort(unique(df."Cell"))
     recepExp = Dict([cell => exp(x[ii]) for (ii, cell) in enumerate(cells)])
-    KxStar = exp(x[(length(cells)+1)])
+    KxStar = exp(x[(length(cells) + 1)])
     return mixSqLoss(fitExperiment(df; recepExp = recepExp, KxStar = KxStar)[2])
 end
 

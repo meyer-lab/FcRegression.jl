@@ -8,8 +8,7 @@ using GLM
 function loadMixData(fn = "lux_mixture_mar2021.csv";)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
 
-    df = stack(df, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]), 
-        variable_name = "Experiment", value_name = "Value")
+    df = stack(df, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]), variable_name = "Experiment", value_name = "Value")
     df = dropmissing(df)
     df[!, "Value"] = convert.(Float64, df[!, "Value"])
     df = df[df[!, "Value"] .> 100, :]   # discard small measurements
@@ -33,13 +32,14 @@ function averageMixData(df = loadMixData())
     lower(x) = quantile(x, 0.25)
     upper(x) = quantile(x, 0.75)
     valname = "Adjusted" in names(df) ? "Adjusted" : "Value"
-    return combine(groupby(df, ["Valency", "Cell", "subclass_1", "subclass_2", "%_1", "%_2"]), 
+    return combine(
+        groupby(df, ["Valency", "Cell", "subclass_1", "subclass_2", "%_1", "%_2"]),
         valname => geocmean => valname,
         valname => geocstd => "std",
         valname => StatsBase.median => "Median",
         valname => lower => "ymin",
         valname => upper => "ymax",
-        )
+    )
 end
 
 """ 
@@ -58,8 +58,7 @@ function plotMixSubplots(splot::Function, df = loadMixData(); avg = false, kwarg
     lcells = length(cells)
     lpairs = size(pairs, 1)
     pls = Vector(undef, lcells * lpairs)
-    palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3], 
-        Scale.color_discrete().f(3)[2], Scale.color_discrete().f(3)[4:end]...]
+    palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3], Scale.color_discrete().f(3)[2], Scale.color_discrete().f(3)[4:end]...]
 
     for (i, pairrow) in enumerate(eachrow(pairs))
         for (j, cell) in enumerate(cells)
@@ -93,12 +92,11 @@ function ols(Actual, Predicted; logscale = true)
 end
 
 function R2(Actual, Predicted)
-    return cor(log10.(Actual), log10.(Predicted)) ^ 2.0
+    return cor(log10.(Actual), log10.(Predicted))^2.0
 end
 
 """ Three predictMix() below provide model predictions"""
-function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; 
-        recepExp = measuredRecepExp, KxStar = KxConst)
+function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp, KxStar = KxConst)
     IgGC = zeros(size(humanIgG))
     IgGC[IgGXname .== humanIgG] .= IgGX
     IgGC[IgGYname .== humanIgG] .= IgGY
@@ -116,8 +114,7 @@ function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY;
 end
 
 predictMix(dfrow::DataFrameRow; recepExp = measuredRecepExp, KxStar = KxConst) =
-    predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; 
-        recepExp = recepExp, KxStar = KxStar)
+    predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; recepExp = recepExp, KxStar = KxStar)
 
 function predictMix(df::DataFrame; recepExp = measuredRecepExp, KxStar = KxConst)
     """ will return another df object """
