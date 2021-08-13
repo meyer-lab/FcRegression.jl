@@ -1,5 +1,6 @@
 """ Figure 2: we can accurately account for mixed ICs """
 
+""" A general plotting function for Adjusted vs. Predicted plots """
 function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict", xxlabel = "Actual", yylabel = "Predicted", color = "Valency", shape = "Cell")
     setGadflyTheme()
 
@@ -38,28 +39,17 @@ function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict", xxlabel = "Actu
 end
 
 
-function figure2(adjusted = true, IgGx_Only = false, avg = true)
-    data = avg ? averageData(loadMixData()) : loadMixData()
+function figure2(IgGx_Only = false)
+    data = loadMixData()
 
-    if IgGx_Only
-        data = data[data[!, "%_1"] .!= 10 / 100, :]
-        data = data[data[!, "%_1"] .!= 33 / 100, :]
-        data = data[data[!, "%_1"] .!= 66 / 100, :]
-        data = data[data[!, "%_1"] .!= 90 / 100, :]
+    if IgGx_Only  # only one IgG subclass
+        data = data[(data[!, "%_1"] .== 1.0) .| (data[!, "%_1"] .== 0.0), :]
     end
 
-    if adjusted
-        df = MixtureFit(data; logscale = true)["df"]
-        xvar = "Adjusted"
-    else
-        df = predictMix(data)
-        xvar = "Value"
+    if !("Adjusted" in names(data))
+        data[!, "Adjusted"] .= data[!, "Value"]
     end
+    df = predictMix(data)
 
-    draw(SVG("figure2.svg", 1300px, 600px), plotGrid((1, 2), [nothing, plotPredvsMeasured(df; xx = xvar)]))
-end
-
-function figure2c()
-    pl = plotPredvsMeasured(PCA_dimred(); xx = "PCA", yy = "Predict", xxlabel = "Actual on imputed PC1")
-    draw(SVG("figure2c.svg", 700px, 600px), pl)
+    draw(SVG("figure2.svg", 1300px, 600px), plotGrid((1, 2), [nothing, plotPredvsMeasured(df; xx = "Value")]))
 end

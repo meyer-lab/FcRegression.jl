@@ -1,5 +1,5 @@
 
-all: figures output/manuscript.html
+all: figures output/manuscript.html output/manuscript.docx
 
 venv: venv/bin/activate
 
@@ -24,6 +24,11 @@ output/manuscript.html: venv output/manuscript.md
 	. venv/bin/activate && pandoc --verbose \
 		--defaults=./common/templates/manubot/pandoc/common.yaml \
 		--defaults=./common/templates/manubot/pandoc/html.yaml output/manuscript.md
+
+output/manuscript.docx: venv output/manuscript.md
+	. venv/bin/activate && pandoc --verbose \
+		--defaults=./common/templates/manubot/pandoc/common.yaml \
+		--defaults=./common/templates/manubot/pandoc/docx.yaml output/manuscript.md
 
 clean:
 	rm -rf *.svg venv output
