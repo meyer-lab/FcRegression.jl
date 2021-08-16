@@ -2,7 +2,6 @@ using MultivariateStats
 using Impute
 using StatsBase
 import Statistics: cor
-using GLM
 
 """ Load mixture in vitro binding data """
 function loadMixData(fn = "lux_mixture_mar2021.csv";)
@@ -84,11 +83,9 @@ const measuredRecepExp = Dict(
 
 function ols(Actual, Predicted; logscale = true)
     if logscale
-        df = DataFrame(A = log.(Actual), B = log.(Predicted))
-    else
-        df = DataFrame(A = Actual, B = Predicted)
+        return log.(Actual)\log.(Predicted)
     end
-    return coef(lm(@formula(B ~ A + 0), df))[1]
+    return Actual\Predicted
 end
 
 function R2(Actual, Predicted)
