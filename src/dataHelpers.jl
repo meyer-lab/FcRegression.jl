@@ -1,4 +1,5 @@
 using DataFrames
+using Memoize
 import CSV
 
 const KxConst = 6.31e-13 # 10^(-12.2)
@@ -80,7 +81,7 @@ end
 
 
 """ Import human or murine affinity data. """
-function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = false)
+@memoize function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = false)
     if murine
         df = CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#") |> DataFrame
     else

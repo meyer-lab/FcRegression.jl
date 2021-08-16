@@ -15,18 +15,19 @@ end
 
 function fitExperiment(df; recepExp = measuredRecepExp, KxStar = KxConst)
     exps = sort(unique(df."Experiment"))
-    factors = zeros(length(exps))
     df = predictMix(df; recepExp = recepExp, KxStar = KxStar)
+
+    df[!, "Value"] = convert.(typeof(KxStar), df[!, "Value"])
 
     if !("Adjusted" in names(df))
         df[!, "Adjusted"] .= df[!, "Value"]
     end
 
     for (ii, exp) in enumerate(exps)
-        factors[ii] = ols(df[df."Experiment" .== exp, "Adjusted"], df[df."Experiment" .== exp, "Predict"])
-        df[df."Experiment" .== exp, "Adjusted"] .*= factors[ii]
+        factor = ols(df[df."Experiment" .== exp, "Adjusted"], df[df."Experiment" .== exp, "Predict"])
+        df[df."Experiment" .== exp, "Adjusted"] .*= factor
     end
-    return factors, df
+    return df
 end
 
 function fitMixFunc2(x, df)
@@ -37,7 +38,7 @@ function fitMixFunc2(x, df)
     cells = sort(unique(df."Cell"))
     recepExp = Dict([cell => exp(x[ii]) for (ii, cell) in enumerate(cells)])
     KxStar = exp(x[(length(cells) + 1)])
-    return mixSqLoss(fitExperiment(df; recepExp = recepExp, KxStar = KxStar)[2])
+    return mixSqLoss(fitExperiment(df; recepExp = recepExp, KxStar = KxStar))
 end
 
 function fitMixMaster()
@@ -48,15 +49,11 @@ function fitMixMaster()
     cells = sort(unique(df."Cell"))
     x0 = [log(measuredRecepExp[cell]) for cell in cells]
     append!(x0, log(KxConst))
-    x_ub = x0 .+ 2.0
-    x_lb = x0 .- 2.0
-    println(x0)
-    println(x_ub)
-    println(x_lb)
+    x_ub = x0 .+ 3.0
+    x_lb = x0 .- 3.0
     f = x -> fitMixFunc2(x, df)
-    od = OnceDifferentiable(f, x0; autodiff = :forward)
-    #res = optimize(f, x0, GradientDescent(), Optim.Options(show_trace=true, iterations = 100))
-    res = optimize(f, x_lb, x_ub, x0; iterations = 100)#, Fminbox(GradientDescent()); show_trace=true, iterations = 100)
-    #res = optimize(f, x0, x_lb, x_ub; show_trace=true, iterations = 100)
+
+    dfc = TwiceDifferentiableConstraints(x_lb, x_ub)
+    res = optimize(f, dfc, x0, IPNewton(), Optim.Options(iterations = 100, show_trace=true); autodiff = :forward)
     return res
 end
