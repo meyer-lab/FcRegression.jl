@@ -52,6 +52,8 @@ function fitMixMaster()
     x_ub = x0 .+ 3.0
     x_lb = x0 .- 3.0
     f = x -> fitMixFunc2(x, df)
-    res = optimize(f, x_lb, x_ub, x0, Fminbox(GradientDescent()), Optim.Options(iterations = 5, show_trace=true); autodiff = :forward)
+
+    dfc = TwiceDifferentiableConstraints(x_lb, x_ub)
+    res = optimize(f, dfc, x0, IPNewton(), Optim.Options(iterations = 100, show_trace=true); autodiff = :forward)
     return res
 end
