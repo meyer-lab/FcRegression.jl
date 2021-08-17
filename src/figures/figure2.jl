@@ -8,22 +8,17 @@ function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict", xxlabel = "Actu
     df[(df[!, xx]) .< 1.0, xx] .= 1.0
     df[(df[!, yy]) .< 1.0, yy] .= 1.0
 
-    xmins = "StdDev" in names(df) ? (df[!, xx] .- df[!, "StdDev"]) : df[!, xx]
-    xmaxs = "StdDev" in names(df) ? (df[!, xx] .+ df[!, "StdDev"]) : xmins
-    xmins[xmins .< 1.0] .= 1.0
-    xmaxs[xmaxs .< 1.0] .= 1.0
-
     r2 = R2((df[!, xx]), (df[!, yy]))
     return plot(
         df,
         x = xx,
         y = yy,
-        xmin = xmins,
-        xmax = xmaxs,
+        xmin = "xmin",
+        xmax = "xmax",
         color = color,
         shape = shape,
         Geom.point,
-        "StdDev" in names(df) ? Geom.errorbar : Guide.xlabel(xxlabel),
+        "xmin" in names(df) ? Geom.errorbar : Guide.xlabel(xxlabel),
         Guide.ylabel(yylabel, orientation = :vertical),
         Guide.title("R^2: $r2"),
         Scale.x_log10,
@@ -40,7 +35,7 @@ end
 
 
 function figure2(IgGx_Only = false)
-    data = loadMixData()
+    data = averageMixData(loadMixData())
 
     if IgGx_Only  # only one IgG subclass
         data = data[(data[!, "%_1"] .== 1.0) .| (data[!, "%_1"] .== 0.0), :]

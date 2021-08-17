@@ -36,8 +36,8 @@ function averageMixData(df = loadMixData())
         valname => geocmean => valname,
         valname => geocstd => "std",
         valname => StatsBase.median => "Median",
-        valname => lower => "ymin",
-        valname => upper => "ymax",
+        valname => lower => "xmin",
+        valname => upper => "xmax",
     )
 end
 

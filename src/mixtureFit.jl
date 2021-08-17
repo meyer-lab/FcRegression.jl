@@ -30,7 +30,7 @@ function fitExperiment(df; recepExp = measuredRecepExp, KxStar = KxConst)
     return df
 end
 
-function fitMixFunc2(x, df)
+function fitMixFunc(x, df)
     ## assemble numbers to a vector for optimization
     # order: log(Rtot), log(Kx*)
     # no valency yet
@@ -51,7 +51,7 @@ function fitMixMaster()
     append!(x0, log(KxConst))
     x_ub = x0 .+ 3.0
     x_lb = x0 .- 3.0
-    f = x -> fitMixFunc2(x, df)
+    f = x -> fitMixFunc(x, df)
 
     dfc = TwiceDifferentiableConstraints(x_lb, x_ub)
     res = optimize(f, dfc, x0, IPNewton(), Optim.Options(iterations = 100, show_trace = true); autodiff = :forward)
