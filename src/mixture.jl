@@ -83,9 +83,9 @@ const measuredRecepExp = Dict(
 
 function ols(Actual, Predicted; logscale = true)
     if logscale
-        return log.(Actual)\log.(Predicted)
+        return log.(Actual) \ log.(Predicted)
     end
-    return Actual\Predicted
+    return Actual \ Predicted
 end
 
 function R2(Actual, Predicted)
