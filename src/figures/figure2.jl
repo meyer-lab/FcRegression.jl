@@ -35,16 +35,12 @@ end
 
 
 function figure2(IgGx_Only = false)
-    data = averageMixData(loadMixData())
+    data = loadMixData()
 
     if IgGx_Only  # only one IgG subclass
         data = data[(data[!, "%_1"] .== 1.0) .| (data[!, "%_1"] .== 0.0), :]
     end
-
-    if !("Adjusted" in names(data))
-        data[!, "Adjusted"] .= data[!, "Value"]
-    end
-    df = predictMix(data)
+    df = fitMixMaster(data)[2]
 
     draw(SVG("figure2.svg", 1300px, 600px), plotGrid((1, 2), [nothing, plotPredvsMeasured(df; xx = "Value")]))
 end
