@@ -14,9 +14,11 @@ function mixSqLoss(df; logscale = true)
 end
 
 function fitExperiment(df; recepExp = measuredRecepExp, KxStar = KxConst)
-    exps = sort(unique(df."Experiment"))
     df = predictMix(df; recepExp = recepExp, KxStar = KxStar)
-
+    if !("Experiment" in names(df))
+        return df
+    end
+    exps = sort(unique(df."Experiment"))
     df[!, "Value"] = convert.(typeof(KxStar), df[!, "Value"])
 
     if !("Adjusted" in names(df))
@@ -30,7 +32,7 @@ function fitExperiment(df; recepExp = measuredRecepExp, KxStar = KxConst)
     return df
 end
 
-function fitMixFunc2(x, df)
+function fitMixFunc(x, df)
     ## assemble numbers to a vector for optimization
     # order: log(Rtot), log(Kx*)
     # no valency yet
@@ -38,22 +40,22 @@ function fitMixFunc2(x, df)
     cells = sort(unique(df."Cell"))
     recepExp = Dict([cell => exp(x[ii]) for (ii, cell) in enumerate(cells)])
     KxStar = exp(x[(length(cells) + 1)])
-    return mixSqLoss(fitExperiment(df; recepExp = recepExp, KxStar = KxStar))
+    return fitExperiment(df; recepExp = recepExp, KxStar = KxStar)
 end
 
-function fitMixMaster()
+function fitMixMaster(df = loadMixData())
     # order: Rtot, Kx*
     # no valency yet
 
-    df = loadMixData()
     cells = sort(unique(df."Cell"))
     x0 = [log(measuredRecepExp[cell]) for cell in cells]
     append!(x0, log(KxConst))
     x_ub = x0 .+ 3.0
     x_lb = x0 .- 3.0
-    f = x -> fitMixFunc2(x, df)
+    f = x -> mixSqLoss(fitMixFunc(x, df))
 
     dfc = TwiceDifferentiableConstraints(x_lb, x_ub)
     res = optimize(f, dfc, x0, IPNewton(), Optim.Options(iterations = 100, show_trace = true); autodiff = :forward)
-    return res
+    ndf = fitMixFunc(Optim.minimizer(res), averageMixData(df))
+    return res, ndf
 end
