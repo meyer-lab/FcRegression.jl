@@ -35,7 +35,7 @@ end
 
 
 function figure2(IgGx_Only = false)
-    data = loadMixData()
+    data = loadMixData(; discard_small = true)
 
     if IgGx_Only  # only one IgG subclass
         data = data[(data[!, "%_1"] .== 1.0) .| (data[!, "%_1"] .== 0.0), :]

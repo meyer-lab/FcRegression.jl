@@ -4,13 +4,15 @@ using StatsBase
 import Statistics: cor
 
 """ Load mixture in vitro binding data """
-function loadMixData(fn = "lux_mixture_mar2021.csv";)
+function loadMixData(fn = "lux_mixture_mar2021.csv"; discard_small = false)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
 
     df = stack(df, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]), variable_name = "Experiment", value_name = "Value")
     df = dropmissing(df)
     df[!, "Value"] = convert.(Float64, df[!, "Value"])
-    df = df[df[!, "Value"] .> 100, :]   # discard small measurements
+    if discard_small
+        df = df[df[!, "Value"] .> 100, :]   # discard small measurements
+    end
     df[(df[!, "Value"]) .< 1.0, "Value"] .= 1.0
 
     df[!, "%_1"] ./= 100.0
@@ -124,54 +126,19 @@ function predictMix(df::DataFrame; recepExp = measuredRecepExp, KxStar = KxConst
     return df
 end
 
-
-function MixtureFitLoss(df, ValConv::Vector, ExpConv::Vector; logscale = false)
-    """ Loss function to be optimized given the conversion factors, called only by MixtureFit() """
-    df = copy(df)
-    dtype = promote_type(eltype(df."Value"), eltype(ValConv), eltype(ExpConv))
-    df[!, "Adjusted"] .= convert.(dtype, df[!, "Value"])
-    df[df[!, "Adjusted"] .<= 1.0, "Adjusted"] .= 1.0
-
-    @assert all(df[!, "Adjusted"] .>= 1.0)
-    @assert all(df[!, "Predict"] .>= 1.0)
-    if any(ValConv .<= 0.0) || any(ExpConv .<= 0.0)
-        return Inf, df
-    end
-
-    loss = 0.0
-    for (iv, val) in enumerate(unique(df."Valency"))
-        for (ie, exp) in enumerate(unique(df."Experiment"))
-            sdf = @view df[(df."Valency" .== val) .& (df."Experiment" .== exp), :]
-            sdf."Adjusted" .*= ValConv[iv] * ExpConv[ie]
-            if logscale
-                loss += norm(log.(sdf."Adjusted") .- log.(sdf."Predict"), 2) / nrow(sdf)
-            else
-                loss += norm(sdf."Adjusted" .- sdf."Predict", 2) / nrow(sdf)
-            end
-        end
-    end
-    return loss, df
-end
-
-
-function MixtureFit(df; logscale = false)
-    """ Two-way fitting for valency and experiment (day) """
-    if !("Predict" in names(df))
-        df = predictMix(df)
-    end
-    nv, ne = length(unique(df."Valency")), length(unique(df."Experiment"))
-    f(p::Vector, q::Vector) = MixtureFitLoss(df, [1.0; p], q; logscale = logscale)[1]
-    f(v::Vector) = f(v[1:(nv - 1)], v[nv:end])
-    init_v = ones(nv + ne - 1)
-    before_loss = MixtureFitLoss(df, [1.0; init_v[1:(nv - 1)]], init_v[nv:end]; logscale = logscale)[1]
-    od = OnceDifferentiable(f, init_v; autodiff = :forward)
-    res = optimize(od, init_v, BFGS()).minimizer
-    p, q = [1.0; res[1:(nv - 1)]], res[nv:end]
-    res = MixtureFitLoss(df, p, q; logscale = logscale)
-    return Dict(
-        "loss" => res[1],
-        "df" => res[2],
-        "ValConv" => Dict([(name, p[i]) for (i, name) in enumerate(unique(df."Valency"))]),
-        "ExpConv" => Dict([(name, q[i]) for (i, name) in enumerate(unique(df."Experiment"))]),
-    )
+""" PCA of isotype/combination x receptor matrix """
+function mixtureDataPCA()
+    df = averageMixData(loadMixData(; discard_small = false))
+    id_cols = ["Valency", "subclass_1", "subclass_2", "%_1", "%_2"]
+    wide = unstack(df, id_cols, "Cell", "Value")
+    mat = Matrix(wide[!, Not(id_cols)])
+    mat = coalesce.(mat, 0)
+    M = fit(PCA, mat'; maxoutdim = 2)
+    score = MultivariateStats.transform(M, mat')'
+    wide[!, "PC 1"] = score[:, 1]
+    wide[!, "PC 2"] = score[:, 2]
+    loading = projection(M)
+    score_df = wide[!, vcat(id_cols, ["PC 1", "PC 2"])]
+    loading_df = DataFrame("Cell" => unique(df."Cell"), "PC 1" => loading[:, 1], "PC 2" => loading[:, 2])
+    return score_df, loading_df
 end
