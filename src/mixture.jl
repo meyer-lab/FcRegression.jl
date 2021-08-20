@@ -4,13 +4,15 @@ using StatsBase
 import Statistics: cor
 
 """ Load mixture in vitro binding data """
-function loadMixData(fn = "lux_mixture_mar2021.csv";)
+function loadMixData(fn = "lux_mixture_mar2021.csv"; discard_small = false)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
 
     df = stack(df, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]), variable_name = "Experiment", value_name = "Value")
     df = dropmissing(df)
     df[!, "Value"] = convert.(Float64, df[!, "Value"])
-    df = df[df[!, "Value"] .> 100, :]   # discard small measurements
+    if discard_small
+        df = df[df[!, "Value"] .> 100, :]   # discard small measurements
+    end
     df[(df[!, "Value"]) .< 1.0, "Value"] .= 1.0
 
     df[!, "%_1"] ./= 100.0
@@ -124,10 +126,19 @@ function predictMix(df::DataFrame; recepExp = measuredRecepExp, KxStar = KxConst
     return df
 end
 
-
-function mixturePCAvisualize()
-    df = averageMixData(loadMixData())
+""" PCA of isotype/combination x receptor matrix """
+function mixtureDataPCA()
+    df = averageMixData(loadMixData(; discard_small = false))
     id_cols = ["Valency", "subclass_1", "subclass_2", "%_1", "%_2"]
     wide = unstack(df, id_cols, "Cell", "Value")
     mat = Matrix(wide[!, Not(id_cols)])
+    mat = coalesce.(mat, 0)
+    M = fit(PCA, mat'; maxoutdim = 2)
+    score = MultivariateStats.transform(M, mat')'
+    wide[!, "PC 1"] = score[:, 1]
+    wide[!, "PC 2"] = score[:, 2]
+    loading = projection(M)
+    score_df = wide[!, vcat(id_cols, ["PC 1", "PC 2"])]
+    loading_df = DataFrame("Cell" => unique(df."Cell"), "PC 1" => loading[:, 1], "PC 2" => loading[:, 2])
+    return score_df, loading_df
 end

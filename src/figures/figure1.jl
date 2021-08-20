@@ -77,5 +77,16 @@ function figure1()
     draw(SVG("figure1_pred.svg", 25inch, 16inch), plotMixSubplots(splot_contPred, loadMixData(); logscale = false))
 end
 
+function figure1c()
+    score_df, loading_df = mixtureDataPCA()
+    score_df[!, "Valency"] .= Symbol.(score_df[!, "Valency"])
+    score_df[!, "Dominant subclass"] .= ""
+    score_df[score_df."%_1" .> score_df."%_2", "Dominant subclass"] .= score_df[score_df."%_1" .> score_df."%_2", "subclass_1"]
+    score_df[score_df."%_1" .<= score_df."%_2", "Dominant subclass"] .= score_df[score_df."%_1" .> score_df."%_2", "subclass_2"]
 
-""
+    score_plot = plot(score_df, x = "PC 1", y = "PC 2", color = "Dominant subclass", shape = "Valency", Geom.point, Guide.title("Score"))
+    loading_plot = plot(loading_df, x = "PC 1", y = "PC 2", color = "Cell", Geom.point, Guide.title("Loading"))
+    pl = plotGrid((1, 2), [score_plot, loading_plot])
+    return draw(SVG("figure1c.svg", 10inch, 4inch), pl)
+end
+
