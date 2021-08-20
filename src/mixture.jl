@@ -123,3 +123,11 @@ function predictMix(df::DataFrame; recepExp = measuredRecepExp, KxStar = KxConst
     df[df."Predict" .< 1.0, "Predict"] .= 1.0
     return df
 end
+
+
+function mixturePCAvisualize()
+    df = averageMixData(loadMixData())
+    id_cols = ["Valency", "subclass_1", "subclass_2", "%_1", "%_2"]
+    wide = unstack(df, id_cols, "Cell", "Value")
+    mat = Matrix(wide[!, Not(id_cols)])
+end
