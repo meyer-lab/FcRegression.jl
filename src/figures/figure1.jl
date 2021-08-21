@@ -89,4 +89,3 @@ function figure1c()
     pl = plotGrid((1, 2), [score_plot, loading_plot])
     return draw(SVG("figure1c.svg", 10inch, 4inch), pl)
 end
-
