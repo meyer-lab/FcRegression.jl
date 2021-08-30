@@ -1,5 +1,7 @@
 """ Figure 1: show the mixture IC binding data """
 
+using Printf
+
 """ Original measurements with middle 50% as error bar """
 function splot_origData(df)
     cell = unique(df."Cell")[1]
@@ -73,19 +75,25 @@ end
 
 function figure1()
     setGadflyTheme()
-    draw(SVG("figure1.svg", 20inch, 16inch), plotMixSubplots(splot_origData, loadMixData(); avg = true))
-    draw(SVG("figure1_pred.svg", 25inch, 16inch), plotMixSubplots(splot_contPred, loadMixData(); logscale = false))
-end
 
-function figure1c()
-    score_df, loading_df = mixtureDataPCA()
+    df = averageMixData()
+    pl1 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG3") .& (df."subclass_2" .== "IgG4"), :])
+    pl2 = splot_origData(df[(df."Cell" .== "FcgRI") .& (df."subclass_1" .== "IgG3") .& (df."subclass_2" .== "IgG4"), :])
+    pl3 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :])
+    
+    score_df, loading_df, vars_expl = mixtureDataPCA()
+    vars = plot(x = 1:length(vars_expl), y = vars_expl, label = [@sprintf("%.2f", i) for i in vars_expl], 
+                Geom.point, Geom.line, Geom.label, Scale.x_discrete, Scale.y_continuous(minvalue=0.5), 
+                Guide.title("Variance Explained by PCA"), Guide.xlabel("Number of components"), Guide.ylabel("R2X"))
+
     score_df[!, "Valency"] .= Symbol.(score_df[!, "Valency"])
-    score_df[!, "Dominant subclass"] .= ""
-    score_df[score_df."%_1" .> score_df."%_2", "Dominant subclass"] .= score_df[score_df."%_1" .> score_df."%_2", "subclass_1"]
-    score_df[score_df."%_1" .<= score_df."%_2", "Dominant subclass"] .= score_df[score_df."%_1" .> score_df."%_2", "subclass_2"]
+    score_df[!, "Subclass"] .= ""
+    score_df[score_df."%_1" .> score_df."%_2", "Subclass"] .= score_df[score_df."%_1" .> score_df."%_2", "subclass_1"]
+    score_df[score_df."%_1" .<= score_df."%_2", "Subclass"] .= score_df[score_df."%_1" .> score_df."%_2", "subclass_2"]
 
-    score_plot = plot(score_df, x = "PC 1", y = "PC 2", color = "Dominant subclass", shape = "Valency", Geom.point, Guide.title("Score"))
-    loading_plot = plot(loading_df, x = "PC 1", y = "PC 2", color = "Cell", Geom.point, Guide.title("Loading"))
-    pl = plotGrid((1, 2), [score_plot, loading_plot])
-    return draw(SVG("figure1c.svg", 10inch, 4inch), pl)
+    score_plot = plot(score_df, x = "PC 1", y = "PC 2", color = "Subclass", shape = "Valency", Geom.point, Guide.title("Score"))
+    loading_plot = plot(loading_df, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("Loading"))
+
+    pl = plotGrid((2, 4), [nothing, pl1, pl2, pl3, nothing, vars, score_plot, loading_plot]; widths = [1 1 1 1; 1 0.8 1.1 1.1])
+    return draw(SVG("figure1.svg", 18inch, 8inch), pl)
 end
