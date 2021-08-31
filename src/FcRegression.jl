@@ -37,7 +37,6 @@ function figureAll()
     setGadflyTheme()
 
     figure1()
-    figure1c()
     figure2()
     figure3()
     figure4()
