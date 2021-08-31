@@ -135,7 +135,7 @@ function mixtureDataPCA()
     mat = coalesce.(mat, 0)
     M = fit(PCA, mat'; maxoutdim = 4)
     vars = principalvars(M)
-    vars_expl = [sum(vars[1:i]) for i in 1:length(vars)] ./ tvar(M)
+    vars_expl = [sum(vars[1:i]) for i = 1:length(vars)] ./ tvar(M)
 
     score = MultivariateStats.transform(M, mat')'
     wide[!, "PC 1"] = score[:, 1]
