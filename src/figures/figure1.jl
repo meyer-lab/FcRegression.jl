@@ -82,7 +82,7 @@ function figure1()
     pl3 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :])
     
     score_df, loading_df, vars_expl = mixtureDataPCA()
-    vars = plot(x = 1:length(vars_expl), y = vars_expl, label = [@sprintf("%.2f \%", i*100) for i in vars_expl], 
+    vars = plot(x = 1:length(vars_expl), y = vars_expl, label = [@sprintf("%.2f %%", i*100) for i in vars_expl], 
                 Geom.point, Geom.line, Geom.label, Scale.x_discrete, Scale.y_continuous(minvalue=0.5), 
                 Guide.title("Variance Explained by PCA"), Guide.xlabel("Number of components"), Guide.ylabel("R2X"))
 
