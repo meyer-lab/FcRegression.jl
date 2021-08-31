@@ -80,11 +80,21 @@ function figure1()
     pl1 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG3") .& (df."subclass_2" .== "IgG4"), :])
     pl2 = splot_origData(df[(df."Cell" .== "FcgRI") .& (df."subclass_1" .== "IgG3") .& (df."subclass_2" .== "IgG4"), :])
     pl3 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :])
-    
+
     score_df, loading_df, vars_expl = mixtureDataPCA()
-    vars = plot(x = 1:length(vars_expl), y = vars_expl, label = [@sprintf("%.2f %%", i*100) for i in vars_expl], 
-                Geom.point, Geom.line, Geom.label, Scale.x_discrete, Scale.y_continuous(minvalue=0.5), 
-                Guide.title("Variance Explained by PCA"), Guide.xlabel("Number of components"), Guide.ylabel("R2X"))
+    vars = plot(
+        x = 1:length(vars_expl),
+        y = vars_expl,
+        label = [@sprintf("%.2f %%", i * 100) for i in vars_expl],
+        Geom.point,
+        Geom.line,
+        Geom.label,
+        Scale.x_discrete,
+        Scale.y_continuous(minvalue = 0.5),
+        Guide.title("Variance Explained by PCA"),
+        Guide.xlabel("Number of components"),
+        Guide.ylabel("R2X"),
+    )
 
     score_df[!, "Valency"] .= Symbol.(score_df[!, "Valency"])
     score_df[!, "Subclass"] .= ""
