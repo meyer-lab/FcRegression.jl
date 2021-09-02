@@ -73,6 +73,17 @@ function splot_contPred(df; logscale = false)
     return pl
 end
 
+function plot_PCA_score(df)
+    layers = []
+    for val in unique(df."Valency")
+        for pair in unique(df."Subclass Pair")
+            append!(layers, layer(df[(df."Subclass Pair" .== pair) .& (df."Valency" .== val), :], 
+                x="PC 1", y="PC 2", color=[pair], Geom.line))
+        end
+    end
+    return plot(df, layers..., x = "PC 1", y = "PC 2", color = "Subclass Pair", shape = "Valency", Geom.point, Guide.title("Score"))
+end
+
 function figure1()
     setGadflyTheme()
 
@@ -97,11 +108,9 @@ function figure1()
     )
 
     score_df[!, "Valency"] .= Symbol.(score_df[!, "Valency"])
-    score_df[!, "Subclass"] .= ""
-    score_df[score_df."%_1" .> score_df."%_2", "Subclass"] .= score_df[score_df."%_1" .> score_df."%_2", "subclass_1"]
-    score_df[score_df."%_1" .<= score_df."%_2", "Subclass"] .= score_df[score_df."%_1" .> score_df."%_2", "subclass_2"]
+    score_df."Subclass Pair" = score_df."subclass_1" .* "-" .* score_df."subclass_2"
 
-    score_plot = plot(score_df, x = "PC 1", y = "PC 2", color = "Subclass", shape = "Valency", Geom.point, Guide.title("Score"))
+    score_plot = plot_PCA_score(score_df)
     loading_plot = plot(loading_df, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("Loading"))
 
     pl = plotGrid((2, 4), [nothing, pl1, pl2, pl3, nothing, vars, score_plot, loading_plot]; widths = [1 1 1 1; 1 0.8 1.1 1.1])
