@@ -186,3 +186,10 @@ function importHumanized(dataType)
     df = leftjoin(df, affinity, on = "Condition" => "IgG")
     return df
 end
+
+
+""" Mouse mix IgG depletion data from Lux """
+function importDeplExp()
+    df = CSV.File(joinpath(dataDir, "lux_depletion_mixedIgG_sep2021.csv"), delim = ",", comment = "#") |> DataFrame
+    return df
+end

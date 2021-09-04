@@ -77,8 +77,7 @@ function plot_PCA_score(df)
     layers = []
     for val in unique(df."Valency")
         for pair in unique(df."Subclass Pair")
-            append!(layers, layer(df[(df."Subclass Pair" .== pair) .& (df."Valency" .== val), :], 
-                x="PC 1", y="PC 2", color=[pair], Geom.line))
+            append!(layers, layer(df[(df."Subclass Pair" .== pair) .& (df."Valency" .== val), :], x = "PC 1", y = "PC 2", color = [pair], Geom.line))
         end
     end
     return plot(df, layers..., x = "PC 1", y = "PC 2", color = "Subclass Pair", shape = "Valency", Geom.point, Guide.title("Score"))
