@@ -68,7 +68,7 @@ function plotMixSubplots(splot::Function, df = loadMixData(); avg = false, kwarg
             pls[(j - 1) * lpairs + (i - 1) + 1] = splot(ndf; kwargs...)
         end
     end
-    return plotGrid((lcells, lpairs), pls; sublabel = false)
+    return plotGrid((lcells, lpairs), pls; sublabels = false)
 
 end
 

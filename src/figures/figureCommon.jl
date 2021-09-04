@@ -26,7 +26,7 @@ function setGadflyTheme()
 end
 
 
-function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], heights = [], sublabel = true)
+function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], heights = [], sublabels = true)
     @assert length(grid_dim) == 2
     nplots = prod(grid_dim)
     if length(pls) != nplots
@@ -54,6 +54,15 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
         grid[i] = Vector{Union{Plot, Compose.Context}}(fill(context(), grid_dim[2]))
     end
 
+    if sublabels == true
+        sublabels = ones(nplots)
+    elseif sublabels == false
+        sublabels = zeros(nplots)
+    else
+        @assert length(sublabels) == nplots
+    end
+    sublabels = sublabels .> 0
+
     for i = 1:nplots
         xi = (i - 1) % grid_dim[2] + 1
         yi = (i - 1) ÷ grid_dim[2] + 1
@@ -63,7 +72,7 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
                     context(0, 0, widths[yi, xi], 1),
                     (
                         context(),
-                        text(0.0, 0.0, sublabel ? 'a' - 1 + i : "", hleft, vtop),
+                        text(0.0, 0.0, sublabels[i] ? 'a' - 1 + i : "", hleft, vtop),
                         font("Helvetica-Bold"),
                         fontsize(30pt),
                         fill(colorant"black"),
@@ -74,7 +83,7 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
                     context(0, 0, widths[yi, xi], 1),
                     (
                         context(),
-                        text(0.0, 0.0, sublabel ? 'a' - 1 + i : "", hleft, vtop),
+                        text(0.0, 0.0, sublabels[i] ? 'a' - 1 + i : "", hleft, vtop),
                         font("Helvetica-Bold"),
                         fontsize(30pt),
                         fill(colorant"black"),

@@ -112,6 +112,7 @@ function figure1()
     score_plot = plot_PCA_score(score_df)
     loading_plot = plot(loading_df, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("Loading"))
 
-    pl = plotGrid((2, 4), [nothing, pl1, pl2, pl3, nothing, vars, score_plot, loading_plot]; widths = [1 1 1 1; 1 0.8 1.1 1.1])
+    pl = plotGrid((2, 4), [nothing, pl1, pl2, pl3, nothing, vars, score_plot, loading_plot]; widths = [1 1 1 1; 1 0.8 1.1 1.1],
+        sublabels = [1 1 1 1 0 1 1 1])
     return draw(SVG("figure1.svg", 18inch, 8inch), pl)
 end
