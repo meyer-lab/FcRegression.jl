@@ -8,6 +8,7 @@
         @test FcRegression.importKav(; murine = false, retdf = false) isa Matrix
         @test FcRegression.importKav(; murine = true, retdf = true) isa DataFrame
         @test FcRegression.importKav(; murine = false, retdf = true) isa DataFrame
+        @test FcRegression.importDeplExp() isa DataFrame
     end
 
     @testset "Testing human FcgR abundance import for genotypes" begin
