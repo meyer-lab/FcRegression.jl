@@ -3,7 +3,7 @@
 using Printf
 
 """ Original measurements with middle 50% as error bar """
-function splot_origData(df)
+function splot_origData(df; match_y = true)
     cell = unique(df."Cell")[1]
     IgGX = unique(df."subclass_1")[1]
     IgGY = unique(df."subclass_2")[1]
@@ -28,7 +28,7 @@ function splot_origData(df)
         Geom.line,
         Geom.errorbar,
         Scale.x_continuous(labels = n -> "$IgGX $(n*100)%\n$IgGY $(100-n*100)%"),
-        Scale.y_continuous(; maxvalue = ymax[cell]),
+        Scale.y_continuous(; maxvalue = match_y ? ymax[cell] : maximum(df."xmax")),
         Scale.color_discrete_manual(palette[1], palette[2]),
         Guide.xlabel("", orientation = :horizontal),
         Guide.ylabel("RFU", orientation = :vertical),
@@ -87,11 +87,13 @@ function figure1()
     setGadflyTheme()
 
     df = averageMixData()
-    pl1 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG3") .& (df."subclass_2" .== "IgG4"), :])
-    pl2 = splot_origData(df[(df."Cell" .== "FcgRI") .& (df."subclass_1" .== "IgG3") .& (df."subclass_2" .== "IgG4"), :])
-    pl3 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :])
+    pl1 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG3") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
+    pl2 = splot_origData(df[(df."Cell" .== "FcgRI") .& (df."subclass_1" .== "IgG2") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
+    pl3 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
 
-    score_df, loading_df, vars_expl = mixtureDataPCA()
+    _, _, vars_expl = mixtureDataPCA()
+    score_df4, loading_df4, _ = mixtureDataPCA()
+    score_df33, loading_df33, _ = mixtureDataPCA()
     vars = plot(
         x = 1:length(vars_expl),
         y = vars_expl,

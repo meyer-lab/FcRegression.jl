@@ -127,8 +127,11 @@ function predictMix(df::DataFrame; recepExp = measuredRecepExp, KxStar = KxConst
 end
 
 """ PCA of isotype/combination x receptor matrix """
-function mixtureDataPCA()
+function mixtureDataPCA(; val = 0)
     df = averageMixData(loadMixData(; discard_small = false))
+    if df > 0
+        df = df[df."Valency" .== val, :]
+    end
     id_cols = ["Valency", "subclass_1", "subclass_2", "%_1", "%_2"]
     wide = unstack(df, id_cols, "Cell", "Value")
     mat = Matrix(wide[!, Not(id_cols)])
