@@ -73,14 +73,15 @@ function splot_contPred(df; logscale = false)
     return pl
 end
 
-function plot_PCA_score(df)
+function plot_PCA_score(df; title="Score")
+    df[!, "Valency"] .= Symbol.(df[!, "Valency"])
     layers = []
     for val in unique(df."Valency")
         for pair in unique(df."Subclass Pair")
             append!(layers, layer(df[(df."Subclass Pair" .== pair) .& (df."Valency" .== val), :], x = "PC 1", y = "PC 2", color = [pair], Geom.line))
         end
     end
-    return plot(df, layers..., x = "PC 1", y = "PC 2", color = "Subclass Pair", shape = "Valency", Geom.point, Guide.title("Score"))
+    return plot(df, layers..., x = "PC 1", y = "PC 2", color = "Subclass Pair", Geom.point, Guide.title(title))
 end
 
 function figure1()
@@ -92,11 +93,15 @@ function figure1()
     pl3 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
 
     _, _, vars_expl = mixtureDataPCA()
-    score_df4, loading_df4, _ = mixtureDataPCA()
-    score_df33, loading_df33, _ = mixtureDataPCA()
+    score_df4, loading_df4, vars_expl4 = mixtureDataPCA(; val = 4)
+    score_df33, loading_df33, vars_expl33 = mixtureDataPCA(; val = 33)
+    R2Xdat = vcat([DataFrame(Components = 1:length(vars_expl), Data = i, R2X = j) 
+        for (i, j) in [("Overall", vars_expl), ("4-valent IC", vars_expl4), ("33-valent IC", vars_expl33)]]...)
     vars = plot(
-        x = 1:length(vars_expl),
-        y = vars_expl,
+        R2Xdat,
+        x = "Components",
+        y = "R2X",
+        color = "Data",
         label = [@sprintf("%.2f %%", i * 100) for i in vars_expl],
         Geom.point,
         Geom.line,
@@ -108,17 +113,15 @@ function figure1()
         Guide.ylabel("R2X"),
     )
 
-    score_df[!, "Valency"] .= Symbol.(score_df[!, "Valency"])
-    score_df."Subclass Pair" = score_df."subclass_1" .* "-" .* score_df."subclass_2"
-
-    score_plot = plot_PCA_score(score_df)
-    loading_plot = plot(loading_df, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("Loading"))
+    score_plot4 = plot_PCA_score(score_df4; title="Score, 4-valent ICs")
+    loading_plot4 = plot(loading_df4, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("Loading, 4-valent ICs"))
+    score_plot33 = plot_PCA_score(score_df33; title="Score, 33-valent ICs")
+    loading_plot33 = plot(loading_df33, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("Loading, 33-valent ICs"))
 
     pl = plotGrid(
-        (2, 4),
-        [nothing, pl1, pl2, pl3, nothing, vars, score_plot, loading_plot];
-        widths = [1 1 1 1; 1 0.8 1.1 1.1],
-        sublabels = [1 1 1 1 0 1 1 1],
+        (3, 4),
+        [nothing, pl1, pl2, pl3, nothing, vars, score_plot4, loading_plot4, score_plot33, loading_plot33];
+        sublabels = [1 1 1 1 0 1 1 1 1 1 0 0],
     )
-    return draw(SVG("figure1.svg", 18inch, 8inch), pl)
+    return draw(SVG("figure1.svg", 18inch, 12inch), pl)
 end

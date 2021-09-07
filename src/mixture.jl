@@ -129,7 +129,7 @@ end
 """ PCA of isotype/combination x receptor matrix """
 function mixtureDataPCA(; val = 0)
     df = averageMixData(loadMixData(; discard_small = false))
-    if df > 0
+    if val > 0
         df = df[df."Valency" .== val, :]
     end
     id_cols = ["Valency", "subclass_1", "subclass_2", "%_1", "%_2"]
@@ -146,5 +146,6 @@ function mixtureDataPCA(; val = 0)
     loading = projection(M)
     score_df = wide[!, vcat(id_cols, ["PC 1", "PC 2"])]
     loading_df = DataFrame("Cell" => unique(df."Cell"), "PC 1" => loading[:, 1], "PC 2" => loading[:, 2])
+    score_df."Subclass Pair" = score_df."subclass_1" .* "-" .* score_df."subclass_2"
     return score_df, loading_df, vars_expl
 end

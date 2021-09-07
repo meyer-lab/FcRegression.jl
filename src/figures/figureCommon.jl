@@ -62,6 +62,7 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
         @assert length(sublabels) == nplots
     end
     sublabels = sublabels .> 0
+    letter_label = 'a'
 
     for i = 1:nplots
         xi = (i - 1) % grid_dim[2] + 1
@@ -72,7 +73,7 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
                     context(0, 0, widths[yi, xi], 1),
                     (
                         context(),
-                        text(0.0, 0.0, sublabels[i] ? 'a' - 1 + i : "", hleft, vtop),
+                        text(0.0, 0.0, sublabels[i] ? letter_label : "", hleft, vtop),
                         font("Helvetica-Bold"),
                         fontsize(30pt),
                         fill(colorant"black"),
@@ -83,13 +84,16 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
                     context(0, 0, widths[yi, xi], 1),
                     (
                         context(),
-                        text(0.0, 0.0, sublabels[i] ? 'a' - 1 + i : "", hleft, vtop),
+                        text(0.0, 0.0, sublabels[i] ? letter_label : "", hleft, vtop),
                         font("Helvetica-Bold"),
                         fontsize(30pt),
                         fill(colorant"black"),
                     ),
                     (context(), render(pls[i])),
                 )
+            end
+            if sublabels[i]
+                letter_label += 1
             end
         else
             grid[yi][xi] = context(0, 0, widths[yi, xi], 1)
