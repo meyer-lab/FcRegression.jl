@@ -37,40 +37,65 @@ function splot_origData(df; match_y = true)
     )
 end
 
-""" Individual measurement with prediction curve """
-function splot_contPred(df; logscale = false)
-    df = copy(df)
-    @assert length(unique(df."Cell")) == 1
-    @assert length(unique(df."subclass_1")) == 1
-    @assert length(unique(df."subclass_2")) == 1
-    IgGXname = unique(df."subclass_1")[1]
-    IgGYname = unique(df."subclass_2")[1]
+function bindVSaff()
+    hKav = importKav(; murine = false, retdf = true)
 
-    x = 0:0.01:1
-    df4 = df[(df."Valency" .== 4), :]
-    preds4 = [predictMix(df4[1, :], IgGXname, IgGYname, i, 1 - i) for i in x]
-    df33 = df[(df."Valency" .== 33), :]
-    preds33 = [predictMix(df33[1, :], IgGXname, IgGYname, i, 1 - i) for i in x]
-
-    if !("Adjusted" in names(df))
-        df[!, "Adjusted"] .= df[!, "Value"]
-    end
-    df[!, "Valency"] .= Symbol.(df[!, "Valency"])
-
-    palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
-    pl = plot(
-        layer(x = x, y = preds4, Geom.line, Theme(default_color = palette[1], line_width = 2px)),
-        layer(x = x, y = preds33, Geom.line, Theme(default_color = palette[2], line_width = 2px)),
-        layer(df, x = "%_1", y = "Adjusted", color = "Valency", shape = "Experiment"),
-        Scale.x_continuous(labels = n -> "$IgGXname $(n*100)%\n$IgGYname $(100-n*100)%"),
-        (logscale ? Scale.y_log10(minvalue = 1, maxvalue = 1e6) : Scale.y_continuous),
-        Scale.color_discrete_manual(palette[1], palette[2]),
-        Guide.xlabel(""),
-        Guide.ylabel("RFU", orientation = :vertical),
-        Guide.xticks(orientation = :horizontal),
-        Guide.title("$IgGXname-$IgGYname in $(df[1, "Cell"])"),
+    # Binding data, keep single IgG subclass only
+    df = averageMixData(loadMixData())
+    df = df[(df."%_1" .== 1.0) .| (df."%_2" .== 1.0), :]
+    df."Subclass" = [r."%_1" >= 1 ? r."subclass_1" : r."subclass_2" for r in eachrow(df)]
+    df = df[!, ["Valency", "Cell", "Subclass", "Value"]]
+    lower(x) = quantile(x, 0.25)
+    upper(x) = quantile(x, 0.75)
+    df = combine(
+        groupby(df, ["Valency", "Cell", "Subclass"]),
+        "Value" => StatsBase.median => "Value",
+        "Value" => lower => "xmin",
+        "Value" => upper => "xmax",
     )
-    return pl
+    df."Affinity" = [hKav[hKav."IgG" .== r."Subclass", r."Cell"][1] for r in eachrow(df)]
+    df[!, "Valency"] .= Symbol.(df[!, "Valency"])
+    slope = ols(df."Affinity", df."Value")
+    ols_x = 10 .^ (0:1:ceil(log10(maximum(df."xmax"))))
+    ols_y = ols_x .* slope
+    pl1 = plot(
+        df,
+        x = "Value",
+        y = "Affinity",
+        xmin = "xmin",
+        xmax = "xmax",
+        color = "Cell",
+        shape = "Subclass",
+        Geom.point,
+        Geom.errorbar,
+        intercept=[148], slope=[slope],
+        Geom.abline(color="red", style=:dash),
+        Scale.x_log10,
+        Scale.y_log10,
+        Guide.title("Binding vs Affinity"),
+        Guide.xlabel("Binding quantification"),
+        Guide.ylabel("Affinity"),
+    )
+
+    val_ratio = combine(groupby(df, ["Cell", "Subclass"])) do df
+        (Ratio = df[df."Valency" .== Symbol("33"), "Value"][1] / df[df."Valency" .== Symbol("4"), "Value"][1],)
+    end
+    val_ratio."Affinity" = [hKav[hKav."IgG" .== r."Subclass", r."Cell"][1] for r in eachrow(val_ratio)]
+
+    pl2 = plot(
+        val_ratio,
+        x = "Ratio",
+        y = "Affinity",
+        color = "Cell",
+        shape = "Subclass",
+        Geom.point,
+        Scale.x_log10,
+        Scale.y_log10,
+        Guide.title("Ratio vs Affinity"),
+        Guide.xlabel("Valency 33 to 4 binding quantification ratio"),
+        Guide.ylabel("Affinity"),
+    )
+    return pl1, pl2
 end
 
 function plot_PCA_score(df; title="Score")
@@ -87,11 +112,9 @@ end
 function figure1()
     setGadflyTheme()
 
-    df = averageMixData()
-    pl1 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG3") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
-    pl2 = splot_origData(df[(df."Cell" .== "FcgRI") .& (df."subclass_1" .== "IgG2") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
-    pl3 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
+    p1, p2 = bindVSaff()
 
+    df = averageMixData()
     _, _, vars_expl = mixtureDataPCA()
     score_df4, loading_df4, vars_expl4 = mixtureDataPCA(; val = 4)
     score_df33, loading_df33, vars_expl33 = mixtureDataPCA(; val = 33)
@@ -118,9 +141,13 @@ function figure1()
     score_plot33 = plot_PCA_score(score_df33; title="Score, 33-valent ICs")
     loading_plot33 = plot(loading_df33, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("Loading, 33-valent ICs"))
 
+
+    # Specific IgG pair - receptor interaction
+    igg12_1 = splot_origData(df[(df."Cell" .== "FcgRI") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG2"), :]; match_y = false)
+    igg14_1 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
     pl = plotGrid(
         (3, 4),
-        [nothing, pl1, pl2, pl3, nothing, vars, score_plot4, loading_plot4, score_plot33, loading_plot33];
+        [nothing, p1, p2, nothing, nothing, vars, igg12_1, igg14_1, score_plot4, loading_plot4, score_plot33, loading_plot33];
         sublabels = [1 1 1 1 0 1 1 1 1 1 0 0],
     )
     return draw(SVG("figure1.svg", 18inch, 12inch), pl)
