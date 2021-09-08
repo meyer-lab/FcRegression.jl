@@ -68,8 +68,9 @@ function bindVSaff()
         shape = "Subclass",
         Geom.point,
         Geom.errorbar,
-        intercept=[148], slope=[slope],
-        Geom.abline(color="red", style=:dash),
+        intercept = [148],
+        slope = [slope],
+        Geom.abline(color = "red", style = :dash),
         Scale.x_log10,
         Scale.y_log10,
         Guide.title("Binding vs Affinity"),
@@ -98,7 +99,7 @@ function bindVSaff()
     return pl1, pl2
 end
 
-function plot_PCA_score(df; title="Score")
+function plot_PCA_score(df; title = "Score")
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
     layers = []
     for val in unique(df."Valency")
@@ -118,8 +119,12 @@ function figure1()
     _, _, vars_expl = mixtureDataPCA()
     score_df4, loading_df4, vars_expl4 = mixtureDataPCA(; val = 4)
     score_df33, loading_df33, vars_expl33 = mixtureDataPCA(; val = 33)
-    R2Xdat = vcat([DataFrame(Components = 1:length(vars_expl), Data = i, R2X = j) 
-        for (i, j) in [("Overall", vars_expl), ("4-valent IC", vars_expl4), ("33-valent IC", vars_expl33)]]...)
+    R2Xdat = vcat(
+        [
+            DataFrame(Components = 1:length(vars_expl), Data = i, R2X = j) for
+            (i, j) in [("Overall", vars_expl), ("4-valent IC", vars_expl4), ("33-valent IC", vars_expl33)]
+        ]...,
+    )
     vars = plot(
         R2Xdat,
         x = "Components",
@@ -136,10 +141,12 @@ function figure1()
         Guide.ylabel("R2X"),
     )
 
-    score_plot4 = plot_PCA_score(score_df4; title="Score, 4-valent ICs")
-    loading_plot4 = plot(loading_df4, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("Loading, 4-valent ICs"))
-    score_plot33 = plot_PCA_score(score_df33; title="Score, 33-valent ICs")
-    loading_plot33 = plot(loading_df33, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("Loading, 33-valent ICs"))
+    score_plot4 = plot_PCA_score(score_df4; title = "Score, 4-valent ICs")
+    loading_plot4 =
+        plot(loading_df4, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("Loading, 4-valent ICs"))
+    score_plot33 = plot_PCA_score(score_df33; title = "Score, 33-valent ICs")
+    loading_plot33 =
+        plot(loading_df33, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("Loading, 33-valent ICs"))
 
 
     # Specific IgG pair - receptor interaction
