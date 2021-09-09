@@ -155,7 +155,7 @@ function figure1()
     pl = plotGrid(
         (3, 4),
         [nothing, p1, p2, nothing, nothing, vars, igg12_1, igg14_1, score_plot4, loading_plot4, score_plot33, loading_plot33];
-        sublabels = [1 1 1 1 0 1 1 1 1 1 0 0],
+        sublabels = [1 1 1 1 0 1 1 1 1 1 1 1],
     )
     return draw(SVG("figure1.svg", 18inch, 12inch), pl)
 end
