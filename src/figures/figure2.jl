@@ -1,7 +1,16 @@
 """ Figure 2: we can accurately account for mixed ICs """
 
 """ A general plotting function for Adjusted vs. Predicted plots """
-function plotPredvsMeasured(df; xx = "Adjusted", yy = "Predict", xxlabel = "Actual", yylabel = "Predicted", color = "Valency", shape = "Cell", title = "Predicted vs Actual")
+function plotPredvsMeasured(
+    df;
+    xx = "Adjusted",
+    yy = "Predict",
+    xxlabel = "Actual",
+    yylabel = "Predicted",
+    color = "Valency",
+    shape = "Cell",
+    title = "Predicted vs Actual",
+)
     setGadflyTheme()
 
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
