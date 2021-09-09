@@ -48,12 +48,9 @@ General function to make subplots for every cell types and IgG pairs
 splot() is a function that take dataframe with only a single cell type and IgG pair
     and output a plot
 """
-function plotMixSubplots(splot::Function, df = loadMixData(); avg = false, kwargs...)
+function plotMixSubplots(splot::Function, df = loadMixData(); kwargs...)
     setGadflyTheme()
-    if avg
-        df = averageMixData(df)
-    end
-
+    
     cells = unique(df."Cell")
     pairs = unique(df[!, ["subclass_1", "subclass_2"]])
     lcells = length(cells)
@@ -94,22 +91,33 @@ function R2(Actual, Predicted)
     return cor(log10.(Actual), log10.(Predicted))^2.0
 end
 
+function ingroupCor(li)
+    n = length(li)
+    xs = repeat(1:3, inner=n)
+    ys = repeat(1:3, outer=n)
+    return cor(log.(xs), log.(ys))
+end
+
 """ Three predictMix() below provide model predictions"""
-function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp, KxStar = KxConst)
+function predictMix(cell::String, val, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp, KxStar = KxConst)
     IgGC = zeros(size(humanIgG))
     IgGC[IgGXname .== humanIgG] .= IgGX
     IgGC[IgGYname .== humanIgG] .= IgGY
 
     Kav = importKav(; murine = false, retdf = true)
-    Kav = Matrix(Kav[!, [dfrow."Cell"]])
-    val = "NewValency" in names(dfrow) ? dfrow."NewValency" : dfrow."Valency"
+    Kav = Matrix(Kav[!, [cell]])
     res = try
-        polyfc(1e-9, KxStar, val, [recepExp[dfrow."Cell"]], IgGC, Kav).Lbound
+        polyfc(1e-9, KxStar, val, [recepExp[cell]], IgGC, Kav).Lbound
     catch e
-        println(val, [recepExp[dfrow."Cell"]], IgGC, Kav)
+        println(val, [recepExp[cell]], IgGC, Kav)
         rethrow(e)
     end
     return res
+end
+
+function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp, KxStar = KxConst)
+    val = "NewValency" in names(dfrow) ? dfrow."NewValency" : dfrow."Valency"
+    return predictMix(dfrow."Cell", val, IgGXname, IgGYname, IgGX, IgGY; recepExp = recepExp, KxStar = KxStar)
 end
 
 predictMix(dfrow::DataFrameRow; recepExp = measuredRecepExp, KxStar = KxConst) =
