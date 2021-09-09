@@ -108,5 +108,5 @@ function figure2()
     p1 = splot_pred("FcgRIIIA-158F"; Lbound = true)
     p2 = splot_pred("FcgRIIIA-158F"; Lbound = false)
 
-    draw(SVG("figure2.svg", 11inch, 6inch), plotGrid((2, 3), [nothing, all_fit, pure_fit, nothing, p1, p2]; sublabels = [1 1 1 0 1 1]))
+    draw(SVG("figure2.svg", 18inch, 9inch), plotGrid((2, 3), [nothing, all_fit, pure_fit, nothing, p1, p2]; sublabels = [1 1 1 0 1 1]))
 end
