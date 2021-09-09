@@ -93,8 +93,8 @@ end
 
 function ingroupCor(li)
     n = length(li)
-    xs = repeat(1:3, inner=n)
-    ys = repeat(1:3, outer=n)
+    xs = repeat(1:3, inner = n)
+    ys = repeat(1:3, outer = n)
     return cor(log.(xs), log.(ys))
 end
 
@@ -124,8 +124,7 @@ function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; kwargs.
     return predictMix(dfrow."Cell", val, IgGXname, IgGYname, IgGX, IgGY; kwargs...)
 end
 
-predictMix(dfrow::DataFrameRow; kwargs...) =
-    predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; kwargs...)
+predictMix(dfrow::DataFrameRow; kwargs...) = predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; kwargs...)
 
 function predictMix(df::DataFrame; KxStar = KxConst, kwargs...)
     """ will return another df object """
