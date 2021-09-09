@@ -98,8 +98,8 @@ function ingroupCor(li)
     return cor(log.(xs), log.(ys))
 end
 
-""" Three predictMix() below provide model predictions"""
-function predictMix(cell::String, val, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp, KxStar = KxConst, kwargs...)
+""" Four predictMix() below provide model predictions"""
+function predictMix(cell::String, val, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp, KxStar = KxConst, Lbound = true, kwargs...)
     IgGC = zeros(size(humanIgG))
     IgGC[IgGXname .== humanIgG] .= IgGX
     IgGC[IgGYname .== humanIgG] .= IgGY
@@ -107,7 +107,11 @@ function predictMix(cell::String, val, IgGXname, IgGYname, IgGX, IgGY; recepExp 
     Kav = importKav(; murine = false, retdf = true)
     Kav = Matrix(Kav[!, [cell]])
     res = try
-        polyfc(1e-9, KxStar, val, [recepExp[cell]], IgGC, Kav).Lbound
+        if Lbound
+            polyfc(1e-9, KxStar, val, [recepExp[cell]], IgGC, Kav).Lbound
+        else
+            polyfc(1e-9, KxStar, val, [recepExp[cell]], IgGC, Kav).Rmulti
+        end
     catch e
         println(val, [recepExp[cell]], IgGC, Kav)
         rethrow(e)
