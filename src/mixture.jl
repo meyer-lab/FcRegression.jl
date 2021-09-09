@@ -50,7 +50,7 @@ splot() is a function that take dataframe with only a single cell type and IgG p
 """
 function plotMixSubplots(splot::Function, df = loadMixData(); kwargs...)
     setGadflyTheme()
-    
+
     cells = unique(df."Cell")
     pairs = unique(df[!, ["subclass_1", "subclass_2"]])
     lcells = length(cells)
@@ -99,7 +99,7 @@ function ingroupCor(li)
 end
 
 """ Three predictMix() below provide model predictions"""
-function predictMix(cell::String, val, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp, KxStar = KxConst)
+function predictMix(cell::String, val, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp, KxStar = KxConst, kwargs...)
     IgGC = zeros(size(humanIgG))
     IgGC[IgGXname .== humanIgG] .= IgGX
     IgGC[IgGYname .== humanIgG] .= IgGY
@@ -115,20 +115,20 @@ function predictMix(cell::String, val, IgGXname, IgGYname, IgGX, IgGY; recepExp 
     return res
 end
 
-function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp, KxStar = KxConst)
+function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; kwargs...)
     val = "NewValency" in names(dfrow) ? dfrow."NewValency" : dfrow."Valency"
-    return predictMix(dfrow."Cell", val, IgGXname, IgGYname, IgGX, IgGY; recepExp = recepExp, KxStar = KxStar)
+    return predictMix(dfrow."Cell", val, IgGXname, IgGYname, IgGX, IgGY; kwargs...)
 end
 
-predictMix(dfrow::DataFrameRow; recepExp = measuredRecepExp, KxStar = KxConst) =
-    predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; recepExp = recepExp, KxStar = KxStar)
+predictMix(dfrow::DataFrameRow; kwargs...) =
+    predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; kwargs...)
 
-function predictMix(df::DataFrame; recepExp = measuredRecepExp, KxStar = KxConst)
+function predictMix(df::DataFrame; KxStar = KxConst, kwargs...)
     """ will return another df object """
     df = copy(df)
     df[!, "Predict"] .= convert(typeof(KxStar), 1.0)
     for i = 1:size(df)[1]
-        df[i, "Predict"] = predictMix(df[i, :]; recepExp = recepExp, KxStar = KxStar)
+        df[i, "Predict"] = predictMix(df[i, :]; KxStar = KxConst, kwargs...)
     end
     df[df."Predict" .< 1.0, "Predict"] .= 1.0
     return df
