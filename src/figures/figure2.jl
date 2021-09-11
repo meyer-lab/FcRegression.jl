@@ -81,7 +81,7 @@ end
 """ Prediction curve """
 function splot_pred(cell; Lbound = true)
     x = 0:0.01:1
-    preds = [[predictMix(cell, 4, IgGXname, "IgG2", i, 1 - i; Lbound = Lbound) for i in x] for IgGXname in ["IgG1", "IgG3", "IgG4"]]
+    preds = [[predictMix(cell, 33, IgGXname, "IgG2", i, 1 - i; Lbound = Lbound) for i in x] for IgGXname in ["IgG1", "IgG3", "IgG4"]]
     palette = Scale.color_discrete().f(10)
     pl = plot(
         layer(x = x, y = preds[1], Geom.line, Theme(default_color = palette[1], line_width = 2px)),
