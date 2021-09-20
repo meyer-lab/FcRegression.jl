@@ -101,8 +101,8 @@ function plot_PCA_score(df; title = "Score")
             append!(layers, layer(df[(df."Subclass Pair" .== pair) .& (df."Valency" .== val), :], x = "PC 1", y = "PC 2", color = [pair], Geom.line))
         end
     end
-    return plot(df, layers..., x = "PC 1", y = "PC 2", color = "Subclass Pair", Geom.point, Guide.title(title), 
-        Guide.xticks(ticks=[(-2:2:8) * 1000], orientation=:horizontal), Guide.yticks(ticks=[(-2:2:8) * 1000]))
+    return plot(df, layers..., x = "PC 1", y = "PC 2", color = "Subclass Pair", Geom.point, Guide.title(title),
+        Guide.xticks(ticks=[-2e4, -1e4, 0, 1e4], orientation=:horizontal), Guide.yticks(ticks=[-5e3, 0, 5e3]))
 end
 
 function figure1()

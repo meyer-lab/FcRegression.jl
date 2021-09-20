@@ -68,33 +68,23 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
         xi = (i - 1) % grid_dim[2] + 1
         yi = (i - 1) ÷ grid_dim[2] + 1
         if i <= length(pls)
-            if pls[i] === nothing
-                grid[yi][xi] = compose(
-                    context(0, 0, widths[yi, xi], 1),
-                    (
-                        context(),
-                        text(0.0, 0.0, sublabels[i] ? letter_label : "", hleft, vtop),
-                        font("Helvetica-Bold"),
-                        fontsize(30pt),
-                        fill(colorant"black"),
-                    ),
-                )
-            else
-                grid[yi][xi] = compose(
-                    context(0, 0, widths[yi, xi], 1),
-                    (
-                        context(),
-                        text(0.0, 0.0, sublabels[i] ? letter_label : "", hleft, vtop),
-                        font("Helvetica-Bold"),
-                        fontsize(30pt),
-                        fill(colorant"black"),
-                    ),
-                    (context(), render(pls[i])),
-                )
-            end
+            label = ""
             if sublabels[i]
+                label = letter_label
                 letter_label += 1
             end
+            content = (pls[i] === nothing) ? context() : (context(), render(pls[i]))
+            grid[yi][xi] = compose(
+                context(0, 0, widths[yi, xi], 1),
+                (
+                    context(),
+                    text(0.0, 0.0, label, hleft, vtop),
+                    font("Helvetica-Bold"),
+                    fontsize(30pt),
+                    fill(colorant"black"),
+                ),
+                content,
+            )
         else
             grid[yi][xi] = context(0, 0, widths[yi, xi], 1)
         end
