@@ -13,5 +13,5 @@ end
 function figure5()
     setGadflyTheme()
     pl = plot_mix_ITP_depletion()
-    draw(SVG("figure5.svg", 4inch, 3inch), pl)
+    draw(SVG("figure5.svg", 6inch, 4inch), pl)
 end
