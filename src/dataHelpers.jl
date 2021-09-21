@@ -191,5 +191,12 @@ end
 """ Mouse mix IgG depletion data from Lux """
 function importDeplExp()
     df = CSV.File(joinpath(dataDir, "lux_depletion_mixedIgG_sep2021.csv"), delim = ",", comment = "#") |> DataFrame
+    @assert all([item in names(df) for item in ["subclass_1", "%_1", "subclass_2", "%_2"]])
+    df[ismissing.(df."%_1"), "%_1"] .= 0
+    df[ismissing.(df."%_2"), "%_2"] .= 0
+    df[ismissing.(df."subclass_1"), "subclass_1"] .= "PBS"
+    df[ismissing.(df."subclass_2"), "subclass_2"] .= "PBS"
+    df = coalesce.(df, 0)
+    df."depletion" /= 100.0
     return df
 end
