@@ -87,8 +87,12 @@ function ols(Actual, Predicted; logscale = true)
     return Actual \ Predicted
 end
 
-function R2(Actual, Predicted)
-    return cor(log10.(Actual), log10.(Predicted))^2.0
+function R2(Actual, Predicted; logscale = true)
+    if logscale
+        return cor(log10.(Actual), log10.(Predicted))^2
+    else
+        return cor(Actual, Predicted)^2
+    end
 end
 
 function ingroupCor(li)
