@@ -76,13 +76,7 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
             content = (pls[i] === nothing) ? context() : (context(), render(pls[i]))
             grid[yi][xi] = compose(
                 context(0, 0, widths[yi, xi], 1),
-                (
-                    context(),
-                    text(0.0, 0.0, label, hleft, vtop),
-                    font("Helvetica-Bold"),
-                    fontsize(30pt),
-                    fill(colorant"black"),
-                ),
+                (context(), text(0.0, 0.0, label, hleft, vtop), font("Helvetica-Bold"), fontsize(30pt), fill(colorant"black")),
                 content,
             )
         else
