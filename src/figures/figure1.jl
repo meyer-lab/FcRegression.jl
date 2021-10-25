@@ -145,8 +145,8 @@ function figure1()
     igg14_1 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
     pl = plotGrid(
         (3, 4),
-        [nothing, p1, p2, nothing, nothing, vars, igg12_1, igg14_1, score_plot4, score_plot33, loading_plot, nothing];
-        sublabels = [1 1 1 1 0 1 1 1 1 1 1 0],
+        [nothing, p1, p2, nothing, nothing, igg12_1, igg14_1, nothing, vars, score_plot4, score_plot33, loading_plot];
+        sublabels = [1 1 1 1 0 1 1 0 1 1 1 1],
     )
     return draw(SVG("figure1.svg", 18inch, 12inch), pl)
 end
