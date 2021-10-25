@@ -79,16 +79,16 @@ function bindVSaff()
 
     pl2 = plot(
         val_ratio,
-        x = "Ratio",
-        y = "Affinity",
+        x = "Affinity",
+        y = "Ratio",
         color = "Cell",
         shape = "Subclass",
         Geom.point,
         Scale.x_log10,
         Scale.y_log10,
-        Guide.title("Ratio vs Affinity"),
-        Guide.xlabel("Valency 33 to 4 binding quantification ratio"),
-        Guide.ylabel("Affinity"),
+        Guide.title("Affinity vs Ratio"),
+        Guide.xlabel("Affinity"),
+        Guide.ylabel("Valency 33 to 4 binding quantification ratio"),
     )
     return pl1, pl2
 end
