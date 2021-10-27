@@ -25,7 +25,7 @@ function fitExperiment(df; recepExp = measuredRecepExp, KxStar = KxConst)
         df[!, "Adjusted"] .= df[!, "Value"]
     end
 
-    for (ii, exp) in enumerate(exps)
+    for exp in exps
         factor = ols(df[df."Experiment" .== exp, "Adjusted"], df[df."Experiment" .== exp, "Predict"])
         df[df."Experiment" .== exp, "Adjusted"] .*= factor
     end
@@ -34,24 +34,29 @@ end
 
 function fitMixFunc(x, df)
     ## assemble numbers to a vector for optimization
-    # order: log(Rtot), log(Kx*)
-    # no valency yet
+    # order: log(Rtot), log(valency), log(Kx*)
 
     cells = sort(unique(df."Cell"))
     recepExp = Dict([cell => exp(x[ii]) for (ii, cell) in enumerate(cells)])
-    KxStar = exp(x[(length(cells) + 1)])
+    # adjust the valency, given there are only 4 and 33 originally
+    df[!, "NewValency"] .= exp(x[(length(cells) + 1)])
+    df[df."Valency" .== 33, "NewValency"] .= exp(x[(length(cells) + 2)])
+    KxStar = exp(x[(length(cells) + 3)])
     return fitExperiment(df; recepExp = recepExp, KxStar = KxStar)
 end
 
 function fitMixMaster(df = loadMixData())
-    # order: Rtot, Kx*
-    # no valency yet
+    # order: log(Rtot), log(valency), log(Kx*)
 
     cells = sort(unique(df."Cell"))
     x0 = [log(measuredRecepExp[cell]) for cell in cells]
+    append!(x0, log.([4, 33]))
     append!(x0, log(KxConst))
     x_ub = x0 .+ 3.0
     x_lb = x0 .- 3.0
+    x_ub[(length(cells)+1):(length(cells)+2)] .= x0[(length(cells)+1):(length(cells)+2)] .+ 0.01   # valency ub is the original valency
+    x_lb[(length(cells)+1):(length(cells)+2)] .= x0[(length(cells)+1):(length(cells)+2)] .- 1.0    # valency lb is exp(1) below
+    println(x0, x_ub, x_lb)
     f = x -> mixSqLoss(fitMixFunc(x, df))
 
     dfc = TwiceDifferentiableConstraints(x_lb, x_ub)

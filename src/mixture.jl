@@ -137,7 +137,7 @@ end
 
 
 """ Four predictMix() below provide model predictions"""
-function predictMix(cell, val::Int, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp, KxStar = KxConst, Lbound = true, kwargs...)
+function predictMix(cell, val::Real, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp, KxStar = KxConst, Lbound = true, kwargs...)
     IgGC = zeros(size(humanIgG))
     IgGC[IgGXname .== humanIgG] .= IgGX
     IgGC[IgGYname .== humanIgG] .= IgGY
