@@ -1,6 +1,7 @@
 """ Figure 1: show the mixture IC binding data """
 
 using Printf
+using ColorSchemes
 
 """ Original measurements with middle 50% as error bar """
 function splot_origData(df; match_y = true)
@@ -93,20 +94,22 @@ function bindVSaff()
     return pl1, pl2
 end
 
+igg_color_designation = Dict([humanIgG[i] => Scale.color_discrete().f(4)[i] for i in 1:length(humanIgG)])
+igg_pair_color(iggA, iggB; tot=5) = reverse([i for i in ColorScheme(range(igg_color_designation[iggA], igg_color_designation[iggB], length=tot))])
+
 function plot_PCA_score(df; title = "Score")
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
     layers = []
     for val in unique(df."Valency")
         for pair in unique(df."Subclass Pair")
-            #append!(layers, layer(df[(df."Subclass Pair" .== pair) .& (df."Valency" .== val), :], x = "PC 1", y = "PC 2", color = [pair], Geom.line))
-            ## below new arrow option
             ddf = df[(df."Subclass Pair" .== pair) .& (df."Valency" .== val), :]
             sort!(ddf, ["%_2"])
             arrdf = DataFrame(xstart = Float64[], ystart = Float64[], xend = Float64[], yend = Float64[], Subclass = String[])
             for ii in 1:(nrow(ddf)-1)
                 push!(arrdf, [ddf[ii, "PC 1"], ddf[ii, "PC 2"], ddf[ii+1, "PC 1"], ddf[ii+1, "PC 2"], "Mixed"])
             end
-            append!(layers, layer(arrdf, x=:xstart, y=:ystart, xend=:xend, yend=:yend, Geom.segment, color=[colorant"black"]))
+            append!(layers, layer(arrdf, x=:xstart, y=:ystart, xend=:xend, yend=:yend, color=[colorant"black"], Geom.segment))
+            # color=igg_pair_color(ddf."subclass_1"[1], ddf."subclass_2"[1]; tot=nrow(arrdf))
         end
     end
 
