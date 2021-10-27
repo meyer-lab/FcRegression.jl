@@ -94,8 +94,8 @@ function bindVSaff()
     return pl1, pl2
 end
 
-igg_color_designation = Dict([humanIgG[i] => Scale.color_discrete().f(4)[i] for i in 1:length(humanIgG)])
-igg_pair_color(iggA, iggB; tot=5) = reverse([i for i in ColorScheme(range(igg_color_designation[iggA], igg_color_designation[iggB], length=tot))])
+igg_color_designation = Dict([humanIgG[i] => Scale.color_discrete().f(4)[i] for i = 1:length(humanIgG)])
+igg_pair_color(iggA, iggB; tot = 5) = reverse([i for i in ColorScheme(range(igg_color_designation[iggA], igg_color_designation[iggB], length = tot))])
 
 function plot_PCA_score(df; title = "Score")
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
@@ -105,10 +105,10 @@ function plot_PCA_score(df; title = "Score")
             ddf = df[(df."Subclass Pair" .== pair) .& (df."Valency" .== val), :]
             sort!(ddf, ["%_2"])
             arrdf = DataFrame(xstart = Float64[], ystart = Float64[], xend = Float64[], yend = Float64[], Subclass = String[])
-            for ii in 1:(nrow(ddf)-1)
-                push!(arrdf, [ddf[ii, "PC 1"], ddf[ii, "PC 2"], ddf[ii+1, "PC 1"], ddf[ii+1, "PC 2"], "Mixed"])
+            for ii = 1:(nrow(ddf) - 1)
+                push!(arrdf, [ddf[ii, "PC 1"], ddf[ii, "PC 2"], ddf[ii + 1, "PC 1"], ddf[ii + 1, "PC 2"], "Mixed"])
             end
-            append!(layers, layer(arrdf, x=:xstart, y=:ystart, xend=:xend, yend=:yend, color=[colorant"black"], Geom.segment))
+            append!(layers, layer(arrdf, x = :xstart, y = :ystart, xend = :xend, yend = :yend, color = [colorant"black"], Geom.segment))
             # color=igg_pair_color(ddf."subclass_1"[1], ddf."subclass_2"[1]; tot=nrow(arrdf))
         end
     end
@@ -117,14 +117,14 @@ function plot_PCA_score(df; title = "Score")
     df[df."%_2" .== 1.0, "Subclass"] .= df[df."%_2" .== 1.0, "subclass_2"]
     df[(df."%_1" .< 1.0) .& (df."%_2" .< 1.0), "Subclass"] .= "Mixed"
     sdf = df[df."Subclass" .!= "Mixed", :]
-    append!(layers, layer(df, x="PC 1", y="PC 2", color=[colorant"black"], size=[1mm], Geom.point))
+    append!(layers, layer(df, x = "PC 1", y = "PC 2", color = [colorant"black"], size = [1mm], Geom.point))
     return plot(
         sdf,
         layers...,
         x = "PC 1",
         y = "PC 2",
         color = "Subclass",
-        size=[3mm],
+        size = [3mm],
         Geom.point,
         Guide.title(title),
         Guide.xticks(ticks = [-2e4, -1e4, 0, 1e4], orientation = :horizontal),
@@ -162,7 +162,7 @@ function figure1()
     score_plot33 = plot_PCA_score(score[score."Valency" .== 33, :]; title = "Score, 33-valent ICs")
     loading_plot = plot(loading, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("Loading"))
 
-    
+
     pl = plotGrid(
         (3, 4),
         [nothing, p1, p2, nothing, nothing, igg12_1, igg14_1, nothing, vars, score_plot4, score_plot33, loading_plot];
