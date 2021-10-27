@@ -119,7 +119,11 @@ function figure1()
 
     p1, p2 = bindVSaff()
 
+    # Specific IgG pair - receptor interaction
     df = averageMixData()
+    igg12_1 = splot_origData(df[(df."Cell" .== "FcgRI") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG2"), :]; match_y = false)
+    igg14_1 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
+
     score, loading, vars_expl = mixtureDataPCA()
     vars = plot(
         DataFrame(Components = 1:length(vars_expl), R2X = vars_expl),
@@ -140,9 +144,7 @@ function figure1()
     score_plot33 = plot_PCA_score(score[score."Valency" .== 33, :]; title = "Score, 33-valent ICs")
     loading_plot = plot(loading, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("Loading"))
 
-    # Specific IgG pair - receptor interaction
-    igg12_1 = splot_origData(df[(df."Cell" .== "FcgRI") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG2"), :]; match_y = false)
-    igg14_1 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
+    
     pl = plotGrid(
         (3, 4),
         [nothing, p1, p2, nothing, nothing, igg12_1, igg14_1, nothing, vars, score_plot4, score_plot33, loading_plot];
