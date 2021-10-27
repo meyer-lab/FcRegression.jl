@@ -98,15 +98,30 @@ function plot_PCA_score(df; title = "Score")
     layers = []
     for val in unique(df."Valency")
         for pair in unique(df."Subclass Pair")
-            append!(layers, layer(df[(df."Subclass Pair" .== pair) .& (df."Valency" .== val), :], x = "PC 1", y = "PC 2", color = [pair], Geom.line))
+            #append!(layers, layer(df[(df."Subclass Pair" .== pair) .& (df."Valency" .== val), :], x = "PC 1", y = "PC 2", color = [pair], Geom.line))
+            ## below new arrow option
+            ddf = df[(df."Subclass Pair" .== pair) .& (df."Valency" .== val), :]
+            sort!(ddf, ["%_2"])
+            arrdf = DataFrame(xstart = Float64[], ystart = Float64[], xend = Float64[], yend = Float64[], Subclass = String[])
+            for ii in 1:(nrow(ddf)-1)
+                push!(arrdf, [ddf[ii, "PC 1"], ddf[ii, "PC 2"], ddf[ii+1, "PC 1"], ddf[ii+1, "PC 2"], "Mixed"])
+            end
+            append!(layers, layer(arrdf, x=:xstart, y=:ystart, xend=:xend, yend=:yend, Geom.segment, color=[colorant"black"]))
         end
     end
+
+    df."Subclass" = copy(df."subclass_1")
+    df[df."%_2" .== 1.0, "Subclass"] .= df[df."%_2" .== 1.0, "subclass_2"]
+    df[(df."%_1" .< 1.0) .& (df."%_2" .< 1.0), "Subclass"] .= "Mixed"
+    sdf = df[df."Subclass" .!= "Mixed", :]
+    append!(layers, layer(df, x="PC 1", y="PC 2", color=[colorant"black"], size=[1mm], Geom.point))
     return plot(
-        df,
+        sdf,
         layers...,
         x = "PC 1",
         y = "PC 2",
-        color = "Subclass Pair",
+        color = "Subclass",
+        size=[3mm],
         Geom.point,
         Guide.title(title),
         Guide.xticks(ticks = [-2e4, -1e4, 0, 1e4], orientation = :horizontal),
