@@ -35,11 +35,11 @@ function averageMixData(df = loadMixData(); combSingle = false)
 
     # Combine cases of single IgGs into one entry
     if combSingle
-        df[df."%_1" .== 0.0, "subclass_1"] .= "None";
-        df[df."subclass_1" .== "None", "%_1"] .= 1.0;
-        df[df."subclass_1" .== "None", "%_2"] .= 0.0;
-        df[df."subclass_1" .== "None", "subclass_1"] = df[df."subclass_1" .== "None", "subclass_2"];
-        df[df."%_2" .== 0.0, "subclass_2"] .= "None";
+        df[df."%_1" .== 0.0, "subclass_1"] .= "None"
+        df[df."subclass_1" .== "None", "%_1"] .= 1.0
+        df[df."subclass_1" .== "None", "%_2"] .= 0.0
+        df[df."subclass_1" .== "None", "subclass_1"] = df[df."subclass_1" .== "None", "subclass_2"]
+        df[df."%_2" .== 0.0, "subclass_2"] .= "None"
     end
 
     valname = "Adjusted" in names(df) ? "Adjusted" : "Value"
@@ -73,7 +73,7 @@ function combSing2pair(df)
                     crow."%_2" = 1.0
                     crow."%_1" = 0.0
                     push!(ndf, crow)
-                end 
+                end
             end
         else
             push!(ndf, row)
