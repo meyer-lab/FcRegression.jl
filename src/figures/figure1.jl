@@ -1,6 +1,7 @@
 """ Figure 1: show the mixture IC binding data """
 
 using Printf
+using ColorSchemes
 
 """ Original measurements with middle 50% as error bar """
 function splot_origData(df; match_y = true)
@@ -79,34 +80,51 @@ function bindVSaff()
 
     pl2 = plot(
         val_ratio,
-        x = "Ratio",
-        y = "Affinity",
+        x = "Affinity",
+        y = "Ratio",
         color = "Cell",
         shape = "Subclass",
         Geom.point,
         Scale.x_log10,
         Scale.y_log10,
-        Guide.title("Ratio vs Affinity"),
-        Guide.xlabel("Valency 33 to 4 binding quantification ratio"),
-        Guide.ylabel("Affinity"),
+        Guide.title("Affinity vs Ratio"),
+        Guide.xlabel("Affinity"),
+        Guide.ylabel("Valency 33 to 4 binding quantification ratio"),
     )
     return pl1, pl2
 end
+
+igg_color_designation = Dict([humanIgG[i] => Scale.color_discrete().f(4)[i] for i in 1:length(humanIgG)])
+igg_pair_color(iggA, iggB; tot=5) = reverse([i for i in ColorScheme(range(igg_color_designation[iggA], igg_color_designation[iggB], length=tot))])
 
 function plot_PCA_score(df; title = "Score")
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
     layers = []
     for val in unique(df."Valency")
         for pair in unique(df."Subclass Pair")
-            append!(layers, layer(df[(df."Subclass Pair" .== pair) .& (df."Valency" .== val), :], x = "PC 1", y = "PC 2", color = [pair], Geom.line))
+            ddf = df[(df."Subclass Pair" .== pair) .& (df."Valency" .== val), :]
+            sort!(ddf, ["%_2"])
+            arrdf = DataFrame(xstart = Float64[], ystart = Float64[], xend = Float64[], yend = Float64[], Subclass = String[])
+            for ii in 1:(nrow(ddf)-1)
+                push!(arrdf, [ddf[ii, "PC 1"], ddf[ii, "PC 2"], ddf[ii+1, "PC 1"], ddf[ii+1, "PC 2"], "Mixed"])
+            end
+            append!(layers, layer(arrdf, x=:xstart, y=:ystart, xend=:xend, yend=:yend, color=[colorant"black"], Geom.segment))
+            # color=igg_pair_color(ddf."subclass_1"[1], ddf."subclass_2"[1]; tot=nrow(arrdf))
         end
     end
+
+    df."Subclass" = copy(df."subclass_1")
+    df[df."%_2" .== 1.0, "Subclass"] .= df[df."%_2" .== 1.0, "subclass_2"]
+    df[(df."%_1" .< 1.0) .& (df."%_2" .< 1.0), "Subclass"] .= "Mixed"
+    sdf = df[df."Subclass" .!= "Mixed", :]
+    append!(layers, layer(df, x="PC 1", y="PC 2", color=[colorant"black"], size=[1mm], Geom.point))
     return plot(
-        df,
+        sdf,
         layers...,
         x = "PC 1",
         y = "PC 2",
-        color = "Subclass Pair",
+        color = "Subclass",
+        size=[3mm],
         Geom.point,
         Guide.title(title),
         Guide.xticks(ticks = [-2e4, -1e4, 0, 1e4], orientation = :horizontal),
@@ -119,7 +137,11 @@ function figure1()
 
     p1, p2 = bindVSaff()
 
+    # Specific IgG pair - receptor interaction
     df = averageMixData()
+    igg12_1 = splot_origData(df[(df."Cell" .== "FcgRI") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG2"), :]; match_y = false)
+    igg14_1 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
+
     score, loading, vars_expl = mixtureDataPCA()
     vars = plot(
         DataFrame(Components = 1:length(vars_expl), R2X = vars_expl),
@@ -140,13 +162,11 @@ function figure1()
     score_plot33 = plot_PCA_score(score[score."Valency" .== 33, :]; title = "Score, 33-valent ICs")
     loading_plot = plot(loading, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("Loading"))
 
-    # Specific IgG pair - receptor interaction
-    igg12_1 = splot_origData(df[(df."Cell" .== "FcgRI") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG2"), :]; match_y = false)
-    igg14_1 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
+    
     pl = plotGrid(
         (3, 4),
-        [nothing, p1, p2, nothing, nothing, vars, igg12_1, igg14_1, score_plot4, score_plot33, loading_plot, nothing];
-        sublabels = [1 1 1 1 0 1 1 1 1 1 1 0],
+        [nothing, p1, p2, nothing, nothing, igg12_1, igg14_1, nothing, vars, score_plot4, score_plot33, loading_plot];
+        sublabels = [1 1 1 1 0 1 1 0 1 1 1 1],
     )
     return draw(SVG("figure1.svg", 18inch, 12inch), pl)
 end
