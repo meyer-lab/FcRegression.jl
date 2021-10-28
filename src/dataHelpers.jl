@@ -73,9 +73,9 @@ function importRtot(; murine = true, genotype = "HIV", retdf = false)
     end
     @assert df.Receptor == (murine ? murineFcgR : humanFcgR)
     if retdf
-        return df[!, ["Receptor"; names(df)[in(cellTypes).(names(df))]]]
+        return deepcopy(df[!, ["Receptor"; names(df)[in(cellTypes).(names(df))]]])
     else
-        return Matrix{Float64}(df[!, cellTypes])
+        return deepcopy(Matrix{Float64}(df[!, cellTypes]))
     end
 end
 
@@ -102,9 +102,9 @@ end
     df = df[in(IgGlist).(df.IgG), :]
 
     if retdf
-        return df[!, ["IgG"; FcRecep]]
+        return deepcopy(df[!, ["IgG"; FcRecep]])
     else
-        return Matrix{Float64}(df[!, FcRecep])
+        return deepcopy(Matrix{Float64}(df[!, FcRecep]))
     end
 end
 

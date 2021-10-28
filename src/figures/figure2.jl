@@ -38,7 +38,7 @@ function plotPredvsMeasured(
             Scale.color_discrete().f(10)[2],
             Scale.color_discrete().f(10)[4:end]...,
         ),
-        Geom.abline(color = "green"),
+        Geom.abline(color = "black"),
         Guide.annotation(compose(context(), text(4, 1, "R<sup>2</sup> = " * @sprintf("%.4f", r2)), font("Helvetica-Bold"))),
         style(errorbar_cap_length = 0px),
     )
