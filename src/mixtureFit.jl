@@ -13,8 +13,9 @@ function mixSqLoss(df; logscale = true)
     return sum((adj .- pred) .^ 2)
 end
 
-function fitExperiment(df; recepExp = measuredRecepExp, KxStar = KxConst)
-    df = predictMix(df; recepExp = recepExp, KxStar = KxStar)
+function fitExperiment(df; recepExp = measuredRecepExp, KxStar = KxConst, 
+        Kav::DataFrame = importKav(; murine = false, retdf = true))
+    df = predictMix(df; recepExp = recepExp, KxStar = KxStar, Kav = Kav)
     if !("Experiment" in names(df))
         return df
     end
@@ -32,26 +33,41 @@ function fitExperiment(df; recepExp = measuredRecepExp, KxStar = KxConst)
     return df
 end
 
-function fitMixFunc(x, df)
+function fitMixFunc(x::Vector, df)
     ## assemble numbers to a vector for optimization
-    # order: log(Rtot), log(valency), log(Kx*)
+    # order: log(Rtot), log(valency), log(Kx*), log(Kav)
 
+    Kav = importKav(; murine = false, retdf = true)
     cells = sort(unique(df."Cell"))
-    recepExp = Dict([cell => exp(x[ii]) for (ii, cell) in enumerate(cells)])
+    @assert length(x) == length(cells) + 3 + size(Kav)[1] * (size(Kav)[2]-1)
+    x = exp.(x) 
+
+    recepExp = Dict([cell => x[ii] for (ii, cell) in enumerate(cells)])
     # adjust the valency, given there are only 4 and 33 originally
-    df[!, "NewValency"] .= exp(x[(length(cells) + 1)])
-    df[df."Valency" .== 33, "NewValency"] .= exp(x[(length(cells) + 2)])
-    KxStar = exp(x[(length(cells) + 3)])
-    return fitExperiment(df; recepExp = recepExp, KxStar = KxStar)
+    df[!, "NewValency"] .= x[(length(cells) + 1)]
+    df[df."Valency" .== 33, "NewValency"] .= x[(length(cells) + 2)]
+    KxStar = x[(length(cells) + 3)]
+    Kav[!, Not("IgG")] .= 0.0
+    Kav[!, Not("IgG")] = reshape(x[(length(cells) + 4):end], (size(Kav)[1], :))
+
+    return fitExperiment(df; recepExp = recepExp, KxStar = KxStar, Kav = Kav)
 end
 
 function fitMixMaster(df = loadMixData())
-    # order: log(Rtot), log(valency), log(Kx*)
-
+    # order: log(Rtot), log(valency), log(Kx*), log(Kav)
+    # x0 for Rtot, valency, Kx*
     cells = sort(unique(df."Cell"))
     x0 = [log(measuredRecepExp[cell]) for cell in cells]
     append!(x0, log.([4, 33]))
     append!(x0, log(KxConst))
+
+    # x0 for Kav
+    Kav = importKav(; murine = false, retdf = true)
+    x0aff = reshape(Matrix(Kav[!, Not("IgG")]), (:))
+    x0aff[x0aff .<= 0.0] .= 1.0
+    append!(x0, log.(x0aff))
+
+    # set bounds for optimization
     x_ub = x0 .+ 3.0
     x_lb = x0 .- 3.0
     x_ub[(length(cells)+1):(length(cells)+2)] .= x0[(length(cells)+1):(length(cells)+2)] .+ 0.01   # valency ub is the original valency
@@ -62,5 +78,7 @@ function fitMixMaster(df = loadMixData())
     dfc = TwiceDifferentiableConstraints(x_lb, x_ub)
     res = optimize(f, dfc, x0, IPNewton(), Optim.Options(iterations = 100, show_trace = true); autodiff = :forward)
     ndf = fitMixFunc(Optim.minimizer(res), averageMixData(df))
-    return res, ndf
+    Kav[!, Not("IgG")] .= 0.0
+    Kav[!, Not("IgG")] = reshape(res.minimizer[(length(cells)+4):end], (size(Kav)[1], :))
+    return res, ndf, Kav
 end
