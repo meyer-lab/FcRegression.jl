@@ -13,8 +13,7 @@ function mixSqLoss(df; logscale = true)
     return sum((adj .- pred) .^ 2)
 end
 
-function fitExperiment(df; recepExp = measuredRecepExp, KxStar = KxConst, 
-        Kav::DataFrame = importKav(; murine = false, retdf = true))
+function fitExperiment(df; recepExp = measuredRecepExp, KxStar = KxConst, Kav::DataFrame = importKav(; murine = false, retdf = true))
     df = predictMix(df; recepExp = recepExp, KxStar = KxStar, Kav = Kav)
     if !("Experiment" in names(df))
         return df
@@ -39,8 +38,8 @@ function fitMixFunc(x::Vector, df; fitKav = false)
 
     Kav = importKav(; murine = false, retdf = true)
     cells = sort(unique(df."Cell"))
-    @assert length(x) == length(cells) + 3 + (fitKav ? size(Kav)[1] * (size(Kav)[2]-1) : 0)
-    x = exp.(x) 
+    @assert length(x) == length(cells) + 3 + (fitKav ? size(Kav)[1] * (size(Kav)[2] - 1) : 0)
+    x = exp.(x)
 
     recepExp = Dict([cell => x[ii] for (ii, cell) in enumerate(cells)])
     # adjust the valency, given there are only 4 and 33 originally
@@ -74,8 +73,8 @@ function fitMixMaster(df = loadMixData(); fitKav = false)
     # set bounds for optimization
     x_ub = x0 .+ 3.0
     x_lb = x0 .- 3.0
-    x_ub[(length(cells)+1):(length(cells)+2)] .= x0[(length(cells)+1):(length(cells)+2)] .+ 0.01   # valency ub is the original valency
-    x_lb[(length(cells)+1):(length(cells)+2)] .= x0[(length(cells)+1):(length(cells)+2)] .- 1.0    # valency lb is exp(1) below
+    x_ub[(length(cells) + 1):(length(cells) + 2)] .= x0[(length(cells) + 1):(length(cells) + 2)] .+ 0.01   # valency ub is the original valency
+    x_lb[(length(cells) + 1):(length(cells) + 2)] .= x0[(length(cells) + 1):(length(cells) + 2)] .- 1.0    # valency lb is exp(1) below
     println(x0, x_ub, x_lb)
     f = x -> mixSqLoss(fitMixFunc(x, df; fitKav = fitKav))
 
@@ -84,7 +83,7 @@ function fitMixMaster(df = loadMixData(); fitKav = false)
     ndf = fitMixFunc(Optim.minimizer(res), averageMixData(df); fitKav = fitKav)
     if fitKav
         Kav[!, Not("IgG")] .= 0.0
-        Kav[!, Not("IgG")] = reshape(exp.(res.minimizer[(length(cells)+4):end]), (size(Kav)[1], :))
+        Kav[!, Not("IgG")] = reshape(exp.(res.minimizer[(length(cells) + 4):end]), (size(Kav)[1], :))
         return res, ndf, Kav
     end
     return res, ndf
