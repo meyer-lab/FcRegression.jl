@@ -84,7 +84,7 @@ function fitMixMaster(df = loadMixData(); fitKav = false)
     ndf = fitMixFunc(Optim.minimizer(res), averageMixData(df); fitKav = fitKav)
     if fitKav
         Kav[!, Not("IgG")] .= 0.0
-        Kav[!, Not("IgG")] = reshape(res.minimizer[(length(cells)+4):end], (size(Kav)[1], :))
+        Kav[!, Not("IgG")] = reshape(exp.(res.minimizer[(length(cells)+4):end]), (size(Kav)[1], :))
         return res, ndf, Kav
     end
     return res, ndf
