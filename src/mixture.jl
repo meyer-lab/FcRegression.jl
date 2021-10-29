@@ -137,13 +137,23 @@ end
 
 
 """ Four predictMix() below provide model predictions"""
-function predictMix(cell, val::Real, IgGXname, IgGYname, IgGX, IgGY; 
-        recepExp = measuredRecepExp, KxStar = KxConst, Lbound = true, 
-        Kav::DataFrame = importKav(; murine = false, retdf = true), kwargs...)
+function predictMix(
+    cell,
+    val::Real,
+    IgGXname,
+    IgGYname,
+    IgGX,
+    IgGY;
+    recepExp = measuredRecepExp,
+    KxStar = KxConst,
+    Lbound = true,
+    Kav::DataFrame = importKav(; murine = false, retdf = true),
+    kwargs...,
+)
     IgGC = zeros(size(humanIgG))
     IgGC[IgGXname .== humanIgG] .= IgGX
     IgGC[IgGYname .== humanIgG] .= IgGY
-    
+
     Kav = Matrix(Kav[!, [cell]])
     res = try
         if Lbound
