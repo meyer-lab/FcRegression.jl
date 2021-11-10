@@ -13,3 +13,20 @@ function figure2d()
     df."Adjusted" = df."Value" .* (geocmean(df."Predict") / geocmean(df."Value"))
     draw(SVG("figure2d.svg", 1300px, 600px), plotGrid((1, 2), [nothing, plotPredvsMeasured(df)]))
 end
+
+function importRobinett()
+    df = CSV.File(joinpath(FcRegression.dataDir, "robinett/Luxetal2013-Fig2Bmod.csv"), delim = ",", comment = "#") |> DataFrame
+    df = dropmissing(stack(df, Not(["Cell", "Antibody", "Valency"])))
+    rename!(df, ["variable" => "Experiment", "value" => "Value"])
+    rename!(df, ["Antibody" => "subclass_1"])
+    df[!, "%_1"] .= 1.0
+    df[!, "subclass_2"] .= "None"
+    df[!, "%_2"] .= 0.0
+    return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
+end
+
+function importRobinettabund()
+    df = CSV.File(joinpath(FcRegression.dataDir, "robinett/FcgRquant.csv"), delim = ",", comment = "#") |> DataFrame
+    df = combine(groupby(df, ["Receptor"]), "Count" => FcRegression.geocmean => "Count")
+    return Dict(eachrow(df))
+end
