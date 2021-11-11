@@ -54,11 +54,11 @@ function fitMixFunc(x::Vector, df; fitKav = false)
     return fitExperiment(df; recepExp = recepExp, KxStar = KxStar, Kav = Kav)
 end
 
-function fitMixMaster(df = loadMixData(); fitKav = false)
+function fitMixMaster(df = loadMixData(); fitKav = false, recepExp = measuredRecepExp)
     # order: log(Rtot), log(valency), log(Kx*), log(Kav)
     # x0 for Rtot, valency, Kx*
     cells = sort(unique(df."Cell"))
-    x0 = [log(measuredRecepExp[cell]) for cell in cells]
+    x0 = [log(recepExp[cell]) for cell in cells]
     append!(x0, log.([4, 33]))
     append!(x0, log(KxConst))
 
