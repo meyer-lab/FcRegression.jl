@@ -84,6 +84,8 @@ function fitMixMaster(df = loadMixData(); fitKav = false, recepExp = measuredRec
     if fitKav
         Kav[!, Not("IgG")] .= 0.0
         Kav[!, Not("IgG")] = reshape(exp.(res.minimizer[(length(cells) + 4):end]), (size(Kav)[1], :))
+        nKav = unstack(stack(Kav, Not("IgG")), "variable", "IgG", "value")
+        CSV.write(joinpath(dataDir, "fitted_human_new_abundance.csv"), nKav)
         return res, ndf, Kav
     end
     return res, ndf
