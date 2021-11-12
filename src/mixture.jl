@@ -29,9 +29,19 @@ function loadMixData(fn = "lux_mixture_mar2021.csv"; discard_small = false)
 end
 
 """ Make statistics of individual cell types and subclass types """
-function averageMixData(df = loadMixData())
+function averageMixData(df = loadMixData(); combSingle = false)
     lower(x) = quantile(x, 0.25)
     upper(x) = quantile(x, 0.75)
+
+    # Combine cases of single IgGs into one entry
+    if combSingle
+        df[df."%_1" .== 0.0, "subclass_1"] .= "None"
+        df[df."subclass_1" .== "None", "%_1"] .= 1.0
+        df[df."subclass_1" .== "None", "%_2"] .= 0.0
+        df[df."subclass_1" .== "None", "subclass_1"] = df[df."subclass_1" .== "None", "subclass_2"]
+        df[df."%_2" .== 0.0, "subclass_2"] .= "None"
+    end
+
     valname = "Adjusted" in names(df) ? "Adjusted" : "Value"
     return combine(
         groupby(df, ["Valency", "Cell", "subclass_1", "subclass_2", "%_1", "%_2"]),
@@ -42,6 +52,36 @@ function averageMixData(df = loadMixData())
         valname => upper => "xmax",
     )
 end
+
+""" Transform combined single IgG case back to pairs"""
+function combSing2pair(df)
+    @assert !("None" in df."subclass_1")
+    @assert "None" in df."subclass_2"
+
+    ndf = copy(df[[], :])
+    isotypes = unique(df."subclass_1")
+    for row in eachrow(df)
+        if row."subclass_2" == "None"
+            for igg in isotypes
+                crow = deepcopy(row)
+                if igg > row."subclass_1"
+                    crow."subclass_2" = igg
+                    push!(ndf, crow)
+                elseif igg < row."subclass_1"
+                    crow."subclass_2" = row."subclass_1"
+                    crow."subclass_1" = igg
+                    crow."%_2" = 1.0
+                    crow."%_1" = 0.0
+                    push!(ndf, crow)
+                end
+            end
+        else
+            push!(ndf, row)
+        end
+    end
+    return sort!(ndf, names(df)[in(["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"]).(names(df))])
+end
+
 
 """ 
 General function to make subplots for every cell types and IgG pairs
@@ -95,20 +135,25 @@ function R2(Actual, Predicted; logscale = true)
     end
 end
 
-function ingroupCor(li)
-    n = length(li)
-    xs = repeat(1:3, inner = n)
-    ys = repeat(1:3, outer = n)
-    return cor(log.(xs), log.(ys))
-end
 
 """ Four predictMix() below provide model predictions"""
-function predictMix(cell::String, val, IgGXname, IgGYname, IgGX, IgGY; recepExp = measuredRecepExp, KxStar = KxConst, Lbound = true, kwargs...)
+function predictMix(
+    cell,
+    val::Real,
+    IgGXname,
+    IgGYname,
+    IgGX,
+    IgGY;
+    recepExp = measuredRecepExp,
+    KxStar = KxConst,
+    Lbound = true,
+    Kav::DataFrame = importKav(; murine = false, retdf = true),
+    kwargs...,
+)
     IgGC = zeros(size(humanIgG))
     IgGC[IgGXname .== humanIgG] .= IgGX
     IgGC[IgGYname .== humanIgG] .= IgGY
 
-    Kav = importKav(; murine = false, retdf = true)
     Kav = Matrix(Kav[!, [cell]])
     res = try
         if Lbound
@@ -143,7 +188,7 @@ end
 
 """ PCA of isotype/combination x receptor matrix """
 function mixtureDataPCA(; val = 0)
-    df = averageMixData(loadMixData(; discard_small = false))
+    df = averageMixData(loadMixData(; discard_small = false); combSingle = true)
     if val > 0
         df = df[df."Valency" .== val, :]
     end
@@ -151,7 +196,7 @@ function mixtureDataPCA(; val = 0)
     wide = unstack(df, id_cols, "Cell", "Value")
     mat = Matrix(wide[!, Not(id_cols)])
     mat = coalesce.(mat, 0)
-    M = fit(PCA, mat'; maxoutdim = 4)
+    M = MultivariateStats.fit(PCA, mat'; maxoutdim = 4)
     vars = principalvars(M)
     vars_expl = [sum(vars[1:i]) for i = 1:length(vars)] ./ tvar(M)
 
@@ -161,6 +206,9 @@ function mixtureDataPCA(; val = 0)
     loading = projection(M)
     score_df = wide[!, vcat(id_cols, ["PC 1", "PC 2"])]
     loading_df = DataFrame("Cell" => unique(df."Cell"), "PC 1" => loading[:, 1], "PC 2" => loading[:, 2])
+    if "None" in df."subclass_2"
+        score_df = combSing2pair(score_df)
+    end
     score_df."Subclass Pair" = score_df."subclass_1" .* "-" .* score_df."subclass_2"
     return score_df, loading_df, vars_expl
 end
