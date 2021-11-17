@@ -32,11 +32,10 @@ function fitExperiment(df; recepExp = measuredRecepExp, KxStar = KxConst, Kav::D
     return df
 end
 
-function fitMixFunc(x::Vector, df; fitKav = false)
+function fitMixFunc(x::Vector, df; fitKav = false, Kav::DataFrame = importKav(; murine = false, retdf = true))
     ## assemble numbers to a vector for optimization
     # order: log(Rtot), log(valency), log(Kx*), log(Kav)
 
-    Kav = importKav(; murine = false, retdf = true)
     cells = sort(unique(df."Cell"))
     @assert length(x) == length(cells) + 3 + (fitKav ? size(Kav)[1] * (size(Kav)[2] - 1) : 0)
     x = exp.(x)
@@ -54,7 +53,8 @@ function fitMixFunc(x::Vector, df; fitKav = false)
     return fitExperiment(df; recepExp = recepExp, KxStar = KxStar, Kav = Kav)
 end
 
-function fitMixMaster(df = loadMixData(); fitKav = false, recepExp = measuredRecepExp)
+function fitMixMaster(df = loadMixData(); fitKav = false, recepExp = measuredRecepExp, 
+            Kav::DataFrame = importKav(; murine = false, retdf = true))
     # order: log(Rtot), log(valency), log(Kx*), log(Kav)
     # x0 for Rtot, valency, Kx*
     cells = sort(unique(df."Cell"))
@@ -64,7 +64,6 @@ function fitMixMaster(df = loadMixData(); fitKav = false, recepExp = measuredRec
 
     # x0 for Kav
     if fitKav
-        Kav = importKav(; murine = false, retdf = true)
         x0aff = reshape(Matrix(Kav[!, Not("IgG")]), (:))
         x0aff[x0aff .<= 0.0] .= 1.0
         append!(x0, log.(x0aff))
@@ -76,7 +75,7 @@ function fitMixMaster(df = loadMixData(); fitKav = false, recepExp = measuredRec
     x_ub[(length(cells) + 1):(length(cells) + 2)] .= x0[(length(cells) + 1):(length(cells) + 2)] .+ 0.01   # valency ub is the original valency
     x_lb[(length(cells) + 1):(length(cells) + 2)] .= x0[(length(cells) + 1):(length(cells) + 2)] .- 1.0    # valency lb is exp(1) below
     println(x0, x_ub, x_lb)
-    f = x -> mixSqLoss(fitMixFunc(x, df; fitKav = fitKav))
+    f = x -> mixSqLoss(fitMixFunc(x, df; fitKav = fitKav, Kav = Kav))
 
     dfc = TwiceDifferentiableConstraints(x_lb, x_ub)
     res = optimize(f, dfc, x0, IPNewton(), Optim.Options(iterations = 100, show_trace = true); autodiff = :forward)
@@ -89,4 +88,16 @@ function fitMixMaster(df = loadMixData(); fitKav = false, recepExp = measuredRec
         return res, ndf, Kav
     end
     return res, ndf
+end
+
+function loadFittedKav(; retdf = true)
+    df = CSV.File(joinpath(dataDir, "fitted_human_new_abundance.csv"), comment = "#") |> DataFrame
+    df = stack(df; variable_name = "IgG", value_name = "Kav")
+    df = unstack(df, "variable", "Kav")
+    df = df[in(humanIgG).(df.IgG), :]
+    if retdf
+        return deepcopy(df[!, ["IgG"; humanFcgR]])
+    else
+        return deepcopy(Matrix{Float64}(df[!, humanFcgR]))
+    end
 end

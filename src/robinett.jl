@@ -25,8 +25,16 @@ function importRobinett()
     return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
 end
 
-function importRobinettabund()
+""" Import Rtot measured in Robinett in vitro study """
+function importRobinettRtot()
     df = CSV.File(joinpath(FcRegression.dataDir, "robinett/FcgRquant.csv"), delim = ",", comment = "#") |> DataFrame
     df = combine(groupby(df, ["Receptor"]), "Count" => FcRegression.geocmean => "Count")
     return Dict(eachrow(df))
+end
+
+function plotRobinettCV()
+    df = importRobinett()
+    Kav = loadFittedKav(; retdf = true)
+    Rtot = importRobinettRtot()
+    res, ndf = fitMixMaster(df; fitKav = false, recepExp = Rtot, Kav=Kav)
 end
