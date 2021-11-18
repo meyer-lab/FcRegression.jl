@@ -40,5 +40,5 @@ function plotRobinettCV()
     _, fitted = fitMixMaster(df; fitKav = false, recepExp = Rtot, Kav=Kav)
     pl1 = plotPredvsMeasured(unfitted; xx="Value", title = "With reported Kav", R2pos = (3, 1))
     pl2 = plotPredvsMeasured(fitted; xx="Value", title = "With newly fitted Kav", R2pos = (3, 1))
-    draw(SVG("figure2rob.svg", 9inch, 4.5inch), plotGrid((1, 2), [pl1, pl2]; sublabels = [1 1]))
+    draw(SVG("figure2rob.svg", 9inch, 4inch), plotGrid((1, 2), [pl1, pl2]; sublabels = [1 1]))
 end
