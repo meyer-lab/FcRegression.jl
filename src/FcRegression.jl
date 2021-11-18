@@ -45,6 +45,8 @@ function figureAll()
 
     figureS1()
     figureS2()
+
+    plotRobinettCV()
 end
 
 export polyfc, polyfc_ActV
