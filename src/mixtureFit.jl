@@ -54,7 +54,7 @@ function fitMixFunc(x::Vector, df; fitKav = false, Kav::DataFrame = importKav(; 
 end
 
 function fitMixMaster(df = loadMixData(); fitKav = false, recepExp = measuredRecepExp, 
-            Kav::DataFrame = importKav(; murine = false, retdf = true))
+            Kav::DataFrame = importKav(; murine = false, retdf = true), show_trace = false)
     # order: log(Rtot), log(valency), log(Kx*), log(Kav)
     # x0 for Rtot, valency, Kx*
     cells = sort(unique(df."Cell"))
@@ -78,8 +78,8 @@ function fitMixMaster(df = loadMixData(); fitKav = false, recepExp = measuredRec
     f = x -> mixSqLoss(fitMixFunc(x, df; fitKav = fitKav, Kav = Kav))
 
     dfc = TwiceDifferentiableConstraints(x_lb, x_ub)
-    res = optimize(f, dfc, x0, IPNewton(), Optim.Options(iterations = 100, show_trace = true); autodiff = :forward)
-    ndf = fitMixFunc(Optim.minimizer(res), averageMixData(df); fitKav = fitKav)
+    res = optimize(f, dfc, x0, IPNewton(), Optim.Options(iterations = 100, show_trace = show_trace); autodiff = :forward)
+    ndf = fitMixFunc(Optim.minimizer(res), averageMixData(df); fitKav = fitKav, Kav = Kav)
     if fitKav
         Kav[!, Not("IgG")] .= 0.0
         Kav[!, Not("IgG")] = reshape(exp.(res.minimizer[(length(cells) + 4):end]), (size(Kav)[1], :))
