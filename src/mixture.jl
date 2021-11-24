@@ -2,6 +2,8 @@ using MultivariateStats
 using Impute
 using StatsBase
 import Statistics: cor
+using GLM
+import ANOVA: anova
 
 """ Load mixture in vitro binding data """
 function loadMixData(fn = "lux_mixture_mar2021.csv"; discard_small = false)
@@ -211,4 +213,18 @@ function mixtureDataPCA(; val = 0)
     end
     score_df."Subclass Pair" = score_df."subclass_1" .* "-" .* score_df."subclass_2"
     return score_df, loading_df, vars_expl
+end
+
+
+function mixtureANOVA()
+    df = loadMixData()
+    df."Measurement" = string.(df."Valency") .* df."Cell" .* df."subclass_1" .* " " .* 
+            string.(df."%_1") .* ", " .* df."subclass_2" .* " " .* string.(df."%_2")
+    df."logValue" = log.(df."Value")
+
+    model = fit(LinearModel,
+            @formula(logValue ~ Measurement),
+            df,
+            contrasts = Dict(:Measurement => EffectsCoding()))
+    return anova(model)
 end

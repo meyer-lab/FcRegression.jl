@@ -4,6 +4,7 @@ authors = ["Aaron Meyer <a@asmlab.org>", "Cyrillus Tan", "Robert Theisen", "Step
 version = "0.1.0"
 
 [deps]
+ANOVA = "0825541b-7374-5e1e-93bd-72e337c8a986"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
 Compose = "a81c6b42-2e10-5240-aca2-a61377ecd94b"
@@ -12,6 +13,7 @@ Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Fontconfig = "186bb1d3-e1f7-5a2c-a377-96d770f13627"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+GLM = "38e38edf-8417-5370-95a0-9cbb8c7f171a"
 Gadfly = "c91e804a-d5a3-530f-b6f0-dfbca275c004"
 Impute = "f7bf1975-0170-51b9-8c5f-a992d46b9575"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
