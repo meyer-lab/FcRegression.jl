@@ -163,9 +163,6 @@ function figure1()
     loading_plot = plot(loading, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("PCA Loadings"))
 
 
-    pl = plotGrid(
-        (3, 4),
-        [nothing, nothing, p1, p2, vars, score_plot4, score_plot33, loading_plot, igg12_1, igg14_1];
-    )
+    pl = plotGrid((3, 4), [nothing, nothing, p1, p2, vars, score_plot4, score_plot33, loading_plot, igg12_1, igg14_1];)
     return draw(SVG("figure1.svg", 18inch, 12inch), pl)
 end
