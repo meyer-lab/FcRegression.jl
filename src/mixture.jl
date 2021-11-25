@@ -213,7 +213,7 @@ function mixtureDataPCA(; val = 0)
     return score_df, loading_df, vars_expl
 end
 
-
+#=
 function mixtureANOVA()
     ## GLM and ANOVA are not included in the package. Results will be saved separately after run
     using GLM
@@ -229,3 +229,4 @@ function mixtureANOVA()
             contrasts = Dict(:Measurement => EffectsCoding()))
     return anova(model)
 end
+=#
