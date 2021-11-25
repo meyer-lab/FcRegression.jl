@@ -68,8 +68,8 @@ function bindVSaff()
         Geom.errorbar,
         Scale.x_log10,
         Scale.y_log10,
-        Guide.title("Affinity vs Binding"),
-        Guide.xlabel("Affinity"),
+        Guide.title("Recorded affinity vs. measured binding for single IgG"),
+        Guide.xlabel("Recorded Affinity"),
         Guide.ylabel("Binding quantification"),
     )
 
@@ -87,9 +87,9 @@ function bindVSaff()
         Geom.point,
         Scale.x_log10,
         Scale.y_log10,
-        Guide.title("Affinity vs Ratio"),
-        Guide.xlabel("Affinity"),
-        Guide.ylabel("Valency 33 to 4 binding quantification ratio"),
+        Guide.title("Recorded affinity vs. intervalency ratio"),
+        Guide.xlabel("Recorded Affinity"),
+        Guide.ylabel("33- to 4-valent binding quantification ratio"),
     )
     return pl1, pl2
 end
@@ -158,15 +158,11 @@ function figure1()
         Guide.ylabel("R2X"),
     )
 
-    score_plot4 = plot_PCA_score(score[score."Valency" .== 4, :]; title = "Score, 4-valent ICs")
-    score_plot33 = plot_PCA_score(score[score."Valency" .== 33, :]; title = "Score, 33-valent ICs")
-    loading_plot = plot(loading, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("Loading"))
+    score_plot4 = plot_PCA_score(score[score."Valency" .== 4, :]; title = "PCA Score, 4-valent ICs")
+    score_plot33 = plot_PCA_score(score[score."Valency" .== 33, :]; title = "PCA Score, 33-valent ICs")
+    loading_plot = plot(loading, x = "PC 1", y = "PC 2", color = "Cell", label = "Cell", Geom.point, Geom.label, Guide.title("PCA Loadings"))
 
 
-    pl = plotGrid(
-        (3, 4),
-        [nothing, p1, p2, nothing, nothing, igg12_1, igg14_1, nothing, vars, score_plot4, score_plot33, loading_plot];
-        sublabels = [1 1 1 1 0 1 1 0 1 1 1 1],
-    )
+    pl = plotGrid((3, 4), [nothing, nothing, p1, p2, vars, score_plot4, score_plot33, loading_plot, igg12_1, igg14_1];)
     return draw(SVG("figure1.svg", 18inch, 12inch), pl)
 end
