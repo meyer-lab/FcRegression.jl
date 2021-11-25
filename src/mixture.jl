@@ -2,8 +2,6 @@ using MultivariateStats
 using Impute
 using StatsBase
 import Statistics: cor
-using GLM
-import ANOVA: anova
 
 """ Load mixture in vitro binding data """
 function loadMixData(fn = "lux_mixture_mar2021.csv"; discard_small = false)
@@ -217,6 +215,9 @@ end
 
 
 function mixtureANOVA()
+    ## GLM and ANOVA are not included in the package. Results will be saved separately after run
+    using GLM
+    import ANOVA: anova
     df = loadMixData()
     df."Measurement" = string.(df."Valency") .* df."Cell" .* df."subclass_1" .* " " .* 
             string.(df."%_1") .* ", " .* df."subclass_2" .* " " .* string.(df."%_2")
