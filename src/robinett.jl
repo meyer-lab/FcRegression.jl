@@ -13,3 +13,32 @@ function figure2d()
     df."Adjusted" = df."Value" .* (geocmean(df."Predict") / geocmean(df."Value"))
     draw(SVG("figure2d.svg", 1300px, 600px), plotGrid((1, 2), [nothing, plotPredvsMeasured(df)]))
 end
+
+function importRobinett()
+    df = CSV.File(joinpath(FcRegression.dataDir, "robinett/Luxetal2013-Fig2Bmod.csv"), delim = ",", comment = "#") |> DataFrame
+    df = dropmissing(stack(df, Not(["Cell", "Antibody", "Valency"])))
+    rename!(df, ["variable" => "Experiment", "value" => "Value"])
+    rename!(df, ["Antibody" => "subclass_1"])
+    df[!, "%_1"] .= 1.0
+    df[!, "subclass_2"] .= "None"
+    df[!, "%_2"] .= 0.0
+    return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
+end
+
+""" Import Rtot measured in Robinett in vitro study """
+function importRobinettRtot()
+    df = CSV.File(joinpath(FcRegression.dataDir, "robinett/FcgRquant.csv"), delim = ",", comment = "#") |> DataFrame
+    df = combine(groupby(df, ["Receptor"]), "Count" => FcRegression.geocmean => "Count")
+    return Dict(eachrow(df))
+end
+
+function plotRobinettCV()
+    df = importRobinett()
+    Kav = loadFittedKav(; retdf = true)
+    Rtot = importRobinettRtot()
+    _, unfitted = fitMixMaster(df; fitKav = false, recepExp = Rtot, show_trace = false)
+    _, fitted = fitMixMaster(df; fitKav = false, recepExp = Rtot, Kav = Kav, show_trace = false)
+    pl1 = plotPredvsMeasured(unfitted; xx="Value", title = "With reported Kav", R2pos = (3, 1))
+    pl2 = plotPredvsMeasured(fitted; xx="Value", title = "With newly fitted Kav", R2pos = (3, 1))
+    draw(SVG("figure2rob.svg", 9inch, 4inch), plotGrid((1, 2), [pl1, pl2]; sublabels = [1 1]))
+end
