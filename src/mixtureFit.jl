@@ -53,8 +53,13 @@ function fitMixFunc(x::Vector, df; fitKav = false, Kav::DataFrame = importKav(; 
     return fitExperiment(df; recepExp = recepExp, KxStar = KxStar, Kav = Kav)
 end
 
-function fitMixMaster(df = loadMixData(); fitKav = false, recepExp = measuredRecepExp, 
-            Kav::DataFrame = importKav(; murine = false, retdf = true), show_trace = false)
+function fitMixMaster(
+    df = loadMixData();
+    fitKav = false,
+    recepExp = measuredRecepExp,
+    Kav::DataFrame = importKav(; murine = false, retdf = true),
+    show_trace = false,
+)
     # order: log(Rtot), log(valency), log(Kx*), log(Kav)
     # x0 for Rtot, valency, Kx*
     cells = sort(unique(df."Cell"))
