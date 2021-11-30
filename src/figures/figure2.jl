@@ -102,7 +102,7 @@ end
 
 function figure2()
     data = loadMixData(; discard_small = true)
-    res, df = fitMixMaster(data)
+    res, df = fitMixMaster(data, fitKav = true)
 
     all_fit = plotPredvsMeasured(df; xx = "Value")
     pure_fit = plotPredvsMeasured(df[(df."%_1" .== 1) .| (df."%_2" .== 1), :]; xx = "Value", title = "Predicted vs Actual, single isotype only")
