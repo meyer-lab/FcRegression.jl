@@ -102,13 +102,20 @@ end
 
 function figure2()
     data = loadMixData(; discard_small = true)
-    res, df = fitMixMaster(data, fitKav = true)
+    raw_predict = predictMix(averageMixData(data))
 
-    all_fit = plotPredvsMeasured(df; xx = "Value")
-    pure_fit = plotPredvsMeasured(df[(df."%_1" .== 1) .| (df."%_2" .== 1), :]; xx = "Value", title = "Predicted vs Actual, single isotype only")
+    raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Prediction without fitting", R2pos = (3.5, 1))
+        
+    _, reg_fitdf = fitMixMaster(data, fitKav = false)
+    reg_allPL = plotPredvsMeasured(reg_fitdf; xx = "Value", title = "Fit all except Kav, all")
+    reg_onePL = plotPredvsMeasured(reg_fitdf; xx = "Value", title = "Fit all except Kav, single isotypes")
+
+    _, df = fitMixMaster(data, fitKav = true)
+    kfit_allPL = plotPredvsMeasured(df; xx = "Value", title = "Fit Kav, all")
+    kfit_onePL = plotPredvsMeasured(df[(df."%_1" .== 1) .| (df."%_2" .== 1), :]; xx = "Value", title = "Fit Kav, single isotypes")
 
     p1 = splot_pred("FcgRIIIA-158F"; Lbound = true)
     p2 = splot_pred("FcgRIIIA-158F"; Lbound = false)
 
-    draw(SVG("figure2.svg", 16inch, 9inch), plotGrid((2, 3), [nothing, all_fit, pure_fit, nothing, p1, p2]; sublabels = [1 1 1 0 1 1]))
+    draw(SVG("figure2.svg", 16inch, 13inch), plotGrid((3, 3), [nothing, raw_pred_pl, reg_allPL, reg_onePL, kfit_allPL, kfit_onePL, p1, p2, nothing]; sublabels = [1 1 1 1 1 1 1 1 0]))
 end
