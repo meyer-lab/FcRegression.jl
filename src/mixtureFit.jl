@@ -82,7 +82,7 @@ function fitMixMaster(
     # order: log(Rtot), log(valency), log(Kx*), log(Kav)
     # x0 for Rtot, valency, Kx*
     @assert fitRs | fitKav
-    x0, x_ub, x_lb = [], [], []
+    x0, x_ub, x_lb = Vector{Real}[], Vector{Real}[], Vector{Real}[]
 
     # fitting Rtot, valency, and Kx*
     if fitRs
