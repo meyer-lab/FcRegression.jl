@@ -108,7 +108,11 @@ function figure2()
     
     res, reg_fitdf = fitMixMaster(data; fitRs = true, fitKav = false)
     reg_allPL = plotPredvsMeasured(reg_fitdf; xx = "Value", title = "Fit all except Kav, all")
-    reg_onePL = plotPredvsMeasured(reg_fitdf[(reg_fitdf."%_1" .== 1) .| (reg_fitdf."%_2" .== 1), :]; xx = "Value", title = "Fit all except Kav, single isotypes")
+    reg_onePL = plotPredvsMeasured(
+        reg_fitdf[(reg_fitdf."%_1" .== 1) .| (reg_fitdf."%_2" .== 1), :];
+        xx = "Value",
+        title = "Fit all except Kav, single isotypes",
+    )
 
     _, df = fitMixMaster(data; fitRs = false, fitKav = true, xres = res.minimizer)
     kfit_allPL = plotPredvsMeasured(df; xx = "Value", title = "Fit Kav only, all")
@@ -117,5 +121,8 @@ function figure2()
     p1 = splot_pred("FcgRIIIA-158F"; Lbound = true)
     p2 = splot_pred("FcgRIIIA-158F"; Lbound = false)
 
-    draw(SVG("figure2.svg", 16inch, 13inch), plotGrid((3, 3), [nothing, raw_pred_pl, reg_allPL, reg_onePL, kfit_allPL, kfit_onePL, p1, p2, nothing]; sublabels = [1 1 1 1 1 1 1 1 0]))
+    draw(
+        SVG("figure2.svg", 16inch, 13inch),
+        plotGrid((3, 3), [nothing, raw_pred_pl, reg_allPL, reg_onePL, kfit_allPL, kfit_onePL, p1, p2, nothing]; sublabels = [1 1 1 1 1 1 1 1 0]),
+    )
 end
