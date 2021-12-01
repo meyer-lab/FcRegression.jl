@@ -110,7 +110,7 @@ function figure2()
     reg_allPL = plotPredvsMeasured(reg_fitdf; xx = "Value", title = "Fit all except Kav, all")
     reg_onePL = plotPredvsMeasured(reg_fitdf[(reg_fitdf."%_1" .== 1) .| (reg_fitdf."%_2" .== 1), :]; xx = "Value", title = "Fit all except Kav, single isotypes")
 
-    _, df = fitMixMaster(data; fitRs = false, fitKav = true, xres = res)
+    _, df = fitMixMaster(data; fitRs = false, fitKav = true, xres = res.minimizer)
     kfit_allPL = plotPredvsMeasured(df; xx = "Value", title = "Fit Kav only, all")
     kfit_onePL = plotPredvsMeasured(df[(df."%_1" .== 1) .| (df."%_2" .== 1), :]; xx = "Value", title = "Fit Kav only, single isotypes")
 
