@@ -105,7 +105,7 @@ function figure2()
     raw_predict = predictMix(averageMixData(data))
 
     raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Prediction without fitting", R2pos = (3.5, 1))
-        
+    
     res, reg_fitdf = fitMixMaster(data; fitRs = true, fitKav = false)
     reg_allPL = plotPredvsMeasured(reg_fitdf; xx = "Value", title = "Fit all except Kav, all")
     reg_onePL = plotPredvsMeasured(reg_fitdf[(reg_fitdf."%_1" .== 1) .| (reg_fitdf."%_2" .== 1), :]; xx = "Value", title = "Fit all except Kav, single isotypes")
