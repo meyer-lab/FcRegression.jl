@@ -115,8 +115,11 @@ function plotReceptorActivities(ActI_df, dataType)
     pl = plot(
         ActI_df,
         x = "Receptor",
+        ymin = "ymin",
+        ymax = "ymax",
         y = "Activity",
         Geom.bar(position = :dodge),
+        Geom.errorbar,
         Scale.x_discrete(),
         Scale.y_continuous(minvalue = 0.0),
         Guide.title("Predicted receptor activities for $dataType"),

@@ -169,6 +169,9 @@ end
 function compareRegMethods()
 end
 
+function wildtypeWeights()
+end
+
 
 function regressionResult(dataType; L0, f, murine::Bool, exp_method = true, fit_ActI = true)
     df = murine ? importDepletion(dataType) : importHumanized(dataType)
@@ -176,10 +179,11 @@ function regressionResult(dataType; L0, f, murine::Bool, exp_method = true, fit_
     Xfc, Xdf, Y = modelPred(df; L0 = L0, f = f, murine = murine)
     if fit_ActI
         res = fitRegression(Xfc, Xdf, Y; murine = murine, exp_method = exp_method)
+        loo_res = LOOCrossVal(Xfc, Xdf, Y; murine = murine)
     else
         res = fitRegression_woActI(Xfc, Xdf, Y, (murine ? murineActI : humanActI); exp_method = exp_method)
+        loo_res = LOOCrossVal(Xfc, Xdf, Y; murine = murine, ActI = res.ActI)
     end
-    loo_res = LOOCrossVal(Xfc, Xdf, Y; murine = murine, ActI = res.ActI)
 
     odf = df[!, in(["Condition", "Background"]).(names(df))]
     odf[!, "Concentration"] .= ("Concentration" in names(df)) ? (df[!, "Concentration"] .* L0) : L0
@@ -211,7 +215,7 @@ function regressionResult(dataType; L0, f, murine::Bool, exp_method = true, fit_
     end
     rename!(wildtype, "IgG" => "Condition")
 
-    wtXfc, wtXdf, wtY = modelPred(wildtype; L0 = L0, f = f, murine = murine)
+    wtXfc, wtXdf, _ = modelPred(wildtype; L0 = L0, f = f, murine = murine)
     Xmat, _ = regressionPred(wtXfc, wtXdf, res.cellWs, res.ActI; showXmat = true, murine = murine)
     Xmat = Xmat .* res.cellWs'
     Xmat[!, "Condition"] = wtXdf[!, "Condition"]
@@ -220,7 +224,10 @@ function regressionResult(dataType; L0, f, murine::Bool, exp_method = true, fit_
     rename!(Cell_df, "variable" => "Component")
 
     # ActI interval
-    ActI_df = DataFrame(Receptor = (murine ? murineFcgR : humanFcgR), Activity = res.ActI)
+    ActI_conf = hcat([loo.ActI for loo in loo_res]...)
+    ActI_low = quantile.(eachslice(ActI_conf, dims=1), 0.25)
+    ActI_hi = quantile.(eachslice(ActI_conf, dims=1), 0.75)
+    ActI_df = DataFrame(Receptor = (murine ? murineFcgR : humanFcgR), Activity = res.ActI, ymin = ActI_low, ymax = ActI_hi)
 
     return res, odf, Cell_df, ActI_df
 end
