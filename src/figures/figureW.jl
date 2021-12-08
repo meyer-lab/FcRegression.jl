@@ -1,4 +1,6 @@
-function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, legend = true, Cellidx = nothing, Recepidx = nothing, Rbound = false)
+function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, 
+        exp_method = true, fit_ActI = true,
+        IgGX = 2, IgGY = 3, legend = true, Cellidx = nothing, Recepidx = nothing, Rbound = false)
 
     if murine
         df = importDepletion(dataType)
@@ -16,7 +18,7 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
         shape = (dataType == "ITP") ? "Condition" : "Concentration"
     end
 
-    res, odf, Cell_df, ActI_df = regressionResult(dataType; L0 = L0, f = f, murine = murine)
+    res, odf, Cell_df, ActI_df = regressionResult(dataType; L0 = L0, f = f, murine = murine, exp_method = exp_method, fit_ActI = exp_method)
     @assert all(in(names(odf)).([color, shape]))
 
 
@@ -99,14 +101,18 @@ function plotCellTypeEffects(Cell_df, dataType; legend = true)
         Cell_df,
         x = "Condition",
         y = "Weight",
+        ymin = "ymin",
+        ymax = "ymax",
         color = "Component",
         Guide.colorkey(pos = [0.65w, -0.15h]),
-        Geom.bar(position = :dodge),
+        Geom.errorbar,
+        Stat.dodge(axis=:x),
+        Geom.bar(position=:dodge),
         Scale.x_discrete(levels = unique(Cell_df.Condition)),
         Scale.y_continuous(minvalue = 0.0),
         Scale.color_discrete(levels = unique(Cell_df.Component)),
         Guide.title("Predicted cell type weights for $dataType"),
-        style(key_position = legend ? :right : :none),
+        style(key_position = legend ? :right : :none, stroke_color=c->"black"),
     )
     return pl
 end
@@ -115,15 +121,16 @@ function plotReceptorActivities(ActI_df, dataType)
     pl = plot(
         ActI_df,
         x = "Receptor",
+        y = "Activity",
         ymin = "ymin",
         ymax = "ymax",
-        y = "Activity",
-        Geom.bar(position = :dodge),
         Geom.errorbar,
+        Stat.dodge(axis=:x),
+        Geom.bar(position=:dodge),
         Scale.x_discrete(),
         Scale.y_continuous(minvalue = 0.0),
         Guide.title("Predicted receptor activities for $dataType"),
-        style(bar_spacing = 5mm),
+        style(bar_spacing = 5mm, stroke_color=c->"black"),
     )
     return pl
 end

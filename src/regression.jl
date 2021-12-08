@@ -169,7 +169,28 @@ end
 function compareRegMethods()
 end
 
-function wildtypeWeights()
+
+function wildtypeWeights(res, df; L0 = 1e-9, f = 4, murine = true)
+    # Prepare for cell type weights in wildtype
+    wildtype = copy(importKav(; murine = murine, c1q = ("C1q" in names(df)), IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true))
+    wildtype[!, "Background"] .= "wt"
+    wildtype[!, "Target"] .= 0.0
+    if !murine
+        wildtype[!, "Genotype"] .= "ZZZ"
+    end
+    if "Neutralization" in names(df)
+        wildtype[!, "Neutralization"] .= 0.0
+    end
+    rename!(wildtype, "IgG" => "Condition")
+
+    wtXfc, wtXdf, _ = modelPred(wildtype; L0 = L0, f = f, murine = murine)
+    Xmat, _ = regressionPred(wtXfc, wtXdf, res.cellWs, res.ActI; showXmat = true, murine = murine)
+    Xmat = Xmat .* res.cellWs'
+    Xmat[!, "Condition"] = wtXdf[!, "Condition"]
+    Cell_df = stack(Xmat, Not("Condition"))
+    rename!(Cell_df, "value" => "Weight")
+    rename!(Cell_df, "variable" => "Component")
+    return Cell_df
 end
 
 
@@ -203,30 +224,22 @@ function regressionResult(dataType; L0, f, murine::Bool, exp_method = true, fit_
         odf[!, "Genotype"] .= df[!, "Genotype"]
     end
 
-    # Prepare for cell type weights in wildtype
-    wildtype = copy(importKav(; murine = murine, c1q = ("C1q" in names(df)), IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true))
-    wildtype[!, "Background"] .= "wt"
-    wildtype[!, "Target"] .= 0.0
-    if !murine
-        wildtype[!, "Genotype"] .= "ZZZ"
-    end
-    if "Neutralization" in names(Xdf)
-        wildtype[!, "Neutralization"] .= 0.0
-    end
-    rename!(wildtype, "IgG" => "Condition")
+    lower(x) = quantile(x, 0.25)
+    upper(x) = quantile(x, 0.75)
 
-    wtXfc, wtXdf, _ = modelPred(wildtype; L0 = L0, f = f, murine = murine)
-    Xmat, _ = regressionPred(wtXfc, wtXdf, res.cellWs, res.ActI; showXmat = true, murine = murine)
-    Xmat = Xmat .* res.cellWs'
-    Xmat[!, "Condition"] = wtXdf[!, "Condition"]
-    Cell_df = stack(Xmat, Not("Condition"))
-    rename!(Cell_df, "value" => "Weight")
-    rename!(Cell_df, "variable" => "Component")
+    Cell_df = wildtypeWeights(res, df; L0 = L0, f = f, murine = murine)
+    Cell_loo = vcat([wildtypeWeights(loo, df) for loo in loo_res]...)
+    Cell_conf = combine(
+        groupby(Cell_loo, ["Condition", "Component"]),
+        "Weight" => lower => "ymin",
+        "Weight" => upper => "ymax",
+    )
+    Cell_df = innerjoin(Cell_df, Cell_conf, on = ["Condition", "Component"])
 
     # ActI interval
     ActI_conf = hcat([loo.ActI for loo in loo_res]...)
-    ActI_low = quantile.(eachslice(ActI_conf, dims=1), 0.25)
-    ActI_hi = quantile.(eachslice(ActI_conf, dims=1), 0.75)
+    ActI_low = lower.(eachslice(ActI_conf, dims=1))
+    ActI_hi = upper.(eachslice(ActI_conf, dims=1))
     ActI_df = DataFrame(Receptor = (murine ? murineFcgR : humanFcgR), Activity = res.ActI, ymin = ActI_low, ymax = ActI_hi)
 
     return res, odf, Cell_df, ActI_df
