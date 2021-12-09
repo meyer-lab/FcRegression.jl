@@ -190,6 +190,19 @@ function wildtypeWeights(res, df; L0 = 1e-9, f = 4, murine = true)
     return Cell_df
 end
 
+function regressionBootstrap(bootsize, Xfc, Xdf, Y; murine = true, exp_method = true, ActI::Union{Nothing, Vector} = nothing)
+    ress = Vector{optResult}()
+    for b in 1:bootsize
+        idx = rand(1:length(Y), length(Y))
+        if ActI === nothing
+            append!(ress, [fitRegression(Xfc[:, :, idx], Xdf[idx, :], Y[idx]; murine = murine, exp_method = exp_method)])
+        else
+            append!(ress, [fitRegression_woActI(Xfc[:, :, idx], Xdf[idx, :], Y[idx], ActI; exp_method = exp_method)])
+        end
+    end
+    return ress
+end
+
 
 function regressionResult(dataType; L0, f, murine::Bool, exp_method = true, fit_ActI = true)
     df = murine ? importDepletion(dataType) : importHumanized(dataType)
@@ -198,9 +211,11 @@ function regressionResult(dataType; L0, f, murine::Bool, exp_method = true, fit_
     if fit_ActI
         res = fitRegression(Xfc, Xdf, Y; murine = murine, exp_method = exp_method)
         loo_res = LOOCrossVal(Xfc, Xdf, Y; murine = murine)
+        boot_res = regressionBootstrap(10, Xfc, Xdf, Y; murine = murine, exp_method = true)
     else
         res = fitRegression_woActI(Xfc, Xdf, Y, (murine ? murineActI : humanActI); exp_method = exp_method)
         loo_res = LOOCrossVal(Xfc, Xdf, Y; murine = murine, ActI = res.ActI)
+        boot_res = regressionBootstrap(10, Xfc, Xdf, Y; murine = murine, exp_method = true, ActI = res.ActI)
     end
 
     odf = df[!, in(["Condition", "Background"]).(names(df))]
@@ -221,5 +236,5 @@ function regressionResult(dataType; L0, f, murine::Bool, exp_method = true, fit_
         odf[!, "Genotype"] .= df[!, "Genotype"]
     end
 
-    return res, loo_res, odf
+    return res, boot_res, odf
 end
