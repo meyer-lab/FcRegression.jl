@@ -1,6 +1,10 @@
-function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, 
+function figureW(dataType::String; L0 = 1e-9, f = 4, murine::Bool, 
     exp_method = true, fit_ActI = true, legend = true)
+    res, loo_res, odf = regressionResult(dataType; L0 = L0, f = f, murine = murine, exp_method = exp_method, fit_ActI = fit_ActI)
+    return figureW(res, loo_res, odf, dataType; L0 = L0, f = f, murine = murine, legend = legend)
+end
 
+function figureW(res::optResult, loo_res::Vector{optResult}, odf::DataFrame, dataType::String; L0 = 1e-9, f = 4, murine::Bool, legend = true)
     if murine
         df = importDepletion(dataType)
         if dataType == "HIV"
@@ -16,17 +20,12 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool,
         color = "Genotype"
         shape = (dataType == "ITP") ? "Condition" : "Concentration"
     end
-
-    res, loo_res, odf = regressionResult(dataType; L0 = L0, f = f, murine = murine, exp_method = exp_method, fit_ActI = fit_ActI)
     @assert all(in(names(odf)).([color, shape]))
 
-
     p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
-    p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
-    p3 = plotCellTypeEffects(df, res, loo_res, dataType; legend = legend, L0 = L0, f = f, murine = murine)
-    p4 = plotReceptorActivities(res, loo_res, dataType; murine = murine)
-
-    return p1, p2, p3, p4
+    p2 = plotCellTypeEffects(df, res, loo_res, dataType; legend = legend, L0 = L0, f = f, murine = murine)
+    p3 = plotReceptorActivities(res, loo_res, dataType; murine = murine)
+    return p1, p2, p3
 end
 
 function plotActualvFit(odf, dataType, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}; legend = true)
