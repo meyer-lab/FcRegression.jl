@@ -166,9 +166,6 @@ function LOOCrossVal(Xfc, Xdf, Y; murine, ActI::Union{Nothing, Vector} = nothing
     return fitResults
 end
 
-function compareRegMethods()
-end
-
 
 function wildtypeWeights(res, df; L0 = 1e-9, f = 4, murine = true)
     # Prepare for cell type weights in wildtype
@@ -224,23 +221,5 @@ function regressionResult(dataType; L0, f, murine::Bool, exp_method = true, fit_
         odf[!, "Genotype"] .= df[!, "Genotype"]
     end
 
-    lower(x) = quantile(x, 0.25)
-    upper(x) = quantile(x, 0.75)
-
-    Cell_df = wildtypeWeights(res, df; L0 = L0, f = f, murine = murine)
-    Cell_loo = vcat([wildtypeWeights(loo, df) for loo in loo_res]...)
-    Cell_conf = combine(
-        groupby(Cell_loo, ["Condition", "Component"]),
-        "Weight" => lower => "ymin",
-        "Weight" => upper => "ymax",
-    )
-    Cell_df = innerjoin(Cell_df, Cell_conf, on = ["Condition", "Component"])
-
-    # ActI interval
-    ActI_conf = hcat([loo.ActI for loo in loo_res]...)
-    ActI_low = lower.(eachslice(ActI_conf, dims=1))
-    ActI_hi = upper.(eachslice(ActI_conf, dims=1))
-    ActI_df = DataFrame(Receptor = (murine ? murineFcgR : humanFcgR), Activity = res.ActI, ymin = ActI_low, ymax = ActI_hi)
-
-    return res, odf, Cell_df, ActI_df
+    return res, loo_res, odf
 end
