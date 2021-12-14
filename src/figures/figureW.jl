@@ -1,5 +1,10 @@
-function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, legend = true, Cellidx = nothing, Recepidx = nothing, Rbound = false)
+function figureW(dataType::String; L0 = 1e-9, f = 4, murine::Bool, 
+    exp_method = true, fit_ActI = true, legend = true)
+    res, loo_res, odf = regressionResult(dataType; L0 = L0, f = f, murine = murine, exp_method = exp_method, fit_ActI = fit_ActI)
+    return figureW(res, loo_res, odf, dataType; L0 = L0, f = f, murine = murine, legend = legend)
+end
 
+function figureW(res::optResult, loo_res::Vector{optResult}, odf::DataFrame, dataType::String; L0 = 1e-9, f = 4, murine::Bool, legend = true)
     if murine
         df = importDepletion(dataType)
         if dataType == "HIV"
@@ -15,42 +20,12 @@ function figureW(dataType; L0 = 1e-9, f = 4, murine::Bool, IgGX = 2, IgGY = 3, l
         color = "Genotype"
         shape = (dataType == "ITP") ? "Condition" : "Concentration"
     end
-
-    res, odf, Cell_df, ActI_df = regressionResult(dataType; L0 = L0, f = f, murine = murine)
     @assert all(in(names(odf)).([color, shape]))
 
-
     p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
-    p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
-    p3 = plotCellTypeEffects(Cell_df, dataType; legend = legend)
-    p4 = plotReceptorActivities(ActI_df, dataType)
-    p5 = plotDepletionSynergy(
-        IgGX,
-        IgGY;
-        L0 = L0,
-        f = f,
-        murine = murine,
-        neutralization = ("Neutralization" in names(df)),
-        c1q = ("C1q" in Cell_df.Component),
-        dataType = dataType,
-        fit = res,
-        Cellidx = Cellidx,
-        Recepidx = Recepidx,
-    )
-    #p5 = L0fSearchHeatmap(df, dataType, 24, -12, -6, murine = murine)
-    p6 = plotSynergy(
-        L0,
-        f;
-        murine = murine,
-        fit = res,
-        Cellidx = Cellidx,
-        Recepidx = Recepidx,
-        Rbound = Rbound,
-        c1q = ("C1q" in Cell_df.Component),
-        neutralization = ("Neutralization" in names(df)),
-    )
-
-    return p1, p2, p3, p4, p5, p6
+    p2 = plotCellTypeEffects(df, res, loo_res, dataType; legend = legend, L0 = L0, f = f, murine = murine)
+    p3 = plotReceptorActivities(res, loo_res, dataType; murine = murine)
+    return p1, p2, p3
 end
 
 function plotActualvFit(odf, dataType, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}; legend = true)
@@ -94,33 +69,55 @@ function plotActualvPredict(odf, dataType, colorL::Union{Symbol, String}, shapeL
 end
 
 
-function plotCellTypeEffects(Cell_df, dataType; legend = true)
+function plotCellTypeEffects(df, res, loo_res, dataType; legend = true, L0 = 1e-9, f = 4, murine = true)
+    Cell_df = wildtypeWeights(res, df; L0 = L0, f = f, murine = murine)
+    Cell_loo = vcat([wildtypeWeights(loo, df) for loo in loo_res]...)
+    Cell_conf = combine(
+        groupby(Cell_loo, ["Condition", "Component"]),
+        "Weight" => lower => "ymin",
+        "Weight" => upper => "ymax",
+    )
+    Cell_df = innerjoin(Cell_df, Cell_conf, on = ["Condition", "Component"])
+
     pl = plot(
         Cell_df,
         x = "Condition",
         y = "Weight",
+        ymin = "ymin",
+        ymax = "ymax",
         color = "Component",
         Guide.colorkey(pos = [0.65w, -0.15h]),
-        Geom.bar(position = :dodge),
+        Geom.errorbar,
+        Stat.dodge(axis=:x),
+        Geom.bar(position=:dodge),
         Scale.x_discrete(levels = unique(Cell_df.Condition)),
         Scale.y_continuous(minvalue = 0.0),
         Scale.color_discrete(levels = unique(Cell_df.Component)),
         Guide.title("Predicted cell type weights for $dataType"),
-        style(key_position = legend ? :right : :none),
+        style(key_position = legend ? :right : :none, stroke_color=c->"black"),
     )
     return pl
 end
 
-function plotReceptorActivities(ActI_df, dataType)
+function plotReceptorActivities(res, loo_res, dataType; murine = true)
+    ActI_conf = hcat([loo.ActI for loo in loo_res]...)
+    ActI_low = lower.(eachslice(ActI_conf, dims=1))
+    ActI_hi = upper.(eachslice(ActI_conf, dims=1))
+    ActI_df = DataFrame(Receptor = (murine ? murineFcgR : humanFcgR), Activity = res.ActI, ymin = ActI_low, ymax = ActI_hi)
+
     pl = plot(
         ActI_df,
         x = "Receptor",
         y = "Activity",
-        Geom.bar(position = :dodge),
+        ymin = "ymin",
+        ymax = "ymax",
+        Geom.errorbar,
+        Stat.dodge(axis=:x),
+        Geom.bar(position=:dodge),
         Scale.x_discrete(),
         Scale.y_continuous(minvalue = 0.0),
         Guide.title("Predicted receptor activities for $dataType"),
-        style(bar_spacing = 5mm),
+        style(bar_spacing = 5mm, stroke_color=c->"black"),
     )
     return pl
 end

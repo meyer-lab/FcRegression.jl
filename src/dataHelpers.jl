@@ -27,8 +27,8 @@ const humanIgG = ["IgG1", "IgG2", "IgG3", "IgG4"]
 const murineFcgR = ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]
 const humanFcgR =
     ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"]
-const murineActI = [1, -1, 1, 1]
-const humanActI = [1, 1, 1, -1, -1, 1, 1, 1, 1]
+const murineActI = [1.0, -1, 1, 1]
+const humanActI = [1.0, 1, 1, -1, -1, 1, 1, 1, 1]
 const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
 const humanActYmax = [5.5e4, 1.5e5, 4.5e4, 3.5e4, 3e3] # ymax for synergy plots
 const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")

@@ -28,11 +28,11 @@ function loadMixData(fn = "lux_mixture_mar2021.csv"; discard_small = false)
     return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
 end
 
+lower(x) = quantile(x, 0.25)
+upper(x) = quantile(x, 0.75)
+
 """ Make statistics of individual cell types and subclass types """
 function averageMixData(df = loadMixData(); combSingle = false)
-    lower(x) = quantile(x, 0.25)
-    upper(x) = quantile(x, 0.75)
-
     # Combine cases of single IgGs into one entry
     if combSingle
         df[df."%_1" .== 0.0, "subclass_1"] .= "None"
