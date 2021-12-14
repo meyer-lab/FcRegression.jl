@@ -18,7 +18,7 @@ end
 
 function invivo_prediction(df::DataFrame; L0 = 1e-9, f = 4, KxStar = KxConst)
     fcPredict = cat([invivo_mix_predict(dfr; L0 = L0, f = f, KxStar = KxConst) for dfr in eachrow(df)]...; dims = 3)
-    res, _, _, _ = regressionResult("ITP"; L0 = 1e-9, f = 10, murine = true)
+    res = regressionResult("ITP"; L0 = 1e-9, f = 10, murine = true)[1]
     Xmat, Ypred = regressionPred(fcPredict, nothing, res.cellWs, res.ActI; showXmat = true, murine = true)
     df[!, "Predicted"] = exponential(Ypred)
     return df
