@@ -106,17 +106,17 @@ function figure2()
 
     raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Prediction without fitting", R2pos = (3.5, 1))
 
-    _, reg_fitdf = fitMixMaster(data, fitKav = false)
+    reg_res, reg_fitdf = fitMixMaster(data; fitKav = false)
     reg_allPL = plotPredvsMeasured(reg_fitdf; xx = "Value", title = "Fit all except Kav, all")
     reg_onePL = plotPredvsMeasured(
         reg_fitdf[(reg_fitdf."%_1" .== 1) .| (reg_fitdf."%_2" .== 1), :];
         xx = "Value",
         title = "Fit all except Kav, single isotypes",
     )
-
-    _, df = fitMixMaster(data, fitKav = true)
-    kfit_allPL = plotPredvsMeasured(df; xx = "Value", title = "Fit Kav, all")
-    kfit_onePL = plotPredvsMeasured(df[(df."%_1" .== 1) .| (df."%_2" .== 1), :]; xx = "Value", title = "Fit Kav, single isotypes")
+    
+    _, kfitdf = fitMixMaster(data; fitRVX = false, recepExp = reg_res[1:(end-3)], vals = reg_res[(end-2):(end-1)], KxStar = reg_res[end], fitKav = true)
+    kfit_allPL = plotPredvsMeasured(kfitdf; xx = "Value", title = "Fit Kav, all")
+    kfit_onePL = plotPredvsMeasured(kfitdf[(kfitdf."%_1" .== 1) .| (kfitdf."%_2" .== 1), :]; xx = "Value", title = "Fit Kav, single isotypes")
 
     p1 = splot_pred("FcgRIIIA-158F"; Lbound = true)
     p2 = splot_pred("FcgRIIIA-158F"; Lbound = false)
