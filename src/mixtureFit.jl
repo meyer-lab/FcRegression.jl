@@ -13,24 +13,6 @@ function mixSqLoss(df; logscale = true)
     return sum((adj .- pred) .^ 2)
 end
 
-function fitExperiment(df; recepExp = measuredRecepExp, KxStar = KxConst, Kav::DataFrame = importKav(; murine = false, retdf = true))
-    df = predictMix(df; recepExp = recepExp, KxStar = KxStar, Kav = Kav)
-    if !("Experiment" in names(df))
-        return df
-    end
-    exps = sort(unique(df."Experiment"))
-    df[!, "Value"] = convert.(typeof(KxStar), df[!, "Value"])
-
-    if !("Adjusted" in names(df))
-        df[!, "Adjusted"] .= df[!, "Value"]
-    end
-
-    for exp in exps
-        factor = ols(df[df."Experiment" .== exp, "Adjusted"], df[df."Experiment" .== exp, "Predict"])
-        df[df."Experiment" .== exp, "Adjusted"] .*= factor
-    end
-    return df
-end
 
 function fitMixFunc(x::Vector, df; fitKav = false, Kav::DataFrame = importKav(; murine = false, retdf = true))
     ## assemble numbers to a vector for optimization
@@ -50,7 +32,7 @@ function fitMixFunc(x::Vector, df; fitKav = false, Kav::DataFrame = importKav(; 
         Kav[!, Not("IgG")] = reshape(x[(length(cells) + 4):end], (size(Kav)[1], :))
     end
 
-    return fitExperiment(df; recepExp = recepExp, KxStar = KxStar, Kav = Kav)
+    return predictMix(df; recepExp = recepExp, KxStar = KxStar, Kav = Kav)
 end
 
 function fitMixMaster(
