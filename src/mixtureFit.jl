@@ -85,11 +85,11 @@ function fitMixMaster(
 
     dfc = TwiceDifferentiableConstraints(x_lb, x_ub)
     res = optimize(f, dfc, x0, IPNewton(), Optim.Options(iterations = 100, show_trace = show_trace); autodiff = :forward)
-    ndf = fitMixFunc(Optim.minimizer(res), averageMixData(df); 
+    ndf = fitMixFunc(res.minimizer, averageMixData(df); 
         fitRVX = fitRVX, recepExp = recepExp, vals = vals, KxStar = KxStar, fitKav = fitKav, Kav = Kav)
     if fitKav
         Kav[!, Not("IgG")] .= 0.0
-        Kav[!, Not("IgG")] = reshape(exp.(res.minimizer[(length(cells) + 4):end]), (size(Kav)[1], :))
+        Kav[!, Not("IgG")] = reshape(exp.((fitRVS ? res.minimizer[(length(cells) + 4):end] : res.minimizer)), (size(Kav)[1], :))
         nKav = unstack(stack(Kav, Not("IgG")), "variable", "IgG", "value")
         CSV.write(joinpath(dataDir, "fitted_human_new_affinity.csv"), nKav)
         return res, ndf, Kav
