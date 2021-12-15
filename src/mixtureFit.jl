@@ -40,7 +40,7 @@ function fitMixFunc(x::Vector, df;
     end
     if fitKav
         Kav[!, Not("IgG")] .= 0.0
-        Kav[!, Not("IgG")] = reshape(x[(length(cells) + 4):end], (size(Kav)[1], :))
+        Kav[!, Not("IgG")] = reshape((fitRVX ? x[(length(cells) + 4):end] : x), (size(Kav)[1], :))
     end
 
     return predictMix(df; recepExp = recepExp, KxStar = KxStar, Kav = Kav)
@@ -85,7 +85,8 @@ function fitMixMaster(
 
     dfc = TwiceDifferentiableConstraints(x_lb, x_ub)
     res = optimize(f, dfc, x0, IPNewton(), Optim.Options(iterations = 100, show_trace = show_trace); autodiff = :forward)
-    ndf = fitMixFunc(Optim.minimizer(res), averageMixData(df); fitKav = fitKav, Kav = Kav)
+    ndf = fitMixFunc(Optim.minimizer(res), averageMixData(df); 
+        fitRVX = fitRVX, recepExp = recepExp, vals = vals, KxStar = KxStar, fitKav = fitKav, Kav = Kav)
     if fitKav
         Kav[!, Not("IgG")] .= 0.0
         Kav[!, Not("IgG")] = reshape(exp.(res.minimizer[(length(cells) + 4):end]), (size(Kav)[1], :))
