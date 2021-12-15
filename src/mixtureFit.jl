@@ -57,8 +57,8 @@ function fitMixMaster(
     x0 = Vector{Float64}()
 
     # x0 for Rtot, valency, Kx*
+    cells = sort(unique(df."Cell"))
     if fitRVX
-        cells = sort(unique(df."Cell"))
         @assert recepExp isa Dict
         x0 = [log(recepExp[cell]) for cell in cells]
         append!(x0, log.(vals))
