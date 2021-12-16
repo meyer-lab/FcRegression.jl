@@ -50,7 +50,12 @@ function modelPred(df; L0, f, murine::Bool = true)
         end
         for i = 1:size(Xfc, 1)    # cell type
             Rtotc = Rtot[:, i]
-            Xfc[i, :, k] = polyfc(df[k, :Concentration], KxConst, f, Rtotc, [1.0], Kav).Rmulti_n
+
+            if dot(Rtotc, Kav) == 0.0
+                Xfc[i, :, k] .= 0.0
+            else
+                Xfc[i, :, k] = polyfc(df[k, :Concentration], KxConst, f, Rtotc, [1.0], Kav).Rmulti_n
+            end
         end
     end
     Xdf = df[!, in(["Condition", "Concentration", "Genotype", "C1q", "Neutralization"]).(names(df))]
