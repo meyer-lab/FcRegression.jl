@@ -192,7 +192,7 @@ end
 
 function regressionBootstrap(bootsize, Xfc, Xdf, Y; murine = true, exp_method = true, ActI::Union{Nothing, Vector} = nothing)
     ress = Vector{optResult}()
-    for b in 1:bootsize
+    for b = 1:bootsize
         idx = rand(1:length(Y), length(Y))
         if ActI === nothing
             append!(ress, [fitRegression(Xfc[:, :, idx], Xdf[idx, :], Y[idx]; murine = murine, exp_method = exp_method)])
