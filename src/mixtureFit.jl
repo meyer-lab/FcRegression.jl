@@ -89,7 +89,7 @@ function fitMixMaster(
         fitRVX = fitRVX, recepExp = recepExp, vals = vals, KxStar = KxStar, fitKav = fitKav, Kav = Kav)
     if fitKav
         Kav[!, Not("IgG")] .= 0.0
-        Kav[!, Not("IgG")] = reshape(exp.((fitRVS ? res.minimizer[(length(cells) + 4):end] : res.minimizer)), (size(Kav)[1], :))
+        Kav[!, Not("IgG")] = reshape(exp.((fitRVX ? res.minimizer[(length(cells) + 4):end] : res.minimizer)), (size(Kav)[1], :))
         nKav = unstack(stack(Kav, Not("IgG")), "variable", "IgG", "value")
         CSV.write(joinpath(dataDir, "fitted_human_new_affinity.csv"), nKav)
         return res, ndf, Kav
