@@ -175,12 +175,12 @@ end
 
 predictMix(dfrow::DataFrameRow; kwargs...) = predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; kwargs...)
 
-function predictMix(df::DataFrame; KxStar = KxConst, kwargs...)
+function predictMix(df::DataFrame; kwargs...)
     """ will return another df object """
     df = copy(df)
-    df[!, "Predict"] .= convert(typeof(KxStar), 1.0)
+    df[!, "Predict"] .= predictMix(df[1, :]; kwargs...)
     for i = 1:size(df)[1]
-        df[i, "Predict"] = predictMix(df[i, :]; KxStar = KxConst, kwargs...)
+        df[i, "Predict"] = predictMix(df[i, :]; kwargs...)
     end
     df[df."Predict" .< 1.0, "Predict"] .= 1.0
     return df
