@@ -203,9 +203,10 @@ function mixtureDataPCA(; val = 0)
     score = MultivariateStats.transform(M, mat')'
     wide[!, "PC 1"] = score[:, 1]
     wide[!, "PC 2"] = score[:, 2]
+    wide[!, "PC 3"] = score[:, 3]
     loading = projection(M)
-    score_df = wide[!, vcat(id_cols, ["PC 1", "PC 2"])]
-    loading_df = DataFrame("Cell" => unique(df."Cell"), "PC 1" => loading[:, 1], "PC 2" => loading[:, 2])
+    score_df = wide[!, vcat(id_cols, ["PC 1", "PC 2", "PC 3"])]
+    loading_df = DataFrame("Cell" => unique(df."Cell"), "PC 1" => loading[:, 1], "PC 2" => loading[:, 2], "PC 3" => loading[:, 3])
     if "None" in df."subclass_2"
         score_df = combSing2pair(score_df)
     end
