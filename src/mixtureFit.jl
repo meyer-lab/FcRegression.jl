@@ -14,9 +14,16 @@ function mixSqLoss(df; logscale = true)
 end
 
 
-function fitMixFunc(x::Vector, df; 
-        fitRVX = true, recepExp::Union{Vector, Dict} = measuredRecepExp, vals = [4, 33], KxStar = KxConst,
-        fitKav = false, Kav::DataFrame = importKav(; murine = false, retdf = true))
+function fitMixFunc(
+    x::Vector,
+    df;
+    fitRVX = true,
+    recepExp::Union{Vector, Dict} = measuredRecepExp,
+    vals = [4, 33],
+    KxStar = KxConst,
+    fitKav = false,
+    Kav::DataFrame = importKav(; murine = false, retdf = true),
+)
     ## assemble numbers to a vector for optimization
     # order: log(Rtot), log(valency), log(Kx*), log(Kav)
 
@@ -48,7 +55,10 @@ end
 
 function fitMixMaster(
     df = loadMixData();
-    fitRVX = true, recepExp = measuredRecepExp, vals = [4, 33], KxStar = KxConst,
+    fitRVX = true,
+    recepExp = measuredRecepExp,
+    vals = [4, 33],
+    KxStar = KxConst,
     fitKav = false,
     Kav::DataFrame = importKav(; murine = false, retdf = true),
     show_trace = false,
@@ -85,8 +95,8 @@ function fitMixMaster(
 
     dfc = TwiceDifferentiableConstraints(x_lb, x_ub)
     res = optimize(f, dfc, x0, IPNewton(), Optim.Options(iterations = 100, show_trace = show_trace); autodiff = :forward)
-    ndf = fitMixFunc(res.minimizer, averageMixData(df); 
-        fitRVX = fitRVX, recepExp = recepExp, vals = vals, KxStar = KxStar, fitKav = fitKav, Kav = Kav)
+    ndf =
+        fitMixFunc(res.minimizer, averageMixData(df); fitRVX = fitRVX, recepExp = recepExp, vals = vals, KxStar = KxStar, fitKav = fitKav, Kav = Kav)
     if fitKav
         Kav[!, Not("IgG")] .= 0.0
         Kav[!, Not("IgG")] = reshape(exp.((fitRVX ? res.minimizer[(length(cells) + 4):end] : res.minimizer)), (size(Kav)[1], :))

@@ -113,9 +113,9 @@ function figure2()
         xx = "Value",
         title = "Fit all except Kav, single isotypes",
     )
-    
+
     res = exp.(reg_res.minimizer)
-    _, kfitdf = fitMixMaster(data; fitRVX = false, recepExp = res[1:(end-3)], vals = res[(end-2):(end-1)], KxStar = res[end], fitKav = true)
+    _, kfitdf = fitMixMaster(data; fitRVX = false, recepExp = res[1:(end - 3)], vals = res[(end - 2):(end - 1)], KxStar = res[end], fitKav = true)
     kfit_allPL = plotPredvsMeasured(kfitdf; xx = "Value", title = "Fit Kav, all")
     kfit_onePL = plotPredvsMeasured(kfitdf[(kfitdf."%_1" .== 1) .| (kfitdf."%_2" .== 1), :]; xx = "Value", title = "Fit Kav, single isotypes")
 
