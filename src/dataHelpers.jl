@@ -26,8 +26,9 @@ const murineIgG = ["IgG1", "IgG2a", "IgG2b", "IgG3"]
 const murineIgGFucose = ["IgG1", "IgG2a", "IgG2b", "IgG3", "IgG2bFucose"]
 const humanIgG = ["IgG1", "IgG2", "IgG3", "IgG4"]
 const murineFcgR = ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]
-const humanFcgR =
-    ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"]
+const humanFcgR = ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIIA-158F", "FcgRIIIA-158V"]
+#const humanFcgR =
+#    ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"]
 const murineActI = [1.0, -1, 1, 1]
 const humanActI = [1.0, 1, 1, -1, -1, 1, 1, 1, 1]
 const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
@@ -206,4 +207,13 @@ end
     df = CSV.File(joinpath(dataDir, "receptor_amount_mar2021.csv"), delim = ",", comment = "#") |> DataFrame
     sort!(df, "Receptor")
     return [fit_mle(Normal, log.(df[df."Receptor" .== rcp, "Measurements"])) for rcp in unique(df."Receptor")]
+end
+
+function importKavDist(; inflation = 0.1)
+    df = CSV.File(joinpath(dataDir, "FcgR-Ka-Bruhns_with_variance.csv"), delim = ",", comment = "#") |> DataFrame
+    # currently regular normal distribution. need changes
+    parstr = x -> Normal((parse.(Float64, split(x, "|")) .+ inflation) .* 1e5...)
+    xdf = parstr.(df[:, Not("IgG")])
+    insertcols!(xdf, 1, "IgG" => df[:, "IgG"])
+    return xdf
 end

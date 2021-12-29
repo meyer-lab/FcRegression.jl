@@ -127,6 +127,14 @@ function Rtot_pdfs(Rtot)
     return sum([log.(pdf(dists[ii], log(Rtot[ii]))) for ii = 1:length(Rtot)])
 end
 
-function Kav_pdfs(; murine = true)
-    df = 
+function Kav_pdfs(Kpropose::DataFrame; murine = false, std = 3.0)
+    # return log f(Ka1) f(Ka2) ... f(Kan)
+    Kav = importKavDist(; inflation = 0.1)
+    Kav = importKav(; murine = murine, retdf= true)
+    @assert size(Kav) == size(Kpropose)
+    Kav = reshape(Matrix(Kav[:, Not("IgG")]), :)
+    Kpropose = reshape(Matrix(Kpropose[:, Not("IgG")]), :)
+    Kpdf = (x_dist, x_test) -> pdf(x_dist, x_test)
+    return sum(log.([Kpdf(Kav[ii], Kpropose[ii]) for ii = 1:length(Kav)]))
 end
+
