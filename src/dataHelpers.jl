@@ -26,9 +26,9 @@ const murineIgG = ["IgG1", "IgG2a", "IgG2b", "IgG3"]
 const murineIgGFucose = ["IgG1", "IgG2a", "IgG2b", "IgG3", "IgG2bFucose"]
 const humanIgG = ["IgG1", "IgG2", "IgG3", "IgG4"]
 const murineFcgR = ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]
-const humanFcgR = ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIIA-158F", "FcgRIIIA-158V"]
-#const humanFcgR =
-#    ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"]
+const humanFcgR =
+    ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"]
+const humanFcgRiv = ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIIA-158F", "FcgRIIIA-158V"]
 const murineActI = [1.0, -1, 1, 1]
 const humanActI = [1.0, 1, 1, -1, -1, 1, 1, 1, 1]
 const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
@@ -70,7 +70,6 @@ function importRtot(; murine = true, genotype = "HIV", retdf = false)
                 df = df[df[:, "Receptor"] .!= generic_type[i], :]
             end
         end
-
         sort!(df, ["Receptor"])
     end
     @assert df.Receptor == (murine ? murineFcgR : humanFcgR)
@@ -83,7 +82,7 @@ end
 
 
 """ Import human or murine affinity data. """
-@memoize function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = false)
+@memoize function importKav(; murine = true, c1q = false, invitro = false, IgG2bFucose = false, retdf = false)
     if murine
         df = CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#") |> DataFrame
     else
@@ -91,7 +90,7 @@ end
     end
 
     IgGlist = copy(murine ? murineIgG : humanIgG)
-    FcRecep = copy(murine ? murineFcgR : humanFcgR)
+    FcRecep = copy(murine ? murineFcgR : (invitro ? humanFcgRiv : humanFcgR))
     if IgG2bFucose
         append!(IgGlist, ["IgG2bFucose"])
     end

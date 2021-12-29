@@ -2,6 +2,126 @@
 
 using Optim
 
+function mixturePredictions(df;
+    Rtot = measuredRecepExp,
+    Kav = importKav(; murine = false, invitro = true, retdf = true),
+    KxStar = KxConst,
+    vals = [4.0, 33.0],
+)
+    if !("NewValency" in names(df))
+        df[!, "NewValency"] .= convert(eltype(vals), 1.0)
+    end
+    df[df."Valency" .== 4, "NewValency"] .= vals[1]
+    df[df."Valency" .== 33, "NewValency"] .= vals[2]
+    ndf = predictMix(df; recepExp = Rtot, KxStar = KxStar, Kav = Kav)
+    valconv1 = sum(log.(ndf[ndf."Valency" .== 4, "Value"])) / sum(log.(ndf[ndf."Valency" .== 4, "Predict"]))
+    valconv2 = sum(log.(ndf[ndf."Valency" .== 33, "Value"])) / sum(log.(ndf[ndf."Valency" .== 33, "Predict"]))
+    ndf[ndf."Valency" .== 4, "Predict"] .*= valconv1
+    ndf[ndf."Valency" .== 33, "Predict"] .*= valconv2
+    return ndf
+end
+
+function fit_goodness(ndf; deviation = 0.1)
+    # log likelihood of prediction vs measurements
+    # deviation < 1.0
+    llike = 0
+    for ii = 1:size(ndf, 1)
+        lmval = ndf[ii, "Value"]
+        llike += log(pdf(Normal(lmval, lmval * deviation), log(ndf[ii, "Predict"])))
+    end
+    return llike
+end
+
+function Rtot_prior(Rtot::Dict)
+    # return log f(R1)f(R2)...f(Rn), input regular Ri w/o log
+    # to speed up, order (lexicographical) is not checked here, but it is important!!
+    dists = importInVitroRtotDist()
+    return sum([log.(pdf(dists[ii], log(Rtot[humanFcgRiv[ii]]))) for ii = 1:length(Rtot)])
+end
+
+function Kav_prior(Kpropose::DataFrame)
+    # return log f(Ka1) f(Ka2) ... f(Kan), input regular Kai w/o log
+    # currently regular normal distribution. need changes
+    Kav = importKavDist(; inflation = 0.1)
+    @assert size(Kav) == size(Kpropose)
+    Kav = reshape(Matrix(Kav[:, Not("IgG")]), :)
+    Kpropose = reshape(Matrix(Kpropose[:, Not("IgG")]), :)
+    Kpdf = (x_dist, x_test) -> pdf(x_dist, x_test)
+    return sum(log.([Kpdf(Kav[ii], Kpropose[ii]) for ii = 1:length(Kav)]))
+end
+
+function valency_prior(vals; vstd = 0.2)
+    # return log f(Val4) f(Val33), input regular val w/o log
+    return log(pdf(Normal(log(4), vstd), log(vals[1]))) + log(pdf(Normal(log(33), vstd), log(vals[2])))
+end
+
+KxStar_prior = x -> log(pdf(Normal(log(KxConst), 4.37), log(x)))    # eyeballed from Robinett Fig. 2d
+
+function dismantle_x0(x)
+    # order: Rtot, vals, KxStar, Kav
+    x = deepcopy(x)
+    Rtot = Dict([humanFcgRiv[ii] => popfirst!(x) for ii = 1:length(humanFcgRiv)])
+    vals = [popfirst!(x), popfirst!(x)]
+    KxStar = popfirst!(x)
+    @assert length(x) == length(humanIgG) * length(humanFcgRiv)
+    Kav = deepcopy(importKav(; murine = false, invitro = true, retdf = true))
+    Kav[:, Not("IgG")] .= 0.0
+    Kav[!, Not("IgG")] = convert.(eltype(x), Kav[!, Not("IgG")])
+    Kav[:, Not("IgG")] = reshape(x, length(humanIgG), length(humanFcgRiv))
+    return Rtot, vals, KxStar, Kav
+end
+
+function assemble_x0(
+    Rtot::Dict = measuredRecepExp, 
+    vals::Vector = [4.0, 33.0], 
+    KxStar = KxConst, 
+    Kav::DataFrame = importKav(; murine = false, invitro = true, retdf = true)
+)
+    x = [Rtot[rr] for rr in humanFcgRiv]
+    push!(x, vals...)
+    push!(x, KxStar)
+    push!(x, reshape(Matrix(Kav[:, Not("IgG")]), :)...)
+    return x
+end
+
+function totalLikelihood(x, df = loadMixData(; discard_small = true))
+    Rtot, vals, KxStar, Kav = dismantle_x0(x)
+    ndf = mixturePredictions(df; Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals)
+    lik = Rtot_prior(Rtot) + Kav_prior(Kav) + valency_prior(vals) + KxStar_prior(KxStar)
+    lik += fit_goodness(ndf; deviation = 0.1)
+    return lik
+end
+
+
+function MLELikelihood()
+    x0 = log.(assemble_x0())
+    f = lx -> -totalLikelihood(exp.(lx))       # minimize the negative of likelihood
+    ## TODO: write Optim function
+
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#=
+
 function mixSqLoss(df; logscale = true)
     # square root differences of model prediction and adjusted measurements
     if "Adjusted" in names(df)
@@ -22,7 +142,7 @@ function fitMixFunc(
     vals = [4, 33],
     KxStar = KxConst,
     fitKav = false,
-    Kav::DataFrame = importKav(; murine = false, retdf = true),
+    Kav::DataFrame = importKav(; murine = false, invitro = true, retdf = true),
 )
     ## assemble numbers to a vector for optimization
     # order: log(Rtot), log(valency), log(Kx*), log(Kav)
@@ -60,7 +180,7 @@ function fitMixMaster(
     vals = [4, 33],
     KxStar = KxConst,
     fitKav = false,
-    Kav::DataFrame = importKav(; murine = false, retdf = true),
+    Kav::DataFrame = importKav(; murine = false, invitro = true, retdf = true),
     show_trace = false,
 )
     # order: log(Rtot), log(valency), log(Kx*), log(Kav)
@@ -113,32 +233,10 @@ function loadFittedKav(; retdf = true)
     df = unstack(df, "variable", "Kav")
     df = df[in(humanIgG).(df.IgG), :]
     if retdf
-        return deepcopy(df[!, ["IgG"; humanFcgR]])
+        return deepcopy(df[!, ["IgG"; humanFcgRiv]])
     else
-        return deepcopy(Matrix{Float64}(df[!, humanFcgR]))
+        return deepcopy(Matrix{Float64}(df[!, humanFcgRiv]))
     end
 end
 
-
-function Rtot_pdfs(Rtot)
-    # return log f(R1)f(R2)...f(Rn)
-    ## to speed up, order (lexicographical) is not checked here, but it is important!!
-    dists = importInVitroRtotDist()
-    return sum([log.(pdf(dists[ii], log(Rtot[ii]))) for ii = 1:length(Rtot)])
-end
-
-function Kav_pdfs(Kpropose::DataFrame; murine = false, std = 3.0)
-    # return log f(Ka1) f(Ka2) ... f(Kan)
-    Kav = importKavDist(; inflation = 0.1)
-    Kav = importKav(; murine = murine, retdf= true)
-    @assert size(Kav) == size(Kpropose)
-    Kav = reshape(Matrix(Kav[:, Not("IgG")]), :)
-    Kpropose = reshape(Matrix(Kpropose[:, Not("IgG")]), :)
-    Kpdf = (x_dist, x_test) -> pdf(x_dist, x_test)
-    return sum(log.([Kpdf(Kav[ii], Kpropose[ii]) for ii = 1:length(Kav)]))
-end
-
-function valency_pdfs(vals; vstd = 0.5)
-    # return log f(Val4) f(Val33)
-    return log(pdf(Normal(log(4), vstd), log(vals[1]))) + log(pdf(Normal(log(33), vstd), log(vals[2])))
-end
+=#
