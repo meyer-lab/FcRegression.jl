@@ -1,6 +1,7 @@
 using DataFrames
 using Memoize
 import CSV
+import Distributions: fit_mle, Normal
 
 const KxConst = 6.31e-13 # 10^(-12.2)
 
@@ -199,4 +200,14 @@ function importDeplExp()
     df = coalesce.(df, 0)
     df."depletion" /= 100.0
     return df
+end
+
+@memoize function importInVitroRtot()
+    df = CSV.File(joinpath(dataDir, "receptor_amount_mar2021.csv"), delim = ",", comment = "#") |> DataFrame
+    ndf = DataFrame(Receptor = String[], LogMean = Float64[], LogStd = Float64[])
+    for rcp in unique(df."Receptor")
+        dist = fit_mle(Normal, log.(df[df."Receptor" .== rcp, "Measurements"]))
+        push!(ndf, [rcp, dist.μ, dist.σ])
+    end
+    return ndf
 end
