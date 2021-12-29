@@ -138,3 +138,7 @@ function Kav_pdfs(Kpropose::DataFrame; murine = false, std = 3.0)
     return sum(log.([Kpdf(Kav[ii], Kpropose[ii]) for ii = 1:length(Kav)]))
 end
 
+function valency_pdfs(vals; vstd = 0.5)
+    # return log f(Val4) f(Val33)
+    return log(pdf(Normal(log(4), vstd), log(vals[1]))) + log(pdf(Normal(log(33), vstd), log(vals[2])))
+end
