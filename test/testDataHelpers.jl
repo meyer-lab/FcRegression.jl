@@ -5,7 +5,8 @@
         @test FcRegression.importRtot(; murine = true, retdf = true) isa DataFrame
         @test FcRegression.importRtot(; murine = false, retdf = true) isa DataFrame
         @test FcRegression.importKav(; murine = true, retdf = false) isa Matrix
-        @test FcRegression.importKav(; murine = false, retdf = false) isa Matrix
+        @test size(FcRegression.importKav(murine = false, retdf = false), 2) == length(FcRegression.humanFcgR)
+        @test size(FcRegression.importKav(murine = false, invitro = true, retdf = false), 2) == length(FcRegression.humanFcgRiv)
         @test FcRegression.importKav(; murine = true, retdf = true) isa DataFrame
         @test FcRegression.importKav(; murine = false, retdf = true) isa DataFrame
         @test FcRegression.importDeplExp() isa DataFrame
