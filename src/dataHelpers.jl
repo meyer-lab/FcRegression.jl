@@ -1,7 +1,7 @@
 using DataFrames
 using Memoize
 import CSV
-import Distributions: fit_mle, Normal
+import Distributions: fit_mle, Normal, pdf
 
 const KxConst = 6.31e-13 # 10^(-12.2)
 
@@ -202,12 +202,8 @@ function importDeplExp()
     return df
 end
 
-@memoize function importInVitroRtot()
+@memoize function importInVitroRtotDist()
     df = CSV.File(joinpath(dataDir, "receptor_amount_mar2021.csv"), delim = ",", comment = "#") |> DataFrame
-    ndf = DataFrame(Receptor = String[], LogMean = Float64[], LogStd = Float64[])
-    for rcp in unique(df."Receptor")
-        dist = fit_mle(Normal, log.(df[df."Receptor" .== rcp, "Measurements"]))
-        push!(ndf, [rcp, dist.μ, dist.σ])
-    end
-    return ndf
+    sort!(df, "Receptor")
+    return [fit_mle(Normal, log.(df[df."Receptor" .== rcp, "Measurements"])) for rcp in unique(df."Receptor")]
 end

@@ -118,3 +118,15 @@ function loadFittedKav(; retdf = true)
         return deepcopy(Matrix{Float64}(df[!, humanFcgR]))
     end
 end
+
+
+function Rtot_pdfs(Rtot)
+    # return log f(R1)f(R2)...f(Rn)
+    ## to speed up, order (lexicographical) is not checked here, but it is important!!
+    dists = importInVitroRtotDist()
+    return sum([log.(pdf(dists[ii], log(Rtot[ii]))) for ii = 1:length(Rtot)])
+end
+
+function Kav_pdfs(; murine = true)
+    df = 
+end
