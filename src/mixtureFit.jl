@@ -8,20 +8,25 @@ function mixturePredictions(df;
     KxStar = KxConst,
     vals = [4.0, 33.0],
 )
-    if !("NewValency" in names(df))
-        df[!, "NewValency"] .= convert(eltype(vals), 1.0)
+    try
+        df[!, "NewValency"] .= vals[1]
+        df[df."Valency" .== 33, "NewValency"] .= vals[2]
+    catch e
+        println("Rtot, ", eltype(Rtot))
+        println("KxStar, ", KxStar)
+        println("vals, ", vals)
+        println("df.NewVal, ", eltype(df."NewValency"))
+        rethrow(e)
     end
-    df[df."Valency" .== 4, "NewValency"] .= vals[1]
-    df[df."Valency" .== 33, "NewValency"] .= vals[2]
     ndf = predictMix(df; recepExp = Rtot, KxStar = KxStar, Kav = Kav)
     valconv1 = sum(log.(ndf[ndf."Valency" .== 4, "Value"])) / sum(log.(ndf[ndf."Valency" .== 4, "Predict"]))
     valconv2 = sum(log.(ndf[ndf."Valency" .== 33, "Value"])) / sum(log.(ndf[ndf."Valency" .== 33, "Predict"]))
-    ndf[ndf."Valency" .== 4, "Predict"] .*= valconv1
-    ndf[ndf."Valency" .== 33, "Predict"] .*= valconv2
+    #ndf[ndf."Valency" .== 4, "Predict"] .*= valconv1
+    #ndf[ndf."Valency" .== 33, "Predict"] .*= valconv2
     return ndf
 end
 
-function fit_goodness(ndf; deviation = 0.1)
+function fit_goodness(ndf; deviation = 0.01)
     # log likelihood of prediction vs measurements
     # deviation < 1.0
     llike = 0
@@ -84,20 +89,28 @@ function assemble_x0(
     return x
 end
 
-function totalLikelihood(x, df = loadMixData(; discard_small = true))
+function totalLikelihood(x, df = loadMixData(; discard_small = true); deviation = 0.1)
     Rtot, vals, KxStar, Kav = dismantle_x0(x)
     ndf = mixturePredictions(df; Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals)
     lik = Rtot_prior(Rtot) + Kav_prior(Kav) + valency_prior(vals) + KxStar_prior(KxStar)
-    lik += fit_goodness(ndf; deviation = 0.1)
+    lik += fit_goodness(ndf; deviation = deviation)
     return lik
 end
 
 
 function MLELikelihood()
-    x0 = log.(assemble_x0())
-    f = lx -> -totalLikelihood(exp.(lx))       # minimize the negative of likelihood
+    x0 = log.(FcRegression.assemble_x0());
+    f = lx -> -FcRegression.totalLikelihood(exp.(lx); deviation = 0.01)       # minimize the negative of likelihood
     ## TODO: write Optim function
 
+    # GD: 7.243698e+04 (reach maxiter)
+    # BFGS: 7.343904e+04
+    # LBFGS: 7.201175e+04
+    opt = optimize(f, x0, LBFGS(), Optim.Options(iterations = 100, show_trace = true); autodiff = :forward)
+
+    Rtot, vals, KxStar, Kav = FcRegression.dismantle_x0(exp.(opt.minimizer))
+    ndf = FcRegression.mixturePredictions(FcRegression.averageMixData(FcRegression.loadMixData()); Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals);
+    FcRegression.plotPredvsMeasured(ndf; xx = "Value")
 end
 
 
