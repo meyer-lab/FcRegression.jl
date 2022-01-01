@@ -208,11 +208,21 @@ end
     return [fit_mle(Normal, log.(df[df."Receptor" .== rcp, "Measurements"])) for rcp in unique(df."Receptor")]
 end
 
-function importKavDist(; inflation = 0.1)
+@memoize function importKavDist(; inflation = 0.1, retdf = true)
     df = CSV.File(joinpath(dataDir, "FcgR-Ka-Bruhns_with_variance.csv"), delim = ",", comment = "#") |> DataFrame
-    # currently regular normal distribution. need changes
-    parstr = x -> Normal((parse.(Float64, split(x, "|")) .+ inflation) .* 1e5...)
+    function parstr(x)
+        params = parse.(Float64, split(x, "|"))
+        params .+= inflation
+        params .*= 1e5      # Bruhns data is written in 1e5 units
+        mu = log(params[1])
+        sigma = log(params[1] + params[2]) - mu
+        return Normal(mu, sigma)
+    end
     xdf = parstr.(df[:, Not("IgG")])
     insertcols!(xdf, 1, "IgG" => df[:, "IgG"])
-    return xdf
+    if retdf
+        return xdf
+    else
+        return Matrix(df[:, Not("IgG")])
+    end
 end

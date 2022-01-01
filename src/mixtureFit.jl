@@ -2,7 +2,7 @@
 
 using Optim
 
-function mixturePredictions(df;
+function mixturePredictions(df = loadMixData();
     Rtot = measuredRecepExp,
     Kav = importKav(; murine = false, invitro = true, retdf = true),
     KxStar = KxConst,
@@ -18,9 +18,11 @@ function mixturePredictions(df;
         println("df.NewVal, ", eltype(df."NewValency"))
         rethrow(e)
     end
+    #println("** in mixturePredictions()")
+    #println(Rtot, Kav, KxStar, vals)
     ndf = predictMix(df; recepExp = Rtot, KxStar = KxStar, Kav = Kav)
-    valconv1 = sum(log.(ndf[ndf."Valency" .== 4, "Value"])) / sum(log.(ndf[ndf."Valency" .== 4, "Predict"]))
-    valconv2 = sum(log.(ndf[ndf."Valency" .== 33, "Value"])) / sum(log.(ndf[ndf."Valency" .== 33, "Predict"]))
+    #valconv1 = sum(log.(ndf[ndf."Valency" .== 4, "Value"])) / sum(log.(ndf[ndf."Valency" .== 4, "Predict"]))
+    #valconv2 = sum(log.(ndf[ndf."Valency" .== 33, "Value"])) / sum(log.(ndf[ndf."Valency" .== 33, "Predict"]))
     #ndf[ndf."Valency" .== 4, "Predict"] .*= valconv1
     #ndf[ndf."Valency" .== 33, "Predict"] .*= valconv2
     return ndf
@@ -46,11 +48,10 @@ end
 
 function Kav_prior(Kpropose::DataFrame)
     # return log f(Ka1) f(Ka2) ... f(Kan), input regular Kai w/o log
-    # currently regular normal distribution. need changes
     Kav = importKavDist(; inflation = 0.1)
     @assert size(Kav) == size(Kpropose)
-    Kav = reshape(Matrix(Kav[:, Not("IgG")]), :)
-    Kpropose = reshape(Matrix(Kpropose[:, Not("IgG")]), :)
+    Kav = reshape(log.(Matrix(Kav[:, Not("IgG")])), :)
+    Kpropose = reshape(log.(Matrix(Kpropose[:, Not("IgG")])), :)
     Kpdf = (x_dist, x_test) -> pdf(x_dist, x_test)
     return sum(log.([Kpdf(Kav[ii], Kpropose[ii]) for ii = 1:length(Kav)]))
 end
@@ -65,10 +66,14 @@ KxStar_prior = x -> log(pdf(Normal(log(KxConst), 4.37), log(x)))    # eyeballed 
 function dismantle_x0(x)
     # order: Rtot, vals, KxStar, Kav
     x = deepcopy(x)
+    @assert all(x[1:length(humanFcgRiv)] .> 0.0) "In dismantle(): Rtot contains negative"
     Rtot = Dict([humanFcgRiv[ii] => popfirst!(x) for ii = 1:length(humanFcgRiv)])
     vals = [popfirst!(x), popfirst!(x)]
+    @assert all(vals .> 0.0) "In dismantle(): vals contains negative"
     KxStar = popfirst!(x)
+    @assert KxStar .> 0.0 "In dismantle(): KxStar is negative"
     @assert length(x) == length(humanIgG) * length(humanFcgRiv)
+    @assert all(x .> 0.0) "In dismantle(): Kav contains negative"
     Kav = deepcopy(importKav(; murine = false, invitro = true, retdf = true))
     Kav[:, Not("IgG")] .= 0.0
     Kav[!, Not("IgG")] = convert.(eltype(x), Kav[!, Not("IgG")])
