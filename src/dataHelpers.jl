@@ -223,6 +223,6 @@ end
     if retdf
         return xdf
     else
-        return Matrix(df[:, Not("IgG")])
+        return Matrix(xdf[:, Not("IgG")])
     end
 end
