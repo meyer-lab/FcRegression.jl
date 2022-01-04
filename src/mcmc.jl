@@ -1,5 +1,5 @@
 using Turing
-using DataFrames
+using Serialization
 
 
 @model function sfit(measurements = FcRegression.loadMixData(; discard_small = true)."Value")
@@ -35,17 +35,44 @@ using DataFrames
     end
 end
 
+function runMCMC(fname = "MCMC_run_100000.dat")
+    if isfile(fname)
+        return deserialize(fname)
+    end
+    m = sfit()
+    c = sample(m, MH(), 1000, discard_initial = 500)
+    f = serialize(fname, c)
+    return c
+end
 
+function plot_MCMC_dists(c::Chains)
+    # Kav, Rtot, f4, f33, KxStar
+    # StatsPlots
+    #histogram(c2["lKav[1]"])
 
-m = sfit()
-
-c = sample(m, MH(), 1000, discard_initial = 500);
-
-c2 = sample(m, Gibbs(MH()), 1000, discard_initial = 500);
-
-c = sample(m, NUTS(), MCMCThreads(), 1000, 4)
-
-using Serialization
-f = serialize("MCMC_run20211231.dat", c)
-
-c′ = deserialize("MCMC_run20211231.dat")
+    # Gadfly
+    ligg = length(FcRegression.humanIgG)
+    lfcr = length(FcRegression.humanFcgRiv)
+    Kav_dist = FcRegression.importKavDist(; inflation = 0.1, retdf = false)
+    Kav_pls = Matrix{Plot}(undef, ligg, lfcr)
+    for ii in eachindex(Kav_pls)
+        dat = exp.(reshape(c["lKav[$ii]"].data, :))
+        IgGname = FcRegression.humanIgG[(ii-1)%ligg+1]
+        FcRname = FcRegression.humanFcgRiv[(ii-1)÷ligg+1]
+        name = IgGname * " to " * FcRname
+        dist = Kav_dist[ii]
+        xxs = (dist.μ - 4 * dist.σ):0.01:(dist.μ + 4 * dist.σ)
+        yys = [pdf(dist, xx) * length(dat) for xx in xxs]
+        Kav_pls[ii] = plot(
+            #layer(x=exp.(xxs), y=yys, Geom.line),
+            DataFrame("Value" => dat), x="Value", Geom.histogram(bincount = 8, density = true),
+            xintercept=[exp(dist.μ)], Geom.vline,
+            Scale.y_continuous(labels = n -> string(n/length(dat))),
+            #layer(DataFrame("Value" => dat), x="Value", Geom.histogram(bincount = 8, density=true)),
+            Guide.xticks(orientation=:horizontal),
+            Guide.title(name)
+        )
+    end
+    Kav_plot = FcRegression.plotGrid((ligg, lfcr), permutedims(Kav_pls, (2 ,1)); sublabels = false);
+    draw(SVG("MCMC_Kav.svg", 16inch, 13inch), Kav_plot)
+end
