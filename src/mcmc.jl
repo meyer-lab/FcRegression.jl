@@ -1,4 +1,4 @@
-import Turing: ~, sample, MH, @model
+import Turing: ~, sample, MH, NUTS, @model
 import Serialization: serialize, deserialize
 
 @model function sfit(measurements = loadMixData(; discard_small = true)."Value")
@@ -38,7 +38,7 @@ function runMCMC(fname = "MCMC_run_100000.dat")
         return deserialize(fname)
     end
     m = sfit()
-    c = sample(m, MH(), 1000, discard_initial = 500)
+    c = sample(m, NUTS(), 1000, discard_initial = 500)
     f = serialize(fname, c)
     return c
 end
@@ -59,9 +59,8 @@ function plotHistPriorDist(dat, dist, name)
     return pl
 end
 
-function plot_MCMC_dists()
-    setGadflyTheme()
-    c = runMCMC()
+function plot_MCMC_dists(c = runMCMC())
+    setGadflyTheme() 
 
     # Plot Kav's
     ligg = length(humanIgG)
