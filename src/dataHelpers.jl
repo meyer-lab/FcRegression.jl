@@ -226,3 +226,7 @@ end
         return Matrix(xdf[:, Not("IgG")])
     end
 end
+
+const f4Dist = Normal(log(4), 0.2*log(4))
+const f33Dist = Normal(log(33), 0.2*log(33))
+const KxStarDist = Normal(log(KxConst), 4.37)
