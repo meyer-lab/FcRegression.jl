@@ -2,29 +2,20 @@
 
 using Optim
 
+##### 
+# Below are for the MLE approach
+##### 
+
 function mixturePredictions(df = loadMixData();
     Rtot = measuredRecepExp,
     Kav = importKav(; murine = false, invitro = true, retdf = true),
     KxStar = KxConst,
     vals = [4.0, 33.0],
 )
-    try
-        df[!, "NewValency"] .= vals[1]
-        df[df."Valency" .== 33, "NewValency"] .= vals[2]
-    catch e
-        println("Rtot, ", eltype(Rtot))
-        println("KxStar, ", KxStar)
-        println("vals, ", vals)
-        println("df.NewVal, ", eltype(df."NewValency"))
-        rethrow(e)
-    end
-    #println("** in mixturePredictions()")
-    #println(Rtot, Kav, KxStar, vals)
+    df[!, "NewValency"] .= vals[1]
+    df[df."Valency" .== 33, "NewValency"] .= vals[2]
+    
     ndf = predictMix(df; recepExp = Rtot, KxStar = KxStar, Kav = Kav)
-    #valconv1 = sum(log.(ndf[ndf."Valency" .== 4, "Value"])) / sum(log.(ndf[ndf."Valency" .== 4, "Predict"]))
-    #valconv2 = sum(log.(ndf[ndf."Valency" .== 33, "Value"])) / sum(log.(ndf[ndf."Valency" .== 33, "Predict"]))
-    #ndf[ndf."Valency" .== 4, "Predict"] .*= valconv1
-    #ndf[ndf."Valency" .== 33, "Predict"] .*= valconv2
     return ndf
 end
 
@@ -102,7 +93,6 @@ function totalLikelihood(x, df = loadMixData(; discard_small = true); deviation 
     return lik
 end
 
-
 function MLELikelihood()
     x0 = log.(FcRegression.assemble_x0());
     f = lx -> -FcRegression.totalLikelihood(exp.(lx); deviation = 0.01)       # minimize the negative of likelihood
@@ -119,26 +109,9 @@ function MLELikelihood()
 end
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#=
+##### 
+# Below are for Least Square approach
+##### 
 
 function mixSqLoss(df; logscale = true)
     # square root differences of model prediction and adjusted measurements
@@ -256,5 +229,3 @@ function loadFittedKav(; retdf = true)
         return deepcopy(Matrix{Float64}(df[!, humanFcgRiv]))
     end
 end
-
-=#
