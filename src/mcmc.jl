@@ -33,7 +33,7 @@ import Serialization: serialize, deserialize
     end
 end
 
-function runMCMC(fname = "MCMC_run_100000.dat")
+function runMCMC(fname = "MCMC_nuts_1000.dat")
     if isfile(fname)
         return deserialize(fname)
     end
