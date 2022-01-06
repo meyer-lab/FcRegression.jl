@@ -4,7 +4,7 @@ using StatsBase
 import Statistics: cor
 
 """ Load mixture in vitro binding data """
-function loadMixData(fn = "lux_mixture_mar2021.csv"; discard_small = false)
+@memoize function loadMixData(fn = "lux_mixture_mar2021.csv"; discard_small = false)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
 
     df = stack(df, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]), variable_name = "Experiment", value_name = "Value")

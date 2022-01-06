@@ -1,6 +1,7 @@
 using DataFrames
 using Memoize
 import CSV
+import Distributions: fit_mle, Normal, pdf
 
 const KxConst = 6.31e-13 # 10^(-12.2)
 
@@ -27,6 +28,7 @@ const humanIgG = ["IgG1", "IgG2", "IgG3", "IgG4"]
 const murineFcgR = ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]
 const humanFcgR =
     ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"]
+const humanFcgRiv = ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIIA-158F", "FcgRIIIA-158V"]
 const murineActI = [1.0, -1, 1, 1]
 const humanActI = [1.0, 1, 1, -1, -1, 1, 1, 1, 1]
 const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
@@ -68,7 +70,6 @@ function importRtot(; murine = true, genotype = "HIV", retdf = false)
                 df = df[df[:, "Receptor"] .!= generic_type[i], :]
             end
         end
-
         sort!(df, ["Receptor"])
     end
     @assert df.Receptor == (murine ? murineFcgR : humanFcgR)
@@ -81,7 +82,7 @@ end
 
 
 """ Import human or murine affinity data. """
-@memoize function importKav(; murine = true, c1q = false, IgG2bFucose = false, retdf = false)
+@memoize function importKav(; murine = true, c1q = false, invitro = false, IgG2bFucose = false, retdf = false)
     if murine
         df = CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#") |> DataFrame
     else
@@ -89,7 +90,7 @@ end
     end
 
     IgGlist = copy(murine ? murineIgG : humanIgG)
-    FcRecep = copy(murine ? murineFcgR : humanFcgR)
+    FcRecep = copy(murine ? murineFcgR : (invitro ? humanFcgRiv : humanFcgR))
     if IgG2bFucose
         append!(IgGlist, ["IgG2bFucose"])
     end
@@ -200,3 +201,32 @@ function importDeplExp()
     df."depletion" /= 100.0
     return df
 end
+
+@memoize function importInVitroRtotDist()
+    df = CSV.File(joinpath(dataDir, "receptor_amount_mar2021.csv"), delim = ",", comment = "#") |> DataFrame
+    sort!(df, "Receptor")
+    return [fit_mle(Normal, log.(df[df."Receptor" .== rcp, "Measurements"])) for rcp in unique(df."Receptor")]
+end
+
+@memoize function importKavDist(; inflation = 0.1, retdf = true)
+    df = CSV.File(joinpath(dataDir, "FcgR-Ka-Bruhns_with_variance.csv"), delim = ",", comment = "#") |> DataFrame
+    function parstr(x)
+        params = parse.(Float64, split(x, "|"))
+        params .+= inflation
+        params .*= 1e5      # Bruhns data is written in 1e5 units
+        mu = log(params[1])
+        sigma = log(params[1] + params[2]) - mu
+        return Normal(mu, sigma)
+    end
+    xdf = parstr.(df[:, Not("IgG")])
+    insertcols!(xdf, 1, "IgG" => df[:, "IgG"])
+    if retdf
+        return xdf
+    else
+        return Matrix(xdf[:, Not("IgG")])
+    end
+end
+
+const f4Dist = Normal(log(4), 0.2*log(4))
+const f33Dist = Normal(log(33), 0.2*log(33))
+const KxStarDist = Normal(log(KxConst), 4.37)

@@ -6,6 +6,7 @@ using Optim
 using StatsBase
 import StatsBase: geomean, std
 using DataFrames
+using Printf
 
 include("figures/figureCommon.jl")
 
@@ -13,6 +14,7 @@ include("fcBindingModel.jl")
 include("dataHelpers.jl")
 include("mixture.jl")
 include("mixtureFit.jl")
+include("mcmc.jl")
 include("regression.jl")
 include("synergy.jl")
 include("invivo.jl")
@@ -46,6 +48,7 @@ function figureAll()
     figureS1()
     figureS2()
 
+    plot_MCMC_dists()
     plotRobinettCV()
 end
 

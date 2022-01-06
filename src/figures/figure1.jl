@@ -1,6 +1,5 @@
 """ Figure 1: show the mixture IC binding data """
 
-using Printf
 using ColorSchemes
 
 """ Original measurements with middle 50% as error bar """
@@ -186,7 +185,6 @@ function figure1()
         Scale.x_continuous(minvalue = -1.0, maxvalue = 1.0),
         Scale.y_continuous(minvalue = -1.0, maxvalue = 1.0),
     )
-
 
     pl = plotGrid((3, 5), [nothing, nothing, p1, p2, vars, SP4, SP33, LP, igg12_1, igg14_1, SP4_13, SP33_13, LP_13];)
     return draw(SVG("figure1.svg", 23inch, 12inch), pl)
