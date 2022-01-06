@@ -41,7 +41,7 @@ function Kav_prior(Kpropose::DataFrame)
     # return log f(Ka1) f(Ka2) ... f(Kan), input regular Kai w/o log
     Kav = importKavDist(; inflation = 0.1)
     @assert size(Kav) == size(Kpropose)
-    Kav = reshape(log.(Matrix(Kav[:, Not("IgG")])), :)
+    Kav = reshape(Matrix(Kav[:, Not("IgG")]), :)
     Kpropose = reshape(log.(Matrix(Kpropose[:, Not("IgG")])), :)
     Kpdf = (x_dist, x_test) -> pdf(x_dist, x_test)
     return sum(log.([Kpdf(Kav[ii], Kpropose[ii]) for ii = 1:length(Kav)]))
