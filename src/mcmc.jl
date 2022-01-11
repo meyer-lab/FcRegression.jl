@@ -22,22 +22,7 @@ import Serialization: serialize, deserialize
 
     Rtotd, vals, KxStar, Kav = dismantle_x0(exp.(vcat(lRtot, [lf4, lf33, lKxStar], reshape(lKav, :))))
     lsigma = 0.1
-    ps = mixturePredictions(;
-        Rtot = Rtotd,
-        Kav = Kav,
-        KxStar = KxStar,
-        vals = vals,
-    )."Predict"
-    for ii in eachindex(measurements)
-        measurements[ii] ~ Normal(ps[ii], ps[ii] * sigma)
     lps = log.(mixturePredictions(; Rtot = Rtotd, Kav = Kav, KxStar = KxStar, vals = vals)."Predict")
-    lsigma = 0.1
-    lps = log.(mixturePredictions(;
-        Rtot = Rtotd,
-        Kav = Kav,
-        KxStar = KxStar,
-        vals = vals,
-    )."Predict")
     for ii in eachindex(lmeasurements)
         lmeasurements[ii] ~ Normal(lps[ii], lsigma)
     end
