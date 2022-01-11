@@ -6,7 +6,8 @@ using Optim
 # Below are for the MLE approach
 ##### 
 
-function mixturePredictions(df = loadMixData();
+function mixturePredictions(
+    df = loadMixData();
     Rtot = measuredRecepExp,
     Kav = importKav(; murine = false, invitro = true, retdf = true),
     KxStar = KxConst,
@@ -14,7 +15,7 @@ function mixturePredictions(df = loadMixData();
 )
     df[!, "NewValency"] .= vals[1]
     df[df."Valency" .== 33, "NewValency"] .= vals[2]
-    
+
     ndf = predictMix(df; recepExp = Rtot, KxStar = KxStar, Kav = Kav)
     return ndf
 end
@@ -73,10 +74,10 @@ function dismantle_x0(x)
 end
 
 function assemble_x0(
-    Rtot::Dict = measuredRecepExp, 
-    vals::Vector = [4.0, 33.0], 
-    KxStar = KxConst, 
-    Kav::DataFrame = importKav(; murine = false, invitro = true, retdf = true)
+    Rtot::Dict = measuredRecepExp,
+    vals::Vector = [4.0, 33.0],
+    KxStar = KxConst,
+    Kav::DataFrame = importKav(; murine = false, invitro = true, retdf = true),
 )
     x = [Rtot[rr] for rr in humanFcgRiv]
     push!(x, vals...)
@@ -94,7 +95,7 @@ function totalLikelihood(x, df = loadMixData(; discard_small = true); deviation 
 end
 
 function MLELikelihood()
-    x0 = log.(FcRegression.assemble_x0());
+    x0 = log.(FcRegression.assemble_x0())
     f = lx -> -FcRegression.totalLikelihood(exp.(lx); deviation = 0.01)       # minimize the negative of likelihood
     ## TODO: write Optim function
 
@@ -104,7 +105,8 @@ function MLELikelihood()
     opt = optimize(f, x0, LBFGS(), Optim.Options(iterations = 100, show_trace = true); autodiff = :forward)
 
     Rtot, vals, KxStar, Kav = FcRegression.dismantle_x0(exp.(opt.minimizer))
-    ndf = FcRegression.mixturePredictions(FcRegression.averageMixData(FcRegression.loadMixData()); Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals);
+    ndf =
+        FcRegression.mixturePredictions(FcRegression.averageMixData(FcRegression.loadMixData()); Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals)
     FcRegression.plotPredvsMeasured(ndf; xx = "Value")
 end
 
