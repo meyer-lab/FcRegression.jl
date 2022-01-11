@@ -1,7 +1,7 @@
 import Turing: ~, sample, MH, NUTS, @model
 import Serialization: serialize, deserialize
 
-@model function sfit(measurements = loadMixData(; discard_small = true)."Value")
+@model function sfit(lmeasurements = log.(loadMixData(; discard_small = true)."Value"))
     Rtot_dist = importInVitroRtotDist()
     Kav_dist = importKavDist(; inflation = 0.1)
     Kav_dist = Matrix(Kav_dist[:, Not("IgG")])
@@ -21,15 +21,15 @@ import Serialization: serialize, deserialize
     lKxStar ~ KxStarDist
     
     Rtotd, vals, KxStar, Kav = dismantle_x0(exp.(vcat(lRtot, [lf4, lf33, lKxStar], reshape(lKav, :))))
-    sigma = 0.1
-    ps = mixturePredictions(;
+    lsigma = 0.1
+    lps = log.(mixturePredictions(;
         Rtot = Rtotd,
         Kav = Kav,
         KxStar = KxStar,
         vals = vals,
-    )."Predict"
-    for ii in eachindex(measurements)
-        measurements[ii] ~ Normal(ps[ii], ps[ii] * sigma)
+    )."Predict")
+    for ii in eachindex(lmeasurements)
+        lmeasurements[ii] ~ Normal(lps[ii], lsigma)
     end
 end
 
