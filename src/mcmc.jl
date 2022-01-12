@@ -1,7 +1,7 @@
 import Turing: ~, sample, MH, NUTS, @model
 import Serialization: serialize, deserialize
 
-@model function sfit(measurements = loadMixData(; discard_small = true)."Value")
+@model function sfit(lmeasurements = log.(loadMixData(; discard_small = true)."Value"))
     Rtot_dist = importInVitroRtotDist()
     Kav_dist = importKavDist(; inflation = 0.1)
     Kav_dist = Matrix(Kav_dist[:, Not("IgG")])
@@ -21,10 +21,10 @@ import Serialization: serialize, deserialize
     lKxStar ~ KxStarDist
 
     Rtotd, vals, KxStar, Kav = dismantle_x0(exp.(vcat(lRtot, [lf4, lf33, lKxStar], reshape(lKav, :))))
-    sigma = 0.1
-    ps = mixturePredictions(; Rtot = Rtotd, Kav = Kav, KxStar = KxStar, vals = vals)."Predict"
-    for ii in eachindex(measurements)
-        measurements[ii] ~ Normal(ps[ii], ps[ii] * sigma)
+    lsigma = 0.1
+    lps = log.(mixturePredictions(; Rtot = Rtotd, Kav = Kav, KxStar = KxStar, vals = vals)."Predict")
+    for ii in eachindex(lmeasurements)
+        lmeasurements[ii] ~ Normal(lps[ii], lsigma)
     end
 end
 
@@ -88,4 +88,22 @@ function plot_MCMC_dists(c = runMCMC())
     other_pls[3] = plotHistPriorDist(c["lKxStar"].data, KxStarDist, "K<sub>x</sub><sup>*</sup>")
     other_plot = plotGrid((1, 3), other_pls; sublabels = false)
     draw(SVG("MCMC_others.svg", 8inch, 4inch), other_plot)
+end
+
+
+function MCMCresults2fit(c = runMCMC())
+    m = DataFrame(mean(c))
+    m."order" .= 0
+    m[startswith.(String.(m."parameters"), "lRtot"), "order"] .= 1
+    m[startswith.(String.(m."parameters"), "lf"), "order"] .= 2
+    m[startswith.(String.(m."parameters"), "lKxStar"), "order"] .= 3
+    m[startswith.(String.(m."parameters"), "lKav"), "order"] .= 4
+    Rtot, vals, KxStar, Kav = dismantle_x0(exp.(sort(m, "order")."mean"))
+
+    return mixturePredictions(;
+        Rtot = Rtot,
+        Kav = Kav,
+        KxStar = KxStar,
+        vals = vals,
+    )
 end
