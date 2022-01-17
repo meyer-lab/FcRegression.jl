@@ -227,6 +227,6 @@ end
     end
 end
 
-const f4Dist = Normal(log(4), 0.2 * log(4))
-const f33Dist = Normal(log(33), 0.2 * log(33))
-const KxStarDist = Normal(log(KxConst), 4.37)
+const f4Dist = Normal(log(4), 0.1 * log(4))
+const f33Dist = Normal(log(33), 0.1 * log(33))
+const KxStarDist = Normal(log(KxConst), 2)   # ~4.37 in Robinett
