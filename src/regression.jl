@@ -21,10 +21,12 @@ mutable struct optResult{T}
 end
 
 """ plug in regression df, and output binding model results """
-function modelPred(df; L0, f, murine::Bool = true)
+function modelPred(df; L0, f, murine::Bool = true, cellTypes = nothing)
     df = copy(df)
     FcRecep = murine ? murineFcgR : humanFcgR
-    cellTypes = murine ? murineCellTypes : humanCellTypes
+    if cellTypes == nothing
+        cellTypes = murine ? murineCellTypes : humanCellTypes
+    end
 
     if "Concentration" in names(df)
         df[!, "Concentration"] .*= L0
@@ -36,7 +38,7 @@ function modelPred(df; L0, f, murine::Bool = true)
     for k = 1:size(Xfc, 3)    # dataframe row
         Kav = Vector{Float64}(df[k, FcRecep])
         Kav = reshape(Kav, 1, :)
-        Rtot = copy(importRtot(; murine = murine, genotype = murine ? "NA" : df[k, :Genotype]))
+        Rtot = copy(importRtot(; murine = murine, genotype = murine ? "NA" : df[k, :Genotype], cellTypes = cellTypes))
         if "Background" in names(df)
             if df[k, "Background"] == "NeuKO"
                 Rtot[:, "Neu" .== cellTypes] .= 0.0
@@ -68,7 +70,8 @@ function modelPred(df; L0, f, murine::Bool = true)
 end
 
 
-function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepActI; showXmat = false, murine = true)
+function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepActI; 
+        showXmat = false, murine = true, cellTypes = nothing)
     ansType = promote_type(eltype(Xfc), eltype(cellWeights), eltype(recepActI))
     noextra = true
     if Xdf === nothing
@@ -81,7 +84,9 @@ function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepA
 
     @assert length(cellWeights) == size(Xfc, 1) + (noextra ? 0 : size(extra, 2))
     @assert length(recepActI) == size(Xfc, 2)
-    cellTypes = murine ? murineCellTypes : humanCellTypes
+    if cellTypes == nothing
+        cellTypes = murine ? murineCellTypes : humanCellTypes
+    end
     if !noextra
         @assert size(Xfc, 3) == size(extra, 1)
         Xmat = DataFrame([colName => Float64[] for colName in vcat(cellTypes, names(extra))])
@@ -106,8 +111,8 @@ function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepA
     end
 end
 
-regressionPred(Xfc, Xdf, fit::optResult; showXmat = false, murine = true) =
-    regressionPred(Xfc, Xdf, fit.cellWs, fit.ActI; showXmat = showXmat, murine = murine)
+regressionPred(Xfc, Xdf, fit::optResult; showXmat = false, murine = true, cellTypes = nothing) =
+    regressionPred(Xfc, Xdf, fit.cellWs, fit.ActI; showXmat = showXmat, murine = murine, cellTypes = cellTypes)
 
 
 """ Solve cell weight by NNLS """
@@ -172,7 +177,7 @@ function LOOCrossVal(Xfc, Xdf, Y; murine, ActI::Union{Nothing, Vector} = nothing
 end
 
 
-function wildtypeWeights(res, df; L0 = 1e-9, f = 4, murine = true)
+function wildtypeWeights(res, df; L0 = 1e-9, f = 4, murine = true, cellTypes = nothing)
     # Prepare for cell type weights in wildtype
     wildtype = copy(importKav(; murine = murine, c1q = ("C1q" in names(df)), IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true))
     wildtype[!, "Background"] .= "wt"
@@ -185,8 +190,8 @@ function wildtypeWeights(res, df; L0 = 1e-9, f = 4, murine = true)
     end
     rename!(wildtype, "IgG" => "Condition")
 
-    wtXfc, wtXdf, _ = modelPred(wildtype; L0 = L0, f = f, murine = murine)
-    Xmat, _ = regressionPred(wtXfc, wtXdf, res.cellWs, res.ActI; showXmat = true, murine = murine)
+    wtXfc, wtXdf, _ = modelPred(wildtype; L0 = L0, f = f, murine = murine, cellTypes = cellTypes)
+    Xmat, _ = regressionPred(wtXfc, wtXdf, res.cellWs, res.ActI; showXmat = true, murine = murine, cellTypes = cellTypes)
     Xmat = Xmat .* res.cellWs'
     Xmat[!, "Condition"] = wtXdf[!, "Condition"]
     Cell_df = stack(Xmat, Not("Condition"))
@@ -209,7 +214,7 @@ function regressionBootstrap(bootsize, Xfc, Xdf, Y; murine = true, exp_method = 
 end
 
 
-function regressionResult(dataType; L0, f, murine::Bool, exp_method = true, fit_ActI = true)
+function regressionResult(dataType; L0, f, murine::Bool, exp_method = true, fit_ActI = true, cellTypes = cellTypes)
     df = murine ? importDepletion(dataType) : importHumanized(dataType)
 
     Xfc, Xdf, Y = modelPred(df; L0 = L0, f = f, murine = murine)
