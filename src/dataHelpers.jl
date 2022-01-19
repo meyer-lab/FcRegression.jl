@@ -35,13 +35,15 @@ const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
 const humanActYmax = [5.5e4, 1.5e5, 4.5e4, 3.5e4, 3e3] # ymax for synergy plots
 const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
-function importRtot(; murine = true, genotype = "HIV", retdf = false)
+function importRtot(; murine = true, genotype = "HIV", retdf = false, cellTypes = nothing)
     if murine
         df = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame
     else
         df = CSV.File(joinpath(dataDir, "human-FcgR-abundance.csv"), comment = "#") |> DataFrame
     end
-    cellTypes = murine ? murineCellTypes : humanCellTypes
+    if cellTypes == nothing
+        cellTypes = murine ? murineCellTypes : humanCellTypes
+    end
     df = combine(groupby(df, ["Cells", "Receptor"]), names(df, "Count") .=> geocmean)
     df = unstack(df, "Receptor", "Cells", "Count_geocmean")
     df = coalesce.(df, 1.0)
