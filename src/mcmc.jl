@@ -1,4 +1,4 @@
-import Turing: ~, sample, MH, NUTS, @model
+import Turing: ~, vi, ADVI, @model, rand
 import Serialization: serialize, deserialize
 
 @model function sfit(lmeasurements = log.(loadMixData(; discard_small = true)."Value"))
@@ -33,7 +33,7 @@ function runMCMC(fname = "ADVI_cache.dat")
         return deserialize(fname)
     end
     m = sfit()
-    q = vi(m, ADVI(10, 100))
+    q = vi(m, ADVI(10, 1000))
     serialize(fname, q)
     return rand(q, 10000)
 end
