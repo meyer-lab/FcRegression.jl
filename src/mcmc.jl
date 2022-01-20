@@ -29,12 +29,14 @@ import Serialization: serialize, deserialize
 end
 
 function runMCMC(fname = "ADVI_cache.dat")
+    local q
     if isfile(fname)
-        return deserialize(fname)
+        q = deserialize(fname)
+    else
+        m = sfit()
+        q = vi(m, ADVI(10, 1000))
+        serialize(fname, q)
     end
-    m = sfit()
-    q = vi(m, ADVI(10, 1000))
-    serialize(fname, q)
     return rand(q, 10000)
 end
 
