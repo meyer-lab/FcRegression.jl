@@ -28,14 +28,14 @@ import Serialization: serialize, deserialize
     end
 end
 
-function runMCMC(fname = "MCMC_nuts_1000.dat")
+function runMCMC(fname = "ADVI_cache.dat")
     if isfile(fname)
         return deserialize(fname)
     end
     m = sfit()
-    c = sample(m, NUTS(), 1000, discard_initial = 500)
-    f = serialize(fname, c)
-    return c
+    q = vi(m, ADVI(10, 100))
+    serialize(fname, q)
+    return rand(q, 10000)
 end
 
 function plotHistPriorDist(dat, dist, name)
