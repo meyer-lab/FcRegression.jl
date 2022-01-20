@@ -100,10 +100,5 @@ function MCMCresults2fit(c = runMCMC())
     m[startswith.(String.(m."parameters"), "lKav"), "order"] .= 4
     Rtot, vals, KxStar, Kav = dismantle_x0(exp.(sort(m, "order")."mean"))
 
-    return mixturePredictions(;
-        Rtot = Rtot,
-        Kav = Kav,
-        KxStar = KxStar,
-        vals = vals,
-    )
+    return mixturePredictions(; Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals)
 end
