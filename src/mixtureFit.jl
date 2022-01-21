@@ -26,7 +26,7 @@ function fit_goodness(ndf; deviation = 0.01)
     llike = 0
     for ii = 1:size(ndf, 1)
         lmval = ndf[ii, "Value"]
-        llike += log(pdf(Normal(lmval, lmval * deviation), log(ndf[ii, "Predict"])))
+        llike += log(pdf(LogNormal(lmval, lmval * deviation), ndf[ii, "Predict"]))
     end
     return llike
 end
@@ -48,12 +48,12 @@ function Kav_prior(Kpropose::DataFrame)
     return sum(log.([Kpdf(Kav[ii], Kpropose[ii]) for ii = 1:length(Kav)]))
 end
 
-function valency_prior(vals; vstd = 0.2)
+function valency_prior(vals)
     # return log f(Val4) f(Val33), input regular val w/o log
-    return log(pdf(Normal(log(4), vstd), log(vals[1]))) + log(pdf(Normal(log(33), vstd), log(vals[2])))
+    return log(pdf(f4Dist, vals[1])) + log(pdf(f33Dist, vals[2]))
 end
 
-KxStar_prior = x -> log(pdf(Normal(log(KxConst), 4.37), log(x)))    # eyeballed from Robinett Fig. 2d
+KxStar_prior = x -> log(pdf(KxStarDist, x))    # eyeballed from Robinett Fig. 2d
 
 function dismantle_x0(x)
     # order: Rtot, vals, KxStar, Kav
