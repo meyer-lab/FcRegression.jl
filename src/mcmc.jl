@@ -1,30 +1,30 @@
 import Turing: ~, vi, ADVI, @model, rand
 import Serialization: serialize, deserialize
 
-@model function sfit(lmeasurements = log.(loadMixData(; discard_small = true)."Value"))
+@model function sfit(measurements = log.(loadMixData(; discard_small = true)."Value"))
     Rtot_dist = importInVitroRtotDist()
     Kav_dist = importKavDist(; inflation = 0.1)
     Kav_dist = Matrix(Kav_dist[:, Not("IgG")])
 
-    lRtot = Vector(undef, length(Rtot_dist))
-    lKav = Matrix(undef, size(Kav_dist)...)
+    Rtot = Vector(undef, length(Rtot_dist))
+    Kav = Matrix(undef, size(Kav_dist)...)
 
-    for ii in eachindex(lRtot)
-        lRtot[ii] ~ Rtot_dist[ii]
+    for ii in eachindex(Rtot)
+        Rtot[ii] ~ Rtot_dist[ii]
     end
-    for ii in eachindex(lKav)
-        lKav[ii] ~ Kav_dist[ii]
+    for ii in eachindex(Kav)
+        Kav[ii] ~ Kav_dist[ii]
     end
 
-    lf4 ~ f4Dist
-    lf33 ~ f33Dist
-    lKxStar ~ KxStarDist
+    f4 ~ f4Dist
+    f33 ~ f33Dist
+    KxStar ~ KxStarDist
 
-    Rtotd, vals, KxStar, Kav = dismantle_x0(exp.(vcat(lRtot, [lf4, lf33, lKxStar], reshape(lKav, :))))
+    Rtotd, vals, KxStar, Kav = dismantle_x0(vcat(Rtot, [f4, f33, KxStar], reshape(Kav, :)))
     lsigma = 0.1
     lps = log.(mixturePredictions(; Rtot = Rtotd, Kav = Kav, KxStar = KxStar, vals = vals)."Predict")
-    for ii in eachindex(lmeasurements)
-        lmeasurements[ii] ~ Normal(lps[ii], lsigma)
+    for ii in eachindex(measurements)
+        measurements[ii] ~ LogNormal(lps[ii], lsigma)
     end
 end
 
