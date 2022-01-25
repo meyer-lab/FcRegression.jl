@@ -1,7 +1,7 @@
 using DataFrames
 using Memoize
 import CSV
-import Distributions: fit_mle, Normal, pdf
+import Distributions: fit_mle, LogNormal, pdf
 
 const KxConst = 6.31e-13 # 10^(-12.2)
 
@@ -207,7 +207,7 @@ end
 @memoize function importInVitroRtotDist()
     df = CSV.File(joinpath(dataDir, "receptor_amount_mar2021.csv"), delim = ",", comment = "#") |> DataFrame
     sort!(df, "Receptor")
-    return [fit_mle(Normal, log.(df[df."Receptor" .== rcp, "Measurements"])) for rcp in unique(df."Receptor")]
+    return [fit_mle(LogNormal, (df[df."Receptor" .== rcp, "Measurements"])) for rcp in unique(df."Receptor")]
 end
 
 @memoize function importKavDist(; inflation = 0.1, retdf = true)
@@ -218,7 +218,7 @@ end
         params .*= 1e5      # Bruhns data is written in 1e5 units
         mu = log(params[1])
         sigma = log(params[1] + params[2]) - mu
-        return Normal(mu, sigma)
+        return LogNormal(mu, sigma)
     end
     xdf = parstr.(df[:, Not("IgG")])
     insertcols!(xdf, 1, "IgG" => df[:, "IgG"])
@@ -231,4 +231,4 @@ end
 
 const f4Dist = Normal(log(4), 0.1 * log(4))
 const f33Dist = Normal(log(33), 0.1 * log(33))
-const KxStarDist = Normal(log(KxConst), 2)   # ~4.37 in Robinett
+const KxStarDist = Normal(log(KxConst), 2)   # ~ 4.37 in Robinett
