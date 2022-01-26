@@ -56,20 +56,24 @@ end
 KxStar_prior = x -> log(pdf(KxStarDist, x))    # eyeballed from Robinett Fig. 2d
 
 function dismantle_x0(x)
-    # order: Rtot, vals, KxStar, Kav
     x = deepcopy(x)
-    @assert all(x[1:length(humanFcgRiv)] .> 0.0) "In dismantle(): Rtot contains negative"
+    if !(eltype(x) <: Number)
+        x = convert.(typeof(x[1]), x)
+    end
+
+    # order: Rtot, vals, KxStar, Kav
+    if any(x[1:length(humanFcgRiv)] .< 0.0) @warn "In dismantle(): Rtot contains negative" end 
     Rtot = Dict([humanFcgRiv[ii] => popfirst!(x) for ii = 1:length(humanFcgRiv)])
     vals = [popfirst!(x), popfirst!(x)]
-    @assert all(vals .> 0.0) "In dismantle(): vals contains negative"
+    if any(vals .< 0.0) @warn "In dismantle(): vals contains negative" end
     KxStar = popfirst!(x)
-    @assert KxStar .> 0.0 "In dismantle(): KxStar is negative"
+    if KxStar .< 0.0 @warn "In dismantle(): KxStar is negative" end
+    
     @assert length(x) == length(humanIgG) * length(humanFcgRiv)
-    @assert all(x .> 0.0) "In dismantle(): Kav contains negative"
-    Kav = deepcopy(importKav(; murine = false, invitro = true, retdf = true))
-    Kav[:, Not("IgG")] .= 0.0
-    Kav[!, Not("IgG")] = convert.(eltype(x), Kav[!, Not("IgG")])
-    Kav[:, Not("IgG")] = reshape(x, length(humanIgG), length(humanFcgRiv))
+    if any(x .< 0.0) @warn "In dismantle(): Kav contains negative" end
+    xKav = reshape(x, length(humanIgG), length(humanFcgRiv))
+    colNs = names(importKav(; murine = false, invitro = true, retdf = true))[2:end]
+    Kav = DataFrame(xKav, colNs)
     return Rtot, vals, KxStar, Kav
 end
 
