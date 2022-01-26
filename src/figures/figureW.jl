@@ -78,18 +78,14 @@ function plotCellTypeEffects(df, res, loo_res, dataType; legend = true, L0 = 1e-
         Cell_df,
         x = "Condition",
         y = "Weight",
-        ymin = "ymin",
-        ymax = "ymax",
         color = "Component",
-        Guide.colorkey(pos = [0.65w, -0.15h]),
-        Geom.errorbar,
-        Stat.dodge(axis = :x),
+        Guide.colorkey(),
         Geom.bar(position = :dodge),
         Scale.x_discrete(levels = unique(Cell_df.Condition)),
         Scale.y_continuous(minvalue = 0.0),
         Scale.color_discrete(levels = unique(Cell_df.Component)),
         Guide.title("Predicted cell type weights for $dataType"),
-        style(key_position = legend ? :right : :none, stroke_color = c -> "black"),
+        style(key_position = legend ? :right : :none),
     )
     return pl
 end
@@ -104,15 +100,11 @@ function plotReceptorActivities(res, loo_res, dataType; murine = true)
         ActI_df,
         x = "Receptor",
         y = "Activity",
-        ymin = "ymin",
-        ymax = "ymax",
-        Geom.errorbar,
-        Stat.dodge(axis = :x),
         Geom.bar(position = :dodge),
         Scale.x_discrete(),
         Scale.y_continuous(minvalue = 0.0),
         Guide.title("Predicted receptor activities for $dataType"),
-        style(bar_spacing = 5mm, stroke_color = c -> "black"),
+        style(bar_spacing = 5mm),  # stroke_color = c -> "black"
     )
     return pl
 end
