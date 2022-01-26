@@ -214,7 +214,7 @@ function regressionBootstrap(bootsize, Xfc, Xdf, Y; murine = true, exp_method = 
 end
 
 
-function regressionResult(dataType; L0, f, murine::Bool, exp_method = true, fit_ActI = true, cellTypes = cellTypes)
+function regressionResult(dataType; L0, f, murine::Bool, exp_method = true, fit_ActI = true)
     df = murine ? importDepletion(dataType) : importHumanized(dataType)
 
     Xfc, Xdf, Y = modelPred(df; L0 = L0, f = f, murine = murine)

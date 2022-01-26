@@ -15,37 +15,31 @@ function oneCellTypeOnlyplot(dataType; L0 = 1e-9, f = 4, murine = true)
     allCellTypes = murine ? murineCellTypes : humanCellTypes
     R2s = [oneCellTypeOnlyR2(dataType; L0 = L0, f = f, murine = murine, cellTypes = nothing)]
     for ct in allCellTypes
-        append!(R2s, [oneCellTypeOnlyR2(dataType; L0 = L0 f = f, murine = murine, cellTypes = [ct])])
+        append!(R2s, [oneCellTypeOnlyR2(dataType; L0 = L0, f = f, murine = murine, cellTypes = [ct])])
     end
     return plot(
             DataFrame(CellTypes=vcat(["All"], allCellTypes .* " only"), R2=R2s),
             x = "CellTypes",
             y = "R2",
             Geom.bar,
-            Guide.title("Regression R<sup>2</sup> with single cell type")
+            Guide.title("Regression R<sup>2</sup> with single cell type"),
+            Guide.xticks(orientation=:vertical),
+            Guide.xlabel("Cell types"),
+            Guide.ylabel("R<sup>2</sup>"),
             style(bar_spacing = 5mm),
         )
 end
-
-
-pl = plot(
-        DataFrame(CellTypes=vcat(["All"], allCellTypes), R2=R2s),
-        Scale.x_continuous(labels = n -> "$IgGXname $(n*100)%\n$IgGYname $(100-n*100)%"),
-        Guide.xlabel(""),
-        Guide.ylabel("RFU", orientation = :vertical),
-        Guide.xticks(orientation = :horizontal),
-        Guide.title("$IgGXname-$IgGYname in $(df[1, "Cell"])"),
-        Guide.manual_color_key("Valency", ["4", "33"], [palette[1], palette[2]]),
-    )
 
 function figure3()
     setGadflyTheme()
 
     mres, mloo_res, modf = regressionResult("melanoma"; L0 = 1e-9, f = 6, murine = true, exp_method = true, fit_ActI = true)
     mp1, mp2, mp3 = figureW(mres, mloo_res, modf, "melanoma"; L0 = 1e-9, f = 6, murine = true, legend = true)
+    mp4 = oneCellTypeOnlyplot("melanoma"; L0 = 1e-9, f = 6, murine = true)
 
     ires, iloo_res, iodf = regressionResult("ITP"; L0 = 1e-8, f = 10, murine = true, exp_method = true, fit_ActI = true)
     ip1, ip2, ip3 = figureW(ires, iloo_res, iodf, "ITP"; L0 = 1e-8, f = 10, murine = true, legend = true)
+    ip4 = oneCellTypeOnlyplot("ITP"; L0 = 1e-8, f = 10, murine = true)
 
-    draw(SVG("figure3.svg", 1300px, 600px), plotGrid((2, 4), [nothing, mp1, mp2, mp3, nothing, ip1, ip2, ip3]))
+    draw(SVG("figure3.svg", 1600px, 600px), plotGrid((2, 5), [nothing, mp1, mp2, mp3, mp4, nothing, ip1, ip2, ip3, ip4]))
 end
