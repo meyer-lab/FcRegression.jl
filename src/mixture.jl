@@ -162,7 +162,7 @@ function predictMix(
             polyfc(1e-9, KxStar, val, [recepExp[cell]], IgGC, Kav).Rmulti
         end
     catch e
-        println(val, [recepExp[cell]], IgGC, Kav)
+        println("Failed at predictMix():\n f = $val\n Rtot = $([recepExp[cell]])\n IgGC = $IgGC\n Kav = $Kav\n")
         rethrow(e)
     end
     return res
