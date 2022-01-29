@@ -70,8 +70,7 @@ function modelPred(df; L0, f, murine::Bool = true, cellTypes = nothing)
 end
 
 
-function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepActI; 
-        showXmat = false, murine = true, cellTypes = nothing)
+function regressionPred(Xfc, Xdf::Union{DataFrame, Nothing}, cellWeights, recepActI; showXmat = false, murine = true, cellTypes = nothing)
     ansType = promote_type(eltype(Xfc), eltype(cellWeights), eltype(recepActI))
     noextra = true
     if Xdf === nothing
