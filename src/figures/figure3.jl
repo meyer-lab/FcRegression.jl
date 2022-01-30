@@ -18,16 +18,16 @@ function oneCellTypeOnlyplot(dataType; L0 = 1e-9, f = 4, murine = true)
         append!(R2s, [oneCellTypeOnlyR2(dataType; L0 = L0, f = f, murine = murine, cellTypes = [ct])])
     end
     return plot(
-            DataFrame(CellTypes=vcat(["All"], allCellTypes .* " only"), R2=R2s),
-            x = "CellTypes",
-            y = "R2",
-            Geom.bar,
-            Guide.title("Regression R<sup>2</sup> with single cell type"),
-            Guide.xticks(orientation=:vertical),
-            Guide.xlabel("Cell types"),
-            Guide.ylabel("R<sup>2</sup>"),
-            style(bar_spacing = 5mm),
-        )
+        DataFrame(CellTypes = vcat(["All"], allCellTypes .* " only"), R2 = R2s),
+        x = "CellTypes",
+        y = "R2",
+        Geom.bar,
+        Guide.title("Regression R<sup>2</sup> with single cell type"),
+        Guide.xticks(orientation = :vertical),
+        Guide.xlabel("Cell types"),
+        Guide.ylabel("R<sup>2</sup>"),
+        style(bar_spacing = 5mm),
+    )
 end
 
 function figure3()
