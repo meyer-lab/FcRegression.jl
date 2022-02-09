@@ -18,12 +18,6 @@ mutable struct regResult{T}
     R2::T
 end
 
-mutable struct optResult{T}
-    cellWs::Array{T}
-    ActI::Array{T}
-    residual::T
-    R2::T
-end
 
 """ plug in reg df, and output binding model results """
 function modelPred(df; L0, f, murine::Bool = true, cellTypes = nothing)
@@ -82,8 +76,10 @@ end
 
 regPred(Xfc::Matrix, opt::regResult; exp_method) = regPred(Xfc, opt.cellWs; exp_method = exp_method)
 
-function regPred(Xdf::DataFrame, opt::regResult; murine, exp_method)
-    cellTypes = murine ? murineCellTypes : humanCellTypes
+function regPred(Xdf::DataFrame, opt::regResult; murine, exp_method, cellTypes = nothing)
+    if cellTypes === nothing
+        cellTypes = murine ? murineCellTypes : humanCellTypes
+    end
     Xmat = Matrix(Xdf[!, in(cellTypes).(names(Xdf))])
     return regPred(Xmat, opt; exp_method = exp_method)
 end

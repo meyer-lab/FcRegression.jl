@@ -1,45 +1,50 @@
 """ Figure 3: deconvolve the receptor and cell type functionality """
 
 function oneCellTypeOnlyR2(dataType; L0 = 1e-9, f = 4, murine = true, cellTypes = ["ncMO", "cMO"])
+    # Only testing on exponential method
     df = murine ? importDepletion(dataType) : importHumanized(dataType)
-    Xfc, Xdf, Y = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes)
-    res = fitRegression(Xfc, Xdf, Y; murine = murine, exp_method = true)
-    loo_res = LOOCrossVal(Xfc, Xdf, Y; murine = murine)
-    rY = exponential(regressionPred(Xfc, Xdf, res; murine = murine, cellTypes = cellTypes))
-    loo_rYs = [exponential(regressionPred(Xfc, Xdf, rres; murine = murine, cellTypes = cellTypes)) for rres in loo_res]
-    loo_R2s = [R2(Y, loo_rY; logscale = false) for loo_rY in loo_rYs]
-    return R2(Y, rY; logscale = false) #, loo_R2s
+    Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes)
+    res = fitRegNNLS(Xdf; murine = murine, cellTypes = cellTypes, exp_method = true)
+    loo_res = regLOO(Xdf; murine = murine, cellTypes = cellTypes, exp_method = true)
+    return res.R2, [l.R2 for l in loo_res]
 end
 
 function oneCellTypeOnlyplot(dataType; L0 = 1e-9, f = 4, murine = true)
     allCellTypes = murine ? murineCellTypes : humanCellTypes
-    R2s = [oneCellTypeOnlyR2(dataType; L0 = L0, f = f, murine = murine, cellTypes = nothing)]
+    mR2, lR2 = oneCellTypeOnlyR2(dataType; L0 = L0, f = f, murine = murine, cellTypes = nothing)
+    mR2s, lR2s = [mR2], [lR2]
     for ct in allCellTypes
-        append!(R2s, [oneCellTypeOnlyR2(dataType; L0 = L0, f = f, murine = murine, cellTypes = [ct])])
+        mR2, lR2 = oneCellTypeOnlyR2(dataType; L0 = L0, f = f, murine = murine, cellTypes = [ct])
+        append!(mR2s, [mR2])
+        append!(lR2s, [lR2])
     end
+    looR2 = hcat(lR2s...)
+    low = [lower(x) for x in eachslice(looR2, dims = 2)]
+    high = [upper(x) for x in eachslice(looR2, dims = 2)]
     return plot(
-        DataFrame(CellTypes = vcat(["All"], allCellTypes .* " only"), R2 = R2s),
+        DataFrame(CellTypes = vcat(["All"], allCellTypes .* " only"), R2 = mR2s, ymin = low, ymax = high),
         x = "CellTypes",
         y = "R2",
+        ymin = "ymin",
+        ymax = "ymax",
+        Geom.errorbar,
         Geom.bar,
-        Guide.title("Regression R<sup>2</sup> with single cell type"),
+        Guide.title("Regression <i>R</i><sup>2</sup> with single cell type"),
         Guide.xticks(orientation = :vertical),
         Guide.xlabel("Cell types"),
-        Guide.ylabel("R<sup>2</sup>"),
-        style(bar_spacing = 5mm),
+        Guide.ylabel("<i>R</i><sup>2</sup>"),
+        style(bar_spacing = 10pt, stroke_color = c -> "black"),
     )
 end
 
 function figure3()
     setGadflyTheme()
 
-    mres, mloo_res, modf = regressionResult("melanoma"; L0 = 1e-9, f = 6, murine = true, exp_method = true, fit_ActI = true)
-    mp1, mp2, mp3 = figureW(mres, mloo_res, modf, "melanoma"; L0 = 1e-9, f = 6, murine = true, legend = true)
+    mp1, mp2, mp3 = figureW("melanoma"; L0 = 1e-9, f = 6, murine = true, legend = true)
     mp4 = oneCellTypeOnlyplot("melanoma"; L0 = 1e-9, f = 6, murine = true)
 
-    ires, iloo_res, iodf = regressionResult("ITP"; L0 = 1e-8, f = 10, murine = true, exp_method = true, fit_ActI = true)
-    ip1, ip2, ip3 = figureW(ires, iloo_res, iodf, "ITP"; L0 = 1e-8, f = 10, murine = true, legend = true)
+    ip1, ip2, ip3 = figureW("ITP"; L0 = 1e-8, f = 10, murine = true, legend = true)
     ip4 = oneCellTypeOnlyplot("ITP"; L0 = 1e-8, f = 10, murine = true)
 
-    draw(SVG("figure3.svg", 1600px, 600px), plotGrid((2, 5), [nothing, mp1, mp2, mp3, mp4, nothing, ip1, ip2, ip3, ip4]))
+    draw(SVG("figure3.svg", 1600px, 600px), plotGrid((2, 4), [mp1, mp2, mp3, mp4, ip1, ip2, ip3, ip4]))
 end
