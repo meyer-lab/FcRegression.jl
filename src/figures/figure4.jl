@@ -13,6 +13,9 @@ function figure4()
 
     res, _, _ = regressionResult(dataType; L0 = L0, f = f, murine = true)
 
+    Xdf = modelPred(df; L0 = L0, f = f, murine = true, cellTypes = nothing)
+    res = fitRegNNLS(Xdf; murine = murine, cellTypes = nothing, exp_method = exp_method)
+
     ITP_Dep = plotDepletionSynergy(1, 2; L0 = L0, f = f, dataType = "ITP", fit = res)
     ITP_Dep_All = plotSynergy(L0, f; murine = true, dataType = dataType, fit = res)
     ITP_Kupffer_Act = plotDepletionSynergy(1, 2; L0 = L0, f = f, dataType = "ITP", fit = res, Cellidx = 6)
