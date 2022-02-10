@@ -6,7 +6,7 @@ function calcSynergy(
     f,
     FcExpr = nothing;
     murine,
-    fit::Union{optResult, Nothing} = nothing,
+    fit::Union{regResult, Nothing} = nothing,
     Rbound = false,
     c1q = false,
     neutralization = false,
@@ -36,7 +36,7 @@ function calcSynergy(
 
     if fit !== nothing  # using disease model
         if neutralization
-            fit = optResult(fit.cellWs, fit.ActI, fit.residual)
+            fit = regResult(fit.cellWs, fit.residual)
             fit.cellWs = fit.cellWs[1:(end - 1)]
         end
         if ndims(FcExpr) == 1
