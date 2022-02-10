@@ -1,9 +1,5 @@
-function figureW(dataType::String; L0 = 1e-9, f = 4, murine::Bool, exp_method = true, fit_ActI = true, legend = true)
-    res, loo_res, odf = regressionResult(dataType; L0 = L0, f = f, murine = murine, exp_method = exp_method, fit_ActI = fit_ActI)
-    return figureW(res, loo_res, odf, dataType; L0 = L0, f = f, murine = murine, legend = legend)
-end
-
-function figureW(res::optResult, loo_res::Vector{optResult}, odf::DataFrame, dataType::String; L0 = 1e-9, f = 4, murine::Bool, legend = true)
+function figureW(dataType::String; L0 = 1e-9, f = 4, murine::Bool, exp_method = true, legend = true)
+    res, odf, loo_res, boot_res = regResult(dataType; L0 = L0, f = f, murine = murine, exp_method = exp_method)
     if murine
         df = importDepletion(dataType)
         if dataType == "HIV"
@@ -22,12 +18,13 @@ function figureW(res::optResult, loo_res::Vector{optResult}, odf::DataFrame, dat
     @assert all(in(names(odf)).([color, shape]))
 
     p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
-    p2 = plotCellTypeEffects(df, res, loo_res, dataType; legend = legend, L0 = L0, f = f, murine = murine)
-    p3 = plotReceptorActivities(res, loo_res, dataType; murine = murine)
+    p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
+    p3 = plotCellTypeEffects(df, res, loo_res, dataType; legend = legend, L0 = L0, f = f, murine = murine)
     return p1, p2, p3
 end
 
 function plotActualvFit(odf, dataType, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}; legend = true)
+    R2anno = "<i>R</i><sup>2</sup>" * @sprintf("=%.3f", R2(odf.Y, odf.Fitted; logscale = false))
     pl = plot(
         odf,
         x = "Y",
@@ -42,6 +39,7 @@ function plotActualvFit(odf, dataType, colorL::Union{Symbol, String}, shapeL::Un
         Guide.xlabel("Actual effect"),
         Guide.ylabel("Fitted effect"),
         Guide.title("Actual vs fitted effect for $dataType"),
+        Guide.annotation(compose(context(), text(0.1, 0.8, R2anno), fill("black"), fontsize(10pt), font("Helvetica"))),
         style(point_size = 5px, key_position = legend ? :right : :none),
     )
     return pl
@@ -49,6 +47,7 @@ end
 
 
 function plotActualvPredict(odf, dataType, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}; legend = true)
+    R2anno = "<i>R</i><sup>2</sup>" * @sprintf("=%.3f", R2(odf.Y, odf.LOOPredict; logscale = false))
     pl = plot(
         odf,
         x = "Y",
@@ -62,6 +61,7 @@ function plotActualvPredict(odf, dataType, colorL::Union{Symbol, String}, shapeL
         Guide.xlabel("Actual effect"),
         Guide.ylabel("LOO predicted effect"),
         Guide.title("Actual vs LOO prediction for $dataType"),
+        Guide.annotation(compose(context(), text(0.1, 0.8, R2anno), fill("black"), fontsize(10pt), font("Helvetica"))),
         style(point_size = 5px, key_position = legend ? :right : :none),
     )
     return pl
@@ -78,47 +78,33 @@ function plotCellTypeEffects(df, res, loo_res, dataType; legend = true, L0 = 1e-
         Cell_df,
         x = "Condition",
         y = "Weight",
+        ymin = "ymin",
+        ymax = "ymax",
         color = "Component",
         Guide.colorkey(),
+        Geom.errorbar,
+        Stat.dodge(axis = :x),
         Geom.bar(position = :dodge),
         Scale.x_discrete(levels = unique(Cell_df.Condition)),
         Scale.y_continuous(minvalue = 0.0),
         Scale.color_discrete(levels = unique(Cell_df.Component)),
         Guide.title("Predicted cell type weights for $dataType"),
-        style(key_position = legend ? :right : :none),
-    )
-    return pl
-end
-
-function plotReceptorActivities(res, loo_res, dataType; murine = true)
-    ActI_conf = hcat([loo.ActI for loo in loo_res]...)
-    ActI_low = lower.(eachslice(ActI_conf, dims = 1))
-    ActI_hi = upper.(eachslice(ActI_conf, dims = 1))
-    ActI_df = DataFrame(Receptor = (murine ? murineFcgR : humanFcgR), Activity = res.ActI, ymin = ActI_low, ymax = ActI_hi)
-
-    pl = plot(
-        ActI_df,
-        x = "Receptor",
-        y = "Activity",
-        Geom.bar(position = :dodge),
-        Scale.x_discrete(),
-        Scale.y_continuous(minvalue = 0.0),
-        Guide.title("Predicted receptor activities for $dataType"),
-        style(bar_spacing = 5mm),  # stroke_color = c -> "black"
+        style(key_position = legend ? :right : :none, stroke_color = c -> "black", errorbar_cap_length = 4px),
     )
     return pl
 end
 
 
-function L0fSearchHeatmap(df, dataType, vmax, clmin, clmax; murine = true)
+function L0fSearchHeatmap(dataType, vmax=10, clmin=-14, clmax=-8; murine = true)
+    df = murine ? importDepletion(dataType) : importHumanized(dataType)
     concs = exp10.(range(clmin, stop = clmax, length = clmax - clmin + 1))
     valencies = [2:vmax;]
     minima = zeros(length(concs), length(valencies))
     for (i, L0) in enumerate(concs)
         for (j, v) in enumerate(valencies)
-            Xfc, Xdf, Y = modelPred(df; L0 = L0, f = v, murine = murine)
-            fit = fitRegression(Xfc, Xdf, Y; murine = murine)
-            minima[i, j] = fit.residual
+            Xdf = modelPred(df; L0 = L0, f = v, murine = murine)
+            fit = fitRegNNLS(Xdf; murine = murine)
+            minima[i, j] = fit.R2
         end
     end
     if dataType == "HIV"
