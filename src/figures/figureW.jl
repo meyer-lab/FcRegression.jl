@@ -95,7 +95,7 @@ function plotCellTypeEffects(df, res, loo_res, dataType; legend = true, L0 = 1e-
 end
 
 
-function L0fSearchHeatmap(dataType, vmax=10, clmin=-14, clmax=-8; murine = true)
+function L0fSearchHeatmap(dataType, vmax = 10, clmin = -14, clmax = -8; murine = true)
     df = murine ? importDepletion(dataType) : importHumanized(dataType)
     concs = exp10.(range(clmin, stop = clmax, length = clmax - clmin + 1))
     valencies = [2:vmax;]
