@@ -42,7 +42,7 @@ function figureAll()
     figure1()
     figure2()
     figure3()
-    figure4()
+    #figure4()
     figure5()
 
     figureS1()
