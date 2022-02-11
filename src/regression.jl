@@ -92,7 +92,7 @@ function fitRegNNLS(Xdf::DataFrame; murine = true, cellTypes = nothing, exp_meth
     Xmat = Matrix(Xdf[!, in(cellTypes).(names(Xdf))])
     Y = Xdf[!, "Target"]
     cY = exp_method ? inv_exponential.(Y) : atanh.(Y)
-    
+
     w = vec(nonneg_lsq(Xmat, cY; alg = :nnls))  # cell type weight found by NNLS
     Yr = Xmat * w
     residual = norm(cY - Yr, 2) / length(Y)
