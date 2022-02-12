@@ -15,12 +15,10 @@ import Serialization: serialize, deserialize
     for ii in eachindex(Kav)
         Kav[ii] ~ Kav_dist[ii]
     end
-
-    f4 ~ f4Dist
-    f33 ~ f33Dist
+    
     KxStar ~ KxStarDist
 
-    Rtotd, vals, KxStar, Kav = dismantle_x0(vcat(Rtot, [f4, f33, KxStar], reshape(Kav, :)))
+    Rtotd, vals, KxStar, Kav = dismantle_x0(vcat(Rtot, [4, 33, KxStar], reshape(Kav, :)))
     lsigma = 0.1
     lps = log.(mixturePredictions(; Rtot = Rtotd, Kav = Kav, KxStar = KxStar, vals = vals)."Predict")
     for ii in eachindex(measurements)
