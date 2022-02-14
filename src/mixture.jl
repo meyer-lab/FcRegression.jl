@@ -155,6 +155,9 @@ function predictMix(
     IgGC[IgGYname .== humanIgG] .= IgGY
 
     Kav = Matrix(Kav[!, [cell]])
+    if [recepExp[cell]]' * Kav * IgGC <= 0.0
+        return 0.0
+    end 
     res = try
         if Lbound
             polyfc(1e-9, KxStar, val, [recepExp[cell]], IgGC, Kav).Lbound
