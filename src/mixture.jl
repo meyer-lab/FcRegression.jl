@@ -155,7 +155,7 @@ function predictMix(
     IgGC[IgGYname .== humanIgG] .= IgGY
 
     Kav = Matrix(Kav[!, [cell]])
-    if [recepExp[cell]]' * Kav * IgGC <= 0.0
+    if IgGC' * Kav * [recepExp[cell]] <= 0.0
         return 0.0
     end 
     res = try
