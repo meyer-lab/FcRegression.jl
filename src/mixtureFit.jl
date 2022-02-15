@@ -83,7 +83,7 @@ function assemble_x0(
     push!(x, vals...)
     push!(x, KxStar)
     Kav = reshape(Matrix(Kav[:, Not("IgG")]), :)
-    Kav[Kav .<= 1.0] .= 1.0 
+    Kav[Kav .<= 1.0] .= 1.0
     push!(x, Kav...)
     return x
 end
