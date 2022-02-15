@@ -82,7 +82,9 @@ function assemble_x0(
     x = [Rtot[rr] for rr in humanFcgRiv]
     push!(x, vals...)
     push!(x, KxStar)
-    push!(x, reshape(Matrix(Kav[:, Not("IgG")]), :)...)
+    Kav = reshape(Matrix(Kav[:, Not("IgG")]), :)
+    Kav[Kav .<= 1.0] .= 1.0 
+    push!(x, Kav...)
     return x
 end
 
