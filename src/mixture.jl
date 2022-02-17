@@ -163,7 +163,7 @@ function predictMix(
 
     if IgGC' * Kav * rcp <= 0.0
         return 0.0
-    end 
+    end
     res = try
         if Lbound
             polyfc(1e-9, KxStar, val, rcp, IgGC, Kav).Lbound
