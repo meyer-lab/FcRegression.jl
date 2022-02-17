@@ -154,15 +154,21 @@ function predictMix(
     IgGC[IgGXname .== humanIgG] .= IgGX
     IgGC[IgGYname .== humanIgG] .= IgGY
 
+    rcp = [recepExp[cell]]
     Kav = Matrix(Kav[!, [cell]])
-    if IgGC' * Kav * [recepExp[cell]] <= 0.0
+
+    if !(0.0 < KxStar < Inf) || !(0.0 < val < Inf) || !(all(0.0 .<= rcp .< Inf)) || !(all(0.0 .<= Kav .< Inf))
+        return 0.0
+    end
+
+    if IgGC' * Kav * rcp <= 0.0
         return 0.0
     end 
     res = try
         if Lbound
-            polyfc(1e-9, KxStar, val, [recepExp[cell]], IgGC, Kav).Lbound
+            polyfc(1e-9, KxStar, val, rcp, IgGC, Kav).Lbound
         else
-            polyfc(1e-9, KxStar, val, [recepExp[cell]], IgGC, Kav).Rmulti
+            polyfc(1e-9, KxStar, val, rcp, IgGC, Kav).Rmulti
         end
     catch e
         println("Failed at predictMix():\n f = $val\n Rtot = $([recepExp[cell]])\n IgGC = $IgGC\n Kav = $Kav\n")
