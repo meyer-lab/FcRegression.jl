@@ -12,13 +12,20 @@ function mixturePredictions(
     Kav = importKav(; murine = false, invitro = true, retdf = true),
     KxStar = KxConst,
     vals = [4.0, 33.0],
+    convs = [2.27, 3.26],
 )
     df[!, "NewValency"] .= vals[1]
     df[df."Valency" .== 33, "NewValency"] .= vals[2]
 
     ndf = predictMix(df; recepExp = Rtot, KxStar = KxStar, Kav = Kav)
+
+    ndf[ndf."Valency" .== 4, "Predict"] ./= convs[1]
+    ndf[ndf."Valency" .== 33, "Predict"] ./= convs[2]
     return ndf
 end
+
+const f4conv_dist = LogNormal(log(2.27), 0.5)
+const f33conv_dist = LogNormal(log(3.26), 0.5)
 
 function fit_goodness(ndf; deviation = 0.01)
     # log likelihood of prediction vs measurements

@@ -10,7 +10,6 @@ function plotPredvsMeasured(
     color = "Cell",
     shape = "Valency",
     title = "Predicted vs Actual",
-    R2pos = (4, 1),
 )
     setGadflyTheme()
 
@@ -19,6 +18,7 @@ function plotPredvsMeasured(
     df[(df[!, yy]) .< 1.0, yy] .= 1.0
 
     r2 = R2((df[!, xx]), (df[!, yy]))
+    R2anno = "R<sup>2</sup> = " * @sprintf("%.4f", r2)
     return plot(
         df,
         x = xx,
@@ -40,7 +40,7 @@ function plotPredvsMeasured(
             Scale.color_discrete().f(10)[4:end]...,
         ),
         Geom.abline(color = "black"),
-        Guide.annotation(compose(context(), text(R2pos[1], R2pos[2], "R<sup>2</sup> = " * @sprintf("%.4f", r2)), font("Helvetica-Bold"))),
+        Guide.annotation(compose(context(), text(160, 60000, R2anno), fill("black"), fontsize(10pt), font("Helvetica"))),
         style(errorbar_cap_length = 0px),
     )
 end
@@ -102,9 +102,9 @@ end
 
 function figure2()
     data = loadMixData(; discard_small = true)
-    raw_predict = predictMix(averageMixData(data))
+    raw_predict = mixturePredictions(averageMixData(data))
 
-    raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Prediction without fitting", R2pos = (3.5, 1))
+    raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Prediction without fitting")
 
     reg_res, reg_fitdf = fitMixMaster(data; fitKav = false)
     reg_allPL = plotPredvsMeasured(reg_fitdf; xx = "Value", title = "Fit all except Kav, all")

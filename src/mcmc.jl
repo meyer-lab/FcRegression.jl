@@ -10,17 +10,23 @@ import Serialization: serialize, deserialize
     Kav = Matrix(undef, size(Kav_dist)...)
 
     for ii in eachindex(Rtot)
-        Rtot[ii] ~ Rtot_dist[ii]
+        #Rtot[ii] ~ Rtot_dist[ii]
+        Rtot[ii] = exp.(Rtot_dist[ii].μ)
     end
     for ii in eachindex(Kav)
         Kav[ii] ~ Kav_dist[ii]
     end
     
-    KxStar ~ KxStarDist
+    #KxStar ~ KxStarDist
+    KxStar = exp(KxStarDist.μ)
+    f4_conv ~ f4conv_dist
+    f33_conv ~ f33conv_dist
 
-    Rtotd, vals, KxStar, Kav = dismantle_x0(vcat(Rtot, [4, 33, KxStar], reshape(Kav, :)))
+    x0 = vcat(Rtot, [4, 33, KxStar], reshape(Kav, :))
+    T = typeof(Kav[1])
+    Rtotd, vals, KxStar, Kav = dismantle_x0(T.(x0))
     lsigma = 0.1
-    lps = log.(mixturePredictions(; Rtot = Rtotd, Kav = Kav, KxStar = KxStar, vals = vals)."Predict")
+    lps = log.(mixturePredictions(; Rtot = Rtotd, Kav = Kav, KxStar = KxStar, vals = vals, convs = [f4_conv, f33_conv])."Predict")
     for ii in eachindex(measurements)
         measurements[ii] ~ LogNormal(lps[ii], lsigma)
     end
@@ -35,7 +41,7 @@ function runMCMC(fname = "ADVI_cache.dat")
         q = vi(m, ADVI(10, 1000))
         serialize(fname, q)
     end
-    return rand(q, 10000)
+    return q
 end
 
 function plotHistPriorDist(dat, dist, name)
