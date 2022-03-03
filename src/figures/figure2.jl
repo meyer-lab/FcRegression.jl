@@ -65,16 +65,26 @@ function splot_contPred(df)
     end
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
 
+    ymax = Dict(
+        "FcgRI" => 5e4,
+        "FcgRIIA-131H" => 2e5,
+        "FcgRIIA-131R" => 5e4,
+        "FcgRIIB-232I" => 600,
+        "FcgRIIIA-158F" => 1.5e5,
+        "FcgRIIIA-158V" => 2.5e5,
+    )
+    cell = df[1, "Cell"]
     palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
 
     pl = plot(
         layer(x = x, y = preds4, Geom.line, Theme(default_color = palette[1], line_width = 2px)),
         layer(x = x, y = preds33, Geom.line, Theme(default_color = palette[2], line_width = 2px)),
         Scale.x_continuous(labels = n -> "$IgGXname $(n*100)%\n$IgGYname $(100-n*100)%"),
+        Scale.y_continuous(; minvalue = 0.0, maxvalue = ymax[cell]),
         Guide.xlabel(""),
         Guide.ylabel("RFU", orientation = :vertical),
         Guide.xticks(orientation = :horizontal),
-        Guide.title("$IgGXname-$IgGYname in $(df[1, "Cell"])"),
+        Guide.title("$IgGXname-$IgGYname in $cell"),
         Guide.manual_color_key("Valency", ["4", "33"], [palette[1], palette[2]]),
     )
     return pl

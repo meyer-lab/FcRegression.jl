@@ -7,6 +7,7 @@ using StatsBase
 import StatsBase: geomean, std
 using DataFrames
 using Printf
+import Cairo, Fontconfig
 
 include("figures/figureCommon.jl")
 
