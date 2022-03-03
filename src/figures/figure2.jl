@@ -65,14 +65,8 @@ function splot_contPred(df)
     end
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
 
-    ymax = Dict(
-        "FcgRI" => 5e4,
-        "FcgRIIA-131H" => 2e5,
-        "FcgRIIA-131R" => 5e4,
-        "FcgRIIB-232I" => 600,
-        "FcgRIIIA-158F" => 1.5e5,
-        "FcgRIIIA-158V" => 2.5e5,
-    )
+    ymax =
+        Dict("FcgRI" => 5e4, "FcgRIIA-131H" => 2e5, "FcgRIIA-131R" => 5e4, "FcgRIIB-232I" => 600, "FcgRIIIA-158F" => 1.5e5, "FcgRIIIA-158V" => 2.5e5)
     cell = df[1, "Cell"]
     palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
 
