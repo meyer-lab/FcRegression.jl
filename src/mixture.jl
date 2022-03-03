@@ -92,7 +92,7 @@ function plotMixSubplots(splot::Function, df = loadMixData(); kwargs...)
     setGadflyTheme()
 
     cells = unique(df."Cell")
-    pairs = unique(df[!, ["subclass_1", "subclass_2"]])
+    pairs = unique(df[df."subclass_2" .!= "None", ["subclass_1", "subclass_2"]])
     lcells = length(cells)
     lpairs = size(pairs, 1)
     pls = Vector(undef, lcells * lpairs)

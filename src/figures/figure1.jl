@@ -187,5 +187,5 @@ function figure1()
     )
 
     pl = plotGrid((3, 5), [nothing, nothing, p1, p2, vars, SP4, SP33, LP, igg12_1, igg14_1, SP4_13, SP33_13, LP_13];)
-    return draw(SVG("figure1.svg", 23inch, 12inch), pl)
+    return draw(SVG("figure1.svg", 20inch, 10inch), pl)
 end
