@@ -23,7 +23,7 @@ import Serialization: serialize, deserialize
     f33_conv ~ f33conv_dist
 
     x0 = vcat(Rtot, [4, 33, KxStar], reshape(Kav, :))
-    T = typeof(Kav[1])
+    T = typeof(x0[1])
     Rtotd, vals, KxStar, Kav = dismantle_x0(T.(x0))
     lsigma = 0.1
     lps = log.(mixturePredictions(; Rtot = Rtotd, Kav = Kav, KxStar = KxStar, vals = vals, convs = [f4_conv, f33_conv])."Predict")
