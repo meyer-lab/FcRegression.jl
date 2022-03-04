@@ -10,15 +10,15 @@ import Serialization: serialize, deserialize
     Kav = Matrix(undef, size(Kav_dist)...)
 
     for ii in eachindex(Rtot)
-        Rtot[ii] ~ Rtot_dist[ii]
+        Rtot[ii] ~ LogNormal(1.0, 1.0) # Rtot_dist[ii]
     end
     for ii in eachindex(Kav)
-        Kav[ii] ~ Kav_dist[ii]
+        Kav[ii] ~ LogNormal(1.0, 1.0) #Kav_dist[ii]
     end
 
-    f4 ~ f4Dist
-    f33 ~ f33Dist
-    KxStar ~ KxStarDist
+    f4 ~ LogNormal(log(4), 0.1 * log(4))
+    f33 ~ LogNormal(log(33), 0.1 * log(33))
+    KxStar ~ LogNormal(log(KxConst), 2)
 
     Rtotd, vals, KxStar, Kav = dismantle_x0(vcat(Rtot, [f4, f33, KxStar], reshape(Kav, :)))
     lsigma = 0.1

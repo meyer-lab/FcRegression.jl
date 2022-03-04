@@ -67,9 +67,9 @@ function dismantle_x0(x)
     @assert length(x) == length(humanIgG) * length(humanFcgRiv)
     @assert all(x .> 0.0) "In dismantle(): Kav contains negative"
     Kav = deepcopy(importKav(; murine = false, invitro = true, retdf = true))
-    Kav[:, Not("IgG")] .= 0.0
-    Kav[!, Not("IgG")] = convert.(eltype(x), Kav[!, Not("IgG")])
-    Kav[:, Not("IgG")] = reshape(x, length(humanIgG), length(humanFcgRiv))
+    Kav[!, Not("IgG")] .= 0.0
+    Kav[!, Not("IgG")] = convert.(eltype(x), Kav[:, Not("IgG")])
+    Kav[!, Not("IgG")] = reshape(x, length(humanIgG), length(humanFcgRiv))
     return Rtot, vals, KxStar, Kav
 end
 
