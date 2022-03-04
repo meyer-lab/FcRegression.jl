@@ -20,7 +20,9 @@ import Serialization: serialize, deserialize
     f33 ~ LogNormal(log(33), 0.1 * log(33))
     KxStar ~ LogNormal(log(KxConst), 2)
 
-    Rtotd, vals, KxStar, Kav = dismantle_x0(vcat(Rtot, [f4, f33, KxStar], reshape(Kav, :)))
+    x0 = vcat(Rtot, [4, 33, KxStar], reshape(Kav, :))
+    T = typeof(x0[1])
+    Rtotd, vals, KxStar, Kav = dismantle_x0(T.(x0))
     lsigma = 0.1
     lps = log.(mixturePredictions(; Rtot = Rtotd, Kav = Kav, KxStar = KxStar, vals = vals)."Predict")
     for ii in eachindex(measurements)
