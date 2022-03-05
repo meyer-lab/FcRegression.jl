@@ -182,7 +182,7 @@ function predictMix(df::DataFrame; kwargs...)
     """ will return another df object """
     df = copy(df)
     df[!, "Predict"] .= predictMix(df[1, :]; kwargs...)
-    for i = 1:size(df)[1]
+    Threads.@threads for i = 1:size(df)[1]
         df[i, "Predict"] = predictMix(df[i, :]; kwargs...)
     end
     df[df."Predict" .< 1.0, "Predict"] .= 1.0
