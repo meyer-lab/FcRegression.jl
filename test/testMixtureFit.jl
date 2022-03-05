@@ -10,5 +10,4 @@ end
 
 @testset "Building the MCMC model can work" begin
     model = FcRegression.sfit()
-    c = sample(model, NUTS(), 1000, discard_initial = 500)
 end
