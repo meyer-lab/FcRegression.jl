@@ -4,15 +4,12 @@ using StatsBase
 import Statistics: cor
 
 """ Load mixture in vitro binding data """
-@memoize function loadMixData(fn = "lux_mixture_mar2021.csv"; discard_small = false)
+@memoize function loadMixData(fn = "lux_mixture_mar2021.csv")
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
 
     df = stack(df, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]), variable_name = "Experiment", value_name = "Value")
     df = dropmissing(df)
     df[!, "Value"] = convert.(Float64, df[!, "Value"])
-    if discard_small
-        df = df[df[!, "Value"] .> 100, :]   # discard small measurements
-    end
     df[(df[!, "Value"]) .< 1.0, "Value"] .= 1.0
 
     df[!, "%_1"] ./= 100.0
@@ -191,7 +188,7 @@ end
 
 """ PCA of isotype/combination x receptor matrix """
 function mixtureDataPCA(; val = 0)
-    df = averageMixData(loadMixData(; discard_small = false); combSingle = true)
+    df = averageMixData(loadMixData(); combSingle = true)
     if val > 0
         df = df[df."Valency" .== val, :]
     end

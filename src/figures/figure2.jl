@@ -111,7 +111,7 @@ function splot_pred(cell; Lbound = true)
 end
 
 function figure2()
-    data = loadMixData(; discard_small = true)
+    data = loadMixData()
     raw_predict = predictMix(averageMixData(data))
 
     raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Prediction without fitting", R2pos = (3.5, 1))
