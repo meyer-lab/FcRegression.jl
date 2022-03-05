@@ -88,7 +88,7 @@ function assemble_x0(
     return x
 end
 
-function totalLikelihood(x, df = loadMixData(; discard_small = true); deviation = 0.1)
+function totalLikelihood(x, df = loadMixData(); deviation = 0.1)
     Rtot, vals, KxStar, Kav = dismantle_x0(x)
     ndf = mixturePredictions(df; Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals)
     lik = Rtot_prior(Rtot) + Kav_prior(Kav) + valency_prior(vals) + KxStar_prior(KxStar)

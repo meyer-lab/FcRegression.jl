@@ -3,7 +3,9 @@ import Serialization: serialize, deserialize
 using Distributions
 
 
-@model function sfit(measurements = log.(loadMixData(; discard_small = true)."Value"))
+@model function sfit()
+    df = deepcopy(loadMixData())
+
     Rtot_dist = importInVitroRtotDist()
     Kav_dist = importKavDist(; inflation = 0.1)
     Kav_dist = Matrix(Kav_dist[:, Not("IgG")])
@@ -12,25 +14,33 @@ using Distributions
     Kav = Matrix(undef, size(Kav_dist)...)
 
     for ii in eachindex(Rtot)
-        Rtot[ii] ~ Truncated(Rtot_dist[ii], 100, 1E7)
+        Rtot[ii] ~ Truncated(Rtot_dist[ii], 1000, 1E7)
     end
     for ii in eachindex(Kav)
-        Kav[ii] ~ Truncated(Kav_dist[ii], 10, 1E6)
+        Kav[ii] ~ Truncated(Kav_dist[ii], 100, 1E9)
     end
 
-    f4 ~ LogNormal(log(4), 0.1 * log(4))
-    f33 ~ LogNormal(log(33), 0.1 * log(33))
+    f4 ~ Truncated(LogNormal(log(4), 0.1), 2.0, 8.0)
+    f33 ~ Truncated(LogNormal(log(33), 0.1), 10, 50)
     KxStar ~ Truncated(LogNormal(log(KxConst), 0.1), 1E-14, 1E-10)
 
-    x0 = vcat(Rtot, [4, 33, KxStar], reshape(Kav, :))
+    x0 = vcat(Rtot, [f4, f33, KxStar], reshape(Kav, :))
     T = typeof(x0[1])
     Rtotd, vals, KxStar, Kav = dismantle_x0(T.(x0))
-    lsigma = 0.1
-    lps = log.(mixturePredictions(; Rtot = Rtotd, Kav = Kav, KxStar = KxStar, vals = vals)."Predict")
-    scaling = mean(log.(measurements)) - mean(lps)
-    lps .+= scaling
+    df = mixturePredictions(df; Rtot = Rtotd, Kav = Kav, KxStar = KxStar, vals = vals)
+
+    lps = df."Predict"
+    measurements = df."Value"
+    @assert all(isfinite(lps))
+    @assert all(isfinite(measurements))
+
+    # Least squares with one var and no intercept
+    scale = sum(measurements .* lps) / sum(measurements .* measurements)
+    lps .+= scale
+
+    @assert size(lps) == size(measurements)
     for ii in eachindex(measurements)
-        measurements[ii] ~ LogNormal(lps[ii], lsigma)
+        measurements[ii] ~ LogNormal(log.(lps[ii]), 0.1)
     end
 end
 
@@ -46,13 +56,15 @@ end
 
 function plotHistPriorDist(dat, dist, name)
     dat = reshape(dat, :)
+    println(dist.μ)
     xxs = LinRange(dist.μ - 4 * dist.σ, dist.μ + 4 * dist.σ, 100)
-    yys = [pdf(dist, xx) for xx in xxs]
+    yys = [pdf(dist, exp.(xx)) for xx in xxs]
+    println(yys)
     pl = plot(
         layer(x = xxs, y = yys, Geom.line, color = [colorant"red"], order = 1),
-        layer(DataFrame("Value" => dat), x = "Value", Geom.histogram(bincount = 8, density = true)),
-        Scale.x_continuous(labels = x -> @sprintf("%.3E", exp(x))),
-        Guide.xticks(orientation = :horizontal),
+        layer(DataFrame("Value" => log.(dat)), x = "Value", Geom.histogram(bincount = 8, density = true)),
+        #Scale.x_continuous(labels = x -> @sprintf("%.3E", exp(x))),
+        #Guide.xticks(orientation = :horizontal),
         Guide.xlabel("Value"),
         Guide.ylabel(nothing),
         Guide.title(name),
@@ -72,7 +84,7 @@ function plot_MCMC_dists(c = runMCMC())
         IgGname = humanIgG[(ii - 1) % ligg + 1]
         FcRname = humanFcgRiv[(ii - 1) ÷ ligg + 1]
         name = IgGname * " to " * FcRname
-        Kav_pls[ii] = plotHistPriorDist(c["lKav[$ii]"].data, Kav_dist[ii], name)
+        Kav_pls[ii] = plotHistPriorDist(c["Kav[$ii]"].data, Kav_dist[ii], name)
     end
     Kav_plot = plotGrid((ligg, lfcr), permutedims(Kav_pls, (2, 1)); sublabels = false)
     draw(SVG("MCMC_Kav.svg", 16inch, 13inch), Kav_plot)
@@ -82,16 +94,16 @@ function plot_MCMC_dists(c = runMCMC())
     Rtot_dist = importInVitroRtotDist()
     for ii in eachindex(Rtot_pls)
         FcRname = humanFcgRiv[ii]
-        Rtot_pls[ii] = plotHistPriorDist(c["lRtot[$ii]"].data, Rtot_dist[ii], FcRname)
+        Rtot_pls[ii] = plotHistPriorDist(c["Rtot[$ii]"].data, Rtot_dist[ii], FcRname)
     end
     Rtot_plot = plotGrid((1, lfcr), Rtot_pls; sublabels = false)
     draw(SVG("MCMC_Rtot.svg", 16inch, 4inch), Rtot_plot)
 
     # Plot f4, f33, KxStar
     other_pls = Vector{Plot}(undef, 3)
-    other_pls[1] = plotHistPriorDist(c["lf4"].data, f4Dist, "f = 4 effective valency")
-    other_pls[2] = plotHistPriorDist(c["lf33"].data, f33Dist, "f = 33 effective valency")
-    other_pls[3] = plotHistPriorDist(c["lKxStar"].data, KxStarDist, "K<sub>x</sub><sup>*</sup>")
+    other_pls[1] = plotHistPriorDist(c["f4"].data, f4Dist, "f = 4 effective valency")
+    other_pls[2] = plotHistPriorDist(c["f33"].data, f33Dist, "f = 33 effective valency")
+    other_pls[3] = plotHistPriorDist(c["KxStar"].data, KxStarDist, "K<sub>x</sub><sup>*</sup>")
     other_plot = plotGrid((1, 3), other_pls; sublabels = false)
     draw(SVG("MCMC_others.svg", 8inch, 4inch), other_plot)
 end
