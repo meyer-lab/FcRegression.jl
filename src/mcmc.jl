@@ -1,5 +1,7 @@
 import Turing: ~, sample, MH, NUTS, @model
 import Serialization: serialize, deserialize
+using Distributions
+
 
 @model function sfit(measurements = log.(loadMixData(; discard_small = true)."Value"))
     Rtot_dist = importInVitroRtotDist()
@@ -10,21 +12,23 @@ import Serialization: serialize, deserialize
     Kav = Matrix(undef, size(Kav_dist)...)
 
     for ii in eachindex(Rtot)
-        Rtot[ii] ~ LogNormal(1.0, 1.0) # Rtot_dist[ii]
+        Rtot[ii] ~ Truncated(Rtot_dist[ii], 100, 1E7)
     end
     for ii in eachindex(Kav)
-        Kav[ii] ~ LogNormal(1.0, 1.0) #Kav_dist[ii]
+        Kav[ii] ~ Truncated(Kav_dist[ii], 10, 1E6)
     end
 
     f4 ~ LogNormal(log(4), 0.1 * log(4))
     f33 ~ LogNormal(log(33), 0.1 * log(33))
-    KxStar ~ LogNormal(log(KxConst), 2)
+    KxStar ~ Truncated(LogNormal(log(KxConst), 0.1), 1E-14, 1E-10)
 
     x0 = vcat(Rtot, [4, 33, KxStar], reshape(Kav, :))
     T = typeof(x0[1])
     Rtotd, vals, KxStar, Kav = dismantle_x0(T.(x0))
     lsigma = 0.1
     lps = log.(mixturePredictions(; Rtot = Rtotd, Kav = Kav, KxStar = KxStar, vals = vals)."Predict")
+    scaling = mean(log.(measurements)) - mean(lps)
+    lps .+= scaling
     for ii in eachindex(measurements)
         measurements[ii] ~ LogNormal(lps[ii], lsigma)
     end
