@@ -56,13 +56,12 @@ end
 
 function plotHistPriorDist(dat, dist, name)
     dat = reshape(dat, :)
-    println(dist.μ)
     xxs = LinRange(dist.μ - 4 * dist.σ, dist.μ + 4 * dist.σ, 100)
     yys = [pdf(dist, exp.(xx)) for xx in xxs]
-    println(yys)
+    yys = yys ./ maximum(yys)
     pl = plot(
         layer(x = xxs, y = yys, Geom.line, color = [colorant"red"], order = 1),
-        layer(DataFrame("Value" => log.(dat)), x = "Value", Geom.histogram(bincount = 8, density = true)),
+        layer(DataFrame("Value" => log.(dat)), x = "Value", Geom.histogram(bincount = 20, density = true)),
         #Scale.x_continuous(labels = x -> @sprintf("%.3E", exp(x))),
         #Guide.xticks(orientation = :horizontal),
         Guide.xlabel("Value"),
@@ -74,6 +73,7 @@ end
 
 function plot_MCMC_dists(c = runMCMC())
     setGadflyTheme()
+    c = c[500:1000]
 
     # Plot Kav's
     ligg = length(humanIgG)
