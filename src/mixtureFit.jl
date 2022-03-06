@@ -21,8 +21,6 @@ function mixturePredictions(
     return ndf
 end
 
-KxStar_prior = x -> log(pdf(KxStarDist, x))    # eyeballed from Robinett Fig. 2d
-
 function dismantle_x0(x)
     # order: Rtot, vals, KxStar, Kav
     x = deepcopy(x)
@@ -56,7 +54,7 @@ function assemble_x0(
     return x
 end
 
-function MLELikelihood()
+function MAPLikelihood()
     model = sfit()
     opt = optimize(model, MAP(), LBFGS(), Optim.Options(iterations=1000, show_every=10, show_trace=true))
     opt = opt.values.array
@@ -65,7 +63,7 @@ function MLELikelihood()
     Rtot, vals, KxStar, Kav = FcRegression.dismantle_x0(xx)
     ndf =
         FcRegression.mixturePredictions(FcRegression.averageMixData(FcRegression.loadMixData()); Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals)
-    FcRegression.plotPredvsMeasured(ndf; xx = "Value")
+    return ndf
 end
 
 
