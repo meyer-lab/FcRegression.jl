@@ -1,10 +1,13 @@
 import Turing: ~, sample, MH, NUTS, @model
 import Serialization: serialize, deserialize
 using Distributions
+using ForwardDiff
+using LinearAlgebra
+import Statistics: cor
 
 
-@model function sfit()
-    df = deepcopy(loadMixData())
+@model function sfit(df)
+    df = deepcopy(df)
 
     Rtot_dist = importInVitroRtotDist()
     Kav_dist = importKavDist(; inflation = 0.1)
@@ -38,9 +41,13 @@ using Distributions
     # Least squares with one var and no intercept
     scale = sum(measurements .* lps) / sum(measurements .* measurements)
     diff = log.(lps .* scale) - log.(measurements)
-    diffSum = sum(abs2.(diff / 0.1)) # Scale by expected variance
 
-    diffSum ~ Chisq(length(diff)) # Speeds up a lot
+    # println(ForwardDiff.value(cor(log.(lps .* scale), log.(measurements))))
+    # Shows a correlation of 0.51
+    
+    # diffSum = norm(diff / 0.1) # Scale by expected variance
+    diff ~ MvNormal(diff, 1.0)
+    # diffSum ~ Chi(length(diff)) # Speeds up a lot
     nothing
 end
 
@@ -48,7 +55,8 @@ function runMCMC(fname = "MCMC_nuts_1000.dat")
     if isfile(fname)
         return deserialize(fname)
     end
-    m = sfit()
+    df = loadMixData()
+    m = sfit(df)
     c = sample(m, NUTS(), 1_000)
     f = serialize(fname, c)
     return c

@@ -1,7 +1,7 @@
 """ Fitting mixture measurements """
 
 using Optim
-import Turing: optimize, MAP
+import Turing: optimize, MAP, MLE
 
 ##### 
 # Below are for the MLE approach
@@ -55,8 +55,10 @@ function assemble_x0(
 end
 
 function MAPLikelihood()
-    model = sfit()
-    opt = optimize(model, MAP(), LBFGS(), Optim.Options(iterations=1000, show_every=10, show_trace=true))
+    df = loadMixData()
+    df = averageMixData(df)
+    model = sfit(df)
+    opt = optimize(model, MAP(), LBFGS(), Optim.Options(g_abstol=1e-12, g_reltol=1e-12, iterations=1000, show_every=10, show_trace=true))
     opt = opt.values.array
     xx = vcat(opt[1:6], opt[31:32], opt[33], opt[7:30])
 
