@@ -1,6 +1,8 @@
 import Turing: ~, sample, MH, NUTS, @model
 import Serialization: serialize, deserialize
 using Distributions
+using ForwardDiff
+using LinearAlgebra
 
 
 @model function sfit()
@@ -24,7 +26,7 @@ using Distributions
     f33 ~ Truncated(LogNormal(log(33), 0.1), 10, 50)
     KxStar ~ Truncated(LogNormal(log(KxConst), 0.1), 1E-14, 1E-10)
 
-    x0 = vcat(Rtot, [f4, f33, KxStar], reshape(Kav, :))
+    x0 = vcat(Rtot, [4.0, 33.0, KxConst], reshape(Kav, :)) # Simplifying fitting for a bit
     T = typeof(x0[1])
     Rtotd, vals, KxStar, Kav = dismantle_x0(T.(x0))
     df = mixturePredictions(df; Rtot = Rtotd, Kav = Kav, KxStar = KxStar, vals = vals)
@@ -33,15 +35,14 @@ using Distributions
     measurements = df."Value"
     @assert all(isfinite(lps))
     @assert all(isfinite(measurements))
+    @assert size(lps) == size(measurements)
 
     # Least squares with one var and no intercept
     scale = sum(measurements .* lps) / sum(measurements .* measurements)
-    lps .+= scale
-
-    @assert size(lps) == size(measurements)
-    for ii in eachindex(measurements)
-        measurements[ii] ~ LogNormal(log.(lps[ii]), 0.1)
-    end
+    diff = log.(lps .* scale) - log.(measurements)
+    
+    diff ~ Normal(0.0, 0.1) # One distribution reduces allocations quite a bit
+    nothing
 end
 
 function runMCMC(fname = "MCMC_nuts_1000.dat")

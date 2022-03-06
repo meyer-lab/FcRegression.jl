@@ -146,7 +146,7 @@ function predictMix(
     Lbound = true,
     Kav::DataFrame = importKav(; murine = false, retdf = true),
     kwargs...,
-)
+)::Real
     IgGC = zeros(size(humanIgG))
     IgGC[IgGXname .== humanIgG] .= IgGX
     IgGC[IgGYname .== humanIgG] .= IgGY
@@ -176,13 +176,28 @@ end
 predictMix(dfrow::DataFrameRow; kwargs...) = predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; kwargs...)
 
 function predictMix(df::DataFrame; kwargs...)
-    """ will return another df object """
-    df = copy(df)
-    df[!, "Predict"] .= predictMix(df[1, :]; kwargs...)
-    Threads.@threads for i = 1:size(df)[1]
-        df[i, "Predict"] = predictMix(df[i, :]; kwargs...)
+    """ Will return another df object. Only iterate over unique rows to save time. """
+    matchCols = ["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]
+    dfunique = df[!, matchCols]
+    dfunique = unique(dfunique)
+
+    # Setup column
+    df[!, "Predict"] .= zero(predictMix(df[1, :]; kwargs...))
+    # Threads.@threads 
+    for i = 1:size(dfunique)[1]
+        cellIDX = df[:, "Valency"] .== dfunique[i, "Valency"]
+        cellIDX = cellIDX .& (df[:, "Cell"] .== dfunique[i, "Cell"])
+        cellIDX = cellIDX .& (df[:, "subclass_1"] .== dfunique[i, "subclass_1"])
+        cellIDX = cellIDX .& (df[:, "subclass_2"] .== dfunique[i, "subclass_2"])
+        cellIDX = cellIDX .& (df[:, "%_1"] .== dfunique[i, "%_1"])
+        cellIDX = cellIDX .& (df[:, "%_2"] .== dfunique[i, "%_2"])
+
+        idx = findfirst(cellIDX)
+        df[cellIDX, "Predict"] .= predictMix(df[idx, :]; kwargs...)
     end
+    @assert all((df[!, "Predict"]) .> 0.0)
     df[df."Predict" .< 1.0, "Predict"] .= 1.0
+    @assert all(isfinite(df[!, "Predict"]))
     return df
 end
 
