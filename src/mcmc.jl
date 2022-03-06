@@ -1,8 +1,6 @@
 import Turing: ~, sample, MH, NUTS, @model
 import Serialization: serialize, deserialize
 using Distributions
-using ForwardDiff
-using LinearAlgebra
 
 
 @model function sfit()
@@ -22,11 +20,11 @@ using LinearAlgebra
         Kav[ii] ~ Truncated(Kav_dist[ii], 100, 1E9)
     end
 
-    f4 ~ Truncated(LogNormal(log(4), 0.1), 2.0, 8.0)
-    f33 ~ Truncated(LogNormal(log(33), 0.1), 10, 50)
+    f4 ~ LogNormal(log(4), 0.1)
+    f33 ~ LogNormal(log(33), 0.1)
     KxStar ~ Truncated(LogNormal(log(KxConst), 0.1), 1E-14, 1E-10)
 
-    x0 = vcat(Rtot, [4.0, 33.0, KxConst], reshape(Kav, :)) # Simplifying fitting for a bit
+    x0 = vcat(Rtot, [f4, f33, KxConst], reshape(Kav, :)) # Simplifying fitting for a bit
     T = typeof(x0[1])
     Rtotd, vals, KxStar, Kav = dismantle_x0(T.(x0))
     df = mixturePredictions(df; Rtot = Rtotd, Kav = Kav, KxStar = KxStar, vals = vals)
@@ -40,8 +38,9 @@ using LinearAlgebra
     # Least squares with one var and no intercept
     scale = sum(measurements .* lps) / sum(measurements .* measurements)
     diff = log.(lps .* scale) - log.(measurements)
-    
-    diff ~ Normal(0.0, 0.1) # One distribution reduces allocations quite a bit
+    diffSum = sum(abs2.(diff / 0.1)) # Scale by expected variance
+
+    diffSum ~ Chisq(length(diff)) # Speeds up a lot
     nothing
 end
 
@@ -50,7 +49,7 @@ function runMCMC(fname = "MCMC_nuts_1000.dat")
         return deserialize(fname)
     end
     m = sfit()
-    c = sample(m, NUTS(), 1000, discard_initial = 500)
+    c = sample(m, NUTS(), 1_000)
     f = serialize(fname, c)
     return c
 end

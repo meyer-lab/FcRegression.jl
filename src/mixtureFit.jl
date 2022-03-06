@@ -1,6 +1,7 @@
 """ Fitting mixture measurements """
 
 using Optim
+import Turing: optimize, MAP
 
 ##### 
 # Below are for the MLE approach
@@ -18,39 +19,6 @@ function mixturePredictions(
 
     ndf = predictMix(df; recepExp = Rtot, KxStar = KxStar, Kav = Kav)
     return ndf
-end
-
-function fit_goodness(ndf; deviation = 0.01)
-    # log likelihood of prediction vs measurements
-    # deviation < 1.0
-    llike = 0
-    for ii = 1:size(ndf, 1)
-        lmval = ndf[ii, "Value"]
-        llike += log(pdf(LogNormal(lmval, lmval * deviation), ndf[ii, "Predict"]))
-    end
-    return llike
-end
-
-function Rtot_prior(Rtot::Dict)
-    # return log f(R1)f(R2)...f(Rn), input regular Ri w/o log
-    # to speed up, order (lexicographical) is not checked here, but it is important!!
-    dists = importInVitroRtotDist()
-    return sum([log.(pdf(dists[ii], log(Rtot[humanFcgRiv[ii]]))) for ii = 1:length(Rtot)])
-end
-
-function Kav_prior(Kpropose::DataFrame)
-    # return log f(Ka1) f(Ka2) ... f(Kan), input regular Kai w/o log
-    Kav = importKavDist(; inflation = 0.1)
-    @assert size(Kav) == size(Kpropose)
-    Kav = reshape(Matrix(Kav[:, Not("IgG")]), :)
-    Kpropose = reshape(log.(Matrix(Kpropose[:, Not("IgG")])), :)
-    Kpdf = (x_dist, x_test) -> pdf(x_dist, x_test)
-    return sum(log.([Kpdf(Kav[ii], Kpropose[ii]) for ii = 1:length(Kav)]))
-end
-
-function valency_prior(vals)
-    # return log f(Val4) f(Val33), input regular val w/o log
-    return log(pdf(f4Dist, vals[1])) + log(pdf(f33Dist, vals[2]))
 end
 
 KxStar_prior = x -> log(pdf(KxStarDist, x))    # eyeballed from Robinett Fig. 2d
@@ -88,28 +56,15 @@ function assemble_x0(
     return x
 end
 
-function totalLikelihood(x, df = loadMixData(); deviation = 0.1)
-    Rtot, vals, KxStar, Kav = dismantle_x0(x)
-    ndf = mixturePredictions(df; Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals)
-    lik = Rtot_prior(Rtot) + Kav_prior(Kav) + valency_prior(vals) + KxStar_prior(KxStar)
-    lik += fit_goodness(ndf; deviation = deviation)
-    return lik
-end
-
 function MLELikelihood()
-    x0 = log.(FcRegression.assemble_x0())
-    f = lx -> -FcRegression.totalLikelihood(exp.(lx); deviation = 0.01)       # minimize the negative of likelihood
-    ## TODO: write Optim function
+    model = sfit()
+    opt = optimize(model, MAP(), LBFGS(), Optim.Options(iterations=1, show_trace=true))
+    println(opt.values)
 
-    # GD: 7.243698e+04 (reach maxiter)
-    # BFGS: 7.343904e+04
-    # LBFGS: 7.201175e+04
-    opt = optimize(f, x0, LBFGS(), Optim.Options(iterations = 100, show_trace = true); autodiff = :forward)
-
-    Rtot, vals, KxStar, Kav = FcRegression.dismantle_x0(exp.(opt.minimizer))
-    ndf =
-        FcRegression.mixturePredictions(FcRegression.averageMixData(FcRegression.loadMixData()); Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals)
-    FcRegression.plotPredvsMeasured(ndf; xx = "Value")
+    #Rtot, vals, KxStar, Kav = FcRegression.dismantle_x0(exp.(opt.minimizer))
+    #ndf =
+    #    FcRegression.mixturePredictions(FcRegression.averageMixData(FcRegression.loadMixData()); Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals)
+    #FcRegression.plotPredvsMeasured(ndf; xx = "Value")
 end
 
 
