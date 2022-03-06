@@ -58,13 +58,14 @@ end
 
 function MLELikelihood()
     model = sfit()
-    opt = optimize(model, MAP(), LBFGS(), Optim.Options(iterations=1, show_trace=true))
-    println(opt.values)
+    opt = optimize(model, MAP(), LBFGS(), Optim.Options(iterations=1000, show_every=10, show_trace=true))
+    opt = opt.values.array
+    xx = vcat(opt[1:6], opt[31:32], opt[33], opt[7:30])
 
-    #Rtot, vals, KxStar, Kav = FcRegression.dismantle_x0(exp.(opt.minimizer))
-    #ndf =
-    #    FcRegression.mixturePredictions(FcRegression.averageMixData(FcRegression.loadMixData()); Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals)
-    #FcRegression.plotPredvsMeasured(ndf; xx = "Value")
+    Rtot, vals, KxStar, Kav = FcRegression.dismantle_x0(xx)
+    ndf =
+        FcRegression.mixturePredictions(FcRegression.averageMixData(FcRegression.loadMixData()); Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals)
+    FcRegression.plotPredvsMeasured(ndf; xx = "Value")
 end
 
 

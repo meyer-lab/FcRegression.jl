@@ -62,8 +62,8 @@ function plotHistPriorDist(dat, dist, name)
     pl = plot(
         layer(x = xxs, y = yys, Geom.line, color = [colorant"red"], order = 1),
         layer(DataFrame("Value" => log.(dat)), x = "Value", Geom.histogram(bincount = 20, density = true)),
-        #Scale.x_continuous(labels = x -> @sprintf("%.3E", exp(x))),
-        #Guide.xticks(orientation = :horizontal),
+        Scale.x_continuous(labels = x -> @sprintf("%.1E", exp(x))),
+        Guide.xticks(orientation = :horizontal),
         Guide.xlabel("Value"),
         Guide.ylabel(nothing),
         Guide.title(name),
@@ -106,17 +106,4 @@ function plot_MCMC_dists(c = runMCMC())
     other_pls[3] = plotHistPriorDist(c["KxStar"].data, KxStarDist, "K<sub>x</sub><sup>*</sup>")
     other_plot = plotGrid((1, 3), other_pls; sublabels = false)
     draw(SVG("MCMC_others.svg", 8inch, 4inch), other_plot)
-end
-
-
-function MCMCresults2fit(c = runMCMC())
-    m = DataFrame(mean(c))
-    m."order" .= 0
-    m[startswith.(String.(m."parameters"), "lRtot"), "order"] .= 1
-    m[startswith.(String.(m."parameters"), "lf"), "order"] .= 2
-    m[startswith.(String.(m."parameters"), "lKxStar"), "order"] .= 3
-    m[startswith.(String.(m."parameters"), "lKav"), "order"] .= 4
-    Rtot, vals, KxStar, Kav = dismantle_x0(exp.(sort(m, "order")."mean"))
-
-    return mixturePredictions(; Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals)
 end
