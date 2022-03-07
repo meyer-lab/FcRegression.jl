@@ -1,14 +1,10 @@
 import Turing: ~, sample, MH, NUTS, @model
 import Serialization: serialize, deserialize
 using Distributions
-using ForwardDiff
 using LinearAlgebra
-import Statistics: cor
 
 
-@model function sfit(df)
-    df = deepcopy(df)
-
+@model function sfit(df, values)
     Rtot_dist = importInVitroRtotDist()
     Kav_dist = importKavDist(; inflation = 0.1)
     Kav_dist = Matrix(Kav_dist[:, Not("IgG")])
@@ -16,38 +12,24 @@ import Statistics: cor
     Rtot = Vector(undef, length(Rtot_dist))
     Kav = Matrix(undef, size(Kav_dist)...)
 
+    # Order of distribution definitions here matches dismantle_x0()
     for ii in eachindex(Rtot)
-        Rtot[ii] ~ truncated(Rtot_dist[ii], 1000, 1E7)
+        Rtot[ii] ~ truncated(Rtot_dist[ii], 10, 1E8)
     end
+
+    f4 ~ truncated(f4Dist, 1.0, 100.0)
+    f33 ~ truncated(f33Dist, 1.0, 100.0)
+    KxStar ~ truncated(KxStarDist, 1E-16, 1E-9)
+
     for ii in eachindex(Kav)
-        Kav[ii] ~ truncated(Kav_dist[ii], 100, 1E9)
+        Kav[ii] ~ truncated(Kav_dist[ii], 10, 1E9)
     end
 
-    f4 ~ LogNormal(log(4), 0.1)
-    f33 ~ LogNormal(log(33), 0.1)
-    KxStar ~ truncated(LogNormal(log(KxConst), 0.1), 1E-14, 1E-10)
-
-    x0 = vcat(Rtot, [f4, f33, KxConst], reshape(Kav, :)) # Simplifying fitting for a bit
+    x0 = vcat(Rtot, f4, f33, KxStar, reshape(Kav, :)) # Simplifying fitting for a bit
     T = typeof(x0[1])
-    Rtotd, vals, KxStar, Kav = dismantle_x0(T.(x0))
-    df = mixturePredictions(df; Rtot = Rtotd, Kav = Kav, KxStar = KxStar, vals = vals)
-
-    lps = df."Predict"
-    measurements = df."Value"
-    @assert all(isfinite(lps))
-    @assert all(isfinite(measurements))
-    @assert size(lps) == size(measurements)
-
-    # Least squares with one var and no intercept
-    scale = sum(measurements .* lps) / sum(measurements .* measurements)
-    diff = log.(lps .* scale) - log.(measurements)
-
-    # println(ForwardDiff.value(cor(log.(lps .* scale), log.(measurements))))
-    # Shows a correlation of 0.51
-    
-    # diffSum = norm(diff / 0.1) # Scale by expected variance
-    diff ~ MvNormal(zeros(size(diff)), 1.0 * I)
-    # diffSum ~ Chi(length(diff)) # Speeds up a lot
+    Rtotd, _, _, Kavd = dismantle_x0(T.(x0))
+    df = mixturePredictions(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
+    values ~ MvLogNormal(log.(df."Predict"), 1.0*I)
     nothing
 end
 
@@ -56,7 +38,7 @@ function runMCMC(fname = "MCMC_nuts_1000.dat")
         return deserialize(fname)
     end
     df = loadMixData()
-    m = sfit(df)
+    m = sfit(df, df."Value")
     c = sample(m, NUTS(), 1_000)
     f = serialize(fname, c)
     return c

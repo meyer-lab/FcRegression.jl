@@ -14,16 +14,23 @@ function mixturePredictions(
     KxStar = KxConst,
     vals = [4.0, 33.0],
 )
+    @assert all(isfinite(df."Value"))
     df[!, "NewValency"] .= vals[1]
     df[df."Valency" .== 33, "NewValency"] .= vals[2]
 
     ndf = predictMix(df; recepExp = Rtot, KxStar = KxStar, Kav = Kav)
+    @assert all(isfinite(ndf."Predict"))
+
+    # Least squares with one var and no intercept
+    scale = sum(ndf."Value" .* ndf."Predict") / sum(ndf."Value" .* ndf."Value")
+    ndf."Predict" *= scale
+
     return ndf
 end
 
 function dismantle_x0(x::Vector)
     # order: Rtot, vals, KxStar, Kav
-    @assert all(x .> 0.0) "In dismantle(): Received a negative number."
+    @assert all(x .>= 0.0) "In dismantle(): Received a negative number."
     x = deepcopy(x)
     Rtot = Dict([humanFcgRiv[ii] => popfirst!(x) for ii = 1:length(humanFcgRiv)])
     vals = [popfirst!(x), popfirst!(x)]
@@ -52,15 +59,11 @@ end
 function MAPLikelihood()
     df = loadMixData()
     df = averageMixData(df)
-    model = sfit(df)
-    opt = optimize(model, MAP(), LBFGS(), Optim.Options(g_abstol=1e-12, g_reltol=1e-12, iterations=1000, show_every=10, show_trace=true))
-    opt = opt.values.array
-    xx = vcat(opt[1:6], opt[31:32], opt[33], opt[7:30])
+    model = sfit(df, df."Value")
+    opt = optimize(model, MAP(), LBFGS(), Optim.Options(iterations=1000, show_every=10, show_trace=true))
 
-    Rtot, vals, KxStar, Kav = FcRegression.dismantle_x0(xx)
-    ndf =
-        FcRegression.mixturePredictions(FcRegression.averageMixData(FcRegression.loadMixData()); Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals)
-    return ndf
+    Rtot, vals, KxStar, Kav = FcRegression.dismantle_x0(opt.values.array[1:33])
+    return FcRegression.mixturePredictions(df; Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals)
 end
 
 

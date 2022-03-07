@@ -19,6 +19,7 @@ function plotPredvsMeasured(
     df[(df[!, yy]) .< 1.0, yy] .= 1.0
 
     r2 = R2((df[!, xx]), (df[!, yy]))
+    println(r2)
     return plot(
         df,
         x = xx,
@@ -116,12 +117,8 @@ function figure2()
     p1 = splot_pred("FcgRIIIA-158F"; Lbound = true)
     p2 = splot_pred("FcgRIIIA-158F"; Lbound = false)
 
-    draw(
-        SVG("figure2.svg", 16inch, 13inch),
-        plotGrid((3, 3), [nothing, raw_pred_pl, nothing, nothing, kfit_allPL, nothing, p1, p2, nothing]; sublabels = [1 1 1 1 1 1 1 1 0]),
-    )
-    draw(
-        PDF("figure2.pdf", 16inch, 13inch),
-        plotGrid((3, 3), [nothing, raw_pred_pl, nothing, nothing, kfit_allPL, nothing, p1, p2, nothing]; sublabels = [1 1 1 1 1 1 1 1 0]),
-    )
+    pp = plotGrid((3, 3), [nothing, raw_pred_pl, nothing, nothing, kfit_allPL, nothing, p1, p2, nothing]; sublabels = [1 1 1 1 1 1 1 1 0])
+
+    draw(SVG("figure2.svg", 16inch, 13inch), pp)
+    draw(PDF("figure2.pdf", 16inch, 13inch), pp)
 end
