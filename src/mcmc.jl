@@ -14,11 +14,11 @@ using LinearAlgebra
 
     # Order of distribution definitions here matches dismantle_x0()
     for ii in eachindex(Rtot)
-        Rtot[ii] ~ truncated(Rtot_dist[ii], 10, 1E8)
+        Rtot[ii] ~ truncated(Rtot_dist[ii], 10, 1E7)
     end
 
-    f4 ~ truncated(f4Dist, 1.0, 100.0)
-    f33 ~ truncated(f33Dist, 1.0, 100.0)
+    f4 ~ truncated(f4Dist, 1.0, 8.0)
+    f33 ~ truncated(f33Dist, 8.0, 50.0)
     KxStar ~ truncated(KxStarDist, 1E-16, 1E-9)
 
     for ii in eachindex(Kav)
@@ -29,7 +29,7 @@ using LinearAlgebra
     T = typeof(x0[1])
     Rtotd, _, _, Kavd = dismantle_x0(T.(x0))
     df = mixturePredictions(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
-    values ~ MvLogNormal(log.(df."Predict"), 1.0*I)
+    values ~ MvLogNormal(log.(df."Predict"), 10.0*I)
     nothing
 end
 
