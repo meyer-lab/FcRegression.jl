@@ -46,7 +46,7 @@ import Statistics: cor
     # Shows a correlation of 0.51
     
     # diffSum = norm(diff / 0.1) # Scale by expected variance
-    diff ~ MvNormal(diff, 1.0)
+    diff ~ MvNormal(0.0, 1.0 * I)
     # diffSum ~ Chi(length(diff)) # Speeds up a lot
     nothing
 end
