@@ -176,7 +176,7 @@ end
 predictMix(dfrow::DataFrameRow; kwargs...) = predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; kwargs...)
 
 function predictMix(df::DataFrame; kwargs...)
-    """ Will return another df object. Only iterate over unique rows to save time. """
+    """ Will return another df object. """
     # Setup column
     df[!, "Predict"] .= predictMix(df[1, :]; kwargs...)
     for i = 2:size(df)[1]
