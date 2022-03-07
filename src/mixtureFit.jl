@@ -21,17 +21,14 @@ function mixturePredictions(
     return ndf
 end
 
-function dismantle_x0(x)
+function dismantle_x0(x::Vector)
     # order: Rtot, vals, KxStar, Kav
+    @assert all(x .> 0.0) "In dismantle(): Received a negative number."
     x = deepcopy(x)
-    @assert all(x[1:length(humanFcgRiv)] .> 0.0) "In dismantle(): Rtot contains negative"
     Rtot = Dict([humanFcgRiv[ii] => popfirst!(x) for ii = 1:length(humanFcgRiv)])
     vals = [popfirst!(x), popfirst!(x)]
-    @assert all(vals .> 0.0) "In dismantle(): vals contains negative"
     KxStar = popfirst!(x)
-    @assert KxStar .> 0.0 "In dismantle(): KxStar is negative"
     @assert length(x) == length(humanIgG) * length(humanFcgRiv)
-    @assert all(x .> 0.0) "In dismantle(): Kav contains negative"
     Kav = deepcopy(importKav(; murine = false, invitro = true, retdf = true))
     Kav[!, Not("IgG")] .= 0.0
     Kav[!, Not("IgG")] = convert.(eltype(x), Kav[:, Not("IgG")])
