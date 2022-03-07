@@ -28,9 +28,7 @@ function dismantle_x0(x::Vector)
     Rtot = Dict([humanFcgRiv[ii] => popfirst!(x) for ii = 1:length(humanFcgRiv)])
     vals = [popfirst!(x), popfirst!(x)]
     KxStar = popfirst!(x)
-    @assert length(x) == length(humanIgG) * length(humanFcgRiv)
     Kav = deepcopy(importKav(; murine = false, invitro = true, retdf = true))
-    Kav[!, Not("IgG")] .= 0.0
     Kav[!, Not("IgG")] = convert.(eltype(x), Kav[:, Not("IgG")])
     Kav[!, Not("IgG")] = reshape(x, length(humanIgG), length(humanFcgRiv))
     return Rtot, vals, KxStar, Kav
