@@ -17,15 +17,15 @@ import Statistics: cor
     Kav = Matrix(undef, size(Kav_dist)...)
 
     for ii in eachindex(Rtot)
-        Rtot[ii] ~ Truncated(Rtot_dist[ii], 1000, 1E7)
+        Rtot[ii] ~ truncated(Rtot_dist[ii], 1000, 1E7)
     end
     for ii in eachindex(Kav)
-        Kav[ii] ~ Truncated(Kav_dist[ii], 100, 1E9)
+        Kav[ii] ~ truncated(Kav_dist[ii], 100, 1E9)
     end
 
     f4 ~ LogNormal(log(4), 0.1)
     f33 ~ LogNormal(log(33), 0.1)
-    KxStar ~ Truncated(LogNormal(log(KxConst), 0.1), 1E-14, 1E-10)
+    KxStar ~ truncated(LogNormal(log(KxConst), 0.1), 1E-14, 1E-10)
 
     x0 = vcat(Rtot, [f4, f33, KxConst], reshape(Kav, :)) # Simplifying fitting for a bit
     T = typeof(x0[1])
