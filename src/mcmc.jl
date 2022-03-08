@@ -29,7 +29,7 @@ using LinearAlgebra
     T = typeof(x0[1])
     Rtotd, _, _, Kavd = dismantle_x0(T.(x0))
     df = mixturePredictions(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
-    values ~ MvLogNormal(log.(df."Predict"), 10.0*I)
+    values ~ MvLogNormal(log.(df."Predict"), 10.0 * I)
     nothing
 end
 
