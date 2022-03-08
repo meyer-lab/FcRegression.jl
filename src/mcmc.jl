@@ -4,8 +4,8 @@ using Distributions
 using LinearAlgebra
 
 
-@model function sfit(df, values)
-    Rtot_dist = importInVitroRtotDist()
+@model function sfit(df, values; robinett=false)
+    Rtot_dist = importInVitroRtotDist(robinett)
     Kav_dist = importKavDist(; inflation = 0.1)
     Kav_dist = Matrix(Kav_dist[:, Not("IgG")])
 

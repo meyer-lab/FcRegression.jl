@@ -105,9 +105,9 @@ end
     df = df[in(IgGlist).(df.IgG), :]
 
     if retdf
-        return deepcopy(df[!, ["IgG"; FcRecep]])
+        return df[!, ["IgG"; FcRecep]]
     else
-        return deepcopy(Matrix{Float64}(df[!, FcRecep]))
+        return Matrix{Float64}(df[!, FcRecep])
     end
 end
 
@@ -204,10 +204,18 @@ function importDeplExp()
     return df
 end
 
-@memoize function importInVitroRtotDist()
-    df = CSV.File(joinpath(dataDir, "receptor_amount_mar2021.csv"), delim = ",", comment = "#") |> DataFrame
+
+""" Import measurements of receptor amounts. """
+@memoize function importInVitroRtotDist(robinett=false)
+    local df
+    if robinett
+        df = CSV.File(joinpath(FcRegression.dataDir, "robinett/FcgRquant.csv"), delim = ",", comment = "#") |> DataFrame
+    else
+        df = CSV.File(joinpath(dataDir, "receptor_amount_mar2021.csv"), delim = ",", comment = "#") |> DataFrame
+    end
     return [fit_mle(LogNormal, (df[df."Receptor" .== rcp, "Measurements"])) for rcp in humanFcgRiv]
 end
+
 
 @memoize function importKavDist(; inflation = 0.1, retdf = true)
     df = CSV.File(joinpath(dataDir, "FcgR-Ka-Bruhns_with_variance.csv"), delim = ",", comment = "#") |> DataFrame

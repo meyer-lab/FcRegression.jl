@@ -141,10 +141,9 @@ function predictMix(
     IgGX,
     IgGY;
     recepExp = measuredRecepExp,
-    KxStar = KxConst,
+    KxStar::Real = KxConst,
     Lbound = true,
-    Kav::DataFrame = importKav(; murine = false, retdf = true),
-    kwargs...,
+    Kav::DataFrame,
 )::Real
     IgGC = zeros(size(humanIgG))
     IgGC[IgGXname .== humanIgG] .= IgGX
