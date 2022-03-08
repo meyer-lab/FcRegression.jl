@@ -1,18 +1,14 @@
 using MultivariateStats
-using Impute
 using StatsBase
 import Statistics: cor
 
 """ Load mixture in vitro binding data """
-@memoize function loadMixData(fn = "lux_mixture_mar2021.csv"; discard_small = false)
+@memoize function loadMixData(fn = "lux_mixture_mar2021.csv")
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
 
     df = stack(df, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]), variable_name = "Experiment", value_name = "Value")
     df = dropmissing(df)
     df[!, "Value"] = convert.(Float64, df[!, "Value"])
-    if discard_small
-        df = df[df[!, "Value"] .> 100, :]   # discard small measurements
-    end
     df[(df[!, "Value"]) .< 1.0, "Value"] .= 1.0
 
     df[!, "%_1"] ./= 100.0
@@ -149,7 +145,7 @@ function predictMix(
     Lbound = true,
     Kav::DataFrame = importKav(; murine = false, retdf = true),
     kwargs...,
-)
+)::Real
     IgGC = zeros(size(humanIgG))
     IgGC[IgGXname .== humanIgG] .= IgGX
     IgGC[IgGYname .== humanIgG] .= IgGY
@@ -179,19 +175,20 @@ end
 predictMix(dfrow::DataFrameRow; kwargs...) = predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; kwargs...)
 
 function predictMix(df::DataFrame; kwargs...)
-    """ will return another df object """
-    df = copy(df)
+    """ Will return another df object. """
+    # Setup column
     df[!, "Predict"] .= predictMix(df[1, :]; kwargs...)
-    Threads.@threads for i = 1:size(df)[1]
+    for i = 2:size(df)[1]
         df[i, "Predict"] = predictMix(df[i, :]; kwargs...)
     end
+    @assert all(isfinite(df[!, "Predict"]))
     df[df."Predict" .< 1.0, "Predict"] .= 1.0
     return df
 end
 
 """ PCA of isotype/combination x receptor matrix """
 function mixtureDataPCA(; val = 0)
-    df = averageMixData(loadMixData(; discard_small = false); combSingle = true)
+    df = averageMixData(loadMixData(); combSingle = true)
     if val > 0
         df = df[df."Valency" .== val, :]
     end
