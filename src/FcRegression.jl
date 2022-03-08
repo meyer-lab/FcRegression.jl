@@ -9,6 +9,9 @@ using DataFrames
 using Printf
 import Cairo, Fontconfig
 
+lower(x) = quantile(x, 0.25)
+upper(x) = quantile(x, 0.75)
+
 include("figures/figureCommon.jl")
 
 include("fcBindingModel.jl")
