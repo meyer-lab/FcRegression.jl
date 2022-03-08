@@ -19,8 +19,8 @@ function oneCellTypeOnlyplot(dataType; L0 = 1e-9, f = 4, murine = true)
         append!(lR2s, [lR2])
     end
     looR2 = hcat(lR2s...)
-    low = [lower(x) for x in eachslice(looR2, dims = 2)]
-    high = [upper(x) for x in eachslice(looR2, dims = 2)]
+    low = [quantile(x, 0.25) for x in eachslice(looR2, dims = 2)]
+    high = [quantile(x, 0.75) for x in eachslice(looR2, dims = 2)]
     return plot(
         DataFrame(CellTypes = vcat(["All"], allCellTypes .* " only"), R2 = mR2s, ymin = low, ymax = high),
         x = "CellTypes",

@@ -78,6 +78,7 @@ function plot_MCMC_dists(c = runMCMC())
     end
     Kav_plot = plotGrid((ligg, lfcr), permutedims(Kav_pls, (2, 1)); sublabels = false)
     draw(SVG("MCMC_Kav.svg", 16inch, 13inch), Kav_plot)
+    draw(PDF("MCMC_Kav.pdf", 16inch, 13inch), Kav_plot)
 
     # Plot Rtot's
     Rtot_pls = Vector{Plot}(undef, lfcr)
@@ -88,6 +89,7 @@ function plot_MCMC_dists(c = runMCMC())
     end
     Rtot_plot = plotGrid((1, lfcr), Rtot_pls; sublabels = false)
     draw(SVG("MCMC_Rtot.svg", 16inch, 4inch), Rtot_plot)
+    draw(PDF("MCMC_Rtot.pdf", 16inch, 4inch), Rtot_plot)
 
     # Plot f4, f33, KxStar
     other_pls = Vector{Plot}(undef, 3)
@@ -96,4 +98,5 @@ function plot_MCMC_dists(c = runMCMC())
     other_pls[3] = plotHistPriorDist(c["KxStar"].data, KxStarDist, "K<sub>x</sub><sup>*</sup>")
     other_plot = plotGrid((1, 3), other_pls; sublabels = false)
     draw(SVG("MCMC_others.svg", 8inch, 4inch), other_plot)
+    draw(PDF("MCMC_others.pdf", 8inch, 4inch), other_plot)
 end

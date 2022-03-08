@@ -24,9 +24,6 @@ import Statistics: cor
     return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
 end
 
-lower(x) = quantile(x, 0.25)
-upper(x) = quantile(x, 0.75)
-
 """ Make statistics of individual cell types and subclass types """
 function averageMixData(df = loadMixData(); combSingle = false)
     # Combine cases of single IgGs into one entry
@@ -143,7 +140,7 @@ function predictMix(
     recepExp = measuredRecepExp,
     KxStar::Real = KxConst,
     Lbound = true,
-    Kav::DataFrame,
+    Kav::DataFrame = importKav(; murine = false, retdf = true),
 )::Real
     IgGC = zeros(size(humanIgG))
     IgGC[IgGXname .== humanIgG] .= IgGX
