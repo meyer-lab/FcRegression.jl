@@ -60,7 +60,7 @@ function MAPLikelihood()
     df = loadMixData()
     df = averageMixData(df)
     model = sfit(df, df."Value")
-    opt = optimize(model, MAP(), LBFGS(), Optim.Options(iterations=1000, show_every=10, show_trace=true))
+    opt = optimize(model, MAP(), LBFGS(), Optim.Options(iterations = 1000, show_every = 10, show_trace = true))
 
     Rtot, vals, KxStar, Kav = FcRegression.dismantle_x0(opt.values.array[1:33])
     return FcRegression.mixturePredictions(df; Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals)
