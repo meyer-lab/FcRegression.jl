@@ -1,11 +1,8 @@
-""" Fitting mixture measurements """
+""" Fitting the mixture measurements. """
 
 using Optim
 import Turing: optimize, MAP, MLE
 
-##### 
-# Below are for the MLE approach
-##### 
 
 function mixturePredictions(
     df = loadMixData();
@@ -29,26 +26,16 @@ function mixturePredictions(
 end
 
 
-function dismantle_x0(x::Vector)
-    # order: Rtot, vals, KxStar, Kav
-    @assert all(x .>= 0.0) "In dismantle(): Received a negative number."
-    x = deepcopy(x)
-    Rtot = Dict([humanFcgRiv[ii] => popfirst!(x) for ii = 1:length(humanFcgRiv)])
-    vals = [popfirst!(x), popfirst!(x)]
-    KxStar = popfirst!(x)
-    Kav = deepcopy(importKav(; murine = false, invitro = true, retdf = true))
-    Kav[!, Not("IgG")] = convert.(eltype(x), Kav[:, Not("IgG")])
-    Kav[!, Not("IgG")] = reshape(x, length(humanIgG), length(humanFcgRiv))
-    return Rtot, vals, KxStar, Kav
-end
-
-
 function MAPLikelihood(df; robinett=false)
     model = sfit(df, df."Value"; robinett=robinett)
     opts = Optim.Options(iterations=1000, show_every=10, show_trace=true)
 
     opt = optimize(model, MAP(), LBFGS(; m = 20), opts)
+    x = opt.values.array
 
-    Rtot, vals, KxStar, Kav = FcRegression.dismantle_x0(opt.values.array[1:33])
-    return FcRegression.mixturePredictions(df; Rtot = Rtot, Kav = Kav, KxStar = KxStar, vals = vals)
+    Rtot = Dict([humanFcgRiv[ii] => x[ii] for ii = 1:length(humanFcgRiv)])
+    Kav = deepcopy(importKav(; murine = false, invitro = true, retdf = true))
+    Kav[!, Not("IgG")] = reshape(x[10:33], length(humanIgG), length(humanFcgRiv))
+    
+    return mixturePredictions(df; Rtot = Rtot, Kav = Kav, KxStar = x[9], vals = [x[7], x[8]])
 end

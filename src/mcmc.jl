@@ -12,10 +12,11 @@ using LinearAlgebra
     Rtot = Vector(undef, length(Rtot_dist))
     Kav = Matrix(undef, size(Kav_dist)...)
 
-    # Order of distribution definitions here matches dismantle_x0()
+    # Order of distribution definitions here matches MAPLikelihood()
     for ii in eachindex(Rtot)
         Rtot[ii] ~ truncated(Rtot_dist[ii], 10, 1E7)
     end
+    Rtot = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
 
     f4 ~ truncated(f4Dist, 1.0, 8.0)
     f33 ~ truncated(f33Dist, 8.0, 50.0)
@@ -25,10 +26,10 @@ using LinearAlgebra
         Kav[ii] ~ truncated(Kav_dist[ii], 10, 1E9)
     end
 
-    x0 = vcat(Rtot, f4, f33, KxStar, reshape(Kav, :)) # Simplifying fitting for a bit
-    T = typeof(x0[1])
-    Rtotd, _, _, Kavd = dismantle_x0(T.(x0))
-    df = mixturePredictions(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
+    Kavd = deepcopy(importKav(; murine = false, invitro = true, retdf = true))
+    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(Kav)
+
+    df = mixturePredictions(deepcopy(df); Rtot = Rtot, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
     values ~ MvLogNormal(log.(df."Predict"), 10.0*I)
     nothing
 end
