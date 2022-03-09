@@ -19,7 +19,7 @@ function invivo_mix_predict(dfr::DataFrameRow; L0 = 1e-9, f = 4, KxStar = KxCons
 end
 
 function invivo_prediction(df::DataFrame; L0 = 1e-9, f = 4, KxStar = KxConst)
-    fcPredict = cat([invivo_mix_predict(dfr; L0 = L0, f = f, KxStar = KxConst) for dfr in eachrow(df)]...; dims = 2)'
+    fcPredict = cat([invivo_mix_predict(dfr; L0 = L0, f = f, KxStar = KxStar) for dfr in eachrow(df)]...; dims = 2)'
     res = regResult("ITP"; L0 = 1e-8, f = 10, murine = true)[1]
     Ypred = regPred(Matrix(fcPredict), res; exp_method = true)
     df[!, "Predicted"] = Ypred
