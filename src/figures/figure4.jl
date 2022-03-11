@@ -16,13 +16,13 @@ function figure4()
     Xdf = modelPred(df; L0 = L0, f = f, murine = true, cellTypes = nothing)
     res = fitRegNNLS(Xdf; murine = murine, cellTypes = nothing, exp_method = exp_method)
 
-    ITP_Kupffer_Bound = plotDepletionSynergy(1, 2; L0 = L0, f = f, dataType = "ITP", fit = res, Cellidx = 6, Recepidx = 2,Rbound = true)
+    ITP_Kupffer_Bound = plotDepletionSynergy(1, 2; L0 = L0, f = f, dataType = "ITP", fit = res, Cellidx = 6, Recepidx = 2, Rbound = true)
     ITP_Kupffer_Bound_All = plotSynergy(L0, f; murine = true, dataType = dataType, fit = res, Cellidx = 6, Recepidx = 2, Rbound = true)
     ITP_Kupffer_Act = plotDepletionSynergy(1, 2; L0 = L0, f = f, dataType = "ITP", fit = res, Cellidx = 6)
     ITP_Kupffer_Act_All = plotSynergy(L0, f; murine = true, dataType = dataType, fit = res, Cellidx = 6)
     ITP_Dep = plotDepletionSynergy(1, 2; L0 = L0, f = f, dataType = "ITP", fit = res)
     ITP_Dep_All = plotSynergy(L0, f; murine = true, dataType = dataType, fit = res)
-    
+
 
     draw(
         SVG("figure4.svg", 10inch, 8inch),
