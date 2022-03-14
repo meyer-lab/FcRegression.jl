@@ -45,8 +45,6 @@ function bindVSaff()
     df = df[(df."%_1" .== 1.0) .| (df."%_2" .== 1.0), :]
     df."Subclass" = [r."%_1" >= 1 ? r."subclass_1" : r."subclass_2" for r in eachrow(df)]
     df = df[!, ["Valency", "Cell", "Subclass", "Value"]]
-    lower(x) = quantile(x, 0.25)
-    upper(x) = quantile(x, 0.75)
     df = combine(
         groupby(df, ["Valency", "Cell", "Subclass"]),
         "Value" => StatsBase.median => "Value",
