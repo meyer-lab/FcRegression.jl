@@ -86,7 +86,7 @@ end
 
 
 function fitRegNNLS(Xdf::DataFrame; murine = true, cellTypes = nothing, exp_method = true)
-    if cellTypes == nothing
+    if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
     Xmat = Matrix(Xdf[!, in(cellTypes).(names(Xdf))])
@@ -95,7 +95,6 @@ function fitRegNNLS(Xdf::DataFrame; murine = true, cellTypes = nothing, exp_meth
 
     w = vec(nonneg_lsq(Xmat, cY; alg = :nnls))  # cell type weight found by NNLS
     Yr = Xmat * w
-    residual = norm(cY - Yr, 2) / length(Y)
     R2val = R2(Y, (exp_method ? exponential(Yr) : tanh(Yr)); logscale = false)
     return regResult(w, R2val)
 end
