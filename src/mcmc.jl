@@ -29,7 +29,13 @@ using LinearAlgebra
     Kavd = deepcopy(importKav(; murine = false, invitro = true, retdf = true))
     Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(Kav)
 
-    df = mixturePredictions(deepcopy(df); Rtot = Rtot, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
+    if any(Kav .< 0.0) || (f4 < 0.0) || (f33 < 0.0) || (KxStar < 0.0)
+        df = deepcopy(df)
+        df."Predict" .= -1000.0
+    else
+        df = mixturePredictions(deepcopy(df); Rtot = Rtot, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
+    end
+
     values ~ MvLogNormal(log.(df."Predict"), 10.0 * I)
     nothing
 end
