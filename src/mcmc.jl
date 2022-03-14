@@ -4,7 +4,7 @@ using Distributions
 using LinearAlgebra
 
 
-@model function sfit(df, values; robinett=false)
+@model function sfit(df, values; robinett = false)
     Rtot_dist = importInVitroRtotDist(robinett)
     Kav_dist = importKavDist(; inflation = 0.1)
     Kav_dist = Matrix(Kav_dist[:, Not("IgG")])
@@ -30,7 +30,7 @@ using LinearAlgebra
     Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(Kav)
 
     df = mixturePredictions(deepcopy(df); Rtot = Rtot, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
-    values ~ MvLogNormal(log.(df."Predict"), 10.0*I)
+    values ~ MvLogNormal(log.(df."Predict"), 10.0 * I)
     nothing
 end
 

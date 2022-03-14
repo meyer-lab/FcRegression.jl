@@ -27,7 +27,7 @@ end
 
 function plotRobinettCV()
     df = averageMixData(importRobinett())
-    fitted = MAPLikelihood(df; robinett=true)
+    fitted = MAPLikelihood(df; robinett = true)
 
     # _, unfitted = fitMixMaster(df; fitKav = false, recepExp = Rtot, show_trace = false)
     # pl1 = plotPredvsMeasured(unfitted; xx = "Value", title = "With reported Kav", R2pos = (3, 1))
