@@ -113,13 +113,6 @@ const measuredRecepExp = Dict(
 )  # geometric mean precalculated
 
 
-function ols(Actual, Predicted; logscale = true)
-    if logscale
-        return log.(Actual) \ log.(Predicted)
-    end
-    return Actual \ Predicted
-end
-
 function R2(Actual, Predicted; logscale = true)
     if logscale
         return cor(log10.(Actual), log10.(Predicted))^2

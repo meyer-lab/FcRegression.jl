@@ -26,7 +26,7 @@ function importRobinett()
 end
 
 function plotRobinettCV()
-    df = importRobinett()
+    df = averageMixData(importRobinett())
     fitted = MAPLikelihood(df; robinett=true)
 
     # _, unfitted = fitMixMaster(df; fitKav = false, recepExp = Rtot, show_trace = false)
