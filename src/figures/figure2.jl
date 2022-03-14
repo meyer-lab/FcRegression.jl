@@ -107,11 +107,12 @@ end
 
 function figure2()
     data = loadMixData()
-    raw_predict = predictMix(averageMixData(data))
+    data = averageMixData(data)
+    raw_predict = predictMix(data)
 
     raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Prediction without fitting", R2pos = (3.5, 1))
 
-    fdf = MAPLikelihood()
+    fdf = MAPLikelihood(data)
     kfit_allPL = plotPredvsMeasured(fdf; xx = "Value", title = "MAP fit")
 
     p1 = splot_pred("FcgRIIIA-158F"; Lbound = true)

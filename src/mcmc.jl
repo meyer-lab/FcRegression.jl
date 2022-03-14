@@ -4,18 +4,19 @@ using Distributions
 using LinearAlgebra
 
 
-@model function sfit(df, values)
-    Rtot_dist = importInVitroRtotDist()
+@model function sfit(df, values; robinett=false)
+    Rtot_dist = importInVitroRtotDist(robinett)
     Kav_dist = importKavDist(; inflation = 0.1)
     Kav_dist = Matrix(Kav_dist[:, Not("IgG")])
 
     Rtot = Vector(undef, length(Rtot_dist))
     Kav = Matrix(undef, size(Kav_dist)...)
 
-    # Order of distribution definitions here matches dismantle_x0()
+    # Order of distribution definitions here matches MAPLikelihood()
     for ii in eachindex(Rtot)
         Rtot[ii] ~ truncated(Rtot_dist[ii], 10, 1E7)
     end
+    Rtot = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
 
     f4 ~ truncated(f4Dist, 1.0, 8.0)
     f33 ~ truncated(f33Dist, 8.0, 50.0)
@@ -25,11 +26,11 @@ using LinearAlgebra
         Kav[ii] ~ truncated(Kav_dist[ii], 10, 1E9)
     end
 
-    x0 = vcat(Rtot, f4, f33, KxStar, reshape(Kav, :)) # Simplifying fitting for a bit
-    T = typeof(x0[1])
-    Rtotd, _, _, Kavd = dismantle_x0(T.(x0))
-    df = mixturePredictions(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
-    values ~ MvLogNormal(log.(df."Predict"), 10.0 * I)
+    Kavd = deepcopy(importKav(; murine = false, invitro = true, retdf = true))
+    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(Kav)
+
+    df = mixturePredictions(deepcopy(df); Rtot = Rtot, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
+    values ~ MvLogNormal(log.(df."Predict"), 10.0*I)
     nothing
 end
 
@@ -78,6 +79,7 @@ function plot_MCMC_dists(c = runMCMC())
     end
     Kav_plot = plotGrid((ligg, lfcr), permutedims(Kav_pls, (2, 1)); sublabels = false)
     draw(SVG("MCMC_Kav.svg", 16inch, 13inch), Kav_plot)
+    draw(PDF("MCMC_Kav.pdf", 16inch, 13inch), Kav_plot)
 
     # Plot Rtot's
     Rtot_pls = Vector{Plot}(undef, lfcr)
@@ -88,6 +90,7 @@ function plot_MCMC_dists(c = runMCMC())
     end
     Rtot_plot = plotGrid((1, lfcr), Rtot_pls; sublabels = false)
     draw(SVG("MCMC_Rtot.svg", 16inch, 4inch), Rtot_plot)
+    draw(PDF("MCMC_Rtot.pdf", 16inch, 4inch), Rtot_plot)
 
     # Plot f4, f33, KxStar
     other_pls = Vector{Plot}(undef, 3)
@@ -96,4 +99,5 @@ function plot_MCMC_dists(c = runMCMC())
     other_pls[3] = plotHistPriorDist(c["KxStar"].data, KxStarDist, "K<sub>x</sub><sup>*</sup>")
     other_plot = plotGrid((1, 3), other_pls; sublabels = false)
     draw(SVG("MCMC_others.svg", 8inch, 4inch), other_plot)
+    draw(PDF("MCMC_others.pdf", 8inch, 4inch), other_plot)
 end

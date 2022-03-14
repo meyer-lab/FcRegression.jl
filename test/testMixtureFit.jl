@@ -7,4 +7,6 @@ import Turing: sample, MH, NUTS
     df = FcRegression.loadMixData()
     model = FcRegression.sfit(df, df."Value")
     model(rng)
+
+    df = FcRegression.MAPLikelihood(df)
 end
