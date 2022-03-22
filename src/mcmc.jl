@@ -36,7 +36,8 @@ using LinearAlgebra
         df = mixturePredictions(deepcopy(df); Rtot = Rtot, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
     end
 
-    values ~ MvLogNormal(log.(df."Predict"), 10.0 * I)
+    stdv = std(log.(df."Predict") - log.(values))
+    values ~ MvLogNormal(log.(df."Predict"), stdv * I)
     nothing
 end
 
