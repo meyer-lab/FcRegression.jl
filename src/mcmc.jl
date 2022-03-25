@@ -3,6 +3,11 @@ import Serialization: serialize, deserialize
 using Distributions
 using LinearAlgebra
 
+const f4Dist = LogNormal(log(4), 0.1)
+const f33Dist = LogNormal(log(33), 0.1)
+const KxStarDist = LogNormal(log(KxConst), 2.0)   # ~ 4.37 in Robinett
+const f4conv_dist = LogNormal(log(2.27), 0.2)   # std ~= 0.473
+const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
 
 @model function sfit(df, values; robinett = false)
     Rtot_dist = importInVitroRtotDist(robinett)

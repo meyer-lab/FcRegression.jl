@@ -22,9 +22,6 @@ function mixturePredictions(
     return ndf
 end
 
-const f4conv_dist = LogNormal(log(2.27), 0.5)   # std ~= 1.37
-const f33conv_dist = LogNormal(log(3.26), 0.5)  #std ~= 1.95
-
 function MAPLikelihood(df; robinett = false)
     model = sfit(df, df."Value"; robinett = robinett)
     opts = Optim.Options(iterations = 1000, show_every = 10, show_trace = true)

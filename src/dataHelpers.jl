@@ -244,7 +244,3 @@ end
 end
 
 importKavDist(; kwargs...) = deepcopy(importKavDist_readcsv(; kwargs...))
-
-const f4Dist = LogNormal(log(4), 0.1)
-const f33Dist = LogNormal(log(33), 0.1)
-const KxStarDist = LogNormal(log(KxConst), 2.0)   # ~ 4.37 in Robinett
