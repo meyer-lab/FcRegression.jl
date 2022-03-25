@@ -35,7 +35,7 @@ const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
 const humanActYmax = [5.5e4, 1.5e5, 4.5e4, 3.5e4, 3e3] # ymax for synergy plots
 const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
-function importRtot(; murine = true, genotype = "HIV", retdf = false, cellTypes = nothing)
+@memoize function importRtot_readcsv(; murine = true, genotype = "HIV", retdf = false, cellTypes = nothing)
     if murine
         df = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame
     else
@@ -82,17 +82,21 @@ function importRtot(; murine = true, genotype = "HIV", retdf = false, cellTypes 
     end
 end
 
+importRtot(; kwargs...) = deepcopy(importRtot_readcsv(; kwargs...))
 
 """ Import human or murine affinity data. """
-@memoize function importKav(; murine = true, c1q = false, invitro = false, IgG2bFucose = false, retdf = false)
+@memoize function importKav_readcsv(; murine = true, c1q = false, invitro = false, IgG2bFucose = false, retdf = false)
     if murine
         df = CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#") |> DataFrame
     else
+        if invitro
+            return importKavDist(; inflation = 0.0, regularKav = true, retdf = retdf)
+        end
         df = CSV.File(joinpath(dataDir, "human-affinities.csv"), comment = "#") |> DataFrame
     end
 
     IgGlist = copy(murine ? murineIgG : humanIgG)
-    FcRecep = copy(murine ? murineFcgR : (invitro ? humanFcgRiv : humanFcgR))
+    FcRecep = copy(murine ? murineFcgR : humanFcgR)
     if IgG2bFucose
         append!(IgGlist, ["IgG2bFucose"])
     end
@@ -111,6 +115,7 @@ end
     end
 end
 
+importKav(; kwargs...) = deepcopy(importKav_readcsv(; kwargs...))
 
 """ Import cell depletion data. """
 function importDepletion(dataType)
@@ -209,23 +214,32 @@ end
 @memoize function importInVitroRtotDist(robinett = false)
     local df
     if robinett
-        df = CSV.File(joinpath(FcRegression.dataDir, "robinett/FcgRquant.csv"), delim = ",", comment = "#") |> DataFrame
+        df = CSV.File(joinpath(dataDir, "robinett/FcgRquant.csv"), delim = ",", comment = "#") |> DataFrame
     else
         df = CSV.File(joinpath(dataDir, "receptor_amount_mar2021.csv"), delim = ",", comment = "#") |> DataFrame
     end
+    sort!(df, "Receptor")
     return [fit_mle(LogNormal, (df[df."Receptor" .== rcp, "Measurements"])) for rcp in humanFcgRiv]
 end
 
 
-@memoize function importKavDist(; inflation = 0.1, retdf = true)
+@memoize function importKavDist_readcsv(; inflation = 0.0, regularKav = false, retdf = true)
     df = CSV.File(joinpath(dataDir, "FcgR-Ka-Bruhns_with_variance.csv"), delim = ",", comment = "#") |> DataFrame
     function parstr(x)
         params = parse.(Float64, split(x, "|"))
         params .+= inflation
         params .*= 1e5      # Bruhns data is written in 1e5 units
-        return LogNormal(log(params[1]), 2.3) # std of 10x
+        mu = log(params[1])
+        sigma = log(params[1] + params[2]) - mu
+        return LogNormal(mu, sigma)
     end
-    xdf = parstr.(df[:, Not("IgG")])
+    function parmean(x)
+        params = parse.(Float64, split(x, "|"))
+        params .+= inflation
+        params .*= 1e5      # Bruhns data is written in 1e5 units
+        return params[1]
+    end
+    xdf = regularKav ? parmean.(df[:, Not("IgG")]) : parstr.(df[:, Not("IgG")])
     insertcols!(xdf, 1, "IgG" => df[:, "IgG"])
     if retdf
         return xdf
@@ -233,6 +247,8 @@ end
         return Matrix(xdf[:, Not("IgG")])
     end
 end
+
+importKavDist(; kwargs...) = deepcopy(importKavDist_readcsv(; kwargs...))
 
 const f4Dist = LogNormal(log(4), 0.1)
 const f33Dist = LogNormal(log(33), 0.1)
