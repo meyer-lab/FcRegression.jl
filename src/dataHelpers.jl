@@ -225,21 +225,16 @@ end
 
 @memoize function importKavDist_readcsv(; inflation = 0.0, regularKav = false, retdf = true)
     df = CSV.File(joinpath(dataDir, "FcgR-Ka-Bruhns_with_variance.csv"), delim = ",", comment = "#") |> DataFrame
-    function parstr(x)
+    function parstr(x, regularKav = false)
         params = parse.(Float64, split(x, "|"))
         params .+= inflation
         params .*= 1e5      # Bruhns data is written in 1e5 units
-        mu = log(params[1])
-        sigma = log(params[1] + params[2]) - mu
-        return LogNormal(mu, sigma)
+        if regularKav
+            return params[1]
+        end
+        return LogNormal(log(params[1]), 2.3) # std of 10x
     end
-    function parmean(x)
-        params = parse.(Float64, split(x, "|"))
-        params .+= inflation
-        params .*= 1e5      # Bruhns data is written in 1e5 units
-        return params[1]
-    end
-    xdf = regularKav ? parmean.(df[:, Not("IgG")]) : parstr.(df[:, Not("IgG")])
+    xdf = parstr.(df[:, Not("IgG")], regularKav)
     insertcols!(xdf, 1, "IgG" => df[:, "IgG"])
     if retdf
         return xdf
