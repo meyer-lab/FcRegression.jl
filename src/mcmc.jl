@@ -23,10 +23,6 @@ const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
     end
     Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
 
-    f4 ~ truncated(f4Dist, 1.0, 8.0)
-    f33 ~ truncated(f33Dist, 8.0, 50.0)
-    KxStar ~ truncated(KxStarDist, 1E-16, 1E-9)
-
     for ii in eachindex(Kav)
         Kav[ii] ~ truncated(Kav_dist[ii], 10, 1E9)
     end
