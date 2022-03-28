@@ -11,7 +11,7 @@ const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
 
 @model function sfit(df, values; robinett = false)
     Rtot_dist = importInVitroRtotDist(robinett)
-    Kav_dist = importKavDist(; inflation = 0.0)
+    Kav_dist = importKavDist(; inflation = 0.1)
     Kav_dist = Matrix(Kav_dist[:, Not("IgG")])
 
     Rtot = Vector(undef, length(Rtot_dist))
