@@ -11,7 +11,7 @@ const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
 
 @model function sfit(df, values; robinett = false)
     Rtot_dist = importInVitroRtotDist(robinett)
-    Kav_dist = importKavDist(; inflation = 0.1)
+    Kav_dist = importKavDist(; inflation = 0.0)
     Kav_dist = Matrix(Kav_dist[:, Not("IgG")])
 
     Rtot = Vector(undef, length(Rtot_dist))
@@ -21,7 +21,7 @@ const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
     for ii in eachindex(Rtot)
         Rtot[ii] ~ truncated(Rtot_dist[ii], 10, 1E7)
     end
-    Rtot = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
+    Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
 
     f4 ~ truncated(f4Dist, 1.0, 8.0)
     f33 ~ truncated(f33Dist, 8.0, 50.0)
@@ -34,11 +34,17 @@ const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
     Kavd = deepcopy(importKav(; murine = false, invitro = true, retdf = true))
     Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(Kav)
 
+    f4 ~ truncated(f4Dist, 1.0, 8.0)
+    f33 ~ truncated(f33Dist, 8.0, 50.0)
+    KxStar ~ truncated(KxStarDist, 1E-16, 1E-9)
+    f4conv ~ truncated(f4conv_dist, 1.0, 4.0)
+    f33conv ~ truncated(f33conv_dist, 2.0, 6.0)
+
     if any(Kav .< 0.0) || (f4 < 0.0) || (f33 < 0.0) || (KxStar < 0.0)
         df = deepcopy(df)
         df."Predict" .= -1000.0
     else
-        df = mixturePredictions(deepcopy(df); Rtot = Rtot, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
+        df = mixturePredictions(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33], convs = [f4conv, f33conv])
     end
 
     stdv = std(log.(df."Predict") - log.(values))
@@ -51,6 +57,9 @@ function runMCMC(fname = "MCMC_nuts_1000.dat")
         return deserialize(fname)
     end
     df = loadMixData()
+
+    # only use single IgG
+    df = df[(df."%_1" .== 1.0) .| (df."%_2" .== 1.0), :]
     m = sfit(df, df."Value")
     c = sample(m, NUTS(), 1_000)
     f = serialize(fname, c)
