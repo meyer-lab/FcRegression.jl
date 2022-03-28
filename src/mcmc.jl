@@ -36,7 +36,7 @@ const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
     f4conv ~ truncated(f4conv_dist, 1.0, 4.0)
     f33conv ~ truncated(f33conv_dist, 2.0, 6.0)
 
-    if any(Kav .< 0.0) || (f4 < 0.0) || (f33 < 0.0) || (KxStar < 0.0)
+    if any(Rtot .<= 0.0) || any(Kav .<= 0.0) || any([f4, f33, KxStar, f4conv, f33conv] .<= 0.0)
         df = deepcopy(df)
         df."Predict" .= -1000.0
     else
