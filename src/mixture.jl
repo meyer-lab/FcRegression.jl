@@ -167,7 +167,7 @@ function predictMix(df::DataFrame; kwargs...)
     """ Will return another df object. """
     # Setup column
     df[!, "Predict"] .= predictMix(df[1, :]; kwargs...)
-    for i = 2:size(df)[1]
+    Threads.@threads for i = 2:size(df)[1]
         df[i, "Predict"] = predictMix(df[i, :]; kwargs...)
     end
     @assert all(isfinite(df[!, "Predict"]))

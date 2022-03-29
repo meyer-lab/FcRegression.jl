@@ -1,4 +1,15 @@
 @testset "dataHelpers.jl tests" begin
+    @testset "Testing deepcopy indeed gives us different objects" begin
+        @test FcRegression.importRtot(; retdf = true) == FcRegression.importRtot(; retdf = true)    # same results
+        @test FcRegression.importRtot(; retdf = true) !== FcRegression.importRtot(; retdf = true)   # different references
+        @test FcRegression.importRtot(; murine = false) == FcRegression.importRtot(; murine = false)
+        @test FcRegression.importRtot(; murine = false) !== FcRegression.importRtot(; murine = false)
+        @test FcRegression.importKav(; retdf = true) == FcRegression.importKav(; retdf = true)
+        @test FcRegression.importKav(; retdf = true) !== FcRegression.importKav(; retdf = true)
+        @test FcRegression.importKav(; murine = false) == FcRegression.importKav(; murine = false)
+        @test FcRegression.importKav(; murine = false) !== FcRegression.importKav(; murine = false)
+    end
+
     @testset "Testing importRtot()" begin
         @test FcRegression.importRtot(; murine = true, retdf = false) isa Matrix
         @test FcRegression.importRtot(; murine = false, retdf = false) isa Matrix

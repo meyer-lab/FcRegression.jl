@@ -10,21 +10,17 @@ function mixturePredictions(
     Kav = importKav(; murine = false, invitro = true, retdf = true),
     KxStar = KxConst,
     vals = [4.0, 33.0],
+    convs = [2.27, 3.26],
 )
-    @assert all(isfinite(df."Value"))
     df[!, "NewValency"] .= vals[1]
     df[df."Valency" .== 33, "NewValency"] .= vals[2]
 
     ndf = predictMix(df; recepExp = Rtot, KxStar = KxStar, Kav = Kav)
-    @assert all(isfinite(ndf."Predict"))
 
-    # Least squares with one var and no intercept
-    scale = sum(ndf."Value" .* ndf."Predict") / sum(ndf."Value" .* ndf."Value")
-    ndf."Predict" *= scale
-
+    ndf[ndf."Valency" .== 4, "Predict"] ./= convs[1]
+    ndf[ndf."Valency" .== 33, "Predict"] ./= convs[2]
     return ndf
 end
-
 
 function MAPLikelihood(df; robinett = false)
     model = sfit(df, df."Value"; robinett = robinett)
