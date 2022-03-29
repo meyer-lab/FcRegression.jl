@@ -36,11 +36,11 @@ const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
     f4conv ~ truncated(f4conv_dist, 1.0, 4.0)
     f33conv ~ truncated(f33conv_dist, 2.0, 6.0)
 
-    if any(Rtot .<= 0.0) || any(Kav .<= 0.0) || any([f4, f33, KxStar, f4conv, f33conv] .<= 0.0)
+    if all(Rtot .> 0.0) && all(Kav .> 0.0) && all([f4, f33, KxStar, f4conv, f33conv] .> 0.0)
+        df = mixturePredictions(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33], convs = [f4conv, f33conv])
+    else
         df = deepcopy(df)
         df."Predict" .= -1000.0
-    else
-        df = mixturePredictions(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33], convs = [f4conv, f33conv])
     end
 
     stdv = std(log.(df."Predict") - log.(values))
@@ -48,7 +48,7 @@ const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
     nothing
 end
 
-function runMCMC(fname = "MCMC_nuts_1000.dat")
+function runMCMC(fname = "MCMC_nuts_wconvs_0328.dat")
     if isfile(fname)
         return deserialize(fname)
     end
@@ -64,13 +64,13 @@ end
 
 function plotHistPriorDist(dat, dist, name)
     dat = reshape(dat, :)
-    xxs = LinRange(dist.μ - 4 * dist.σ, dist.μ + 4 * dist.σ, 100)
-    yys = [pdf(dist, exp.(xx)) for xx in xxs]
+    xxs = exp.(LinRange(dist.μ - 4 * dist.σ, dist.μ + 4 * dist.σ, 100))
+    yys = [pdf(dist, xx) for xx in xxs]
     yys = yys ./ maximum(yys)
     pl = plot(
         layer(x = xxs, y = yys, Geom.line, color = [colorant"red"], order = 1),
-        layer(DataFrame("Value" => log.(dat)), x = "Value", Geom.histogram(bincount = 20, density = true)),
-        Scale.x_continuous(labels = x -> @sprintf("%.1E", exp(x))),
+        layer(DataFrame("Value" => dat), x = "Value", Geom.histogram(bincount = 20, density = true)),
+        Scale.x_log10(),
         Guide.xticks(orientation = :horizontal),
         Guide.xlabel("Value"),
         Guide.ylabel(nothing),
@@ -110,11 +110,37 @@ function plot_MCMC_dists(c = runMCMC())
     draw(PDF("MCMC_Rtot.pdf", 16inch, 4inch), Rtot_plot)
 
     # Plot f4, f33, KxStar
-    other_pls = Vector{Plot}(undef, 3)
+    other_pls = Vector{Plot}(undef, 5)
     other_pls[1] = plotHistPriorDist(c["f4"].data, f4Dist, "f = 4 effective valency")
     other_pls[2] = plotHistPriorDist(c["f33"].data, f33Dist, "f = 33 effective valency")
     other_pls[3] = plotHistPriorDist(c["KxStar"].data, KxStarDist, "K<sub>x</sub><sup>*</sup>")
-    other_plot = plotGrid((1, 3), other_pls; sublabels = false)
-    draw(SVG("MCMC_others.svg", 8inch, 4inch), other_plot)
-    draw(PDF("MCMC_others.pdf", 8inch, 4inch), other_plot)
+    other_pls[4] = plotHistPriorDist(c["f4conv"].data, f4conv_dist, "f = 4 conversion factor")
+    other_pls[5] = plotHistPriorDist(c["f33conv"].data, f33conv_dist, "f = 33 conversion factor")
+    other_plot = plotGrid((1, 5), other_pls; sublabels = false)
+    draw(SVG("MCMC_others.svg", 12inch, 4inch), other_plot)
+    draw(PDF("MCMC_others.pdf", 12inch, 4inch), other_plot)
+end
+
+
+function plot_MCMC_fit(c = runMCMC(), df = loadMixData())
+    c = c[500:1000]
+    Rtot = [mean(c["Rtot[$i]"].data) for i = 1:length(humanFcgRiv)]
+    Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
+
+    Kavd = importKav(; murine = false, invitro = true, retdf = true)
+    Kav = [mean(c["Kav[$i]"].data) for i = 1:length(importKav(; murine = false, invitro = true, retdf = false))]
+    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
+    
+    f4 = mean(c["f4"].data)
+    f33 = mean(c["f33"].data)
+    KxStar = mean(c["KxStar"].data)
+    f4conv = mean(c["f4conv"].data)
+    f33conv = mean(c["f33conv"].data)
+
+    if !("xmin" in names(df))
+        df = averageMixData(df)
+    end
+    df = mixturePredictions(df; Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33], convs = [f4conv, f33conv])
+    pl = plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", title = "With single IgG fitted params")
+
 end
