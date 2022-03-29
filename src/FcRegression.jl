@@ -27,6 +27,7 @@ include("figures/figureW.jl")
 
 include("figures/figure1.jl")
 include("figures/figure2.jl")
+include("figures/figure2a.jl")
 include("robinett.jl")
 include("figures/figure3.jl")
 include("figures/figure4.jl")
