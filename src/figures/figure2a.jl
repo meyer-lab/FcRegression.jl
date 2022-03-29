@@ -23,7 +23,6 @@ function cornerplot(df::AbstractDataFrame; nbins = 20, hexbins = 50, plotsize = 
                                      Guide.xlabel(xlabel),
                                      Guide.ylabel(ylabel, orientation = :vertical),
                                      (logscale ? Scale.x_log10 : Scale.x_continuous),
-                                     Guide.xticks(label=(xlabel != nothing)),
                                      Coord.Cartesian(xmin = ranges[i][1], xmax = ranges[i][end],),))
         
         for j = (i + 1):ndims
@@ -35,7 +34,6 @@ function cornerplot(df::AbstractDataFrame; nbins = 20, hexbins = 50, plotsize = 
                                         Guide.ylabel(ylabel, orientation = :vertical),
                                         (logscale ? Scale.x_log10 : Scale.x_continuous),
                                         (logscale ? Scale.y_log10 : Scale.y_continuous),
-                                        Guide.xticks(label=(xlabel != nothing)),
                                         Guide.yticks(label=(ylabel != nothing)),
                                         Coord.Cartesian(xmin = ranges[i][1], xmax = ranges[i][end],
                                                         ymin = ranges[j][1], ymax = ranges[j][end]),
@@ -47,4 +45,12 @@ function cornerplot(df::AbstractDataFrame; nbins = 20, hexbins = 50, plotsize = 
         end # for j = (i + 1):ndims
     end # for i = 1:ndims
     return gridstack(subplots)
+end
+
+
+function MCMC_cornerplot(c = runMCMC())
+    df = DataFrame(c)
+    df = df[500:1000, [contains(n, "[") | contains(n, "f") | contains(n, "Star") for n in names(df)]]
+    pl = cornerplot(ndf; plotsize = 200cm)
+    draw(PDF("figure2a.pdf", 200cm, 200cm), pl)
 end
