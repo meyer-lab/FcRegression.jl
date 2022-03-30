@@ -130,7 +130,7 @@ function plot_MCMC_fit(c = runMCMC(), df = loadMixData())
     Kavd = importKav(; murine = false, invitro = true, retdf = true)
     Kav = [mean(c["Kav[$i]"].data) for i = 1:length(importKav(; murine = false, invitro = true, retdf = false))]
     Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
-    
+
     f4 = mean(c["f4"].data)
     f33 = mean(c["f33"].data)
     KxStar = mean(c["KxStar"].data)
