@@ -5,3 +5,5 @@ venv
 *.svg
 
 cache/requests-cache.sqlite
+
+*.pdf

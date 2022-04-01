@@ -62,6 +62,7 @@ function runMCMC(fname = "MCMC_nuts_wconvs_0328.dat")
     return c
 end
 
+""" Making a single subplot for priors and posteriors """
 function plotHistPriorDist(dat, dist, name)
     dat = reshape(dat, :)
     xxs = exp.(LinRange(dist.μ - 4 * dist.σ, dist.μ + 4 * dist.σ, 100))
@@ -122,25 +123,23 @@ function plot_MCMC_dists(c = runMCMC())
 end
 
 
-function plot_MCMC_fit(c = runMCMC(), df = loadMixData())
+function MCMC_params_predict(c = runMCMC(), df = loadMixData())
     c = c[500:1000]
-    Rtot = [mean(c["Rtot[$i]"].data) for i = 1:length(humanFcgRiv)]
+    Rtot = [geomean(c["Rtot[$i]"].data) for i = 1:length(humanFcgRiv)]
     Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
 
     Kavd = importKav(; murine = false, invitro = true, retdf = true)
-    Kav = [mean(c["Kav[$i]"].data) for i = 1:length(importKav(; murine = false, invitro = true, retdf = false))]
+    Kav = [geomean(c["Kav[$i]"].data) for i = 1:length(importKav(; murine = false, invitro = true, retdf = false))]
     Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
-
-    f4 = mean(c["f4"].data)
-    f33 = mean(c["f33"].data)
-    KxStar = mean(c["KxStar"].data)
-    f4conv = mean(c["f4conv"].data)
-    f33conv = mean(c["f33conv"].data)
+    
+    f4 = geomean(c["f4"].data)
+    f33 = geomean(c["f33"].data)
+    KxStar = geomean(c["KxStar"].data)
+    f4conv = geomean(c["f4conv"].data)
+    f33conv = geomean(c["f33conv"].data)
 
     if !("xmin" in names(df))
         df = averageMixData(df)
     end
-    df = mixturePredictions(df; Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33], convs = [f4conv, f33conv])
-    pl = plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", title = "With single IgG fitted params")
-
+    return mixturePredictions(df; Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33], convs = [f4conv, f33conv])
 end
