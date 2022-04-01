@@ -111,7 +111,7 @@ function figure2()
     data = averageMixData(data)
     raw_predict = predictMix(data)
 
-    raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Prediction without fitting", R2pos = (3.5, 1))
+    raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Prediction without fitting", R2pos = (3, 1))
 
 
     c = runMCMC()
@@ -124,5 +124,5 @@ function figure2()
     pp = plotGrid((3, 3), [nothing, raw_pred_pl, pl1, pl2, pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], nothing]; sublabels = [1 1 1 1 1 1 1 1 0])
 
     draw(SVG("figure2.svg", 12inch, 12inch), pp)
-    draw(PDF("figure2.pdf", 12inch, 12inch), pp)
+    #draw(PDF("figure2.pdf", 12inch, 12inch), pp)
 end
