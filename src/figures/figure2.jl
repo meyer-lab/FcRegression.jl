@@ -10,7 +10,7 @@ function plotPredvsMeasured(
     color = "Cell",
     shape = "Valency",
     title = "Predicted vs Actual",
-    R2pos = (4, 1),
+    R2pos = (3, 1),
 )
     setGadflyTheme()
 
@@ -41,7 +41,8 @@ function plotPredvsMeasured(
             Scale.color_discrete().f(10)[4:end]...,
         ),
         Geom.abline(color = "black"),
-        Guide.annotation(compose(context(), text(R2pos[1], R2pos[2], "R<sup>2</sup> = " * @sprintf("%.4f", r2)), font("Helvetica-Bold"))),
+        Guide.annotation(compose(context(), text(R2pos[1], R2pos[2], "<i>R</i><sup>2</sup> = " * @sprintf("%.4f", r2)), 
+            stroke("black"), fill("black"), font("Helvetica-Bold"))),
         style(errorbar_cap_length = 0px),
     )
 end
@@ -112,14 +113,16 @@ function figure2()
 
     raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Prediction without fitting", R2pos = (3.5, 1))
 
-    fdf = MAPLikelihood(data)
-    kfit_allPL = plotPredvsMeasured(fdf; xx = "Value", title = "MAP fit")
 
-    p1 = splot_pred("FcgRIIIA-158F"; Lbound = true)
-    p2 = splot_pred("FcgRIIIA-158F"; Lbound = false)
+    c = runMCMC()
+    df = loadMixData()
+    pl1 = plotPredvsMeasured(MCMC_params_predict(c, df); xx = "Value", yy = "Predict", title = "All predictions with \nsingle IgG fitted params")
+    pl2 = plotPredvsMeasured(MCMC_params_predict(c, df[(df."%_1" .!= 1.0) .& (df."%_2" .!= 1.0), :]); 
+        xx = "Value", yy = "Predict", title = "Mixture predictions with \nsingle IgG fitted params")
+    _, pl_igg, _, _ = plot_MCMC_affinity(c)
 
-    pp = plotGrid((3, 3), [nothing, raw_pred_pl, nothing, nothing, kfit_allPL, nothing, p1, p2, nothing]; sublabels = [1 1 1 1 1 1 1 1 0])
+    pp = plotGrid((3, 3), [nothing, raw_pred_pl, pl1, pl2, pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], nothing]; sublabels = [1 1 1 1 1 1 1 1 0])
 
-    draw(SVG("figure2.svg", 16inch, 13inch), pp)
-    draw(PDF("figure2.pdf", 16inch, 13inch), pp)
+    draw(SVG("figure2.svg", 12inch, 12inch), pp)
+    draw(PDF("figure2.pdf", 12inch, 12inch), pp)
 end
