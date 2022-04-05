@@ -34,3 +34,20 @@ function plotRobinettCV()
     pl2 = plotPredvsMeasured(fitted; xx = "Value", title = "With newly fitted Kav", R2pos = (3, 1))
     draw(SVG("figure2rob.svg", 9inch, 4inch), plotGrid((1, 2), [nothing, pl2]; sublabels = [1 1]))
 end
+
+""" Fit everything but affinities for Robinett data with MCMC, compare new and old affinities"""
+function validateRobinett(c = runMCMC())
+    df = importRobinett()
+
+    Kav_old = importKav(; murine = false, invitro = true, retdf = true)
+    m_old = sfit(df, df."Values"; robinett = true, Kavd = )
+
+    _, Kav_new, _ = extractMCMCresults(c)
+    m = 
+
+
+
+    
+    
+
+end
