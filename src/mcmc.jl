@@ -11,7 +11,7 @@ const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
 
 @model function sfit(df, values; robinett = false)
     Rtot_dist = importInVitroRtotDist(robinett)
-    Kav_dist = importKavDist(; inflation = 0.1)
+    Kav_dist = importKavDist()
     Kav_dist = Matrix(Kav_dist[:, Not("IgG")])
 
     Rtot = Vector(undef, length(Rtot_dist))
@@ -87,7 +87,7 @@ function plot_MCMC_dists(c = runMCMC())
     # Plot Kav's
     ligg = length(humanIgG)
     lfcr = length(humanFcgRiv)
-    Kav_dist = importKavDist(; inflation = 0.1, retdf = false)
+    Kav_dist = importKavDist(; retdf = false)
     Kav_pls = Matrix{Plot}(undef, ligg, lfcr)
     for ii in eachindex(Kav_pls)
         IgGname = humanIgG[(ii - 1) % ligg + 1]

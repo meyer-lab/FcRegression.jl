@@ -2,6 +2,7 @@ using DataFrames
 using Memoize
 import CSV
 import Distributions: fit_mle, LogNormal, pdf
+using NLsolve
 
 const KxConst = 6.31e-13 # 10^(-12.2)
 
@@ -90,7 +91,7 @@ importRtot(; kwargs...) = deepcopy(importRtot_readcsv(; kwargs...))
         df = CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#") |> DataFrame
     else
         if invitro
-            return importKavDist(; inflation = 0.0, regularKav = true, retdf = retdf)
+            return importKavDist(; regularKav = true, retdf = retdf)
         end
         df = CSV.File(joinpath(dataDir, "human-affinities.csv"), comment = "#") |> DataFrame
     end
@@ -219,20 +220,30 @@ end
         df = CSV.File(joinpath(dataDir, "receptor_amount_mar2021.csv"), delim = ",", comment = "#") |> DataFrame
     end
     sort!(df, "Receptor")
-    return [fit_mle(LogNormal, (df[df."Receptor" .== rcp, "Measurements"])) for rcp in humanFcgRiv]
+    return [fit_mle(LogNormal, df[df."Receptor" .== rcp, "Measurements"]) for rcp in humanFcgRiv]
 end
 
+""" A more accurate way to infer logNormal distribution with exact mean and variance """
+function inferLogNormal(mean, variance)
+    function logNormalParams!(f, v)
+        f[1] = exp(v[1] + v[2]^2/2) - mean
+        f[2] = sqrt((exp(v[2]^2)-1) * exp(2*v[1] + v[2]^2)) - variance
+    end
+    xs = nlsolve(logNormalParams!, [log(mean), log(variance)]).zero
+    return LogNormal(xs[1], xs[2])
+end
 
-@memoize function importKavDist_readcsv(; inflation = 0.0, regularKav = false, retdf = true)
+@memoize function importKavDist_readcsv(; regularKav = false, retdf = true)
     df = CSV.File(joinpath(dataDir, "FcgR-Ka-Bruhns_with_variance.csv"), delim = ",", comment = "#") |> DataFrame
     function parstr(x, regularKav = false)
         params = parse.(Float64, split(x, "|"))
-        params .+= inflation
         params .*= 1e5      # Bruhns data is written in 1e5 units
+        if params[1] < 1e4  params[1] = 1e4  end    # minimum affinity as 1e4 M-1
+        if params[2] < 1e5  params[2] = 1e5  end    # minimum variance as 1e5 M-1
         if regularKav
             return params[1]
         end
-        return LogNormal(log(params[1]), 2.3) # std of 10x
+        return inferLogNormal(params[1], params[2])
     end
     xdf = parstr.(df[:, Not("IgG")], regularKav)
     insertcols!(xdf, 1, "IgG" => df[:, "IgG"])
