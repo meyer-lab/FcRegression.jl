@@ -3,9 +3,9 @@ import Serialization: serialize, deserialize
 using Distributions
 using LinearAlgebra
 
-const f4Dist = LogNormal(log(4), 0.1)
-const f33Dist = LogNormal(log(33), 0.1)
-const KxStarDist = LogNormal(log(KxConst), 2.0)   # ~ 4.37 in Robinett
+const f4Dist = LogNormal(log(4), 0.2)   # std ~= 0.82
+const f33Dist = LogNormal(log(33), 0.2)   # std ~= 6.80
+const KxStarDist = LogNormal(log(KxConst), 2.0)   # std ~= 4.37 in Robinett
 const f4conv_dist = LogNormal(log(2.27), 0.2)   # std ~= 0.473
 const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
 
@@ -19,12 +19,12 @@ const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
 
     # Order of distribution definitions here matches MAPLikelihood()
     for ii in eachindex(Rtot)
-        Rtot[ii] ~ truncated(Rtot_dist[ii], 10, 1E7)
+        Rtot[ii] ~ truncated(Rtot_dist[ii], 10, 1E8)
     end
     Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
 
     for ii in eachindex(Kav)
-        Kav[ii] ~ truncated(Kav_dist[ii], 10, 1E9)
+        Kav[ii] ~ truncated(Kav_dist[ii], 10, 1E10)
     end
 
     Kavd = deepcopy(importKav(; murine = false, invitro = true, retdf = true))
@@ -32,9 +32,9 @@ const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
 
     f4 ~ truncated(f4Dist, 1.0, 8.0)
     f33 ~ truncated(f33Dist, 8.0, 50.0)
-    KxStar ~ truncated(KxStarDist, 1E-16, 1E-9)
-    f4conv ~ truncated(f4conv_dist, 1.0, 4.0)
-    f33conv ~ truncated(f33conv_dist, 2.0, 6.0)
+    KxStar ~ truncated(KxStarDist, 1E-18, 1E-9)
+    f4conv ~ truncated(f4conv_dist, 1.0, 5.0)
+    f33conv ~ truncated(f33conv_dist, 2.0, 10.0)
 
     if all(Rtot .> 0.0) && all(Kav .> 0.0) && all([f4, f33, KxStar, f4conv, f33conv] .> 0.0)
         df = mixturePredictions(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33], convs = [f4conv, f33conv])
