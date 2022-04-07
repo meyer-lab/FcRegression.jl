@@ -114,7 +114,7 @@ function figure2()
     raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Prediction without fitting", R2pos = (3, 1))
 
 
-    c = runMCMC()
+    c = runMCMC("MCMC_nuts_wconvs_0405.dat")
     df = loadMixData()
     pl1 = plotPredvsMeasured(MCMC_params_predict(c, df); xx = "Value", yy = "Predict", title = "All predictions with \nsingle IgG fitted params")
     pl2 = plotPredvsMeasured(MCMC_params_predict(c, df[(df."%_1" .!= 1.0) .& (df."%_2" .!= 1.0), :]); 
@@ -123,6 +123,6 @@ function figure2()
 
     pp = plotGrid((3, 3), [nothing, raw_pred_pl, pl1, pl2, pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], nothing]; sublabels = [1 1 1 1 1 1 1 1 0])
 
-    draw(SVG("figure2.svg", 12inch, 12inch), pp)
-    #draw(PDF("figure2.pdf", 12inch, 12inch), pp)
+    #draw(SVG("figure2.svg", 12inch, 12inch), pp)
+    draw(PDF("figure2.pdf", 12inch, 12inch), pp)
 end

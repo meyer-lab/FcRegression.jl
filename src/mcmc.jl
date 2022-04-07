@@ -6,7 +6,7 @@ using LinearAlgebra
 const f4Dist = LogNormal(log(4), 0.2)   # std ~= 0.82
 const f33Dist = LogNormal(log(33), 0.2)   # std ~= 6.80
 const KxStarDist = LogNormal(log(KxConst), 2.0)   # std ~= 4.37 in Robinett
-const f4conv_dist = LogNormal(log(2.27), 0.2)   # std ~= 0.473
+const f4conv_dist = LogNormal(log(2.27), 0.2)   # std ~= 0.468
 const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
 
 @model function sfit(df, values; robinett = false)
@@ -48,7 +48,7 @@ const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
     nothing
 end
 
-function runMCMC(fname = "MCMC_nuts_wconvs_0328.dat")
+function runMCMC(fname = "MCMC_nuts_wconvs_0405.dat")
     if isfile(fname)
         return deserialize(fname)
     end
@@ -125,18 +125,18 @@ end
 
 function MCMC_params_predict(c = runMCMC(), df = loadMixData())
     c = c[500:1000]
-    Rtot = [geomean(c["Rtot[$i]"].data) for i = 1:length(humanFcgRiv)]
+    Rtot = [median(c["Rtot[$i]"].data) for i = 1:length(humanFcgRiv)]
     Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
 
     Kavd = importKav(; murine = false, invitro = true, retdf = true)
-    Kav = [geomean(c["Kav[$i]"].data) for i = 1:length(importKav(; murine = false, invitro = true, retdf = false))]
+    Kav = [median(c["Kav[$i]"].data) for i = 1:length(importKav(; murine = false, invitro = true, retdf = false))]
     Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
     
-    f4 = geomean(c["f4"].data)
-    f33 = geomean(c["f33"].data)
-    KxStar = geomean(c["KxStar"].data)
-    f4conv = geomean(c["f4conv"].data)
-    f33conv = geomean(c["f33conv"].data)
+    f4 = median(c["f4"].data)
+    f33 = median(c["f33"].data)
+    KxStar = median(c["KxStar"].data)
+    f4conv = median(c["f4conv"].data)
+    f33conv = median(c["f33conv"].data)
 
     if !("xmin" in names(df))
         df = averageMixData(df)
