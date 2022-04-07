@@ -141,11 +141,12 @@ function extractMCMCresults(c = runMCMC())
     return Rtotd, Kavd, [f4, f33, KxStar, f4conv, f33conv]
 end
 
-function MCMC_params_predict(c = runMCMC(), df = loadMixData())
+function MCMC_params_predict_plot(c = runMCMC(), df = loadMixData(); kwargs...)
     Rtotd, Kavd, (f4, f33, KxStar, f4conv, f33conv) = extractMCMCresults(c)
 
     if !("xmin" in names(df))
         df = averageMixData(df)
     end
-    return mixturePredictions(df; Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33], convs = [f4conv, f33conv])
+    ndf = mixturePredictions(df; Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33], convs = [f4conv, f33conv])
+    return plotPredvsMeasured(ndf; kwargs...)
 end
