@@ -131,7 +131,7 @@ function MCMC_params_predict(c = runMCMC(), df = loadMixData())
     Kavd = importKav(; murine = false, invitro = true, retdf = true)
     Kav = [median(c["Kav[$i]"].data) for i = 1:length(importKav(; murine = false, invitro = true, retdf = false))]
     Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
-    
+
     f4 = median(c["f4"].data)
     f33 = median(c["f33"].data)
     KxStar = median(c["KxStar"].data)

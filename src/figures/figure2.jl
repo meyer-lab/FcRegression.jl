@@ -41,8 +41,15 @@ function plotPredvsMeasured(
             Scale.color_discrete().f(10)[4:end]...,
         ),
         Geom.abline(color = "black"),
-        Guide.annotation(compose(context(), text(R2pos[1], R2pos[2], "<i>R</i><sup>2</sup> = " * @sprintf("%.4f", r2)), 
-            stroke("black"), fill("black"), font("Helvetica-Bold"))),
+        Guide.annotation(
+            compose(
+                context(),
+                text(R2pos[1], R2pos[2], "<i>R</i><sup>2</sup> = " * @sprintf("%.4f", r2)),
+                stroke("black"),
+                fill("black"),
+                font("Helvetica-Bold"),
+            ),
+        ),
         style(errorbar_cap_length = 0px),
     )
 end
@@ -117,8 +124,12 @@ function figure2()
     c = runMCMC("MCMC_nuts_wconvs_0405.dat")
     df = loadMixData()
     pl1 = plotPredvsMeasured(MCMC_params_predict(c, df); xx = "Value", yy = "Predict", title = "All predictions with \nsingle IgG fitted params")
-    pl2 = plotPredvsMeasured(MCMC_params_predict(c, df[(df."%_1" .!= 1.0) .& (df."%_2" .!= 1.0), :]); 
-        xx = "Value", yy = "Predict", title = "Mixture predictions with \nsingle IgG fitted params")
+    pl2 = plotPredvsMeasured(
+        MCMC_params_predict(c, df[(df."%_1" .!= 1.0) .& (df."%_2" .!= 1.0), :]);
+        xx = "Value",
+        yy = "Predict",
+        title = "Mixture predictions with \nsingle IgG fitted params",
+    )
     _, pl_igg, _, _ = plot_MCMC_affinity(c)
 
     pp = plotGrid((3, 3), [nothing, raw_pred_pl, pl1, pl2, pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], nothing]; sublabels = [1 1 1 1 1 1 1 1 0])
