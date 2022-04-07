@@ -40,10 +40,9 @@ function validateRobinett(c = runMCMC())
     df = importRobinett()
 
     Kav_old = importKav(; murine = false, invitro = true, retdf = true)
-    m_old = sfit(df, df."Values"; robinett = true, Kavd = )
+    m_old = sfit(df, df."Values"; robinett = true)
 
     _, Kav_new, _ = extractMCMCresults(c)
-    m = 
 
 
 

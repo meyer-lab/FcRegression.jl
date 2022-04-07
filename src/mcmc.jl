@@ -123,7 +123,7 @@ function plot_MCMC_dists(c = runMCMC())
     draw(PDF("MCMC_others.pdf", 12inch, 4inch), other_plot)
 end
 
-function extractMCMCresults(c = runMCMC("MCMC_nuts_wconvs_0328.dat"))
+function extractMCMCresults(c = runMCMC())
     c = c[500:1000]
     Rtot = [median(c["Rtot[$i]"].data) for i = 1:length(humanFcgRiv)]
     Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
