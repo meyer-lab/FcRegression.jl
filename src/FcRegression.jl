@@ -55,7 +55,6 @@ function figureAll()
     figureS2()
 
     plot_MCMC_dists()
-    plotRobinettCV()
 end
 
 export polyfc, polyfc_ActV

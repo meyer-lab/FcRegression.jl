@@ -9,7 +9,7 @@ const KxStarDist = LogNormal(log(KxConst), 2.0)   # std ~= 4.37 in Robinett
 const f4conv_dist = LogNormal(log(2.27), 0.2)   # std ~= 0.468
 const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
 
-@model function sfit(df, values; robinett = false)
+@model function sfit(df, values; robinett = false, Kavd = importKav(; murine = false, invitro = true, retdf = true))
     Rtot_dist = importInVitroRtotDist(robinett)
     Kav_dist = importKavDist()
     Kav_dist = Matrix(Kav_dist[:, Not("IgG")])
@@ -27,8 +27,9 @@ const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
         Kav[ii] ~ truncated(Kav_dist[ii], 10, 1E10)
     end
 
-    Kavd = deepcopy(importKav(; murine = false, invitro = true, retdf = true))
-    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(Kav)
+    if !robinett    # Don't fit affinity for Robinett data
+        Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(Kav)
+    end
 
     f4 ~ truncated(f4Dist, 1.0, 8.0)
     f33 ~ truncated(f33Dist, 8.0, 50.0)
@@ -122,8 +123,7 @@ function plot_MCMC_dists(c = runMCMC())
     draw(PDF("MCMC_others.pdf", 12inch, 4inch), other_plot)
 end
 
-
-function MCMC_params_predict(c = runMCMC(), df = loadMixData())
+function extractMCMCresults(c = runMCMC())
     c = c[500:1000]
     Rtot = [median(c["Rtot[$i]"].data) for i = 1:length(humanFcgRiv)]
     Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
@@ -138,8 +138,15 @@ function MCMC_params_predict(c = runMCMC(), df = loadMixData())
     f4conv = median(c["f4conv"].data)
     f33conv = median(c["f33conv"].data)
 
+    return Rtotd, Kavd, [f4, f33, KxStar, f4conv, f33conv]
+end
+
+function MCMC_params_predict_plot(c = runMCMC(), df = loadMixData(); kwargs...)
+    Rtotd, Kavd, (f4, f33, KxStar, f4conv, f33conv) = extractMCMCresults(c)
+
     if !("xmin" in names(df))
         df = averageMixData(df)
     end
-    return mixturePredictions(df; Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33], convs = [f4conv, f33conv])
+    ndf = mixturePredictions(df; Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33], convs = [f4conv, f33conv])
+    return plotPredvsMeasured(ndf; kwargs...)
 end

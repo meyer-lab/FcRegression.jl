@@ -13,12 +13,13 @@ function mixturePredictions(
     convs = [2.27, 3.26],
 )
     df[!, "NewValency"] .= vals[1]
-    df[df."Valency" .== 33, "NewValency"] .= vals[2]
+    df[df."Valency" .> 12, "NewValency"] .= vals[2]
+    # use 12 as a threshold to accomodate both new (f = 33) and Robinett (f = 26) data
 
     ndf = predictMix(df; recepExp = Rtot, KxStar = KxStar, Kav = Kav)
 
-    ndf[ndf."Valency" .== 4, "Predict"] ./= convs[1]
-    ndf[ndf."Valency" .== 33, "Predict"] ./= convs[2]
+    ndf[ndf."Valency" .<= 12, "Predict"] ./= convs[1]
+    ndf[ndf."Valency" .> 12, "Predict"] ./= convs[2]
     return ndf
 end
 

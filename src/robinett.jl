@@ -1,12 +1,3 @@
-const RobMeasuredRecepExp = Dict(
-    "FcgRI" => 232871.607,
-    "FcgRIIA-131H" => 1605371.923,
-    "FcgRIIA-131R" => 318818.901,
-    "FcgRIIB-232I" => 394556.044,
-    "FcgRIIIA-158F" => 4677645.042,
-    "FcgRIIIA-158V" => 3680707.938,
-)  # geometric mean
-
 function figure2d()
     df = averageData(loadMixData("robinett/Luxetal2013-Fig2BRef.csv"))
     df = predictMix(df; recepExp = RobMeasuredRecepExp)
@@ -25,12 +16,30 @@ function importRobinett()
     return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
 end
 
-function plotRobinettCV()
-    df = averageMixData(importRobinett())
-    fitted = MAPLikelihood(df; robinett = true)
+""" Fit everything but affinities for Robinett data with MCMC, compare new and old affinities"""
+function validateRobinett(fname = "MCMC_robinett_0407.dat", c = runMCMC())
+    local c_old, c_new
+    if isfile(fname)
+        c_old, c_new = deserialize(fname)
+        df = importRobinett()
+    else
+        df = importRobinett()
+        Kav_old = importKav(; murine = false, invitro = true, retdf = true)
+        m_old = sfit(df, df."Value"; robinett = true, Kavd = Kav_old)
+        c_old = sample(m_old, NUTS(), 1_000)
 
-    # _, unfitted = fitMixMaster(df; fitKav = false, recepExp = Rtot, show_trace = false)
-    # pl1 = plotPredvsMeasured(unfitted; xx = "Value", title = "With reported Kav", R2pos = (3, 1))
-    pl2 = plotPredvsMeasured(fitted; xx = "Value", title = "With newly fitted Kav", R2pos = (3, 1))
-    draw(SVG("figure2rob.svg", 9inch, 4inch), plotGrid((1, 2), [nothing, pl2]; sublabels = [1 1]))
+        _, Kav_new, _ = extractMCMCresults(c)
+        m_new = sfit(df, df."Value"; robinett = true, Kavd = Kav_new)
+        c_new = sample(m_new, NUTS(), 1_000)
+        f = serialize(fname, [c_old, c_new])
+    end
+
+    pl1 = MCMC_params_predict_plot(c_old, df; xx = "Value", yy = "Predict", 
+        title = "Robinett with documented affinities", R2pos = (2.5, 0.8))
+    pl2 = MCMC_params_predict_plot(c_new, df; xx = "Value", yy = "Predict", 
+        title = "Robinett with updated affinities", R2pos = (2.5, 0.8))
+
+    pp = plotGrid((1, 2), [pl1, pl2])
+    draw(PDF("figure2robinett.pdf", 7inch, 3inch), pp)
+    return pl1, pl2
 end
