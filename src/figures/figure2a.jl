@@ -16,28 +16,35 @@ function cornerplot(df::AbstractDataFrame; nbins = 20, hexbins = 50, plotsize = 
     for i = 1:ndims
         # for last diagonal, add axis label if given
         xlabel = (i == ndims) ? String(names(df)[i]) : nothing
-        ylabel = (i == 1) ? String(names(df)[i])  : nothing
+        ylabel = (i == 1) ? String(names(df)[i]) : nothing
 
         # plot the diagonal histogram
-        subplots[i, i] = render(plot(layer(x = df[!, i], Geom.histogram(bincount = nbins),),
-                                     Guide.xlabel(xlabel),
-                                     Guide.ylabel(ylabel, orientation = :vertical),
-                                     (logscale ? Scale.x_log10 : Scale.x_continuous),
-                                     Coord.Cartesian(xmin = ranges[i][1], xmax = ranges[i][end],),))
-        
+        subplots[i, i] = render(
+            plot(
+                layer(x = df[!, i], Geom.histogram(bincount = nbins)),
+                Guide.xlabel(xlabel),
+                Guide.ylabel(ylabel, orientation = :vertical),
+                (logscale ? Scale.x_log10 : Scale.x_continuous),
+                Coord.Cartesian(xmin = ranges[i][1], xmax = ranges[i][end]),
+            ),
+        )
+
         for j = (i + 1):ndims
             xlabel = (j == ndims) ? String(names(df)[i]) : nothing
             ylabel = (i == 1) ? String(names(df)[j]) : nothing
 
-            subplots[j, i] = render(plot(layer(x=df[!, i], y=df[!, j], Geom.density2d,),
-                                        Guide.xlabel(xlabel),
-                                        Guide.ylabel(ylabel, orientation = :vertical),
-                                        (logscale ? Scale.x_log10 : Scale.x_continuous),
-                                        (logscale ? Scale.y_log10 : Scale.y_continuous),
-                                        Guide.yticks(label=(ylabel != nothing)),
-                                        Coord.Cartesian(xmin = ranges[i][1], xmax = ranges[i][end],
-                                                        ymin = ranges[j][1], ymax = ranges[j][end]),
-                                        style(key_position = :none)))
+            subplots[j, i] = render(
+                plot(
+                    layer(x = df[!, i], y = df[!, j], Geom.density2d),
+                    Guide.xlabel(xlabel),
+                    Guide.ylabel(ylabel, orientation = :vertical),
+                    (logscale ? Scale.x_log10 : Scale.x_continuous),
+                    (logscale ? Scale.y_log10 : Scale.y_continuous),
+                    Guide.yticks(label = (ylabel != nothing)),
+                    Coord.Cartesian(xmin = ranges[i][1], xmax = ranges[i][end], ymin = ranges[j][1], ymax = ranges[j][end]),
+                    style(key_position = :none),
+                ),
+            )
 
             # make subplots above diagonal empty
             subplots[i, j] = Compose.context()
