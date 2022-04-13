@@ -20,12 +20,13 @@ function plotPredvsMeasured(
 
     r2 = R2((df[!, xx]), (df[!, yy]))
     println(r2)
+    errbar = "xmin" in names(df)
     return plot(
         df,
         x = xx,
         y = yy,
-        xmin = "xmin",
-        xmax = "xmax",
+        xmin = (errbar ? "xmin" : xx),
+        xmax = (errbar ? "xmax" : xx),
         color = color,
         shape = shape,
         Geom.point,
