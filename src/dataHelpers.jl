@@ -223,13 +223,14 @@ end
     return [fit_mle(LogNormal, df[df."Receptor" .== rcp, "Measurements"]) for rcp in humanFcgRiv]
 end
 
-""" A more accurate way to infer logNormal distribution with exact mean and variance """
-function inferLogNormal(mean, variance)
+""" A more accurate way to infer logNormal distribution with exact mode and IQR """
+function inferLogNormal(mode, iqr)
     function logNormalParams!(f, v)
-        f[1] = exp(v[1] + v[2]^2 / 2) - mean
-        f[2] = sqrt((exp(v[2]^2) - 1) * exp(2 * v[1] + v[2]^2)) - variance
+        f[1] = exp(v[1] - v[2]^2) - mode
+        f[2] = 2 * exp(v[1]) * sinh(0.6745 * v[2]) - iqr
+        # from Wikipedia and Dewey Lonzo Whaley (ETSU)'s thesis, Eq. 36
     end
-    xs = nlsolve(logNormalParams!, [log(mean), log(variance)]).zero
+    xs = nlsolve(logNormalParams!, [log(mode), log(iqr)]).zero
     return LogNormal(xs[1], xs[2])
 end
 
