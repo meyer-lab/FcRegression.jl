@@ -1,5 +1,5 @@
 """ Import Apr 2022 murine in vitro data """
-function importMurineInVitro(fn = "CHO-mFcgR-apr2022.csv"; subTdivF = true)
+function importMurineInVitro(fn = "CHO-mFcgR-apr2022.csv")
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
     df = stack(df, ["TNP-BSA", "IgG1", "IgG2b", "IgG2c"])
     rename!(df, "variable" => "Subclass")
@@ -8,11 +8,7 @@ function importMurineInVitro(fn = "CHO-mFcgR-apr2022.csv"; subTdivF = true)
     dfCHO = combine(groupby(dfCHO, "Subclass"), "Value" => geocmean => "BaseValue")
     dfn = dropmissing(df[df."Receptor" .!= "CHO", :])
     dfn = innerjoin(dfCHO, dfn, on = "Subclass")
-    if subTdivF
-        dfn."Value" = dfn."Value" .- dfn."BaseValue"  
-    else
-        dfn."Value" = dfn."Value" ./ dfn."BaseValue"
-    end
+    dfn."Value" = dfn."Value" .- dfn."BaseValue"  
     dfn[dfn."Value" .<= 0.5, "Value"] .= 0.5
     return dfn[!, Not("BaseValue")]
 end
@@ -28,7 +24,7 @@ function predictMurine(dfr::DataFrameRow;
     if dfr."Subclass" == "TNP-BSA" || dfr."Affinity" <= 0.0
         return 0.0
     end
-    return polyfc(1e-9, KxStar, dfr."Valency", [recepExp[dfr."Receptor"] * dfr."Expression"], 
+    return polyfc(1e-9, KxStar, dfr."Valency", [recepExp[dfr."Receptor"] * dfr."Expression" / 100], 
         [1.0], reshape([dfr."Affinity"], 1, 1)).Lbound
 end
 
@@ -53,7 +49,7 @@ function predictMurine(df::AbstractDataFrame;
     return df
 end
 
-@model function murineFit(df, values; subTdivF = true)
+@model function murineFit(df, values)
     # Rtot sample
     Rtot = Vector(undef, length(murineFcgR))
     for ii in eachindex(Rtot)
@@ -75,16 +71,14 @@ end
     Kav[!, Not("IgG")] = typeof(Kav[1, 3]).(Kavd)
 
     KxStar ~ truncated(KxStarDist, 1E-18, 1E-9)
-    # conversion factor: subtraction = 6.6, division = 1.62e4
-    if subTdivF
-        conv ~ truncated(LogNormal(log(6.6), 1), 1e-3, 1e3)
-    else
-        conv ~ truncated(LogNormal(log(1.62e4), 2), 1.0, 1e6)
-    end
+    # conversion factor: subtraction = 0.028
+    conv ~ truncated(LogNormal(log(0.028), 2), 1e-6, 1e3)
 
+    
     # fit predictions
-    if all(Rtot .> 0.0) && all(Kavd .> 0.0)
-        df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kav, KxStar = KxStar, conv = conv)
+    if all(Rtot .> 0.0) #&& all(Kavd .> 0.0)
+        df = predictMurine(deepcopy(df); recepExp = Rtotd)
+        #df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kav, KxStar = KxStar, conv = conv)
     else
         df = deepcopy(df)
         df."Predict" .= -1000.0
