@@ -9,10 +9,11 @@ function importMurineInVitro(fn = "CHO-mFcgR-apr2022.csv"; subTdivF = true)
     dfn = dropmissing(df[df."Receptor" .!= "CHO", :])
     dfn = innerjoin(dfCHO, dfn, on = "Subclass")
     if subTdivF
-        dfn."Value" = dfn."Value" .- dfn."BaseValue"
+        dfn."Value" = dfn."Value" .- dfn."BaseValue"  
     else
         dfn."Value" = dfn."Value" ./ dfn."BaseValue"
     end
+    dfn[dfn."Value" .<= 0.5, "Value"] .= 0.5
     return dfn[!, Not("BaseValue")]
 end
 
@@ -33,7 +34,7 @@ end
 
 function predictMurine(df::AbstractDataFrame; 
         Kav = importKav(; murine = true, retdf = true),
-        conv = 1.0,
+        conv = 1.62e4,
         kwargs...)
     # Add affinity information to df
     Kav[Kav."IgG" .== "IgG2a", "IgG"] .= "IgG2c"
@@ -52,7 +53,7 @@ function predictMurine(df::AbstractDataFrame;
     return df
 end
 
-@model function murineFit(df, values)
+@model function murineFit(df, values; subTdivF = true)
     # Rtot sample
     Rtot = Vector(undef, length(murineFcgR))
     for ii in eachindex(Rtot)
@@ -68,18 +69,22 @@ end
     Kavd = zeros(size(Kavm)...)
     for ii in eachindex(Kavm)
         ka = Kavm[ii]
-        kaa = maximum([1e4, ka])
+        kaa = maximum([1e4, ka])    # affinity is at least 1e4
         Kavd[ii] ~ truncated(inferLogNormal(kaa, kaa * 10), 1e2, 1e10)
     end
     Kav[!, Not("IgG")] = typeof(Kav[1, 3]).(Kavd)
 
-    # conversion factor (not fitting valency)
     KxStar ~ truncated(KxStarDist, 1E-18, 1E-9)
-    f33conv ~ truncated(f33conv_dist, 2.0, 10.0)
+    # conversion factor: subtraction = 6.6, division = 1.62e4
+    if subTdivF
+        conv ~ truncated(LogNormal(log(6.6), 1), 1e-3, 1e3)
+    else
+        conv ~ truncated(LogNormal(log(1.62e4), 2), 1.0, 1e6)
+    end
 
     # fit predictions
     if all(Rtot .> 0.0) && all(Kavd .> 0.0)
-        df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kav, KxStar = KxStar, conv = f33conv)
+        df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kav, KxStar = KxStar, conv = conv)
     else
         df = deepcopy(df)
         df."Predict" .= -1000.0
