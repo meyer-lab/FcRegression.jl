@@ -32,7 +32,8 @@ function predictMurine(dfr::DataFrameRow;
 end
 
 function predictMurine(df::AbstractDataFrame; 
-        Kav = importKav(; murine = true, retdf = true), 
+        Kav = importKav(; murine = true, retdf = true),
+        conv = 1.0,
         kwargs...)
     # Add affinity information to df
     Kav[Kav."IgG" .== "IgG2a", "IgG"] .= "IgG2c"
@@ -42,10 +43,11 @@ function predictMurine(df::AbstractDataFrame;
     rename!(dft, "value" => "Affinity")
     df = dft[dft."Receptor" .== dft."variable", Not("variable")]
     df."Predict" .= 0.0
-    for i = 1:size(df)[1]
+    Threads.@threads for i = 1:size(df)[1]
         df[i, "Predict"] = predictMurine(df[i, :]; kwargs...)
     end
     @assert all(isfinite(df[!, "Predict"]))
+    df[!, "Predict"] ./= conv
     df[df."Predict" .< 1.0, "Predict"] .= 1.0
     return df
 end
@@ -62,15 +64,28 @@ end
 
     # Kav sample
     Kav = importKav(; murine = true, retdf = true)
-    Kavd = deepcopy(Kav)
-    for igg in murineIgG
-        for rcp in murineFcgR
-            ka = Kav[Kav."IgG" .== igg, rcp][1]
-            ka = (ka < 1e4) ? 1e4 : ka
-            Kavd[Kavd."IgG" .== igg, rcp] .=  rand(truncated(inferLogNormal(ka, ka * 1e2), 1e2, 1e10))
-            #Kavd[Kavd."IgG" .== igg, rcp] ~ truncated(inferLogNormal(ka, ka * 1e2), 1e2, 1e10)
-        end
+    Kavm = Matrix(Kav[!, Not("IgG")])
+    Kavd = zeros(size(Kavm)...)
+    for ii in eachindex(Kavm)
+        ka = Kavm[ii]
+        kaa = maximum([1e4, ka])
+        Kavd[ii] ~ truncated(inferLogNormal(kaa, kaa * 10), 1e2, 1e10)
+    end
+    Kav[!, Not("IgG")] = typeof(Kav[1, 3]).(Kavd)
+
+    # conversion factor (not fitting valency)
+    KxStar ~ truncated(KxStarDist, 1E-18, 1E-9)
+    f33conv ~ truncated(f33conv_dist, 2.0, 10.0)
+
+    # fit predictions
+    if all(Rtot .> 0.0) && all(Kavd .> 0.0)
+        df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kav, KxStar = KxStar, conv = f33conv)
+    else
+        df = deepcopy(df)
+        df."Predict" .= -1000.0
     end
     
-
+    stdv = std(log.(df."Predict") - log.(values))
+    values ~ MvLogNormal(log.(df."Predict"), stdv * I)
+    nothing
 end
