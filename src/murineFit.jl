@@ -9,6 +9,19 @@ function importMurineInVitro(fn = "CHO-mFcgR-apr2022.csv")
     return sort!(df, ["Receptor", "Subclass"])
 end
 
+""" Priors for murine affinities. Not including IgG3"""
+@memoize function murineKavDist(; regularKav = false)
+    Kav = importKav(; murine = true, retdf = true)
+    Kav = Kav[Kav."IgG" .!= "IgG3", :]
+    function retDist(x; regularKav = regularKav)
+        x = maximum([1e4, x])
+        if regularKav   return x    end
+        return inferLogNormal(x, x * 10)
+    end
+    Kav[!, Not("IgG")] = retDist.(Kav[!, Not("IgG")], regularKav = regularKav)
+    return Kav
+end
+
 const InVitroMurineRcpExp = Dict(
     "FcgRI" => 1e5,
     "FcgRIIB" => 1e7,
@@ -28,7 +41,7 @@ function predictMurine(dfr::DataFrameRow;
 end
 
 function predictMurine(df::AbstractDataFrame; 
-        Kav = importKav(; murine = true, retdf = true),
+        Kav = murineKavDist(; regularKav = true),
         conv = 1.47,
         kwargs...)
     # Add affinity information to df
@@ -50,19 +63,6 @@ function predictMurine(df::AbstractDataFrame;
     return dft
 end
 
-""" Priors for murine affinities. Not including IgG3"""
-@memoize function murineKavDist(; regularKav = false)
-    Kav = importKav(; murine = true, retdf = true)
-    Kav = Kav[Kav."IgG" .!= "IgG3", :]
-    function retDist(x; regularKav = regularKav)
-        x = maximum([1e4, x])
-        if regularKav   return x    end
-        return inferLogNormal(x, x * 10)
-    end
-    Kav[!, Not("IgG")] = retDist.(Kav[!, Not("IgG")])
-    return Kav
-end
-
 @model function murineFit(df, values)
     # Rtot sample
     Rtot = Vector(undef, length(murineFcgR))
@@ -75,7 +75,7 @@ end
 
     # Kav sample
     Kav_dist = Matrix(murineKavDist()[:, Not("IgG")])
-    Kavd = importKav(; murine = true, retdf = true)
+    Kavd = murineKavDist(; regularKav = true)
     Kavd = Kavd[Kavd."IgG" .!= "IgG3", :]
     Kav = Matrix(undef, size(Kav_dist)...)
     for ii in eachindex(Kav)
@@ -84,8 +84,8 @@ end
     Kavd[!, Not("IgG")] = Kav
 
     KxStar ~ truncated(KxStarDist, 1E-18, 1E-9)
-    # conversion factor: subtraction = 0.164
-    conv ~ truncated(LogNormal(log(0.164), 2), 1e-6, 1e3)
+    # conversion factor: subtraction = 1.47
+    conv ~ truncated(LogNormal(log(1.47), 2), 1e-6, 1e3)
 
     # fit predictions
     if all(Rtot .> 0.0) && all(Kav .> 0.0)
