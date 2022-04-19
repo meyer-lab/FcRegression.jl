@@ -1,16 +1,12 @@
 """ Import Apr 2022 murine in vitro data """
 function importMurineInVitro(fn = "CHO-mFcgR-apr2022.csv")
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
-    df = stack(df, ["TNP-BSA", "IgG1", "IgG2b", "IgG2c"])
+    df[!, ["IgG1", "IgG2b", "IgG2c"]] .-= df[!, "TNP-BSA"]
+    df = stack(df[!, Not("TNP-BSA")], ["IgG1", "IgG2b", "IgG2c"])
     rename!(df, "variable" => "Subclass")
     rename!(df, "value" => "Value")
-    dfCHO = dropmissing(df[df."Receptor" .== "CHO", Not("Expression")])
-    dfCHO = combine(groupby(dfCHO, "Subclass"), "Value" => geocmean => "BaseValue")
-    dfn = dropmissing(df[df."Receptor" .!= "CHO", :])
-    dfn = innerjoin(dfCHO, dfn, on = "Subclass")
-    dfn."Value" = dfn."Value" .- dfn."BaseValue"  
-    dfn[dfn."Value" .<= 0.5, "Value"] .= 0.5
-    return dfn[!, Not("BaseValue")]
+    df = dropmissing(df[df."Receptor" .!= "CHO", :])
+    return sort!(df, ["Receptor", "Subclass"])
 end
 
 function predictMurine(dfr::DataFrameRow; 
@@ -34,19 +30,27 @@ function predictMurine(df::AbstractDataFrame;
         kwargs...)
     # Add affinity information to df
     Kav[Kav."IgG" .== "IgG2a", "IgG"] .= "IgG2c"
-    push!(Kav, ["TNP-BSA", 0.0, 0.0, 0.0, 0.0])
     dft = innerjoin(df, Kav, on = "Subclass" => "IgG")
     dft = stack(dft, murineFcgR)
     rename!(dft, "value" => "Affinity")
-    df = dft[dft."Receptor" .== dft."variable", Not("variable")]
-    df."Predict" .= 0.0
-    Threads.@threads for i = 1:size(df)[1]
-        df[i, "Predict"] = predictMurine(df[i, :]; kwargs...)
+    dft = dft[dft."Receptor" .== dft."variable", Not("variable")]
+    sort!(dft, ["Receptor", "Subclass"])
+    @assert df."Value" == dft."Value"   # must ensure the right order
+    dft."Predict" = [predictMurine(dft[i, :]; kwargs...) for i = 1:size(dft)[1]]
+    @assert all(isfinite(dft[!, "Predict"]))
+    dft[!, "Predict"] ./= conv
+    dft[dft."Predict" .< 1.0, "Predict"] .= 1.0
+    return dft
+end
+
+@memoize function murineKavDist()
+    Kav = importKav(; murine = true, retdf = true)
+    function retDist(x)
+        x = maximum([1e4, x])
+        return inferLogNormal(x, x * 10)
     end
-    @assert all(isfinite(df[!, "Predict"]))
-    df[!, "Predict"] ./= conv
-    df[df."Predict" .< 1.0, "Predict"] .= 1.0
-    return df
+    Kav[!, Not("IgG")] = retDist.(Kav[!, Not("IgG")])
+    return Kav
 end
 
 @model function murineFit(df, values)
@@ -60,25 +64,21 @@ end
     Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(Rtot)])
 
     # Kav sample
-    Kav = importKav(; murine = true, retdf = true)
-    Kavm = Matrix(Kav[!, Not("IgG")])
-    Kavd = zeros(size(Kavm)...)
-    for ii in eachindex(Kavm)
-        ka = Kavm[ii]
-        kaa = maximum([1e4, ka])    # affinity is at least 1e4
-        Kavd[ii] ~ truncated(inferLogNormal(kaa, kaa * 10), 1e2, 1e10)
+    Kav_dist = Matrix(murineKavDist()[:, Not("IgG")])
+    Kavd = importKav(; murine = true, retdf = true)
+    Kav = Matrix(undef, size(Kav_dist)...)
+    for ii in eachindex(Kav)
+        Kav[ii] ~ truncated(Kav_dist[ii], 1e2, 1E10)
     end
-    Kav[!, Not("IgG")] = typeof(Kav[1, 3]).(Kavd)
+    Kavd[!, Not("IgG")] = Kav
 
     KxStar ~ truncated(KxStarDist, 1E-18, 1E-9)
-    # conversion factor: subtraction = 0.028
-    conv ~ truncated(LogNormal(log(0.028), 2), 1e-6, 1e3)
+    # conversion factor: subtraction = 0.164
+    conv ~ truncated(LogNormal(log(0.164), 2), 1e-6, 1e3)
 
-    
     # fit predictions
-    if all(Rtot .> 0.0) #&& all(Kavd .> 0.0)
-        df = predictMurine(deepcopy(df); recepExp = Rtotd)
-        #df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kav, KxStar = KxStar, conv = conv)
+    if all(Rtot .> 0.0) && all(Kav .> 0.0)
+        df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, conv = conv)
     else
         df = deepcopy(df)
         df."Predict" .= -1000.0
