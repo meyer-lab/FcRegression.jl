@@ -10,7 +10,7 @@ function importMurineInVitro(fn = "CHO-mFcgR-apr2022.csv")
 end
 
 """ Priors for murine affinities. Not including IgG3"""
-@memoize function murineKavDist(; regularKav = false)
+@memoize function murineKavDist(; regularKav = false, retdf = true)
     Kav = importKav(; murine = true, retdf = true)
     Kav = Kav[Kav."IgG" .!= "IgG3", :]
     function retDist(x; regularKav = regularKav)
@@ -19,6 +19,9 @@ end
         return inferLogNormal(x, x * 10)
     end
     Kav[!, Not("IgG")] = retDist.(Kav[!, Not("IgG")], regularKav = regularKav)
+    if !retdf
+        return Matrix(Kav[!, Not("IgG")])
+    end
     return Kav
 end
 
@@ -98,4 +101,70 @@ end
     stdv = std(log.(df."Predict") - log.(values))
     values ~ MvLogNormal(log.(df."Predict"), stdv * I)
     nothing
+end
+
+function runMurineMCMC(fname = "MCMC_murine_nuts300_0419.dat")
+    if isfile(fname)
+        return deserialize(fname)
+    end
+    df = importMurineInVitro()
+    m = murineFit(df, df."Value")
+    c = sample(m, NUTS(), 300)
+    f = serialize(fname, c)
+    return c
+end
+
+function plot_murineMCMC_dists(c = runMurineMCMC())
+    setGadflyTheme()
+
+    # Plot Kav's
+    Kav = murineKavDist()
+    ligg, lfcr = size(Kav)
+    lfcr -= 1
+    Kav_pls = Matrix{Plot}(undef, ligg, lfcr)
+    for ii in eachindex(Kav_pls)
+        IgGname = Kav."IgG"[(ii - 1) % ligg + 1]
+        FcRname = names(Kav)[2:end][(ii - 1) ÷ ligg + 1]
+        name = IgGname * " to " * FcRname
+        Kav_pls[ii] = plotHistPriorDist(c["Kav[$ii]"].data, Kav[(ii-1)%ligg+1, FcRname], name)
+    end
+    Kav_plot = plotGrid((ligg, lfcr), permutedims(Kav_pls, (2, 1)); sublabels = false)
+    draw(SVG("MCMCmurine_Kav.svg", 16inch, 13inch), Kav_plot)
+    draw(PDF("MCMCmurine_Kav.pdf", 16inch, 13inch), Kav_plot)
+
+    # Plot Rtot's
+    Rtot_pls = Vector{Plot}(undef, lfcr)
+    Rtot_dist = [inferLogNormal(InVitroMurineRcpExp[fcr], InVitroMurineRcpExp[fcr] * 1e2) 
+                    for fcr in names(Kav)[2:end]]
+    for ii in eachindex(Rtot_pls)
+        FcRname = names(Kav)[2:end][ii]
+        Rtot_pls[ii] = plotHistPriorDist(c["Rtot[$ii]"].data, Rtot_dist[ii], FcRname)
+    end
+    Rtot_plot = plotGrid((1, lfcr), Rtot_pls; sublabels = false)
+    draw(SVG("MCMCmurine_Rtot.svg", 16inch, 4inch), Rtot_plot)
+    draw(PDF("MCMCmurine_Rtot.pdf", 16inch, 4inch), Rtot_plot)
+
+    # Plot f4, f33, KxStar
+    other_pls = Vector{Plot}(undef, 2)
+    other_pls[1] = plotHistPriorDist(c["KxStar"].data, KxStarDist, "K<sub>x</sub><sup>*</sup>")
+    other_pls[2] = plotHistPriorDist(c["conv"].data, LogNormal(log(1.47), 2), "Conversion factor")
+    other_plot = plotGrid((1, 2), other_pls; sublabels = false)
+    draw(SVG("MCMCmurine_others.svg", 12inch, 4inch), other_plot)
+    draw(PDF("MCMCmurine_others.pdf", 12inch, 4inch), other_plot)
+end
+
+function MCMC_params_predict_plot(c = runMurineMCMC(), df = importMurineInVitro(); kwargs...)
+    # Extract MCMC results
+    Rtot = [median(c["Rtot[$i]"].data) for i = 1:length(murineFcgR)]
+    Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(murineFcgR)])
+
+    Kavd = murineKavDist(; regularKav = true)
+    Kav = [median(c["Kav[$i]"].data) for i = 1:length(murineKavDist(; regularKav = true, retdf = false))]
+    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
+
+    KxStar = median(c["KxStar"].data)
+    conv = median(c["conv"].data)
+
+    ndf = predictMurine(df; Kav = Kavd, conv=conv, KxStar=KxStar, recepExp = Rtotd)
+    plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Receptor", shape = "Subclass", kwargs...)
 end
