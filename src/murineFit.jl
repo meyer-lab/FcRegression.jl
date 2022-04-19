@@ -10,7 +10,7 @@ function importMurineInVitro(fn = "CHO-mFcgR-apr2022.csv")
 end
 
 """ Priors for murine affinities. Not including IgG3"""
-@memoize function murineKavDist(; regularKav = false, retdf = true)
+@memoize function murineKavDist_nested(; regularKav = false, retdf = true)
     Kav = importKav(; murine = true, retdf = true)
     Kav = Kav[Kav."IgG" .!= "IgG3", :]
     function retDist(x; regularKav = regularKav)
@@ -24,6 +24,8 @@ end
     end
     return Kav
 end
+
+murineKavDist(; kwargs...) = deepcopy(murineKavDist_nested(; kwargs...))
 
 const InVitroMurineRcpExp = Dict(
     "FcgRI" => 1e5,
