@@ -9,14 +9,17 @@ function importMurineInVitro(fn = "CHO-mFcgR-apr2022.csv")
     return sort!(df, ["Receptor", "Subclass"])
 end
 
+const InVitroMurineRcpExp = Dict(
+    "FcgRI" => 1e5,
+    "FcgRIIB" => 1e7,
+    "FcgRIII" => 1e6,
+    "FcgRIV" => 1e5,
+)
+
 function predictMurine(dfr::DataFrameRow; 
         KxStar = KxConst, 
-        recepExp = Dict(
-            "FcgRI" => 1e5,
-            "FcgRIIB" => 1e5,
-            "FcgRIII" => 1e5,
-            "FcgRIV" => 1e5,
-        ))
+        recepExp = InVitroMurineRcpExp,
+    )
     if dfr."Subclass" == "TNP-BSA" || dfr."Affinity" <= 0.0
         return 0.0
     end
@@ -26,7 +29,7 @@ end
 
 function predictMurine(df::AbstractDataFrame; 
         Kav = importKav(; murine = true, retdf = true),
-        conv = 1.62e4,
+        conv = 1.47,
         kwargs...)
     # Add affinity information to df
     Kav[Kav."IgG" .== "IgG2a", "IgG"] .= "IgG2c"
@@ -47,10 +50,13 @@ function predictMurine(df::AbstractDataFrame;
     return dft
 end
 
-@memoize function murineKavDist()
+""" Priors for murine affinities. Not including IgG3"""
+@memoize function murineKavDist(; regularKav = false)
     Kav = importKav(; murine = true, retdf = true)
-    function retDist(x)
+    Kav = Kav[Kav."IgG" .!= "IgG3", :]
+    function retDist(x; regularKav = regularKav)
         x = maximum([1e4, x])
+        if regularKav   return x    end
         return inferLogNormal(x, x * 10)
     end
     Kav[!, Not("IgG")] = retDist.(Kav[!, Not("IgG")])
@@ -61,15 +67,16 @@ end
     # Rtot sample
     Rtot = Vector(undef, length(murineFcgR))
     for ii in eachindex(Rtot)
-        Rtot[ii] ~ truncated(LogNormal(18, 3), 100, 1E8)
+        ref = InVitroMurineRcpExp[murineFcgR[ii]]
+        Rtot[ii] ~ truncated(inferLogNormal(ref, ref * 1e2), 1e3, 1e9)
         # Treat receptor amount as unknown with a wide prior
-        # peak at ~10^5 with width ~10^4 to ~10^(6.5)
     end
     Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(Rtot)])
 
     # Kav sample
     Kav_dist = Matrix(murineKavDist()[:, Not("IgG")])
     Kavd = importKav(; murine = true, retdf = true)
+    Kavd = Kavd[Kavd."IgG" .!= "IgG3", :]
     Kav = Matrix(undef, size(Kav_dist)...)
     for ii in eachindex(Kav)
         Kav[ii] ~ truncated(Kav_dist[ii], 1e2, 1E10)
