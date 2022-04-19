@@ -36,7 +36,11 @@ function predictMurine(df::AbstractDataFrame;
     dft = dft[dft."Receptor" .== dft."variable", Not("variable")]
     sort!(dft, ["Receptor", "Subclass"])
     @assert df."Value" == dft."Value"   # must ensure the right order
-    dft."Predict" = [predictMurine(dft[i, :]; kwargs...) for i = 1:size(dft)[1]]
+    preds = Vector(undef, size(dft)[1])
+    @Threads.threads for i = 1:size(dft)[1]
+        preds[i] = predictMurine(dft[i, :]; kwargs...)
+    end
+    dft."Predict" = preds
     @assert all(isfinite(dft[!, "Predict"]))
     dft[!, "Predict"] ./= conv
     dft[dft."Predict" .< 1.0, "Predict"] .= 1.0
