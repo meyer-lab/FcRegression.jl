@@ -52,7 +52,7 @@ end
 
 function predictMurine(df::AbstractDataFrame; 
         Kav = murineKavDist(; regularKav = true),
-        conv = 1.47,
+        conv = 20561,
         kwargs...)
     # Add affinity information to df
     Kav[Kav."IgG" .== "IgG2a", "IgG"] .= "IgG2c"
@@ -69,7 +69,7 @@ function predictMurine(df::AbstractDataFrame;
     dft."Predict" = preds
     @assert all(isfinite(dft[!, "Predict"]))
     dft[!, "Predict"] ./= conv
-    dft[dft."Predict" .< 1.0, "Predict"] .= 1.0
+    dft[dft."Predict" .<= 0.0, "Predict"] .= 1e-6
     return dft
 end
 
@@ -94,8 +94,8 @@ end
     Kavd[!, Not("IgG")] = Kav
 
     KxStar ~ truncated(KxStarDist, 1E-18, 1E-9)
-    # conversion factor: subtraction = 1.47
-    conv ~ truncated(LogNormal(log(1.47), 2), 1e-6, 1e3)
+    # conversion factor: 20561
+    conv ~ truncated(inferLogNormal(20561, 20561), 1e-6, 1e8)
 
     # fit predictions
     if all(Rtot .> 0.0) && all(Kav .> 0.0)
@@ -154,7 +154,7 @@ function plot_murineMCMC_dists(c = runMurineMCMC())
     # Plot f4, f33, KxStar
     other_pls = Vector{Plot}(undef, 2)
     other_pls[1] = plotHistPriorDist(c["KxStar"].data, KxStarDist, "K<sub>x</sub><sup>*</sup>")
-    other_pls[2] = plotHistPriorDist(c["conv"].data, LogNormal(log(1.47), 2), "Conversion factor")
+    other_pls[2] = plotHistPriorDist(c["conv"].data, inferLogNormal(20561, 20561), "Conversion factor")
     other_plot = plotGrid((1, 2), other_pls; sublabels = false)
     draw(SVG("MCMCmurine_others.svg", 12inch, 4inch), other_plot)
     draw(PDF("MCMCmurine_others.pdf", 12inch, 4inch), other_plot)

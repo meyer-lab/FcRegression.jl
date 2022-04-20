@@ -5,6 +5,6 @@ function figure3()
     ndf = predictMurine(df)
     pl = plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", 
         color = "Receptor", shape = "Subclass", 
-        clip2one = false, R2pos = (-1.5, 6), 
+        clip2one = false, R2pos = (-1.5, 1), 
         title = "Raw murine prediction without fitting")
 end

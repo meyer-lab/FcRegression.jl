@@ -230,7 +230,7 @@ function inferLogNormal(mode, iqr)
         f[2] = 2 * exp(v[1]) * sinh(0.6745 * v[2]) - iqr
         # from Wikipedia and Dewey Lonzo Whaley (ETSU)'s thesis, Eq. 36
     end
-    xs = nlsolve(logNormalParams!, [log(mode), log(iqr)]).zero
+    xs = nlsolve(logNormalParams!, [log(mode), 1.0]).zero
     return LogNormal(xs[1], xs[2])
 end
 
