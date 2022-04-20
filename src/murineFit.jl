@@ -1,11 +1,16 @@
 """ Import Apr 2022 murine in vitro data """
 function importMurineInVitro(fn = "CHO-mFcgR-apr2022.csv")
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
-    df[!, ["IgG1", "IgG2b", "IgG2c"]] .-= df[!, "TNP-BSA"]
-    df = stack(df[!, Not("TNP-BSA")], ["IgG1", "IgG2b", "IgG2c"])
+    df = df[df."Experiment" .!= 5, :]   # throw away Exp. 5
+    df[!, ["IgG1", "IgG2b", "IgG2c"]] .-= df[!, "TNP-BSA"]  # subtract TNP-BSA control from meas
+    df = df[df."Receptor" .!= "CHO", Not("TNP-BSA")]
+    df = dropmissing(stack(df, ["IgG1", "IgG2b", "IgG2c"]))
     rename!(df, "variable" => "Subclass")
     rename!(df, "value" => "Value")
-    df = dropmissing(df[df."Receptor" .!= "CHO", :])
+    baseline = combine(groupby(df, "Experiment"), "Value" => geomean => "Baseline")
+    df = innerjoin(df, baseline, on = "Experiment")
+    df[!, "Value"] ./= df[!, "Baseline"]    # normalize fluorescence by daily geomean
+    df = df[!, Not(["Experiment", "Baseline"])]
     return sort!(df, ["Receptor", "Subclass"])
 end
 
