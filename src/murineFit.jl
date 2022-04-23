@@ -160,7 +160,11 @@ function plot_murineMCMC_dists(c = runMurineMCMC())
     draw(PDF("MCMCmurine_others.pdf", 12inch, 4inch), other_plot)
 end
 
-function MCMC_params_predict_plot(c = runMurineMCMC(), df = importMurineInVitro(); kwargs...)
+function murineMCMC_params_predict_plot(
+        c = runMurineMCMC(), 
+        df = importMurineInVitro(); 
+        kwargs...
+    )
     # Extract MCMC results
     Rtot = [median(c["Rtot[$i]"].data) for i = 1:length(murineFcgR)]
     Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(murineFcgR)])
@@ -174,4 +178,23 @@ function MCMC_params_predict_plot(c = runMurineMCMC(), df = importMurineInVitro(
 
     ndf = predictMurine(df; Kav = Kavd, conv=conv, KxStar=KxStar, recepExp = Rtotd)
     plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Receptor", shape = "Subclass", kwargs...)
+end
+
+function MAPmurineLikelihood()
+    df = importMurineInVitro()
+    m = murineFit(df, df."Value")
+    opts = Optim.Options(iterations = 1000, show_every = 10, show_trace = true)
+    opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
+    x = opt.values
+
+    Rtot = Dict([rcp => x[Symbol("Rtot[$i]")] for (i, rcp) in enumerate(murineFcgR)])
+    Kav = murineKavDist(; regularKav = true, retdf = true)
+    Kav[!, Not("IgG")] = reshape([x[Symbol("Kav[$i]")] for i = 1:12], 3, 4)
+    KxStar, conv = x[:KxStar], x[:conv]
+    
+    ndf = predictMurine(df; Kav = Kav, recepExp = Rtot, KxStar = KxStar, conv = conv)
+    pl = plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", 
+        color = "Receptor", shape = "Subclass", clip2one = false, 
+        R2pos = (-0.5, -1.2), title = "Murine MAP fitting results")
+    return pl
 end
