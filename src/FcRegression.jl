@@ -50,7 +50,7 @@ function figureAll()
     figure1()
     figure2()
     figure3()
-    figure5()
+    figure4()
     figure6()
 
     figureS1()
