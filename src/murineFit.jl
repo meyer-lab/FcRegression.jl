@@ -20,7 +20,9 @@ end
     Kav = Kav[Kav."IgG" .!= "IgG3", :]
     function retDist(x; regularKav = regularKav)
         x = maximum([1e4, x])
-        if regularKav   return x    end
+        if regularKav
+            return x
+        end
         return inferLogNormal(x, x * 10)
     end
     Kav[!, Not("IgG")] = retDist.(Kav[!, Not("IgG")], regularKav = regularKav)
@@ -32,28 +34,16 @@ end
 
 murineKavDist(; kwargs...) = deepcopy(murineKavDist_nested(; kwargs...))
 
-const InVitroMurineRcpExp = Dict(
-    "FcgRI" => 1e5,
-    "FcgRIIB" => 1e7,
-    "FcgRIII" => 1e6,
-    "FcgRIV" => 1e5,
-)
+const InVitroMurineRcpExp = Dict("FcgRI" => 1e5, "FcgRIIB" => 1e7, "FcgRIII" => 1e6, "FcgRIV" => 1e5)
 
-function predictMurine(dfr::DataFrameRow; 
-        KxStar = KxConst, 
-        recepExp = InVitroMurineRcpExp,
-    )
+function predictMurine(dfr::DataFrameRow; KxStar = KxConst, recepExp = InVitroMurineRcpExp)
     if dfr."Subclass" == "TNP-BSA" || dfr."Affinity" <= 0.0
         return 0.0
     end
-    return polyfc(1e-9, KxStar, dfr."Valency", [recepExp[dfr."Receptor"] * dfr."Expression" / 100], 
-        [1.0], reshape([dfr."Affinity"], 1, 1)).Lbound
+    return polyfc(1e-9, KxStar, dfr."Valency", [recepExp[dfr."Receptor"] * dfr."Expression" / 100], [1.0], reshape([dfr."Affinity"], 1, 1)).Lbound
 end
 
-function predictMurine(df::AbstractDataFrame; 
-        Kav = murineKavDist(; regularKav = true),
-        conv = 20561,
-        kwargs...)
+function predictMurine(df::AbstractDataFrame; Kav = murineKavDist(; regularKav = true), conv = 20561, kwargs...)
     # Add affinity information to df
     Kav[Kav."IgG" .== "IgG2a", "IgG"] .= "IgG2c"
     dft = innerjoin(df, Kav, on = "Subclass" => "IgG")
@@ -63,7 +53,7 @@ function predictMurine(df::AbstractDataFrame;
     sort!(dft, ["Receptor", "Subclass"])
     @assert df."Value" == dft."Value"   # must ensure the right order
     preds = Vector(undef, size(dft)[1])
-    @Threads.threads for i = 1:size(dft)[1]
+    Threads.@threads for i = 1:size(dft)[1]
         preds[i] = predictMurine(dft[i, :]; kwargs...)
     end
     dft."Predict" = preds
@@ -104,7 +94,7 @@ end
         df = deepcopy(df)
         df."Predict" .= -1000.0
     end
-    
+
     stdv = std(log.(df."Predict") - log.(values))
     values ~ MvLogNormal(log.(df."Predict"), stdv * I)
     nothing
@@ -133,7 +123,7 @@ function plot_murineMCMC_dists(c = runMurineMCMC())
         IgGname = Kav."IgG"[(ii - 1) % ligg + 1]
         FcRname = names(Kav)[2:end][(ii - 1) ÷ ligg + 1]
         name = IgGname * " to " * FcRname
-        Kav_pls[ii] = plotHistPriorDist(c["Kav[$ii]"].data, Kav[(ii-1)%ligg+1, FcRname], name)
+        Kav_pls[ii] = plotHistPriorDist(c["Kav[$ii]"].data, Kav[(ii - 1) % ligg + 1, FcRname], name)
     end
     Kav_plot = plotGrid((ligg, lfcr), permutedims(Kav_pls, (2, 1)); sublabels = false)
     draw(SVG("MCMCmurine_Kav.svg", 16inch, 13inch), Kav_plot)
@@ -141,8 +131,7 @@ function plot_murineMCMC_dists(c = runMurineMCMC())
 
     # Plot Rtot's
     Rtot_pls = Vector{Plot}(undef, lfcr)
-    Rtot_dist = [inferLogNormal(InVitroMurineRcpExp[fcr], InVitroMurineRcpExp[fcr] * 1e2) 
-                    for fcr in names(Kav)[2:end]]
+    Rtot_dist = [inferLogNormal(InVitroMurineRcpExp[fcr], InVitroMurineRcpExp[fcr] * 1e2) for fcr in names(Kav)[2:end]]
     for ii in eachindex(Rtot_pls)
         FcRname = names(Kav)[2:end][ii]
         Rtot_pls[ii] = plotHistPriorDist(c["Rtot[$ii]"].data, Rtot_dist[ii], FcRname)
@@ -160,11 +149,7 @@ function plot_murineMCMC_dists(c = runMurineMCMC())
     draw(PDF("MCMCmurine_others.pdf", 12inch, 4inch), other_plot)
 end
 
-function murineMCMC_params_predict_plot(
-        c = runMurineMCMC(), 
-        df = importMurineInVitro(); 
-        kwargs...
-    )
+function murineMCMC_params_predict_plot(c = runMurineMCMC(), df = importMurineInVitro(); kwargs...)
     # Extract MCMC results
     Rtot = [median(c["Rtot[$i]"].data) for i = 1:length(murineFcgR)]
     Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(murineFcgR)])
@@ -176,7 +161,7 @@ function murineMCMC_params_predict_plot(
     KxStar = median(c["KxStar"].data)
     conv = median(c["conv"].data)
 
-    ndf = predictMurine(df; Kav = Kavd, conv=conv, KxStar=KxStar, recepExp = Rtotd)
+    ndf = predictMurine(df; Kav = Kavd, conv = conv, KxStar = KxStar, recepExp = Rtotd)
     plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Receptor", shape = "Subclass", kwargs...)
 end
 
@@ -191,10 +176,17 @@ function MAPmurineLikelihood()
     Kav = murineKavDist(; regularKav = true, retdf = true)
     Kav[!, Not("IgG")] = reshape([x[Symbol("Kav[$i]")] for i = 1:12], 3, 4)
     KxStar, conv = x[:KxStar], x[:conv]
-    
+
     ndf = predictMurine(df; Kav = Kav, recepExp = Rtot, KxStar = KxStar, conv = conv)
-    pl = plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", 
-        color = "Receptor", shape = "Subclass", clip2one = false, 
-        R2pos = (-0.5, -1.2), title = "Murine MAP fitting results")
+    pl = plotPredvsMeasured(
+        ndf;
+        xx = "Value",
+        yy = "Predict",
+        color = "Receptor",
+        shape = "Subclass",
+        clip2one = false,
+        R2pos = (-0.5, -1.2),
+        title = "Murine MAP fitting results",
+    )
     return pl
 end
