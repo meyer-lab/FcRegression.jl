@@ -1,5 +1,17 @@
 """ Figure 3: fitted murine affinities """
 
+function plot_murine_ADVI_affinity(q = runMurineMCMC())
+    s = rand(q, 100000)[5:16, :]
+    Kav_priors = murineKavDist()
+    pls = Vector{Union{Gadfly.Plot, Context}}(undef, 3)
+    for (ii, igg) in enumerate(Kav_priors[!, "IgG"])
+        priors = reshape(Matrix(Kav_priors[Kav_priors."IgG" .== igg, Not("IgG")]), :)
+        posts = DataFrame(Matrix(s[(ii*4-3):(ii*4), :]'), names(Kav_priors)[2:end])
+        pls[ii] = dist_violin_plot(posts, priors; title = "m$igg Affinities Distributions")
+    end
+    return pls
+end
+
 function figure3()
     df = importMurineInVitro()
     ndf = predictMurine(df)
@@ -9,7 +21,7 @@ function figure3()
         title = "Raw murine prediction without fitting")
     pl2 = MAPmurineLikelihood()
 
-    pp = plotGrid((1, 2), [pl1 ,pl2])
+    pp = plotGrid((1, 2), [pl1, pl2])
 
     #draw(SVG("figure2.svg", 6inch, 3inch), pp)
     draw(PDF("figure3.pdf", 6inch, 3inch), pp)

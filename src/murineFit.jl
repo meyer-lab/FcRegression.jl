@@ -89,8 +89,8 @@ end
     Kavd = Kavd[Kavd."IgG" .!= "IgG3", :]
     Kav = Matrix(undef, size(Kav_dist)...)
     for ii in eachindex(Kav)
-            Kav[ii] ~ truncated(Kav_dist[ii], 1e2, 1E10)
-        end
+        Kav[ii] ~ truncated(Kav_dist[ii], 1e2, 1E10)
+    end
     Kavd[!, Not("IgG")] = Kav
 
     KxStar ~ truncated(KxStarDist, 1E-18, 1E-9)
@@ -130,14 +130,14 @@ function plot_murineMCMC_dists(c::Union{Chains, MultivariateDistribution} = runM
     lfcr -= 1
     Kav_pls = Matrix{Plot}(undef, ligg, lfcr)
     if c isa MultivariateDistribution
-        cc = rand(c, 100000)
+        cc = rand(c, 100_000)
         @assert size(c)[1] == 18
     end
     for ii in eachindex(Kav_pls)
         IgGname = Kav."IgG"[(ii - 1) % ligg + 1]
         FcRname = names(Kav)[2:end][(ii - 1) ÷ ligg + 1]
         name = IgGname * " to " * FcRname
-        dat = (c isa Chains) ? c["Kav[$ii]"].data : cc[2+ii, :]  # 5-16 are Kav's
+        dat = (c isa Chains) ? c["Kav[$ii]"].data : cc[4+ii, :]  # 5-16 are Kav's
         Kav_pls[ii] = plotHistPriorDist(dat, Kav[(ii-1)%ligg+1, FcRname], name)
     end
     Kav_plot = plotGrid((ligg, lfcr), permutedims(Kav_pls, (2, 1)); sublabels = false)
@@ -204,7 +204,7 @@ function MAPmurineLikelihood()
     pl = plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", 
         color = "Receptor", shape = "Subclass", clip2one = false, 
         R2pos = (-0.5, -1.2), title = "Murine MAP fitting results")
-    return pl
+    return pl, [Rtot, Kav, KxStar, conv]
 end
 
 function murineADVI_predict_plot(q, df = importMurineInVitro())
@@ -220,16 +220,4 @@ function murineADVI_predict_plot(q, df = importMurineInVitro())
     return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", 
         color = "Receptor", shape = "Subclass", clip2one = false, 
         R2pos = (0, -1.2), title = "Murine fitting with ADVI (sampled median)")
-end
-
-function plot_murine_ADVI_affinity(q = runMurineMCMC())
-    s = rand(q, 100000)[5:16, :]
-    Kav_priors = murineKavDist()
-    pls = Vector{Union{Gadfly.Plot, Context}}(undef, 3)
-    for (ii, igg) in enumerate(Kav_priors[!, "IgG"])
-        priors = reshape(Matrix(Kav_priors[Kav_priors."IgG" .== igg, Not("IgG")]), :)
-        posts = DataFrame(Matrix(s[(ii*4-3):(ii*4), :]'), names(Kav_priors)[2:end])
-        pls[ii] = dist_violin_plot(posts, priors; title = "m$igg Affinities Distributions")
-    end
-    return pls
 end
