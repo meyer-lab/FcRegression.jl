@@ -14,7 +14,7 @@ function plotPredvsMeasured(
     clip2one = true,
 )
     setGadflyTheme()
-    
+
     df = deepcopy(df)
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
     if clip2one
