@@ -4,9 +4,7 @@ function importMurineInVitro(fn = "CHO-mFcgR-apr2022.csv")
     df = df[df."Experiment" .!= 5, :]   # throw away Exp. 5
     df[!, ["IgG1", "IgG2b", "IgG2c"]] .-= df[!, "TNP-BSA"]  # subtract TNP-BSA control from meas
     df = df[df."Receptor" .!= "CHO", Not("TNP-BSA")]
-    df = dropmissing(stack(df, ["IgG1", "IgG2b", "IgG2c"]))
-    rename!(df, "variable" => "Subclass")
-    rename!(df, "value" => "Value")
+    df = dropmissing(stack(df, ["IgG1", "IgG2b", "IgG2c"], variable_name = "Subclass", value_name = "Value"))
     baseline = combine(groupby(df, "Experiment"), "Value" => geomean => "Baseline")
     df = innerjoin(df, baseline, on = "Experiment")
     df[!, "Value"] ./= df[!, "Baseline"]    # normalize fluorescence by daily geomean
@@ -197,4 +195,41 @@ function MAPmurineLikelihood()
         color = "Receptor", shape = "Subclass", clip2one = false, 
         R2pos = (-0.5, -1.2), title = "Murine MAP fitting results")
     return pl
+end
+
+
+function importMurineLeukocyte(fn = "leukocyte-apr2022.csv")
+    df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
+    #df = df[df."Cell" .!= "Tcell", :]   # throw away T cells
+    df = df[df."Experiment" .!= 7, :]   # throw away Exp. 7
+    df[!, ["IgG1", "IgG2b", "IgG2c"]] .-= df[!, "TNP-BSA"]  # subtract TNP-BSA control from meas
+    df = df[!, Not("TNP-BSA")]
+    df = dropmissing(stack(df, ["IgG1", "IgG2b", "IgG2c"], variable_name = "Subclass", value_name = "Value"))
+    df[df."Value" .< 1.0, "Value"] .= 1.0   # clip values to 1.0
+    baseline = combine(groupby(df, "Experiment"), "Value" => geomean => "Baseline")
+    df = innerjoin(df, baseline, on = "Experiment")
+    df[!, "Value"] ./= df[!, "Baseline"]    # normalize fluorescence by daily geomean
+    df = df[!, Not(["Experiment", "Baseline"])]
+    return sort!(df, ["Cell", "Subclass", "Valency"])
+end
+
+function predictLeukocyte(dfr::DataFrameRow;
+        KxStar = KxConst,
+        Kav = importKav(; murine = true, retdf = true),)
+    igg = dfr."Subclass"
+    igg = (igg == "IgG2c") ? "IgG2a" : igg
+    Kav_vs = Matrix(Kav[Kav."IgG" .== igg, Not("IgG")])
+    Rtot_vs = Vector(dfr[murineFcgR])
+    return polyfc(1e-9, KxStar, dfr."Valency", Rtot_vs, [1.0], Kav_vs).Lbound
+end
+
+function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte();
+        Kav = importKav(; murine = true, retdf = true),
+        kwargs...)
+    Rtot = importRtot(; murine = true, retdf = true, cellTypes = unique(df."Cell"))
+    Rtot = stack(Rtot, Not("Receptor"), variable_name = "Cell", value_name = "Abundance")
+    Rtot = dropmissing(unstack(Rtot, "Cell", "Receptor", "Abundance"))
+    rdf = innerjoin(df, Rtot, on = "Cell")
+
+
 end
