@@ -215,7 +215,8 @@ end
 
 function predictLeukocyte(dfr::DataFrameRow;
         KxStar = KxConst,
-        Kav = importKav(; murine = true, retdf = true),)
+        Kav = importKav(; murine = true, retdf = true)
+    )
     igg = dfr."Subclass"
     igg = (igg == "IgG2c") ? "IgG2a" : igg
     Kav_vs = Matrix(Kav[Kav."IgG" .== igg, Not("IgG")])
@@ -223,13 +224,23 @@ function predictLeukocyte(dfr::DataFrameRow;
     return polyfc(1e-9, KxStar, dfr."Valency", Rtot_vs, [1.0], Kav_vs).Lbound
 end
 
-function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte();
-        Kav = importKav(; murine = true, retdf = true),
-        kwargs...)
+function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(); kwargs...)
     Rtot = importRtot(; murine = true, retdf = true, cellTypes = unique(df."Cell"))
     Rtot = stack(Rtot, Not("Receptor"), variable_name = "Cell", value_name = "Abundance")
     Rtot = dropmissing(unstack(Rtot, "Cell", "Receptor", "Abundance"))
     rdf = innerjoin(df, Rtot, on = "Cell")
+    sort!(rdf, ["Cell", "Subclass", "Valency"])
+    @assert df."Value" == rdf."Value"
+    preds = Vector(undef, size(rdf)[1])
+    @Threads.threads for i = 1:size(rdf)[1]
+        preds[i] = predictLeukocyte(rdf[i, :]; kwargs...)
+    end
+    rdf."Predict" = preds
+    @assert all(isfinite(rdf[!, "Predict"]))
+    rdf[rdf."Predict" .<= 0.0, "Predict"] .= 1e-8
+    rdf = rdf[!, Not(murineFcgR)]
 
-
+    # in lieu of conversion factor, for now
+    rdf."Predict" ./= geomean(rdf."Predict") / geomean(rdf."Value")
+    return rdf
 end
