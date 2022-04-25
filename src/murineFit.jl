@@ -41,7 +41,7 @@ const InVitroMurineRcpExp = Dict(
 
 function predictMurine(dfr::DataFrameRow; 
         KxStar = KxConst, 
-        recepExp = InVitroMurineRcpExp,
+        recepExp::Dict = InVitroMurineRcpExp,
     )
     if dfr."Subclass" == "TNP-BSA" || dfr."Affinity" <= 0.0
         return 0.0
@@ -51,7 +51,7 @@ function predictMurine(dfr::DataFrameRow;
 end
 
 function predictMurine(df::AbstractDataFrame; 
-        Kav = murineKavDist(; regularKav = true),
+        Kav::AbstractDataFrame = murineKavDist(; regularKav = true),
         conv = 20561,
         kwargs...)
     # Add affinity information to df
@@ -89,8 +89,8 @@ end
     Kavd = Kavd[Kavd."IgG" .!= "IgG3", :]
     Kav = Matrix(undef, size(Kav_dist)...)
     for ii in eachindex(Kav)
-        Kav[ii] ~ truncated(Kav_dist[ii], 1e2, 1E10)
-    end
+            Kav[ii] ~ truncated(Kav_dist[ii], 1e2, 1E10)
+        end
     Kavd[!, Not("IgG")] = Kav
 
     KxStar ~ truncated(KxStarDist, 1E-18, 1E-9)
@@ -110,18 +110,18 @@ end
     nothing
 end
 
-function runMurineMCMC(fname = "MCMC_murine_nuts300_0419.dat")
+function runMurineMCMC(fname = "murine_ADVI_0423.dat")
     if isfile(fname)
         return deserialize(fname)
     end
     df = importMurineInVitro()
     m = murineFit(df, df."Value")
-    c = sample(m, NUTS(), 300)
-    f = serialize(fname, c)
-    return c
+    q = vi(m, ADVI(10, 1000))
+    f = serialize(fname, q)
+    return q
 end
 
-function plot_murineMCMC_dists(c = runMurineMCMC())
+function plot_murineMCMC_dists(c::Union{Chains, MultivariateDistribution} = runMurineMCMC())
     setGadflyTheme()
 
     # Plot Kav's
@@ -129,11 +129,16 @@ function plot_murineMCMC_dists(c = runMurineMCMC())
     ligg, lfcr = size(Kav)
     lfcr -= 1
     Kav_pls = Matrix{Plot}(undef, ligg, lfcr)
+    if c isa MultivariateDistribution
+        cc = rand(c, 100000)
+        @assert size(c)[1] == 18
+    end
     for ii in eachindex(Kav_pls)
         IgGname = Kav."IgG"[(ii - 1) % ligg + 1]
         FcRname = names(Kav)[2:end][(ii - 1) ÷ ligg + 1]
         name = IgGname * " to " * FcRname
-        Kav_pls[ii] = plotHistPriorDist(c["Kav[$ii]"].data, Kav[(ii-1)%ligg+1, FcRname], name)
+        dat = (c isa Chains) ? c["Kav[$ii]"].data : cc[2+ii, :]  # 5-16 are Kav's
+        Kav_pls[ii] = plotHistPriorDist(dat, Kav[(ii-1)%ligg+1, FcRname], name)
     end
     Kav_plot = plotGrid((ligg, lfcr), permutedims(Kav_pls, (2, 1)); sublabels = false)
     draw(SVG("MCMCmurine_Kav.svg", 16inch, 13inch), Kav_plot)
@@ -145,16 +150,19 @@ function plot_murineMCMC_dists(c = runMurineMCMC())
                     for fcr in names(Kav)[2:end]]
     for ii in eachindex(Rtot_pls)
         FcRname = names(Kav)[2:end][ii]
-        Rtot_pls[ii] = plotHistPriorDist(c["Rtot[$ii]"].data, Rtot_dist[ii], FcRname)
+        dat = (c isa Chains) ? c["Rtot[$ii]"].data : cc[ii, :]   # 1-4 are Rtot's
+        Rtot_pls[ii] = plotHistPriorDist(dat, Rtot_dist[ii], FcRname)
     end
     Rtot_plot = plotGrid((1, lfcr), Rtot_pls; sublabels = false)
     draw(SVG("MCMCmurine_Rtot.svg", 16inch, 4inch), Rtot_plot)
     draw(PDF("MCMCmurine_Rtot.pdf", 16inch, 4inch), Rtot_plot)
 
-    # Plot f4, f33, KxStar
+    # Plot conv, KxStar
     other_pls = Vector{Plot}(undef, 2)
-    other_pls[1] = plotHistPriorDist(c["KxStar"].data, KxStarDist, "K<sub>x</sub><sup>*</sup>")
-    other_pls[2] = plotHistPriorDist(c["conv"].data, inferLogNormal(20561, 20561), "Conversion factor")
+    KxStar_dat = (c isa Chains) ? c["KxStar"].data : cc[17, :]
+    other_pls[1] = plotHistPriorDist(KxStar_dat, KxStarDist, "K<sub>x</sub><sup>*</sup>")
+    conv_dat = (c isa Chains) ? c["conv"].data : cc[18, :]
+    other_pls[2] = plotHistPriorDist(conv_dat, inferLogNormal(20561, 20561), "Conversion factor")
     other_plot = plotGrid((1, 2), other_pls; sublabels = false)
     draw(SVG("MCMCmurine_others.svg", 12inch, 4inch), other_plot)
     draw(PDF("MCMCmurine_others.pdf", 12inch, 4inch), other_plot)
@@ -197,4 +205,31 @@ function MAPmurineLikelihood()
         color = "Receptor", shape = "Subclass", clip2one = false, 
         R2pos = (-0.5, -1.2), title = "Murine MAP fitting results")
     return pl
+end
+
+function murineADVI_predict_plot(q, df = importMurineInVitro())
+    x = median(rand(q, 100000), dims = 2)
+    Rtot = x[1:4]
+    Rtotd = Dict([FcRegression.murineFcgR[ii] => Rtot[ii] for ii = 1:length(FcRegression.murineFcgR)])
+    Kav = x[5:16]
+    Kavd = FcRegression.murineKavDist(; regularKav = true)
+    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
+    KxStar, conv = x[17], x[18]
+
+    ndf = predictMurine(df; Kav=Kavd, recepExp = Rtotd, KxStar = KxStar, conv = conv)
+    return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", 
+        color = "Receptor", shape = "Subclass", clip2one = false, 
+        R2pos = (0, -1.2), title = "Murine fitting with ADVI (sampled median)")
+end
+
+function plot_murine_ADVI_affinity(q = runMurineMCMC())
+    s = rand(q, 100000)[5:16, :]
+    Kav_priors = murineKavDist()
+    pls = Vector{Union{Gadfly.Plot, Context}}(undef, 3)
+    for (ii, igg) in enumerate(Kav_priors[!, "IgG"])
+        priors = reshape(Matrix(Kav_priors[Kav_priors."IgG" .== igg, Not("IgG")]), :)
+        posts = DataFrame(Matrix(s[(ii*4-3):(ii*4), :]'), names(Kav_priors)[2:end])
+        pls[ii] = dist_violin_plot(posts, priors; title = "m$igg Affinities Distributions")
+    end
+    return pls
 end

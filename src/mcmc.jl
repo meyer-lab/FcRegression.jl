@@ -1,4 +1,4 @@
-import Turing: ~, sample, MH, NUTS, @model
+import Turing: ~, sample, NUTS, @model, Chains, ADVI, vi, rand
 import Serialization: serialize, deserialize
 using Distributions
 using LinearAlgebra
@@ -64,7 +64,7 @@ function runMCMC(fname = "MCMC_nuts_wconvs_0405.dat")
 end
 
 """ Making a single subplot for priors and posteriors """
-function plotHistPriorDist(dat, dist, name)
+function plotHistPriorDist(dat::Array{Float64}, dist::Distribution, name::String = "")
     dat = reshape(dat, :)
     xxs = exp.(LinRange(dist.μ - 4 * dist.σ, dist.μ + 4 * dist.σ, 100))
     yys = [pdf(dist, xx) for xx in xxs]
