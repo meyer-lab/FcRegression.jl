@@ -221,10 +221,7 @@ function importMurineLeukocyte(fn = "leukocyte-apr2022.csv")
     return sort!(df, ["Cell", "Subclass", "Valency"])
 end
 
-function predictLeukocyte(dfr::DataFrameRow;
-        KxStar = KxConst,
-        Kav = importKav(; murine = true, retdf = true)
-    )
+function predictLeukocyte(dfr::DataFrameRow; KxStar = KxConst, Kav = importKav(; murine = true, retdf = true))
     igg = dfr."Subclass"
     igg = (igg == "IgG2c") ? "IgG2a" : igg
     Kav_vs = Matrix(Kav[Kav."IgG" .== igg, Not("IgG")])
@@ -232,10 +229,10 @@ function predictLeukocyte(dfr::DataFrameRow;
     return polyfc(1e-9, KxStar, dfr."Valency", Rtot_vs, [1.0], Kav_vs).Lbound
 end
 
-function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(); 
-        average = false, title = "Murine Leukocyte Predictions", kwargs...)
+function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(); average = false, title = "Murine Leukocyte Predictions", kwargs...)
     if average
-        df = combine(groupby(df, Not("Value")), 
+        df = combine(
+            groupby(df, Not("Value")),
             "Value" => geomean => "Value",
             "Value" => (xs -> quantile(xs, 0.25)) => "xmin",
             "Value" => (xs -> quantile(xs, 0.75)) => "xmax",
@@ -249,7 +246,7 @@ function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte();
     sort!(rdf, ["Cell", "Subclass", "Valency"])
     @assert df."Value" == rdf."Value"
     preds = Vector(undef, size(rdf)[1])
-    @Threads.threads for i = 1:size(rdf)[1]
+    Threads.@threads for i = 1:size(rdf)[1]
         preds[i] = predictLeukocyte(rdf[i, :]; kwargs...)
     end
     rdf."Predict" = preds
