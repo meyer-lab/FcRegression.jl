@@ -10,3 +10,9 @@ import Turing: sample, MH, NUTS
 
     df = FcRegression.MAPLikelihood(df)
 end
+
+@testset "Check murine fitting model can work" begin
+    df = FcRegression.importMurineInVitro()
+    model = FcRegression.murineFit(df, df."Value")
+    df = FcRegression.MAPmurineLikelihood(df)
+end

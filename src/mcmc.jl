@@ -1,4 +1,4 @@
-import Turing: ~, sample, MH, NUTS, @model
+import Turing: ~, sample, NUTS, @model, Chains, ADVI, vi, rand
 import Serialization: serialize, deserialize
 using Distributions
 using LinearAlgebra
@@ -37,13 +37,7 @@ const f33conv_dist = LogNormal(log(3.26), 0.2)  #std ~= 0.672
     f4conv ~ truncated(f4conv_dist, 1.0, 5.0)
     f33conv ~ truncated(f33conv_dist, 2.0, 10.0)
 
-    if all(Rtot .> 0.0) && all(Kav .> 0.0) && all([f4, f33, KxStar, f4conv, f33conv] .> 0.0)
-        df = mixturePredictions(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33], convs = [f4conv, f33conv])
-    else
-        df = deepcopy(df)
-        df."Predict" .= -1000.0
-    end
-
+    df = mixturePredictions(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33], convs = [f4conv, f33conv])
     stdv = std(log.(df."Predict") - log.(values))
     values ~ MvLogNormal(log.(df."Predict"), stdv * I)
     nothing
@@ -64,7 +58,7 @@ function runMCMC(fname = "MCMC_nuts_wconvs_0405.dat")
 end
 
 """ Making a single subplot for priors and posteriors """
-function plotHistPriorDist(dat, dist, name)
+function plotHistPriorDist(dat::Array{Float64}, dist::Distribution, name::String = "")
     dat = reshape(dat, :)
     xxs = exp.(LinRange(dist.μ - 4 * dist.σ, dist.μ + 4 * dist.σ, 100))
     yys = [pdf(dist, xx) for xx in xxs]

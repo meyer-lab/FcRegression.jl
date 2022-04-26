@@ -1,14 +1,16 @@
-function dist_violin_plot(df, dist_list; title = "", x_name = "Receptor")
+function dist_violin_plot(df::AbstractDataFrame, dist_list::Vector{T}; 
+        title = "", x_name = "Receptor", y_range = (4, 8)) where T <: Distribution
     setGadflyTheme()
+    @assert size(df)[2] == length(dist_list)
 
-    odf = DataFrame([names(df)[i] => rand(dist_list[i], 500) for i = 1:size(df)[2] if dist_list[i].μ > 0])
+    odf = DataFrame([names(df)[i] => rand(dist_list[i], 100_000) for i = 1:size(df)[2] if dist_list[i].μ > 0])
     df = stack(df, variable_name = x_name, value_name = "Value")
     odf = stack(odf, variable_name = x_name, value_name = "Value")
 
     return plot(
         layer(df, x = x_name, y = "Value", Geom.violin, Theme(default_color = colorant"red")),
         layer(odf, x = x_name, y = "Value", Geom.violin, Theme(default_color = colorant"green")),
-        Coord.cartesian(ymin = 4, ymax = 8),
+        Coord.cartesian(ymin = y_range[1], ymax = y_range[2]),
         Scale.y_log10,
         Guide.manual_color_key("Legend", ["Prior", "Posterior"], ["green", "red"]),
         Guide.ylabel("<i>K</i><sub>a</sub> (M<sup>-1</sup>)"),
