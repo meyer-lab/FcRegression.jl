@@ -39,9 +39,11 @@ const InVitroMurineRcpExp = Dict(
     "FcgRIV" => 1e5,
 )
 
+using ForwardDiff
+
 function predictMurine(dfr::DataFrameRow; 
-        KxStar = KxConst, 
-        recepExp::Dict = InVitroMurineRcpExp,
+        KxStar, 
+        recepExp::Dict,
     )
     if dfr."Subclass" == "TNP-BSA" || dfr."Affinity" <= 0.0
         return 0.0
@@ -52,7 +54,7 @@ end
 
 function predictMurine(df::AbstractDataFrame; 
         Kav::AbstractDataFrame = murineKavDist(; regularKav = true),
-        conv = 20561,
+        conv,
         kwargs...)
     # Add affinity information to df
     Kav[Kav."IgG" .== "IgG2a", "IgG"] .= "IgG2c"
@@ -74,12 +76,10 @@ function predictMurine(df::AbstractDataFrame;
 end
 
 @model function murineFit(df, values)
-    # Rtot sample
+    # Receptor amount is unknown with a wide prior
     Rtot = Vector(undef, length(murineFcgR))
     for ii in eachindex(Rtot)
-        ref = InVitroMurineRcpExp[murineFcgR[ii]]
-        Rtot[ii] ~ truncated(inferLogNormal(ref, ref * 1e2), 1e3, 1e9)
-        # Treat receptor amount as unknown with a wide prior
+        Rtot[ii] ~ LogNormal(1.0, 1.0)
     end
     Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(Rtot)])
 
@@ -89,21 +89,17 @@ end
     Kavd = Kavd[Kavd."IgG" .!= "IgG3", :]
     Kav = Matrix(undef, size(Kav_dist)...)
     for ii in eachindex(Kav)
-        Kav[ii] ~ truncated(Kav_dist[ii], 1e2, 1E10)
+        Kav[ii] ~ LogNormal(1.0, 1.0) # Kav_dist[ii]
     end
     Kavd[!, Not("IgG")] = Kav
 
     KxStar ~ truncated(KxStarDist, 1E-18, 1E-9)
+
     # conversion factor: 20561
-    conv ~ truncated(inferLogNormal(20561, 20561), 1e-6, 1e8)
+    conv ~ truncated(inferLogNormal(20561, 20561), 1e-6, 1e6)
 
     # fit predictions
-    if all(Rtot .> 0.0) && all(Kav .> 0.0)
-        df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, conv = conv)
-    else
-        df = deepcopy(df)
-        df."Predict" .= -1000.0
-    end
+    df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, conv = conv)
     
     stdv = std(log.(df."Predict") - log.(values))
     values ~ MvLogNormal(log.(df."Predict"), stdv * I)
@@ -116,7 +112,7 @@ function runMurineMCMC(fname = "murine_ADVI_0423.dat")
     end
     df = importMurineInVitro()
     m = murineFit(df, df."Value")
-    q = vi(m, ADVI(10, 1000))
+    q = sample(m, NUTS(), 1_000)
     f = serialize(fname, q)
     return q
 end
