@@ -167,8 +167,7 @@ function murineMCMC_params_predict_plot(c = runMurineMCMC(), df = importMurineIn
     plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Receptor", shape = "Subclass", kwargs...)
 end
 
-function MAPmurineLikelihood()
-    df = importMurineInVitro()
+function MAPmurineLikelihood(df = importMurineInVitro())
     m = murineFit(df, df."Value")
     opts = Optim.Options(iterations = 1000, show_every = 10, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
