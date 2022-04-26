@@ -36,8 +36,12 @@ function averageMixData(df = loadMixData(); combSingle = false)
     end
 
     valname = "Adjusted" in names(df) ? "Adjusted" : "Value"
+    combining = ["Value"]
+    if "Experiment" in names(df)
+        append!(combining, ["Experiment"])
+    end
     return combine(
-        groupby(df, ["Valency", "Cell", "subclass_1", "subclass_2", "%_1", "%_2"]),
+        groupby(df, Not(combining)),
         valname => geocmean => valname,
         valname => geocstd => "std",
         valname => StatsBase.median => "Median",
