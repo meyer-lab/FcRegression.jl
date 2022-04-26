@@ -34,7 +34,7 @@ end
 
 murineKavDist(; kwargs...) = deepcopy(murineKavDist_nested(; kwargs...))
 
-const InVitroMurineRcpExp = Dict("FcgRI" => 1e5, "FcgRIIB" => 1e7, "FcgRIII" => 1e6, "FcgRIV" => 1e5)
+const InVitroMurineRcpExp = Dict("FcgRI" => 1e6, "FcgRIIB" => 1e6, "FcgRIII" => 1e6, "FcgRIV" => 1e6)
 
 function predictMurine(dfr::DataFrameRow; KxStar = KxConst, recepExp = InVitroMurineRcpExp)
     if dfr."Subclass" == "TNP-BSA" || dfr."Affinity" <= 0.0
@@ -88,13 +88,7 @@ end
     conv ~ truncated(inferLogNormal(20561, 20561), 1e-6, 1e8)
 
     # fit predictions
-    if all(Rtot .> 0.0) && all(Kav .> 0.0)
-        df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, conv = conv)
-    else
-        df = deepcopy(df)
-        df."Predict" .= -1000.0
-    end
-
+    df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, conv = conv)
     stdv = std(log.(df."Predict") - log.(values))
     values ~ MvLogNormal(log.(df."Predict"), stdv * I)
     nothing
