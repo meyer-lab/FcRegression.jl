@@ -23,6 +23,18 @@ end
 
 const murineCellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO", "Kupffer", "KupfferHi"]
 const humanCellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO"]
+const cellTypeFullName = Dict(
+    "ncMO" => "Non-classical monocyte",
+    "cMO" => "Classical monocyte",
+    "MO" => "Monocyte",
+    "NKs" => "NKs",
+    "Neu" => "Neutrophil",
+    "EO" => "Eosinophil",
+    "Kupffer" => "Kupffer cell",
+    "KupfferHi" => "Kupffer high cell",
+    "Tcell" => "T cell",
+    "Bcell" => "B cell",
+)
 const murineIgG = ["IgG1", "IgG2a", "IgG2b", "IgG3"]
 const murineIgGFucose = ["IgG1", "IgG2a", "IgG2b", "IgG3", "IgG2bFucose"]
 const humanIgG = ["IgG1", "IgG2", "IgG3", "IgG4"]
@@ -36,7 +48,8 @@ const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
 const humanActYmax = [5.5e4, 1.5e5, 4.5e4, 3.5e4, 3e3] # ymax for synergy plots
 const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
-@memoize function importRtot_readcsv(; murine = true, genotype = "HIV", retdf = false, cellTypes = nothing)
+@memoize function importRtot_readcsv(; murine = true, genotype = "HIV", 
+        retdf = false, cellTypes = nothing)
     if murine
         df = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame
     else
