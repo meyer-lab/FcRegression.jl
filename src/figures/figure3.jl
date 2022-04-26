@@ -8,10 +8,8 @@ function figure3()
         clip2one = false, R2pos = (-1.5, 1), 
         title = "Raw murine prediction without fitting")
     pl2 = MAPmurineLikelihood()
+    _, pl3 = predictLeukocyte(; average = true, title = "Leukocyte binding raw predictions")
 
-    pp = plotGrid((1, 2), [pl1 ,pl2])
-
-    #draw(SVG("figure2.svg", 6inch, 3inch), pp)
-    draw(PDF("figure3.pdf", 6inch, 3inch), pp)
-
+    pp = plotGrid((1, 3), [pl1, pl2, pl3])
+    draw(PDF("figure3.pdf", 11inch, 3inch), pp)
 end

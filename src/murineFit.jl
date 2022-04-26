@@ -224,7 +224,16 @@ function predictLeukocyte(dfr::DataFrameRow;
     return polyfc(1e-9, KxStar, dfr."Valency", Rtot_vs, [1.0], Kav_vs).Lbound
 end
 
-function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(); kwargs...)
+function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(); 
+        average = false, title = "Murine Leukocyte Predictions", kwargs...)
+    if average
+        df = combine(groupby(df, Not("Value")), 
+            "Value" => geomean => "Value",
+            "Value" => (xs -> quantile(xs, 0.25)) => "xmin",
+            "Value" => (xs -> quantile(xs, 0.75)) => "xmax",
+        )
+    end
+
     Rtot = importRtot(; murine = true, retdf = true, cellTypes = unique(df."Cell"))
     Rtot = stack(Rtot, Not("Receptor"), variable_name = "Cell", value_name = "Abundance")
     Rtot = dropmissing(unstack(Rtot, "Cell", "Receptor", "Abundance"))
@@ -242,5 +251,10 @@ function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(); kwarg
 
     # in lieu of conversion factor, for now
     rdf."Predict" ./= geomean(rdf."Predict") / geomean(rdf."Value")
-    return rdf
+    pldf = deepcopy(rdf)
+    pldf."Cell" = replace.(pldf."Cell", cellTypeFullName...)
+    pl = plotPredvsMeasured(pldf; xx = "Value", yy = "Predict", 
+        color = "Cell", shape = "Valency", clip2one = false, 
+        R2pos = (0, -1.5), title = title)
+    return rdf, pl
 end
