@@ -263,6 +263,6 @@ function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte();
     pldf."Cell" = replace.(pldf."Cell", cellTypeFullName...)
     pl = plotPredvsMeasured(pldf; xx = "Value", yy = "Predict", 
         color = "Cell", shape = "Valency", clip2one = false, 
-        R2pos = (0, -1.5), title = title)
+        R2pos = (-0.5, -2), title = title)
     return rdf, pl
 end
