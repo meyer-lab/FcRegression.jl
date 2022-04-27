@@ -51,7 +51,7 @@ function predictMurine(df::AbstractDataFrame; Kav = murineKavDist(; regularKav =
     sort!(dft, ["Receptor", "Subclass"])
     @assert df."Value" == dft."Value"   # must ensure the right order
     preds = Vector(undef, size(dft)[1])
-    Threads.@threads for i = 1:size(dft)[1]
+    for i = 1:size(dft)[1]
         preds[i] = predictMurine(dft[i, :]; kwargs...)
     end
     dft."Predict" = preds
