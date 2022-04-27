@@ -236,7 +236,7 @@ end
 end
 
 """ A more accurate way to infer logNormal distribution with exact mode and IQR """
-function inferLogNormal(mode, iqr)
+@memoize function inferLogNormal(mode, iqr)
     function logNormalParams!(f, v)
         f[1] = exp(v[1] - v[2]^2) - mode
         f[2] = 2 * exp(v[1]) * sinh(0.6745 * v[2]) - iqr
