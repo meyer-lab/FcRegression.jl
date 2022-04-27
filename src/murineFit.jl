@@ -119,8 +119,8 @@ function plot_murineMCMC_dists(c::Union{Chains, MultivariateDistribution} = runM
         IgGname = Kav."IgG"[(ii - 1) % ligg + 1]
         FcRname = names(Kav)[2:end][(ii - 1) ÷ ligg + 1]
         name = IgGname * " to " * FcRname
-        dat = (c isa Chains) ? c["Kav[$ii]"].data : cc[4+ii, :]  # 5-16 are Kav's
-        Kav_pls[ii] = plotHistPriorDist(dat, Kav[(ii-1)%ligg+1, FcRname], name)
+        dat = (c isa Chains) ? c["Kav[$ii]"].data : cc[4 + ii, :]  # 5-16 are Kav's
+        Kav_pls[ii] = plotHistPriorDist(dat, Kav[(ii - 1) % ligg + 1, FcRname], name)
     end
     Kav_plot = plotGrid((ligg, lfcr), permutedims(Kav_pls, (2, 1)); sublabels = false)
     draw(SVG("MCMCmurine_Kav.svg", 16inch, 13inch), Kav_plot)
@@ -199,10 +199,17 @@ function murineADVI_predict_plot(q, df = importMurineInVitro())
     Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
     KxStar, conv = x[17], x[18]
 
-    ndf = predictMurine(df; Kav=Kavd, recepExp = Rtotd, KxStar = KxStar, conv = conv)
-    return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", 
-        color = "Receptor", shape = "Subclass", clip2one = false, 
-        R2pos = (0, -1.2), title = "Murine fitting with ADVI (sampled median)")
+    ndf = predictMurine(df; Kav = Kavd, recepExp = Rtotd, KxStar = KxStar, conv = conv)
+    return plotPredvsMeasured(
+        ndf;
+        xx = "Value",
+        yy = "Predict",
+        color = "Receptor",
+        shape = "Subclass",
+        clip2one = false,
+        R2pos = (0, -1.2),
+        title = "Murine fitting with ADVI (sampled median)",
+    )
 end
 
 
@@ -258,8 +265,7 @@ function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(); avera
     rdf."Predict" ./= geomean(rdf."Predict") / geomean(rdf."Value")
     pldf = deepcopy(rdf)
     pldf."Cell" = replace.(pldf."Cell", cellTypeFullName...)
-    pl = plotPredvsMeasured(pldf; xx = "Value", yy = "Predict", 
-        color = "Cell", shape = "Valency", clip2one = false, 
-        R2pos = (-0.5, -2), title = title)
+    pl =
+        plotPredvsMeasured(pldf; xx = "Value", yy = "Predict", color = "Cell", shape = "Valency", clip2one = false, R2pos = (-0.5, -2), title = title)
     return rdf, pl
 end
