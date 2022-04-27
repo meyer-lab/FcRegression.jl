@@ -24,7 +24,7 @@ function modelPred(df; L0, f, murine::Bool = true, cellTypes = nothing)
     df = copy(df)
     FcRecep = murine ? murineFcgR : humanFcgR
     ActI = murine ? murineActI : humanActI
-    if cellTypes == nothing
+    if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
 

@@ -54,7 +54,7 @@ const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
     else
         df = CSV.File(joinpath(dataDir, "human-FcgR-abundance.csv"), comment = "#") |> DataFrame
     end
-    if cellTypes == nothing
+    if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
     df = combine(groupby(df, ["Cells", "Receptor"]), names(df, "Count") .=> geocmean)

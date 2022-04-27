@@ -40,7 +40,7 @@ function cornerplot(df::AbstractDataFrame; nbins = 20, hexbins = 50, plotsize = 
                     Guide.ylabel(ylabel, orientation = :vertical),
                     (logscale ? Scale.x_log10 : Scale.x_continuous),
                     (logscale ? Scale.y_log10 : Scale.y_continuous),
-                    Guide.yticks(label = (ylabel != nothing)),
+                    Guide.yticks(label = (ylabel !== nothing)),
                     Coord.Cartesian(xmin = ranges[i][1], xmax = ranges[i][end], ymin = ranges[j][1], ymax = ranges[j][end]),
                     style(key_position = :none),
                 ),
