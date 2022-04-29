@@ -67,7 +67,7 @@ end
     Rtot = Vector(undef, length(murineFcgR))
     for ii in eachindex(Rtot)
         ref = InVitroMurineRcpExp[murineFcgR[ii]]
-        Rtot[ii] ~ truncated(inferLogNormal(ref, ref * 1e2), 1e3, 1e9)
+        Rtot[ii] ~ inferLogNormal(ref, ref * 1e2)
         # Treat receptor amount as unknown with a wide prior
     end
     Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(Rtot)])
@@ -78,16 +78,22 @@ end
     Kavd = Kavd[Kavd."IgG" .!= "IgG3", :]
     Kav = Matrix(undef, size(Kav_dist)...)
     for ii in eachindex(Kav)
-        Kav[ii] ~ truncated(Kav_dist[ii], 1e2, 1E10)
+        Kav[ii] ~ Kav_dist[ii]
     end
     Kavd[!, Not("IgG")] = Kav
 
-    KxStar ~ truncated(KxStarDist, 1E-18, 1E-9)
+    KxStar ~ KxStarDist
     # conversion factor: 20561
-    conv ~ truncated(inferLogNormal(20561, 20561), 1e-6, 1e8)
+    conv ~ inferLogNormal(20561, 20561)
 
     # fit predictions
-    df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, conv = conv)
+    if all(Rtot .>= 0.0) && all(Kav .>= 0.0) && (KxStar > 0.0) && (conv > 0.0)
+        df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, conv = conv)
+    else
+        df = deepcopy(df)
+        df."Predict" .= Inf
+    end
+
     stdv = std(log.(df."Predict") - log.(values))
     values ~ MvLogNormal(log.(df."Predict"), stdv * I)
     nothing
@@ -104,11 +110,11 @@ function runMurineMCMC(fname = "murine_ADVI_0423.dat")
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
     c = sample(m, NUTS(), 100, init_params = opt.values.array)
     #q = vi(m, ADVI(10, 1000))
-    #f = serialize(fname, q)
+    f = serialize(fname, c)
     return c
 end
 
-function plot_murineMCMC_dists(c::Union{Chains, MultivariateDistribution} = runMurineMCMC())
+function plot_murineMCMC_dists(c::Union{Chains, MultivariateDistribution} = runMurineMCMC(); bincount = 20)
     setGadflyTheme()
 
     # Plot Kav's
@@ -125,7 +131,7 @@ function plot_murineMCMC_dists(c::Union{Chains, MultivariateDistribution} = runM
         FcRname = names(Kav)[2:end][(ii - 1) ÷ ligg + 1]
         name = IgGname * " to " * FcRname
         dat = (c isa Chains) ? c["Kav[$ii]"].data : cc[4+ii, :]  # 5-16 are Kav's
-        Kav_pls[ii] = plotHistPriorDist(dat, Kav[(ii-1)%ligg+1, FcRname], name)
+        Kav_pls[ii] = plotHistPriorDist(dat, Kav[(ii-1)%ligg+1, FcRname], name; bincount = bincount)
     end
     Kav_plot = plotGrid((ligg, lfcr), permutedims(Kav_pls, (2, 1)); sublabels = false)
     draw(SVG("MCMCmurine_Kav.svg", 16inch, 13inch), Kav_plot)
@@ -137,7 +143,7 @@ function plot_murineMCMC_dists(c::Union{Chains, MultivariateDistribution} = runM
     for ii in eachindex(Rtot_pls)
         FcRname = names(Kav)[2:end][ii]
         dat = (c isa Chains) ? c["Rtot[$ii]"].data : cc[ii, :]   # 1-4 are Rtot's
-        Rtot_pls[ii] = plotHistPriorDist(dat, Rtot_dist[ii], FcRname)
+        Rtot_pls[ii] = plotHistPriorDist(dat, Rtot_dist[ii], FcRname; bincount = bincount)
     end
     Rtot_plot = plotGrid((1, lfcr), Rtot_pls; sublabels = false)
     draw(SVG("MCMCmurine_Rtot.svg", 16inch, 4inch), Rtot_plot)
@@ -146,9 +152,9 @@ function plot_murineMCMC_dists(c::Union{Chains, MultivariateDistribution} = runM
     # Plot conv, KxStar
     other_pls = Vector{Plot}(undef, 2)
     KxStar_dat = (c isa Chains) ? c["KxStar"].data : cc[17, :]
-    other_pls[1] = plotHistPriorDist(KxStar_dat, KxStarDist, "K<sub>x</sub><sup>*</sup>")
+    other_pls[1] = plotHistPriorDist(KxStar_dat, KxStarDist, "K<sub>x</sub><sup>*</sup>"; bincount = bincount)
     conv_dat = (c isa Chains) ? c["conv"].data : cc[18, :]
-    other_pls[2] = plotHistPriorDist(conv_dat, inferLogNormal(20561, 20561), "Conversion factor")
+    other_pls[2] = plotHistPriorDist(conv_dat, inferLogNormal(20561, 20561), "Conversion factor"; bincount = bincount)
     other_plot = plotGrid((1, 2), other_pls; sublabels = false)
     draw(SVG("MCMCmurine_others.svg", 12inch, 4inch), other_plot)
     draw(PDF("MCMCmurine_others.pdf", 12inch, 4inch), other_plot)

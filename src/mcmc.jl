@@ -58,14 +58,14 @@ function runMCMC(fname = "MCMC_nuts_wconvs_0405.dat")
 end
 
 """ Making a single subplot for priors and posteriors """
-function plotHistPriorDist(dat::Array{Float64}, dist::Distribution, name::String = "")
+function plotHistPriorDist(dat::Array{Float64}, dist::Distribution, name::String = ""; bincount = 20)
     dat = reshape(dat, :)
     xxs = exp.(LinRange(dist.μ - 4 * dist.σ, dist.μ + 4 * dist.σ, 100))
     yys = [pdf(dist, xx) for xx in xxs]
     yys = yys ./ maximum(yys)
     pl = plot(
         layer(x = xxs, y = yys, Geom.line, color = [colorant"red"], order = 1),
-        layer(DataFrame("Value" => dat), x = "Value", Geom.histogram(bincount = 20, density = true)),
+        layer(DataFrame("Value" => dat), x = "Value", Geom.histogram(bincount = bincount, density = true)),
         Scale.x_log10(),
         Guide.xticks(orientation = :horizontal),
         Guide.xlabel("Value"),
