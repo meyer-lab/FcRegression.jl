@@ -52,7 +52,7 @@ function predictMurine(df::AbstractDataFrame; Kav = murineKavDist(; regularKav =
     sort!(dft, ["Receptor", "Subclass"])
     @assert df."Value" == dft."Value"   # must ensure the right order
     preds = Vector(undef, size(dft)[1])
-    for i = 1:size(dft)[1]
+    Threads.@threads for i = 1:size(dft)[1]
         preds[i] = predictMurine(dft[i, :]; kwargs...)
     end
     dft."Predict" = preds
@@ -99,9 +99,13 @@ function runMurineMCMC(fname = "murine_ADVI_0423.dat")
     end
     df = importMurineInVitro()
     m = murineFit(df, df."Value")
-    q = vi(m, ADVI(10, 1000))
-    f = serialize(fname, q)
-    return q
+    # use MAP estimate as starting point
+    opts = Optim.Options(iterations = 1000, show_every = 10, show_trace = true)
+    opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
+    c = sample(m, NUTS(), 100, init_params = opt.values.array)
+    #q = vi(m, ADVI(10, 1000))
+    #f = serialize(fname, q)
+    return c
 end
 
 function plot_murineMCMC_dists(c::Union{Chains, MultivariateDistribution} = runMurineMCMC())
