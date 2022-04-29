@@ -150,20 +150,36 @@ function plot_murineMCMC_dists(c::Union{Chains, MultivariateDistribution} = runM
     draw(PDF("MCMCmurine_others.pdf", 12inch, 4inch), other_plot)
 end
 
-function murineMCMC_params_predict_plot(c = runMurineMCMC(), df = importMurineInVitro(); kwargs...)
-    # Extract MCMC results
-    Rtot = [median(c["Rtot[$i]"].data) for i = 1:length(murineFcgR)]
-    Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(murineFcgR)])
+function murineMCMC_params_predict_plot(c::Union{Chains, MultivariateDistribution} = runMurineMCMC(), 
+        df = importMurineInVitro(); title = nothing, kwargs...)
+    
+    if c isa Chains
+        # Extract MCMC results
+        Rtot = [median(c["Rtot[$i]"].data) for i = 1:length(murineFcgR)]
+        Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(murineFcgR)])
 
-    Kavd = murineKavDist(; regularKav = true)
-    Kav = [median(c["Kav[$i]"].data) for i = 1:length(murineKavDist(; regularKav = true, retdf = false))]
-    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
+        Kavd = murineKavDist(; regularKav = true)
+        Kav = [median(c["Kav[$i]"].data) for i = 1:length(murineKavDist(; regularKav = true, retdf = false))]
+        Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
 
-    KxStar = median(c["KxStar"].data)
-    conv = median(c["conv"].data)
+        KxStar = median(c["KxStar"].data)
+        conv = median(c["conv"].data)
+        title = (title === nothing) ? "Murine fitting with NUTS (median)" : title
+    else
+        # Extract ADVI results
+        x = median(rand(q, 100000), dims = 2)
+        Rtot = x[1:4]
+        Rtotd = Dict([FcRegression.murineFcgR[ii] => Rtot[ii] for ii = 1:length(FcRegression.murineFcgR)])
+        Kav = x[5:16]
+        Kavd = FcRegression.murineKavDist(; regularKav = true)
+        Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
+        KxStar, conv = x[17], x[18]
+        title = (title === nothing) ? "Murine fitting with ADVI (sampled median)" : title
+    end
 
     ndf = predictMurine(df; Kav = Kavd, conv = conv, KxStar = KxStar, recepExp = Rtotd)
-    plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Receptor", shape = "Subclass", kwargs...)
+    plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Receptor", shape = "Subclass", 
+        clip2one = false, R2pos = (0, -1.2), title = title, kwargs...)
 end
 
 function MAPmurineLikelihood(df = importMurineInVitro())
@@ -191,20 +207,7 @@ function MAPmurineLikelihood(df = importMurineInVitro())
     return pl, [Rtot, Kav, KxStar, conv]
 end
 
-function murineADVI_predict_plot(q, df = importMurineInVitro())
-    x = median(rand(q, 100000), dims = 2)
-    Rtot = x[1:4]
-    Rtotd = Dict([FcRegression.murineFcgR[ii] => Rtot[ii] for ii = 1:length(FcRegression.murineFcgR)])
-    Kav = x[5:16]
-    Kavd = FcRegression.murineKavDist(; regularKav = true)
-    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
-    KxStar, conv = x[17], x[18]
 
-    ndf = predictMurine(df; Kav=Kavd, recepExp = Rtotd, KxStar = KxStar, conv = conv)
-    return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", 
-        color = "Receptor", shape = "Subclass", clip2one = false, 
-        R2pos = (0, -1.2), title = "Murine fitting with ADVI (sampled median)")
-end
 
 
 function importMurineLeukocyte(fn = "leukocyte-apr2022.csv")
