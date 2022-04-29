@@ -150,7 +150,7 @@ function plot_murineMCMC_dists(c::Union{Chains, MultivariateDistribution} = runM
     draw(PDF("MCMCmurine_others.pdf", 12inch, 4inch), other_plot)
 end
 
-function murineMCMC_params_predict_plot(c::Union{Chains, MultivariateDistribution} = runMurineMCMC(), 
+function plot_murineMCMC_predict(c::Union{Chains, MultivariateDistribution} = runMurineMCMC(), 
         df = importMurineInVitro(); title = nothing, kwargs...)
     
     if c isa Chains
@@ -167,7 +167,7 @@ function murineMCMC_params_predict_plot(c::Union{Chains, MultivariateDistributio
         title = (title === nothing) ? "Murine fitting with NUTS (median)" : title
     else
         # Extract ADVI results
-        x = median(rand(q, 100000), dims = 2)
+        x = median(rand(c, 100000), dims = 2)
         Rtot = x[1:4]
         Rtotd = Dict([FcRegression.murineFcgR[ii] => Rtot[ii] for ii = 1:length(FcRegression.murineFcgR)])
         Kav = x[5:16]
