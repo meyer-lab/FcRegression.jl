@@ -43,6 +43,7 @@ end
 
 function predictMurine(df::AbstractDataFrame; Kav = murineKavDist(; regularKav = true), conv = 20561, kwargs...)
     # Add affinity information to df
+    Kav = deepcopy(Kav)
     Kav[Kav."IgG" .== "IgG2a", "IgG"] .= "IgG2c"
     dft = innerjoin(df, Kav, on = "Subclass" => "IgG")
     dft = stack(dft, murineFcgR)
@@ -57,7 +58,7 @@ function predictMurine(df::AbstractDataFrame; Kav = murineKavDist(; regularKav =
     dft."Predict" = preds
     @assert all(isfinite(dft[!, "Predict"]))
     dft[!, "Predict"] ./= conv
-    dft[dft."Predict" .<= 0.0, "Predict"] .= 1e-6
+    dft[dft."Predict" .<= 0.0, "Predict"] .= 1e-8
     return dft
 end
 
