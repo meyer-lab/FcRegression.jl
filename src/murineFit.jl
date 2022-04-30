@@ -108,7 +108,7 @@ function runMurineMCMC(fname = "murine_ADVI_0423.dat")
     # use MAP estimate as starting point
     opts = Optim.Options(iterations = 1000, show_every = 10, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
-    c = sample(m, NUTS(), 100, init_params = opt.values.array)
+    c = sample(m, NUTS(), 1_000, init_params = opt.values.array)
     #q = vi(m, ADVI(10, 1000))
     f = serialize(fname, c)
     return c
