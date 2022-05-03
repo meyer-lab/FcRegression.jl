@@ -17,21 +17,21 @@ const KxStarDist = LogNormal(log(KxConst), 2.0)   # std ~= 4.37 in Robinett
 
     # Order of distribution definitions here matches MAPLikelihood()
     for ii in eachindex(Rtot)
-        Rtot[ii] ~ Rtot_dist[ii] #truncated(Rtot_dist[ii], 10, 1E8)
+        Rtot[ii] ~ Rtot_dist[ii]
     end
     Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
 
     for ii in eachindex(Kav)
-        Kav[ii] ~ Kav_dist[ii] #truncated(Kav_dist[ii], 10, 1E10)
+        Kav[ii] ~ Kav_dist[ii]
     end
 
     if !robinett    # Don't fit affinity for Robinett data
         Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(Kav)
     end
 
-    f4 ~ f4Dist #truncated(f4Dist, 1.0, 8.0)
-    f33 ~ f33Dist #truncated(f33Dist, 8.0, 50.0)
-    KxStar ~ KxStarDist #truncated(KxStarDist, 1E-18, 1E-9)
+    f4 ~ f4Dist
+    f33 ~ f33Dist
+    KxStar ~ KxStarDist
 
     # fit predictions
     if all(Rtot .>= 0.0) && all(0.0 .<= Kav .< Inf) && all(0.0 .< [f4, f33, KxStar] .< Inf)
