@@ -35,8 +35,11 @@ murineKavDist(; kwargs...) = deepcopy(murineKavDist_nested(; kwargs...))
 const InVitroMurineRcpExp = Dict("FcgRI" => 1e6, "FcgRIIB" => 1e6, "FcgRIII" => 1e6, "FcgRIV" => 1e6)
 
 function predictMurine(dfr::DataFrameRow; KxStar = KxConst, recepExp = InVitroMurineRcpExp)
-    if dfr."Subclass" == "TNP-BSA" || dfr."Affinity" <= 0.0
+    if (dfr."Subclass" == "TNP-BSA") || (dfr."Affinity" <= 0.0)
         return 0.0
+    end
+    if dfr."Affinity" >= Inf
+        return Inf
     end
     return polyfc(1e-9, KxStar, dfr."Valency", [recepExp[dfr."Receptor"] * dfr."Expression" / 100], [1.0], reshape([dfr."Affinity"], 1, 1)).Lbound
 end
@@ -63,7 +66,7 @@ function predictMurine(df::AbstractDataFrame; Kav = murineKavDist(; regularKav =
     return dft
 end
 
-@model function murineFit(df, values)
+@model function murineFit(df, values; KxStar = KxConst)
     # Rtot sample
     Rtot = Vector(undef, length(murineFcgR))
     for ii in eachindex(Rtot)
@@ -83,13 +86,9 @@ end
     end
     Kavd[!, Not("IgG")] = Kav
 
-    KxStar ~ KxStarDist
-    # conversion factor: 20561
-    conv ~ inferLogNormal(20561, 20561)
-
     # fit predictions
-    if all(Rtot .>= 0.0) && all(Kav .>= 0.0) && (KxStar > 0.0) && (conv > 0.0)
-        df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, conv = conv)
+    if all(Rtot .>= 0.0) && all(0.0 .<= Kav .< Inf)
+        df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kavd, KxStar = KxStar)
     else
         df = deepcopy(df)
         df."Predict" .= Inf
@@ -100,16 +99,16 @@ end
     nothing
 end
 
-function runMurineMCMC(fname = "murine_ADVI_0423.dat")
+function runMurineMCMC(fname = "murine_ADVI_0423.dat"; KxStar = KxConst, mcmc_iter = 1_000)
     if isfile(fname)
         return deserialize(fname)
     end
     df = importMurineInVitro()
-    m = murineFit(df, df."Value")
+    m = murineFit(df, df."Value"; KxStar = KxStar)
     # use MAP estimate as starting point
-    opts = Optim.Options(iterations = 1000, show_every = 10, show_trace = true)
+    opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
-    c = sample(m, NUTS(), 1_000, init_params = opt.values.array)
+    c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
     #q = vi(m, ADVI(10, 1000))
     f = serialize(fname, c)
     return c
@@ -149,16 +148,10 @@ function plot_murineMCMC_dists(c::Union{Chains, MultivariateDistribution} = runM
     Rtot_plot = plotGrid((1, lfcr), Rtot_pls; sublabels = false)
     draw(SVG("MCMCmurine_Rtot.svg", 16inch, 4inch), Rtot_plot)
     draw(PDF("MCMCmurine_Rtot.pdf", 16inch, 4inch), Rtot_plot)
-
-    # Plot KxStar
-    KxStar_dat = (c isa Chains) ? c["KxStar"].data : cc[17, :]
-    other_pl = plotHistPriorDist(KxStar_dat, KxStarDist, "K<sub>x</sub><sup>*</sup>"; bincount = bincount)
-    draw(SVG("MCMCmurine_others.svg", 5inch, 4inch), other_pl)
-    draw(PDF("MCMCmurine_others.pdf", 5inch, 4inch), other_pl)
 end
 
 function plot_murineMCMC_predict(c::Union{Chains, MultivariateDistribution} = runMurineMCMC(), 
-        df = importMurineInVitro(); title = nothing, kwargs...)
+        df = importMurineInVitro(); title = nothing, KxStar = KxConst, kwargs...)
     
     if c isa Chains
         # Extract MCMC results
@@ -168,8 +161,6 @@ function plot_murineMCMC_predict(c::Union{Chains, MultivariateDistribution} = ru
         Kavd = murineKavDist(; regularKav = true)
         Kav = [median(c["Kav[$i]"].data) for i = 1:length(murineKavDist(; regularKav = true, retdf = false))]
         Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
-
-        KxStar = median(c["KxStar"].data)
         title = (title === nothing) ? "Murine fitting with NUTS (median)" : title
     else
         # Extract ADVI results
@@ -179,7 +170,6 @@ function plot_murineMCMC_predict(c::Union{Chains, MultivariateDistribution} = ru
         Kav = x[5:16]
         Kavd = FcRegression.murineKavDist(; regularKav = true)
         Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
-        KxStar = x[17]
         title = (title === nothing) ? "Murine fitting with ADVI (sampled median)" : title
     end
 
@@ -188,16 +178,15 @@ function plot_murineMCMC_predict(c::Union{Chains, MultivariateDistribution} = ru
         clip2one = false, R2pos = (0, -1.2), title = title, kwargs...)
 end
 
-function MAPmurineLikelihood(df = importMurineInVitro())
-    m = murineFit(df, df."Value")
-    opts = Optim.Options(iterations = 1000, show_every = 10, show_trace = true)
+function MAPmurineLikelihood(df = importMurineInVitro(); KxStar = KxConst)
+    m = murineFit(df, df."Value"; KxStar = KxStar)
+    opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
     x = opt.values
 
     Rtot = Dict([rcp => x[Symbol("Rtot[$i]")] for (i, rcp) in enumerate(murineFcgR)])
     Kav = murineKavDist(; regularKav = true, retdf = true)
     Kav[!, Not("IgG")] = reshape([x[Symbol("Kav[$i]")] for i = 1:12], 3, 4)
-    KxStar = x[:KxStar]
 
     ndf = predictMurine(df; Kav = Kav, recepExp = Rtot, KxStar = KxStar)
     pl = plotPredvsMeasured(
@@ -210,7 +199,7 @@ function MAPmurineLikelihood(df = importMurineInVitro())
         R2pos = (-0.5, -1.2),
         title = "Murine MAP fitting results",
     )
-    return pl, [Rtot, Kav, KxStar]
+    return pl, [Rtot, Kav]
 end
 
 
@@ -264,7 +253,7 @@ function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(); avera
     rdf[rdf."Predict" .<= 0.0, "Predict"] .= 1e-8
     rdf = rdf[!, Not(murineFcgR)]
 
-    # in lieu of conversion factor, for now
+    rdf[rdf."Predict" .<= 0.0, "Predict"] .= 1e-12
     rdf."Predict" ./= geomean(rdf."Predict") / geomean(rdf."Value")
     pldf = deepcopy(rdf)
     pldf."Cell" = replace.(pldf."Cell", cellTypeFullName...)
