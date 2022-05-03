@@ -174,7 +174,7 @@ function plot_murineMCMC_predict(c::Union{Chains, MultivariateDistribution} = ru
     end
 
     ndf = predictMurine(df; Kav = Kavd, KxStar = KxStar, recepExp = Rtotd)
-    plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Receptor", shape = "Subclass", 
+    return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Receptor", shape = "Subclass", 
         clip2one = false, R2pos = (0, -1.2), title = title, kwargs...)
 end
 
