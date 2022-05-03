@@ -46,7 +46,7 @@ const KxStarDist = LogNormal(log(KxConst), 2.0)   # std ~= 4.37 in Robinett
     nothing
 end
 
-function runMCMC(fname = "MCMC_nuts_wconvs_0405.dat"; mcmc_iter = 1_000)
+function runMCMC(fname = "MCMC_nuts_0502.dat"; mcmc_iter = 1_000)
     if isfile(fname)
         return deserialize(fname)
     end
