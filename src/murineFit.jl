@@ -66,12 +66,20 @@ function predictMurine(df::AbstractDataFrame; Kav = murineKavDist(; regularKav =
     return dft
 end
 
+function predictMurine(c::Chains = runMurineMCMC(), 
+        df::AbstractDataFrame = importMurineInVitro(); KxStar = KxConst, kwargs...)
+    Kavd = murineKavDist(; regularKav = true)
+    Kav = [median(c["Kav[$i]"].data) for i = 1:12]
+    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
+    return predictMurine(df; Kav = Kavd, KxStar = KxStar, kwargs...)
+end
+
 @model function murineFit(df, values; KxStar = KxConst)
     # Rtot sample
     Rtot = Vector(undef, length(murineFcgR))
     for ii in eachindex(Rtot)
-        ref = InVitroMurineRcpExp[murineFcgR[ii]]
-        Rtot[ii] ~ inferLogNormal(ref, ref * 1e2)
+            ref = InVitroMurineRcpExp[murineFcgR[ii]]
+            Rtot[ii] ~ inferLogNormal(ref, ref * 1e2)
         # Treat receptor amount as unknown with a wide prior
     end
     Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(Rtot)])
@@ -99,7 +107,7 @@ end
     nothing
 end
 
-function runMurineMCMC(fname = "murine_ADVI_0423.dat"; KxStar = KxConst, mcmc_iter = 1_000)
+function runMurineMCMC(fname = "murine_NUTS_0502_5.62332e-16.dat"; KxStar = KxConst, mcmc_iter = 1_000)
     if isfile(fname)
         return deserialize(fname)
     end
@@ -205,7 +213,7 @@ end
 
 
 
-function importMurineLeukocyte(fn = "leukocyte-apr2022.csv")
+function importMurineLeukocyte(fn = "leukocyte-apr2022.csv"; average = true)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
     #df = df[df."Cell" .!= "Tcell", :]   # throw away T cells
     df = df[df."Experiment" .!= 7, :]   # throw away Exp. 7
@@ -217,6 +225,14 @@ function importMurineLeukocyte(fn = "leukocyte-apr2022.csv")
     df = innerjoin(df, baseline, on = "Experiment")
     df[!, "Value"] ./= df[!, "Baseline"]    # normalize fluorescence by daily geomean
     df = df[!, Not(["Experiment", "Baseline"])]
+    if average
+        df = combine(
+            groupby(df, Not("Value")),
+            "Value" => geomean => "Value",
+            "Value" => (xs -> quantile(xs, 0.25)) => "xmin",
+            "Value" => (xs -> quantile(xs, 0.75)) => "xmax",
+        )
+    end
     return sort!(df, ["Cell", "Subclass", "Valency"])
 end
 
@@ -228,16 +244,8 @@ function predictLeukocyte(dfr::DataFrameRow; KxStar = KxConst, Kav = importKav(;
     return polyfc(1e-9, KxStar, dfr."Valency", Rtot_vs, [1.0], Kav_vs).Lbound
 end
 
-function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(); average = false, title = "Murine Leukocyte Predictions", kwargs...)
-    if average
-        df = combine(
-            groupby(df, Not("Value")),
-            "Value" => geomean => "Value",
-            "Value" => (xs -> quantile(xs, 0.25)) => "xmin",
-            "Value" => (xs -> quantile(xs, 0.75)) => "xmax",
-        )
-    end
-
+function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(; average = true); kwargs...)
+    # transpose Rtot
     Rtot = importRtot(; murine = true, retdf = true, cellTypes = unique(df."Cell"))
     Rtot = stack(Rtot, Not("Receptor"), variable_name = "Cell", value_name = "Abundance")
     Rtot = dropmissing(unstack(Rtot, "Cell", "Receptor", "Abundance"))
@@ -249,16 +257,31 @@ function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(); avera
         preds[i] = predictLeukocyte(rdf[i, :]; kwargs...)
     end
     rdf."Predict" = preds
-    @assert all(isfinite(rdf[!, "Predict"]))
-    rdf[rdf."Predict" .<= 0.0, "Predict"] .= 1e-8
+    #@assert all(isfinite(rdf[!, "Predict"]))
     rdf = rdf[!, Not(murineFcgR)]
-
     rdf[rdf."Predict" .<= 0.0, "Predict"] .= 1e-12
     rdf."Predict" ./= geomean(rdf."Predict") / geomean(rdf."Value")
-    pldf = deepcopy(rdf)
+    return rdf
+end
+
+function plot_murine_leukocyte(ndf; kwargs...)
+    @assert "Predict" in names(ndf)
+    pldf = deepcopy(ndf)
     pldf."Cell" = replace.(pldf."Cell", cellTypeFullName...)
-    pl = plotPredvsMeasured(pldf; xx = "Value", yy = "Predict", 
+    return plotPredvsMeasured(pldf; xx = "Value", yy = "Predict", 
         color = "Cell", shape = "Valency", clip2one = false, 
-        R2pos = (-0.5, -2), title = title)
-    return rdf, pl
+        R2pos = (0, -1.5), kwargs...)
+end
+
+function validateMurine(c = runMurineMCMC(), df = importMurineLeukocyte(); KxStar = KxConst)
+    ndf_old = predictLeukocyte(df; KxStar = KxStar)
+    pl_old = plot_murine_leukocyte(ndf_old; title = "Murine Leukocyte Raw Predictions")
+
+    Kavd = murineKavDist(; regularKav = true)
+    Kav = [median(c["Kav[$i]"].data) for i = 1:12]
+    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
+
+    ndf_new = predictLeukocyte(df; Kav = Kavd, KxStar = KxStar)
+    pl_new = plot_murine_leukocyte(ndf_new; title = "Murine Leukocyte Updated Predictions")
+    return pl_old, pl_new
 end
