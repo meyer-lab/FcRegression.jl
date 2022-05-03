@@ -59,7 +59,6 @@ function predictMurine(df::AbstractDataFrame; Kav = murineKavDist(; regularKav =
         preds[i] = predictMurine(dft[i, :]; kwargs...)
     end
     dft."Predict" = preds
-    #@assert all(isfinite(dft[!, "Predict"]))
     dft[dft."Predict" .<= 0.0, "Predict"] .= 1e-12
     dft[!, "Predict"] ./= geomean(dft."Predict") / geomean(dft."Value")
     
