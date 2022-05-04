@@ -55,7 +55,7 @@ function predictMurine(df::AbstractDataFrame; Kav = murineKavDist(; regularKav =
     sort!(dft, ["Receptor", "Subclass"])
     @assert df."Value" == dft."Value"   # must ensure the right order
     preds = Vector(undef, size(dft)[1])
-    Threads.@threads for i = 1:size(dft)[1]
+    for i = 1:size(dft)[1]
         preds[i] = predictMurine(dft[i, :]; kwargs...)
     end
     dft."Predict" = preds
@@ -252,7 +252,7 @@ function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(; averag
     sort!(rdf, ["Cell", "Subclass", "Valency"])
     @assert df."Value" == rdf."Value"
     preds = Vector(undef, size(rdf)[1])
-    Threads.@threads for i = 1:size(rdf)[1]
+    for i = 1:size(rdf)[1]
         preds[i] = predictLeukocyte(rdf[i, :]; kwargs...)
     end
     rdf."Predict" = preds
