@@ -61,12 +61,11 @@ function predictMurine(df::AbstractDataFrame; Kav = murineKavDist(; regularKav =
     dft."Predict" = preds
     dft[dft."Predict" .<= 0.0, "Predict"] .= 1e-12
     dft[!, "Predict"] ./= geomean(dft."Predict") / geomean(dft."Value")
-    
+
     return dft
 end
 
-function predictMurine(c::Chains = runMurineMCMC(), 
-        df::AbstractDataFrame = importMurineInVitro(); KxStar = KxConst, kwargs...)
+function predictMurine(c::Chains = runMurineMCMC(), df::AbstractDataFrame = importMurineInVitro(); KxStar = KxConst, kwargs...)
     Kavd = murineKavDist(; regularKav = true)
     Kav = [median(c["Kav[$i]"].data) for i = 1:12]
     Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
@@ -77,8 +76,8 @@ end
     # Rtot sample
     Rtot = Vector(undef, length(murineFcgR))
     for ii in eachindex(Rtot)
-            ref = InVitroMurineRcpExp[murineFcgR[ii]]
-            Rtot[ii] ~ inferLogNormal(ref, ref * 1e2)
+        ref = InVitroMurineRcpExp[murineFcgR[ii]]
+        Rtot[ii] ~ inferLogNormal(ref, ref * 1e2)
         # Treat receptor amount as unknown with a wide prior
     end
     Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(Rtot)])
@@ -137,8 +136,8 @@ function plot_murineMCMC_dists(c::Union{Chains, MultivariateDistribution} = runM
         IgGname = Kav."IgG"[(ii - 1) % ligg + 1]
         FcRname = names(Kav)[2:end][(ii - 1) ÷ ligg + 1]
         name = IgGname * " to " * FcRname
-        dat = (c isa Chains) ? c["Kav[$ii]"].data : cc[4+ii, :]  # 5-16 are Kav's
-        Kav_pls[ii] = plotHistPriorDist(dat, Kav[(ii-1)%ligg+1, FcRname], name; bincount = bincount)
+        dat = (c isa Chains) ? c["Kav[$ii]"].data : cc[4 + ii, :]  # 5-16 are Kav's
+        Kav_pls[ii] = plotHistPriorDist(dat, Kav[(ii - 1) % ligg + 1, FcRname], name; bincount = bincount)
     end
     Kav_plot = plotGrid((ligg, lfcr), permutedims(Kav_pls, (2, 1)); sublabels = false)
     draw(SVG("MCMCmurine_Kav.svg", 16inch, 13inch), Kav_plot)
@@ -157,9 +156,14 @@ function plot_murineMCMC_dists(c::Union{Chains, MultivariateDistribution} = runM
     draw(PDF("MCMCmurine_Rtot.pdf", 16inch, 4inch), Rtot_plot)
 end
 
-function plot_murineMCMC_predict(c::Union{Chains, MultivariateDistribution} = runMurineMCMC(), 
-        df = importMurineInVitro(); title = nothing, KxStar = KxConst, kwargs...)
-    
+function plot_murineMCMC_predict(
+    c::Union{Chains, MultivariateDistribution} = runMurineMCMC(),
+    df = importMurineInVitro();
+    title = nothing,
+    KxStar = KxConst,
+    kwargs...,
+)
+
     if c isa Chains
         # Extract MCMC results
         Rtot = [median(c["Rtot[$i]"].data) for i = 1:length(murineFcgR)]
@@ -181,8 +185,17 @@ function plot_murineMCMC_predict(c::Union{Chains, MultivariateDistribution} = ru
     end
 
     ndf = predictMurine(df; Kav = Kavd, KxStar = KxStar, recepExp = Rtotd)
-    return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Receptor", shape = "Subclass", 
-        clip2one = false, R2pos = (0, -1.2), title = title, kwargs...)
+    return plotPredvsMeasured(
+        ndf;
+        xx = "Value",
+        yy = "Predict",
+        color = "Receptor",
+        shape = "Subclass",
+        clip2one = false,
+        R2pos = (0, -1.2),
+        title = title,
+        kwargs...,
+    )
 end
 
 function MAPmurineLikelihood(df = importMurineInVitro(); KxStar = KxConst)
@@ -267,9 +280,7 @@ function plot_murine_leukocyte(ndf; kwargs...)
     @assert "Predict" in names(ndf)
     pldf = deepcopy(ndf)
     pldf."Cell" = replace.(pldf."Cell", cellTypeFullName...)
-    return plotPredvsMeasured(pldf; xx = "Value", yy = "Predict", 
-        color = "Cell", shape = "Valency", clip2one = false, 
-        R2pos = (0, -1.5), kwargs...)
+    return plotPredvsMeasured(pldf; xx = "Value", yy = "Predict", color = "Cell", shape = "Valency", clip2one = false, R2pos = (0, -1.5), kwargs...)
 end
 
 function validateMurine(c = runMurineMCMC(), df = importMurineLeukocyte(); KxStar = KxConst)

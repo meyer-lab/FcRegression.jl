@@ -1,5 +1,4 @@
-function dist_violin_plot(df::AbstractDataFrame, dist_list::Vector{T}; 
-        title = "", x_name = "Receptor", y_range = (4, 8)) where T <: Distribution
+function dist_violin_plot(df::AbstractDataFrame, dist_list::Vector{T}; title = "", x_name = "Receptor", y_range = (4, 8)) where {T <: Distribution}
     setGadflyTheme()
     @assert size(df)[2] == length(dist_list)
 
