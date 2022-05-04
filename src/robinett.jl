@@ -17,7 +17,7 @@ function importRobinett()
 end
 
 """ Fit everything but affinities for Robinett data with MCMC, compare new and old affinities"""
-function validateRobinett(fname = "MCMC_robinett_0503.dat", c = runMCMC(); mcmc_iter = 500)
+function validateRobinett(fname = "MCMC_robinett_0504.dat", c = runMCMC(); mcmc_iter = 1_000)
     local c_old, c_new
     if isfile(fname)
         c_old, c_new = deserialize(fname)

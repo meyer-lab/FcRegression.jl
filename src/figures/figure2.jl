@@ -126,7 +126,7 @@ function figure2()
     raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Prediction without fitting", R2pos = (3, 1))
 
 
-    c = runMCMC("MCMC_nuts_0502.dat")
+    c = runMCMC("humanNUTSfit_0504.dat")
     df = loadMixData()
     pl1 = MCMC_params_predict_plot(c, df; xx = "Value", yy = "Predict", title = "All predictions with \nsingle IgG fitted params")
     pl2 = MCMC_params_predict_plot(
