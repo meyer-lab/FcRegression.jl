@@ -174,7 +174,6 @@ function predictMix(df::DataFrame; kwargs...)
     Threads.@threads for i = 2:size(df)[1]
         df[i, "Predict"] = predictMix(df[i, :]; kwargs...)
     end
-    @assert all(isfinite(df[!, "Predict"]))
     df[df."Predict" .< 1.0, "Predict"] .= 1.0
     return df
 end

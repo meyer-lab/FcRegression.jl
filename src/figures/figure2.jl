@@ -126,7 +126,7 @@ function figure2()
     raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Prediction without fitting", R2pos = (3, 1))
 
 
-    c = runMCMC("MCMC_nuts_wconvs_0405.dat")
+    c = runMCMC("MCMC_nuts_0502.dat")
     df = loadMixData()
     pl1 = MCMC_params_predict_plot(c, df; xx = "Value", yy = "Predict", title = "All predictions with \nsingle IgG fitted params")
     pl2 = MCMC_params_predict_plot(
@@ -136,10 +136,9 @@ function figure2()
         yy = "Predict",
         title = "Mixture predictions with \nsingle IgG fitted params",
     )
-    _, pl_igg, _, _ = plot_MCMC_affinity(c)
+    _, pl_igg, _ = plot_MCMC_affinity(c)
+    rob1, rob2 = validateRobinett("MCMC_robinett_0503.dat", c; mcmc_iter = 100)
 
-    pp = plotGrid((3, 3), [nothing, raw_pred_pl, pl1, pl2, pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], nothing]; sublabels = [1 1 1 1 1 1 1 1 0])
-
-    #draw(SVG("figure2.svg", 12inch, 12inch), pp)
+    pp = plotGrid((4, 3), [nothing, raw_pred_pl, pl1, pl2, pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], rob1, rob2])
     draw(PDF("figure2.pdf", 12inch, 12inch), pp)
 end

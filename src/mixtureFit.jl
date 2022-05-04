@@ -10,7 +10,6 @@ function mixturePredictions(
     Kav = importKav(; murine = false, invitro = true, retdf = true),
     KxStar = KxConst,
     vals = [4.0, 33.0],
-    convs = [2.27, 3.26],
 )
     df[!, "NewValency"] .= vals[1]
     df[df."Valency" .> 12, "NewValency"] .= vals[2]
@@ -18,8 +17,9 @@ function mixturePredictions(
 
     ndf = predictMix(df; recepExp = Rtot, KxStar = KxStar, Kav = Kav)
 
-    ndf[ndf."Valency" .<= 12, "Predict"] ./= convs[1]
-    ndf[ndf."Valency" .> 12, "Predict"] ./= convs[2]
+    ndf[ndf."Predict" .<= 0.0, "Predict"] .= 1e-12
+    ndf[ndf."Valency" .<= 12, "Predict"] ./= geomean(ndf[ndf."Valency" .<= 12, "Predict"]) / geomean(ndf[ndf."Valency" .<= 12, "Value"])
+    ndf[ndf."Valency" .> 12, "Predict"] ./= geomean(ndf[ndf."Valency" .> 12, "Predict"]) / geomean(ndf[ndf."Valency" .> 12, "Value"])
     return ndf
 end
 

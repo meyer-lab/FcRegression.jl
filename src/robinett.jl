@@ -17,20 +17,26 @@ function importRobinett()
 end
 
 """ Fit everything but affinities for Robinett data with MCMC, compare new and old affinities"""
-function validateRobinett(fname = "MCMC_robinett_0407.dat", c = runMCMC())
+function validateRobinett(fname = "MCMC_robinett_0503.dat", c = runMCMC(); mcmc_iter = 500)
     local c_old, c_new
     if isfile(fname)
         c_old, c_new = deserialize(fname)
         df = importRobinett()
     else
         df = importRobinett()
+        opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
+
+
         Kav_old = importKav(; murine = false, invitro = true, retdf = true)
         m_old = sfit(df, df."Value"; robinett = true, Kavd = Kav_old)
-        c_old = sample(m_old, NUTS(), 1_000)
+        opt_old = optimize(m_old, MAP(), LBFGS(; m = 20), opts)
+        c_old = sample(m_old, NUTS(), mcmc_iter, init_params = opt_old.values.array)
 
         _, Kav_new, _ = extractMCMCresults(c)
         m_new = sfit(df, df."Value"; robinett = true, Kavd = Kav_new)
-        c_new = sample(m_new, NUTS(), 1_000)
+        opt_new = optimize(m_new, MAP(), LBFGS(; m = 20), opts)
+        c_new = sample(m_new, NUTS(), mcmc_iter, init_params = opt_new.values.array)
+
         f = serialize(fname, [c_old, c_new])
     end
 
