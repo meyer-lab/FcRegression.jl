@@ -1,7 +1,7 @@
 """ Fitting the mixture measurements. """
 
 using Optim
-import Turing: optimize, MAP, MLE
+import Turing: MAP, MLE
 
 
 function mixturePredictions(

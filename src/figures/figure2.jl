@@ -11,16 +11,14 @@ function plotPredvsMeasured(
     shape = "Valency",
     title = "Predicted vs Actual",
     R2pos = (3, 1),
-    clip2one = true,
 )
     setGadflyTheme()
 
     df = deepcopy(df)
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
-    if clip2one
-        df[(df[!, xx]) .< 1.0, xx] .= 1.0
-        df[(df[!, yy]) .< 1.0, yy] .= 1.0
-    end
+    
+    df[(df[!, xx]) .<= 0.0, xx] .= minimum(df[(df[!, xx]) .> 0.0, xx]) / 1e-2
+    df[(df[!, yy]) .<= 0.0, yy] .= minimum(df[(df[!, yy]) .> 0.0, yy]) / 1e-2
 
     r2 = R2((df[!, xx]), (df[!, yy]))
     println(r2)

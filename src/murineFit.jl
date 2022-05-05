@@ -56,12 +56,13 @@ function predictMurine(df::AbstractDataFrame; Kav = murineKavDist(; regularKav =
     sort!(dft, ["Receptor", "Subclass"])
     @assert df."Value" == dft."Value"   # must ensure the right order
     preds = Vector(undef, size(dft)[1])
-    for i = 1:size(dft)[1]
+    Threads.@threads for i = 1:size(dft)[1]
         preds[i] = predictMurine(dft[i, :]; kwargs...)
     end
     dft."Predict" = preds
-    dft[dft."Predict" .<= 0.0, "Predict"] .= 1e-12
-    dft[!, "Predict"] ./= geomean(dft."Predict") / geomean(dft."Value")
+    if any(dft."Predict" .> 0.0)
+        dft."Predict" ./= geomean(dft."Predict"[dft."Predict" .> 0.0]) / geomean(dft."Value"[dft."Predict" .> 0.0])
+    end
     
     return dft
 end
@@ -172,7 +173,7 @@ function plot_murineMCMC_predict(c::Chains = runMurineMCMC(), df = importMurineI
 
     ndf = predictMurine(df; recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, f33 = f33)
     return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Receptor", shape = "Subclass", 
-        clip2one = false, R2pos = (0, -1), title = title, kwargs...)
+        R2pos = (0, -1), title = title, kwargs...)
 end
 
 function MAPmurineLikelihood(df = importMurineInVitro(); KxStar = KxConst)
@@ -192,7 +193,6 @@ function MAPmurineLikelihood(df = importMurineInVitro(); KxStar = KxConst)
         yy = "Predict",
         color = "Receptor",
         shape = "Subclass",
-        clip2one = false,
         R2pos = (-0.5, -1.2),
         title = "Murine MAP fitting results",
     )
@@ -260,8 +260,7 @@ function plot_murine_leukocyte(ndf; kwargs...)
     pldf = deepcopy(ndf)
     pldf."Cell" = replace.(pldf."Cell", cellTypeFullName...)
     return plotPredvsMeasured(pldf; xx = "Value", yy = "Predict", 
-        color = "Cell", shape = "Valency", clip2one = false, 
-        R2pos = (0, -1.5), kwargs...)
+        color = "Cell", shape = "Valency", R2pos = (0, -1.5), kwargs...)
 end
 
 @model function mLeukocyteModel(df, values; 

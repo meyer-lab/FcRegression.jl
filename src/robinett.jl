@@ -6,7 +6,11 @@ function figure2d()
 end
 
 function importRobinett()
-    df = CSV.File(joinpath(FcRegression.dataDir, "robinett/Luxetal2013-Fig2Bmod.csv"), delim = ",", comment = "#") |> DataFrame
+    df = CSV.File(joinpath(dataDir, "robinett/Luxetal2013-Fig2Bmod.csv"), delim = ",", comment = "#") |> DataFrame
+    for i = 1:4
+        cn = "Replicate $i"
+        df[!, cn] ./= geomean(df[Not(ismissing.(df[!, cn])), cn])
+    end
     df = dropmissing(stack(df, Not(["Cell", "Antibody", "Valency"])))
     rename!(df, ["variable" => "Experiment", "value" => "Value"])
     rename!(df, ["Antibody" => "subclass_1"])
@@ -26,7 +30,6 @@ function validateRobinett(fname = "MCMC_robinett_0504.dat", c = runMCMC(); mcmc_
         df = importRobinett()
         opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
 
-
         Kav_old = importKav(; murine = false, invitro = true, retdf = true)
         m_old = sfit(df, df."Value"; robinett = true, Kavd = Kav_old)
         opt_old = optimize(m_old, MAP(), LBFGS(; m = 20), opts)
@@ -40,8 +43,12 @@ function validateRobinett(fname = "MCMC_robinett_0504.dat", c = runMCMC(); mcmc_
         f = serialize(fname, [c_old, c_new])
     end
 
-    pl1 = MCMC_params_predict_plot(c_old, df; xx = "Value", yy = "Predict", title = "Robinett with documented affinities", R2pos = (2.5, 0.8))
-    pl2 = MCMC_params_predict_plot(c_new, df; xx = "Value", yy = "Predict", title = "Robinett with updated affinities", R2pos = (2.5, 0.8))
+    pl1 = MCMC_params_predict_plot(c_old, df; xx = "Value", yy = "Predict", 
+        title = "Robinett with documented affinities", 
+        R2pos = (0, -2))
+    pl2 = MCMC_params_predict_plot(c_new, df; xx = "Value", yy = "Predict", 
+        title = "Robinett with updated affinities", 
+        R2pos = (0, -2))
 
     pp = plotGrid((1, 2), [pl1, pl2])
     draw(PDF("figure2robinett.pdf", 7inch, 3inch), pp)

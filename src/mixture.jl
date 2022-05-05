@@ -11,6 +11,11 @@ import Statistics: cor
     df[!, "Value"] = convert.(Float64, df[!, "Value"])
     df[(df[!, "Value"]) .< 1.0, "Value"] .= 1.0
 
+    baseline = combine(groupby(df, "Experiment"), "Value" => geomean => "Baseline")
+    df = innerjoin(df, baseline, on = "Experiment")
+    df[!, "Value"] ./= df[!, "Baseline"]    # normalize fluorescence by daily geomean
+    df = df[!, Not(["Experiment", "Baseline"])]
+
     df[!, "%_1"] ./= 100.0
     df[!, "%_2"] ./= 100.0
 
@@ -21,7 +26,7 @@ import Statistics: cor
     replace!(df."Cell", "CHO-hFcgRIIA-131Arg" => "FcgRIIA-131R")
     replace!(df."Cell", "CHO-hFcgRIIIA-158Phe" => "FcgRIIIA-158F")
 
-    return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
+    return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "%_2"])
 end
 
 """ Make statistics of individual cell types and subclass types """
@@ -42,7 +47,7 @@ function averageMixData(df = loadMixData(); combSingle = false)
     end
     return combine(
         groupby(df, Not(combining)),
-        valname => geocmean => valname,
+        valname => geomean => valname,
         valname => geocstd => "std",
         valname => StatsBase.median => "Median",
         valname => lower => "xmin",
@@ -174,7 +179,9 @@ function predictMix(df::DataFrame; kwargs...)
     Threads.@threads for i = 2:size(df)[1]
         df[i, "Predict"] = predictMix(df[i, :]; kwargs...)
     end
-    df[df."Predict" .< 1.0, "Predict"] .= 1.0
+    if any(df."Predict" .> 0.0)
+        df."Predict" ./= geomean(df."Predict"[df."Predict" .> 0.0]) / geomean(df."Value"[df."Predict" .> 0.0])
+    end
     return df
 end
 
