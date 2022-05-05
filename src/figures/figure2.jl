@@ -140,6 +140,6 @@ function figure2()
     _, pl_igg, _ = plot_MCMC_affinity(c)
     rob1, rob2 = validateRobinett("MCMC_robinett_0505.dat", c; mcmc_iter = 100)
 
-    pp = plotGrid((4, 3), [nothing, raw_pred_pl, pl1, pl2, pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], rob1, rob2])
+    pp = plotGrid((4, 3), [nothing, nothing, raw_pred_pl, pl1, pl2, pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], rob1, rob2])
     draw(PDF("figure2.pdf", 12inch, 12inch), pp)
 end
