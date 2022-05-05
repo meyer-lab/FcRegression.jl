@@ -21,7 +21,7 @@ function importRobinett()
 end
 
 """ Fit everything but affinities for Robinett data with MCMC, compare new and old affinities"""
-function validateRobinett(fname = "MCMC_robinett_0504.dat", c = runMCMC(); mcmc_iter = 1_000)
+function validateRobinett(fname = "MCMC_robinett_0505.dat", c = runMCMC(); mcmc_iter = 1_000)
     local c_old, c_new
     if isfile(fname)
         c_old, c_new = deserialize(fname)
@@ -45,10 +45,10 @@ function validateRobinett(fname = "MCMC_robinett_0504.dat", c = runMCMC(); mcmc_
 
     pl1 = MCMC_params_predict_plot(c_old, df; xx = "Value", yy = "Predict", 
         title = "Robinett with documented affinities", 
-        R2pos = (0, -2))
+        R2pos = (0, -1.5))
     pl2 = MCMC_params_predict_plot(c_new, df; xx = "Value", yy = "Predict", 
         title = "Robinett with updated affinities", 
-        R2pos = (0, -2))
+        R2pos = (0, -1.5))
 
     pp = plotGrid((1, 2), [pl1, pl2])
     draw(PDF("figure2robinett.pdf", 7inch, 3inch), pp)

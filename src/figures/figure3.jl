@@ -14,24 +14,23 @@ end
 
 function figure3()
     # fetch human KxStar here
-    KxStar = median(runMCMC("humanNUTSfit_0504.dat")["KxStar"])
-    # KxStar = 2.5072552083386547e-14
+    KxStar = median(runMCMC("humanNUTSfit_0505.dat")["KxStar"])
 
     df = importMurineInVitro()
-    ndf = predictMurine(df)
+    ndf = predictMurine(df; Kav = importKav(; murine = true, retdf = true))
     pl1 = plotPredvsMeasured(
         ndf;
         xx = "Value",
         yy = "Predict",
         color = "Receptor",
         shape = "Subclass",
-        clip2one = false,
         R2pos = (0, -1),
-        title = "Rawndf =  murine prediction without fitting",
+        title = "Raw murine prediction\nwith documented affinities",
     )
 
-    c = runMurineMCMC("murineNUTSdepfit_0504.dat"; KxStar = KxStar)
-    pl2 = plot_murineMCMC_predict(c, df; title = "Murine prediction with fitted parameters", KxStar = KxStar)
+    c = runMurineMCMC("murineNUTSdepfit_0505.dat"; KxStar = KxStar)
+    pl2 = plot_murineMCMC_predict(c, df; title = "Murine prediction with fitted parameters", 
+        KxStar = KxStar, R2pos = (0, -0.3),)
 
     apls = plot_murine_MCMC_affinity(c)
     leuk_old, leuk_new = validateMurine(c; KxStar = KxStar)

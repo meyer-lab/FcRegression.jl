@@ -121,21 +121,24 @@ function figure2()
     data = averageMixData(data)
     raw_predict = predictMix(data)
 
-    raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Prediction without fitting", R2pos = (3, 1))
+    raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", 
+        title = "Prediction without fitting", R2pos = (0, -2.2))
 
 
-    c = runMCMC("humanNUTSfit_0504.dat")
+    c = runMCMC("humanNUTSfit_0505.dat")
     df = loadMixData()
-    pl1 = MCMC_params_predict_plot(c, df; xx = "Value", yy = "Predict", title = "All predictions with \nsingle IgG fitted params")
+    pl1 = MCMC_params_predict_plot(c, df; xx = "Value", yy = "Predict", 
+        title = "All predictions with \nsingle IgG fitted params", R2pos = (0, -2.2))
     pl2 = MCMC_params_predict_plot(
         c,
         df[(df."%_1" .!= 1.0) .& (df."%_2" .!= 1.0), :];
         xx = "Value",
         yy = "Predict",
         title = "Mixture predictions with \nsingle IgG fitted params",
+        R2pos = (0, -2.2),
     )
     _, pl_igg, _ = plot_MCMC_affinity(c)
-    rob1, rob2 = validateRobinett("MCMC_robinett_0503.dat", c; mcmc_iter = 100)
+    rob1, rob2 = validateRobinett("MCMC_robinett_0505.dat", c; mcmc_iter = 100)
 
     pp = plotGrid((4, 3), [nothing, raw_pred_pl, pl1, pl2, pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], rob1, rob2])
     draw(PDF("figure2.pdf", 12inch, 12inch), pp)
