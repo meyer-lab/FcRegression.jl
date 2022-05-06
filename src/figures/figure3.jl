@@ -55,7 +55,7 @@ function figure3_v2()
         title = "Raw murine leukocyte prediction\nwith documented affinities",
     )
 
-    c = fitLeukocyteMCMC("leukNUTSfit_0505_01.dat")
+    c = fitLeukocyteMCMC("leukNUTSfit_0505.dat")
     ndf2 = predictLeukocyte(c, df; KxStar = KxStar)
     pl2 = plotPredvsMeasured(
         ndf2;

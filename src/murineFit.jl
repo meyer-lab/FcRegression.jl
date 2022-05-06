@@ -229,7 +229,7 @@ function validateMurineInVitro(c::Chains = fitLeukocyteMCMC(); KxStar = KxConst,
         color = "Receptor",
         shape = "Subclass",
         R2pos = (0, -1),
-        title = "Murine in vitro binding raw prediction\nwith documented affinities",
+        title = "Murine in vitro binding prediction\nwith documented affinities",
     )
     pl2 = plotPredvsMeasured(
         predictMurine(df; Kav = Kav_new);

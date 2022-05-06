@@ -272,3 +272,30 @@ end
 end
 
 importKavDist(; kwargs...) = deepcopy(importKavDist_readcsv(; kwargs...))
+
+@memoize function importCellRtotDist_readcsv(; murine = true, retdf = true)
+    @assert murine
+    df = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame
+    df[df."Count" .< 1.0, "Count"] .= 1.0
+
+    function findDist(x)
+        if length(x) <= 1
+            return inferLogNormal(x[1], x[1])
+        end
+        if std(x) <= 5.0
+            return inferLogNormal(geomean(x), 5.0)
+        end
+        return inferLogNormal(geomean(x), quantile(x, 0.9) - quantile(x, 0.1))
+    end
+
+    ndf = combine(groupby(df, ["Cells", "Receptor"]), "Count" => findDist => "Distribution")
+    ndf = unstack(ndf, "Receptor", "Cells", "Distribution")
+    @assert ndf."Receptor" == murineFcgR
+    if retdf
+        return ndf
+    else
+        return Matrix(ndf[!, Not("Receptor")])
+    end
+end
+
+importCellRtotDist(; kwargs...) = deepcopy(importCellRtotDist_readcsv(; kwargs...))
