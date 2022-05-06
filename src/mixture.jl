@@ -172,15 +172,29 @@ end
 
 predictMix(dfrow::DataFrameRow; kwargs...) = predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; kwargs...)
 
-function predictMix(df::DataFrame; kwargs...)
-    """ Will return another df object. """
+function predictMix(df::DataFrame; vals = [4.0, 33.0], conversion = true, kwargs...)
+    """ Will return another df object. Have already considered conversion factors"""
+    df = deepcopy(df)
+    if length(unique(df."Valency")) == 2
+        df[!, "NewValency"] .= vals[1]
+        df[df."Valency" .> 12, "NewValency"] .= vals[2]
+    end
+
     # Setup column
     df[!, "Predict"] .= predictMix(df[1, :]; kwargs...)
     Threads.@threads for i = 2:size(df)[1]
         df[i, "Predict"] = predictMix(df[i, :]; kwargs...)
     end
-    if any(df."Predict" .> 0.0)
-        df."Predict" ./= geomean(df."Predict"[df."Predict" .> 0.0]) / geomean(df."Value"[df."Predict" .> 0.0])
+
+    # one conversion factor per valency
+    df[df."Predict" .< 0.0, "Predict"] .= 0.0
+    if conversion
+        for val in unique(df."Valency")
+            if any(df[df."Valency" .== val, "Predict"] .> 0.0)
+                rows = (df."Valency" .== val) .& (df."Predict" .> 0.0)
+                df[(df."Valency" .== val), "Predict"] ./= geomean(df[rows, "Predict"]) / geomean(df[rows, "Value"])
+            end
+        end
     end
     return df
 end

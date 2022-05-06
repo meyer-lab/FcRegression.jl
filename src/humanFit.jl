@@ -1,7 +1,8 @@
-import Turing: ~, sample, NUTS, @model, Chains, ADVI, vi, rand
+import Turing: ~, sample, NUTS, @model, Chains, ADVI, vi, rand, MAP, MLE
 import Serialization: serialize, deserialize
 using Distributions
 using LinearAlgebra
+
 
 const f4Dist = LogNormal(log(4), 0.2)   # std ~= 0.82
 const f33Dist = LogNormal(log(33), 0.2)   # std ~= 6.80
@@ -35,7 +36,7 @@ const KxStarDist = LogNormal(log(KxConst), 2.0)   # std ~= 4.37 in Robinett
 
     # fit predictions
     if all(Rtot .>= 0.0) && all(0.0 .<= Kav .< Inf) && all(0.0 .< [f4, f33, KxStar] .< Inf)
-        df = mixturePredictions(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
+        df = predictMix(deepcopy(df); recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
     else
         df = deepcopy(df)
         df."Predict" .= Inf
@@ -62,6 +63,20 @@ function runMCMC(fname = "humanNUTSfit_0505.dat"; mcmc_iter = 1_000)
 
     f = serialize(fname, c)
     return c
+end
+
+function MAPLikelihood(df; robinett = false)
+    model = sfit(df, df."Value"; robinett = robinett)
+    opts = Optim.Options(iterations = 1000, show_every = 10, show_trace = true)
+
+    opt = optimize(model, MAP(), LBFGS(; m = 20), opts)
+    x = opt.values.array
+
+    Rtot = Dict([humanFcgRiv[ii] => x[ii] for ii = 1:length(humanFcgRiv)])
+    Kav = deepcopy(importKav(; murine = false, invitro = true, retdf = true))
+    Kav[!, Not("IgG")] = reshape(x[10:33], length(humanIgG), length(humanFcgRiv))
+
+    return predictMix(df; recepExp = Rtot, Kav = Kav, KxStar = x[9], vals = [x[7], x[8]])
 end
 
 """ Making a single subplot for priors and posteriors """
@@ -139,7 +154,7 @@ function MCMC_params_predict_plot(c = runMCMC(), df = loadMixData(); kwargs...)
     if !("xmin" in names(df))
         df = averageMixData(df)
     end
-    ndf = mixturePredictions(df; Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
+    ndf = predictMix(df; recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
     return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Cell", shape = "Valency",
         title = "Human NUTS fitting results", kwargs...)
 end

@@ -1,5 +1,5 @@
 function dist_violin_plot(df::AbstractDataFrame, dist_list::Vector{T}; 
-        title = "", x_name = "Receptor", y_range = (4, 8)) where T <: Distribution
+        title = "", x_name = "Receptor", y_range = (5, 8)) where T <: Distribution
     setGadflyTheme()
     @assert size(df)[2] == length(dist_list)
 
@@ -32,8 +32,8 @@ function plot_MCMC_affinity(c = runMCMC())
     pl_igg = Vector{Union{Gadfly.Plot, Context}}(undef, 0)
     for igg in Kav_priors[!, "IgG"]
         priors = reshape(Matrix(Kav_priors[Kav_priors."IgG" .== igg, Not("IgG")]), :)
-        posts = DataFrame(hcat(reshape(Matrix(Kav_posts[Kav_posts."IgG" .== "IgG1", Not("IgG")]), :)...), humanFcgRiv)
-        append!(pl_igg, [dist_violin_plot(posts, priors; title = "h$igg Affinities Distributions")])
+        posts = DataFrame(hcat(reshape(Matrix(Kav_posts[Kav_posts."IgG" .== igg, Not("IgG")]), :)...), humanFcgRiv)
+        append!(pl_igg, [dist_violin_plot(posts, priors; title = "h$igg Affinities Distributions", y_range = (5, 8))])
     end
 
     misc_priors = [f4Dist, f33Dist, KxStarDist]
