@@ -67,14 +67,17 @@ function predictMurine(df::AbstractDataFrame; Kav = murineKavDist(; regularKav =
     return dft
 end
 
-function predictMurine(c::Chains = runMurineMCMC(), df::AbstractDataFrame = importMurineInVitro(); kwargs...)
-    Kavd = murineKavDist(; regularKav = true)
-    Kav = [median(c["Kav[$i]"].data) for i = 1:12]
-    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
-    return predictMurine(df; Kav = Kavd, kwargs...)
+function predictMurine(c::Chains = runMurineMCMC(), df::AbstractDataFrame = importMurineInVitro(); 
+        Kav = murineKavDist(; regularKav = true), kwargs...)
+    
+    Rtot = [median(c["Rtot[$i]"].data) for i = 1:4]
+    Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(Rtot)])
+    f33 = median(c["f33"].data)
+
+    return predictMurine(df; Kav = Kav, recepExp = Rtotd, f33 = f33, kwargs...)
 end
 
-@model function murineFit(df, values; KxStar = KxConst)
+@model function murineFit(df, values; KxStar = KxConst, Kavd::Union{Nothing, AbstractDataFrame} = nothing)
     # Rtot sample
     Rtot = Vector(undef, length(murineFcgR))
     for ii in eachindex(Rtot)
@@ -84,20 +87,22 @@ end
     end
     Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(Rtot)])
 
-    # Kav sample
-    Kav_dist = Matrix(murineKavDist()[:, Not("IgG")])
-    Kavd = murineKavDist(; regularKav = true)
-    Kavd = Kavd[Kavd."IgG" .!= "IgG3", :]
-    Kav = Matrix(undef, size(Kav_dist)...)
-    for ii in eachindex(Kav)
-        Kav[ii] ~ Kav_dist[ii]
-    end
-    Kavd[!, Not("IgG")] = Kav
+    if Kavd === nothing
+        # fit Kav
+        Kav_dist = Matrix(murineKavDist()[:, Not("IgG")])
+        Kavd = murineKavDist(; regularKav = true)
+        Kavd = Kavd[Kavd."IgG" .!= "IgG3", :]
+        Kav = Matrix(undef, size(Kav_dist)...)
+        for ii in eachindex(Kav)
+            Kav[ii] ~ Kav_dist[ii]
+        end
+        Kavd[!, Not("IgG")] = Kav
+    end    
 
     f33 ~ f33Dist
 
     # fit predictions
-    if all(Rtot .>= 0.0) && all(0.0 .<= Kav .< Inf)
+    if all(Rtot .>= 0.0) && all(0.0 .<= Matrix(Kavd[!, Not("IgG")]) .< Inf)
         df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kavd, KxStar = KxConst, f33 = f33)
     else
         df = deepcopy(df)
@@ -165,7 +170,7 @@ function plot_murineMCMC_predict(c::Chains = runMurineMCMC(), df = importMurineI
     Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(murineFcgR)])
 
     Kavd = murineKavDist(; regularKav = true)
-    Kav = [median(c["Kav[$i]"].data) for i = 1:length(murineKavDist(; regularKav = true, retdf = false))]
+    Kav = [median(c["Kav[$i]"].data) for i = 1:12]
     Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
     title = (title === nothing) ? "Murine fitting with NUTS (median)" : title
 
@@ -199,117 +204,44 @@ function MAPmurineLikelihood(df = importMurineInVitro(); KxStar = KxConst)
     return pl, [Rtot, Kav]
 end
 
+function validateMurineInVitro(c::Chains = fitLeukocyteMCMC(); KxStar = KxConst, mcmc_iter = 1_000)
+    df = importMurineInVitro()
+    opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
 
+    Kav_old = murineKavDist(; regularKav = true, retdf = true)
+    m_old = murineFit(df, df."Value"; KxStar = KxStar, Kavd = Kav_old)
+    opt_old = optimize(m_old, MAP(), LBFGS(; m = 20), opts)
+    c_old = sample(m_old, NUTS(), mcmc_iter, init_params = opt_old.values.array)
 
-
-function importMurineLeukocyte(fn = "leukocyte-apr2022.csv"; average = true)
-    df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
-    #df = df[df."Cell" .!= "Tcell", :]   # throw away T cells
-    df = df[df."Experiment" .!= 7, :]   # throw away Exp. 7
-    df[!, ["IgG1", "IgG2b", "IgG2c"]] .-= df[!, "TNP-BSA"]  # subtract TNP-BSA control from meas
-    df = df[!, Not("TNP-BSA")]
-    df = dropmissing(stack(df, ["IgG1", "IgG2b", "IgG2c"], variable_name = "Subclass", value_name = "Value"))
-    df[df."Value" .< 1.0, "Value"] .= 1.0   # clip values to 1.0
-    baseline = combine(groupby(df, "Experiment"), "Value" => geomean => "Baseline")
-    df = innerjoin(df, baseline, on = "Experiment")
-    df[!, "Value"] ./= df[!, "Baseline"]    # normalize fluorescence by daily geomean
-    df = df[!, Not(["Experiment", "Baseline"])]
-    if average
-        df = combine(
-            groupby(df, Not("Value")),
-            "Value" => geomean => "Value",
-            "Value" => (xs -> quantile(xs, 0.25)) => "xmin",
-            "Value" => (xs -> quantile(xs, 0.75)) => "xmax",
-        )
-    end
-    return sort!(df, ["Cell", "Subclass", "Valency"])
-end
-
-function predictLeukocyte(dfr::DataFrameRow; KxStar = KxConst, 
-        Kav = murineKavDist(; regularKav = true, retdf = true), f = [4, 33])
-    igg = dfr."Subclass"
-    igg = (igg == "IgG2c") ? "IgG2a" : igg
-    Kav_vs = Matrix(Kav[Kav."IgG" .== igg, Not("IgG")])
-    Rtot_vs = Vector(dfr[murineFcgR])
-    val = (dfr."Valency" > 12) ? f[2] : f[1]
-    return polyfc(1e-9, KxStar, val, Rtot_vs, [1.0], Kav_vs).Lbound
-end
-
-function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(; average = true); kwargs...)
-    # transpose Rtot
-    Rtot = importRtot(; murine = true, retdf = true, cellTypes = unique(df."Cell"))
-    Rtot = stack(Rtot, Not("Receptor"), variable_name = "Cell", value_name = "Abundance")
-    Rtot = dropmissing(unstack(Rtot, "Cell", "Receptor", "Abundance"))
-    rdf = innerjoin(df, Rtot, on = "Cell")
-    sort!(rdf, ["Cell", "Subclass", "Valency"])
-    @assert df."Value" == rdf."Value"
-    preds = Vector(undef, size(rdf)[1])
-    for i = 1:size(rdf)[1]
-        preds[i] = predictLeukocyte(rdf[i, :]; kwargs...)
-    end
-    rdf."Predict" = preds
-    #@assert all(isfinite(rdf[!, "Predict"]))
-    rdf = rdf[!, Not(murineFcgR)]
-    rdf[rdf."Predict" .<= 0.0, "Predict"] .= 1e-12
-    rdf."Predict" ./= geomean(rdf."Predict") / geomean(rdf."Value")
-    return rdf
-end
-
-function plot_murine_leukocyte(ndf; kwargs...)
-    @assert "Predict" in names(ndf)
-    pldf = deepcopy(ndf)
-    pldf."Cell" = replace.(pldf."Cell", cellTypeFullName...)
-    return plotPredvsMeasured(pldf; xx = "Value", yy = "Predict", 
-        color = "Cell", shape = "Valency", R2pos = (0, -1.5), kwargs...)
-end
-
-@model function mLeukocyteModel(df, values; 
-        KxStar = KxConst, Kav = murineKavDist(; regularKav = true, retdf = true))
-    # fit valency
-    f4 ~ f4Dist
-    f33 ~ f33Dist
-    
-    # fit predictions
-    if all(0.0 .< [f4, f33] .< Inf)
-        df = predictLeukocyte(deepcopy(df); Kav = Kav, KxStar = KxStar, f = [f4, f33])
-    else
-        df = deepcopy(df)
-        df."Predict" .= Inf
-    end
-
-    stdv = std(log.(df."Predict") - log.(values))
-    values ~ MvLogNormal(log.(df."Predict"), stdv * I)
-    nothing
-end
-
-function fitLeukocyteMCMC(; mcmc_iter = 1_000, KxStar = KxConst, 
-        Kav = murineKavDist(; regularKav = true, retdf = true))
-    df = importMurineLeukocyte(; average = false)
-    m = mLeukocyteModel(df, df."Value"; KxStar = KxStar, Kav = Kav)
-    # use MAP estimate as starting point
-    opts = Optim.Options(iterations = 200, show_every = 10, show_trace = true)
-    opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
-    #c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
-
-    f4 = opt.values[:f4]
-    f33 = opt.values[:f33]
-    return [f4, f33]
-end
-
-function validateMurine(c = runMurineMCMC(); KxStar = KxConst)
-    df = importMurineLeukocyte(; average = true)
-
-    Kav1 = importKav(; murine = true, retdf = true)
-    ndf1 = predictLeukocyte(deepcopy(df); KxStar = KxStar, 
-        f = fitLeukocyteMCMC(; KxStar = KxStar))
-    pl1 = plot_murine_leukocyte(ndf1; title = "Murine Leukocyte Raw Predictions")
-
-    Kavd = murineKavDist(; regularKav = true)
+    # construct new Kav df from chain c
+    Kav_new = murineKavDist(; regularKav = true, retdf = true)
     Kav = [median(c["Kav[$i]"].data) for i = 1:12]
-    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
+    Kav_new[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kav_new)[1], :))
+    
+    m_new = murineFit(df, df."Value"; KxStar = KxStar, Kavd = Kav_new)
+    opt_new = optimize(m_new, MAP(), LBFGS(; m = 20), opts)
+    c_new = sample(m_new, NUTS(), mcmc_iter, init_params = opt_old.values.array)
 
-    ndf2 = predictLeukocyte(deepcopy(df); Kav = Kavd, KxStar = KxStar, 
-        f = fitLeukocyteMCMC(; KxStar = KxStar, Kav = Kavd))
-    pl2 = plot_murine_leukocyte(ndf2; title = "Murine Leukocyte Updated Predictions")
+    pl1 = plotPredvsMeasured(
+        predictMurine(df; Kav = Kav_old);
+        xx = "Value",
+        yy = "Predict",
+        color = "Receptor",
+        shape = "Subclass",
+        R2pos = (0, -1),
+        title = "Murine in vitro binding raw prediction\nwith documented affinities",
+    )
+    pl2 = plotPredvsMeasured(
+        predictMurine(df; Kav = Kav_new);
+        xx = "Value",
+        yy = "Predict",
+        color = "Receptor",
+        shape = "Subclass",
+        R2pos = (0, -1),
+        title = "Murine in vitro binding prediction\nwith updated affinities",
+    )
+
+    pp = plotGrid((1, 2), [pl1, pl2])
+    draw(PDF("figure3CHO.pdf", 7inch, 3inch), pp)
     return pl1, pl2
 end

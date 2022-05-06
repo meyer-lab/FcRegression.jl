@@ -33,8 +33,44 @@ function figure3()
         KxStar = KxStar, R2pos = (0, -0.3),)
 
     apls = plot_murine_MCMC_affinity(c)
-    leuk_old, leuk_new = validateMurine(c; KxStar = KxStar)
+    #leuk_old, leuk_new = validateLeukocyte(c; KxStar = KxStar)
 
-    pp = plotGrid((3, 3), [pl1, pl2, apls[1], apls[2], apls[3], leuk_old, leuk_new])
+    pp = plotGrid((3, 3), [pl1, pl2, apls[1], apls[2], apls[3]])
     draw(PDF("figure3.pdf", 12inch, 9inch), pp)
+end
+
+function figure3_v2()
+    # fetch human KxStar here
+    KxStar = median(runMCMC("humanNUTSfit_0505.dat")["KxStar"])
+
+    df = importMurineLeukocyte(; average = true)
+    ndf1 = predictLeukocyte(df; Kav = importKav(; murine = true, retdf = true), KxStar = KxStar)
+    pl1 = plotPredvsMeasured(
+        ndf1;
+        xx = "Value",
+        yy = "Predict",
+        color = "Cell",
+        shape = "Subclass",
+        R2pos = (0, -2),
+        title = "Raw murine leukocyte prediction\nwith documented affinities",
+    )
+
+    c = fitLeukocyteMCMC("leukNUTSfit_0505_01.dat")
+    ndf2 = predictLeukocyte(c, df; KxStar = KxStar)
+    pl2 = plotPredvsMeasured(
+        ndf2;
+        xx = "Value",
+        yy = "Predict",
+        color = "Cell",
+        shape = "Subclass",
+        R2pos = (0, -2),
+        title = "Murine leukocyte prediction\nwith updated affinities",
+    )
+
+    apls = plot_murine_MCMC_affinity(c)
+
+    vpl1, vpl2 = validateMurineInVitro(c; KxStar = KxStar)
+
+    pp = plotGrid((3, 3), [pl1, pl2, apls[1], apls[2], apls[3], vpl1, vpl2])
+    draw(PDF("figure3_v2.pdf", 12inch, 9inch), pp)
 end
