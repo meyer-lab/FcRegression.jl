@@ -12,7 +12,7 @@ function plot_murine_MCMC_affinity(c::Chains = runMurineMCMC())
     return pls
 end
 
-function figure3()
+function figure3_v1()
     # fetch human KxStar here
     KxStar = median(runMCMC("humanNUTSfit_0505.dat")["KxStar"])
 
@@ -39,7 +39,7 @@ function figure3()
     draw(PDF("figure3.pdf", 12inch, 9inch), pp)
 end
 
-function figure3_v2()
+function figure3()
     # fetch human KxStar here
     KxStar = median(runMCMC("humanNUTSfit_0505.dat")["KxStar"])
 
