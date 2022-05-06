@@ -5,8 +5,9 @@ function plot_murine_ADVI_affinity(c::Chains = runMurineMCMC())
     pls = Vector{Union{Gadfly.Plot, Context}}(undef, 3)
     for (ii, igg) in enumerate(Kav_priors[!, "IgG"])
         priors = reshape(Matrix(Kav_priors[Kav_priors."IgG" .== igg, Not("IgG")]), :)
-        posts = DataFrame(hcat([reshape(Matrix(c["Kav[$i]"]), :) for i = (ii * 4 - 3):(ii * 4)]...), names(Kav_priors)[2:end])
-        pls[ii] = dist_violin_plot(posts, priors; y_range = (4, 9), title = "m$igg Affinities Distributions")
+        posts = DataFrame(hcat([reshape(Matrix(c["Kav[$i]"]), :) for i = (ii*4-3):(ii*4)]...), names(Kav_priors)[2:end])
+        pls[ii] = dist_violin_plot(posts, priors; y_range = (4, 9), 
+            title = "m$igg Affinities Distributions")
     end
     return pls
 end
