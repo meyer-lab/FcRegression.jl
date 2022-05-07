@@ -23,7 +23,10 @@ end
     ndf = FcRegression.predictMurine(df; Kav = mKav, recepExp = mRecepExp)
     @test all(ndf[(ndf."Receptor" .== "FcgRI") .& (ndf."Subclass" .== "IgG2c"), "Predict"] .<= 1e-8)
     @test all(ndf[Not((ndf."Receptor" .== "FcgRI") .& (ndf."Subclass" .== "IgG2c")), "Predict"] .> 1e-8)
-    @test testAllApproxSame(ndf0[Not((ndf0."Receptor" .== "FcgRI") .& (ndf0."Subclass" .== "IgG2c")), "Predict"] ./ ndf[Not((ndf."Receptor" .== "FcgRI") .& (ndf."Subclass" .== "IgG2c")), "Predict"])
+    @test testAllApproxSame(
+        ndf0[Not((ndf0."Receptor" .== "FcgRI") .& (ndf0."Subclass" .== "IgG2c")), "Predict"] ./
+        ndf[Not((ndf."Receptor" .== "FcgRI") .& (ndf."Subclass" .== "IgG2c")), "Predict"],
+    )
 
     # remove one IgG's affinities
     mKav = FcRegression.murineKavDist(; regularKav = true)

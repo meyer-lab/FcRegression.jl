@@ -21,8 +21,7 @@ function importMurineLeukocyte(fn = "leukocyte-apr2022.csv"; average = true)
     return sort!(df, ["Cell", "Subclass", "Valency"])
 end
 
-function predictLeukocyte(dfr::DataFrameRow; KxStar = KxConst, 
-        Kav = murineKavDist(; regularKav = true, retdf = true), f = [4, 33])
+function predictLeukocyte(dfr::DataFrameRow; KxStar = KxConst, Kav = murineKavDist(; regularKav = true, retdf = true), f = [4, 33])
     igg = dfr."Subclass"
     igg = (igg == "IgG2c") ? "IgG2a" : igg
     Kav_vs = Matrix(Kav[Kav."IgG" .== igg, Not("IgG")])
@@ -31,8 +30,7 @@ function predictLeukocyte(dfr::DataFrameRow; KxStar = KxConst,
     return polyfc(1e-9, KxStar, val, Rtot_vs, [1.0], Kav_vs).Lbound
 end
 
-function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(; average = true); 
-        Rtot = nothing, kwargs...)
+function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(; average = true); Rtot = nothing, kwargs...)
     # transpose Rtot
     cellTypes = unique(df."Cell")
     if Rtot === nothing
@@ -51,7 +49,7 @@ function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(; averag
     end
     rdf."Predict" = typeof(preds[1]).(preds)
     rdf = rdf[!, Not(murineFcgR)]
-    
+
     # one conversion factor per valency
     rdf[rdf."Predict" .< 0.0, "Predict"] .= 0.0
     for val in unique(rdf."Valency")
@@ -72,10 +70,10 @@ function predictLeukocyte(c::Chains, df::AbstractDataFrame; kwargs...)
     Kavd = murineKavDist(; regularKav = true, retdf = true)
     Kav = [median(c["Kav[$i]"].data) for i = 1:12]
     Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
-    
+
     f4 = median(c["f4"])
     f33 = median(c["f33"])
-    
+
     return predictLeukocyte(df; Rtot = Rtotd, Kav = Kavd, f = [f4, f33], kwargs...)
 end
 
@@ -84,8 +82,7 @@ function plot_murine_leukocyte(ndf; kwargs...)
     @assert "Predict" in names(ndf)
     pldf = deepcopy(ndf)
     pldf."Cell" = replace.(pldf."Cell", cellTypeFullName...)
-    return plotPredvsMeasured(pldf; xx = "Value", yy = "Predict", 
-        color = "Cell", shape = "Valency", R2pos = (0, -1.5), kwargs...)
+    return plotPredvsMeasured(pldf; xx = "Value", yy = "Predict", color = "Cell", shape = "Valency", R2pos = (0, -1.5), kwargs...)
 end
 
 @model function mLeukocyteModel(df, values; KxStar = KxConst)
@@ -112,7 +109,7 @@ end
     # sample valency
     f4 ~ f4Dist
     f33 ~ f33Dist
-    
+
     # fit predictions
     if all(0.0 .<= Rtot .< Inf) && all(0.0 .<= Kav .< Inf) && all(0.0 .< [f4, f33] .< Inf)
         df = predictLeukocyte(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, f = [f4, f33])
@@ -173,7 +170,7 @@ function plot_MCMCLeuk_dists(c = fitLeukocyteMCMC())
     for ii in eachindex(Kav_pls)
         IgGname = mIgGs[(ii - 1) % ligg + 1]
         FcRname = murineFcgR[(ii - 1) ÷ ligg + 1]
-        name = "m$IgGname to m$FcRname" 
+        name = "m$IgGname to m$FcRname"
         Kav_pls[ii] = plotHistPriorDist(c["Kav[$ii]"].data, Kav_dist[ii], name)
     end
     Kav_plot = plotGrid((ligg, lfcr), permutedims(Kav_pls, (2, 1)); sublabels = false)
@@ -188,7 +185,7 @@ function plot_MCMCLeuk_dists(c = fitLeukocyteMCMC())
     for ii in eachindex(Rtot_pls)
         cellname = cellTypes[(ii - 1) % lcell + 1]
         FcRname = murineFcgR[(ii - 1) ÷ lcell + 1]
-        name = "m$FcRname on $cellname" 
+        name = "m$FcRname on $cellname"
         Rtot_pls[ii] = plotHistPriorDist(c["Rtot[$ii]"].data, Rtotd[ii], name)
     end
     Rtot_plot = plotGrid((lcell, lfcr), permutedims(Rtot_pls, (2, 1)); sublabels = false)
