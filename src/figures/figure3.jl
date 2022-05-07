@@ -1,6 +1,6 @@
 """ Figure 3: fitted murine affinities """
 
-function plot_murine_ADVI_affinity(c::Chains = runMurineMCMC())
+function plot_murine_MCMC_affinity(c::Chains = runMurineMCMC())
     Kav_priors = murineKavDist()
     pls = Vector{Union{Gadfly.Plot, Context}}(undef, 3)
     for (ii, igg) in enumerate(Kav_priors[!, "IgG"])
@@ -12,41 +12,65 @@ function plot_murine_ADVI_affinity(c::Chains = runMurineMCMC())
     return pls
 end
 
-function figure3()
+function figure3_v1()
     # fetch human KxStar here
+    KxStar = median(runMCMC("humanNUTSfit_0505.dat")["KxStar"])
 
     df = importMurineInVitro()
-    ndf = predictMurine(df)
+    ndf = predictMurine(df; Kav = importKav(; murine = true, retdf = true))
     pl1 = plotPredvsMeasured(
         ndf;
         xx = "Value",
         yy = "Predict",
         color = "Receptor",
         shape = "Subclass",
-        clip2one = false,
         R2pos = (0, -1),
-        title = "Raw murine prediction without fitting",
+        title = "Raw murine prediction\nwith documented affinities",
     )
-    #pl2, _ = MAPmurineLikelihood()
 
-    c = runMurineMCMC("murine_NUTS_0502_5.62332e-16.dat")
-    apls = plot_murine_ADVI_affinity(c)
+    c = runMurineMCMC("murineNUTSdepfit_0505.dat"; KxStar = KxStar)
+    pl2 = plot_murineMCMC_predict(c, df; title = "Murine prediction with fitted parameters", 
+        KxStar = KxStar, R2pos = (0, -0.3),)
 
-    ndf2 = predictMurine(c, df; KxStar = 5.62332e-16)
-    pl3 = plotPredvsMeasured(
+    apls = plot_murine_MCMC_affinity(c)
+    #leuk_old, leuk_new = validateLeukocyte(c; KxStar = KxStar)
+
+    pp = plotGrid((3, 3), [pl1, pl2, apls[1], apls[2], apls[3]])
+    draw(PDF("figure3.pdf", 12inch, 9inch), pp)
+end
+
+function figure3()
+    # fetch human KxStar here
+    KxStar = median(runMCMC("humanNUTSfit_0505.dat")["KxStar"])
+
+    df = importMurineLeukocyte(; average = true)
+    ndf1 = predictLeukocyte(df; Kav = importKav(; murine = true, retdf = true), KxStar = KxStar)
+    pl1 = plotPredvsMeasured(
+        ndf1;
+        xx = "Value",
+        yy = "Predict",
+        color = "Cell",
+        shape = "Subclass",
+        R2pos = (0, -2),
+        title = "Raw murine leukocyte prediction\nwith documented affinities",
+    )
+
+    c = fitLeukocyteMCMC("leukNUTSfit_0505.dat")
+    ndf2 = predictLeukocyte(c, df; KxStar = KxStar)
+    pl2 = plotPredvsMeasured(
         ndf2;
         xx = "Value",
         yy = "Predict",
-        color = "Receptor",
+        color = "Cell",
         shape = "Subclass",
-        clip2one = false,
-        R2pos = (0, -1),
-        title = "Murine prediction after fitting",
+        R2pos = (0, -2),
+        title = "Murine leukocyte prediction\nwith updated affinities",
     )
 
-    leuk = importMurineLeukocyte()
-    leuk_old, leuk_new = validateMurine(c, leuk; KxStar = 5.62332e-16)
+    apls = plot_murine_MCMC_affinity(c)
 
-    pp = plotGrid((3, 3), [pl1, pl3, apls[1], apls[2], apls[3], leuk_old, leuk_new])
-    draw(PDF("figure3.pdf", 12inch, 9inch), pp)
+    vpl1, vpl2 = validateMurineInVitro(c; KxStar = KxStar)
+
+    pp = plotGrid((3, 3), [pl1, pl2, apls[1], apls[2], apls[3], vpl1, vpl2])
+    draw(PDF("figure3_v2.pdf", 12inch, 9inch), pp)
 end

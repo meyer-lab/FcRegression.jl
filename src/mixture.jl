@@ -11,6 +11,11 @@ import Statistics: cor
     df[!, "Value"] = convert.(Float64, df[!, "Value"])
     df[(df[!, "Value"]) .< 1.0, "Value"] .= 1.0
 
+    baseline = combine(groupby(df, "Experiment"), "Value" => geomean => "Baseline")
+    df = innerjoin(df, baseline, on = "Experiment")
+    df[!, "Value"] ./= df[!, "Baseline"]    # normalize fluorescence by daily geomean
+    df = df[!, Not(["Experiment", "Baseline"])]
+
     df[!, "%_1"] ./= 100.0
     df[!, "%_2"] ./= 100.0
 
@@ -21,7 +26,7 @@ import Statistics: cor
     replace!(df."Cell", "CHO-hFcgRIIA-131Arg" => "FcgRIIA-131R")
     replace!(df."Cell", "CHO-hFcgRIIIA-158Phe" => "FcgRIIIA-158F")
 
-    return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
+    return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "%_2"])
 end
 
 """ Make statistics of individual cell types and subclass types """
@@ -42,7 +47,7 @@ function averageMixData(df = loadMixData(); combSingle = false)
     end
     return combine(
         groupby(df, Not(combining)),
-        valname => geocmean => valname,
+        valname => geomean => valname,
         valname => geocstd => "std",
         valname => StatsBase.median => "Median",
         valname => lower => "xmin",
@@ -167,14 +172,30 @@ end
 
 predictMix(dfrow::DataFrameRow; kwargs...) = predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; kwargs...)
 
-function predictMix(df::DataFrame; kwargs...)
-    """ Will return another df object. """
+function predictMix(df::DataFrame; vals = [4.0, 33.0], conversion = true, kwargs...)
+    """ Will return another df object. Have already considered conversion factors"""
+    df = deepcopy(df)
+    if length(unique(df."Valency")) == 2
+        df[!, "NewValency"] .= vals[1]
+        df[df."Valency" .> 12, "NewValency"] .= vals[2]
+    end
+
     # Setup column
     df[!, "Predict"] .= predictMix(df[1, :]; kwargs...)
-    for i = 2:size(df)[1]
+    Threads.@threads for i = 2:size(df)[1]
         df[i, "Predict"] = predictMix(df[i, :]; kwargs...)
     end
-    df[df."Predict" .< 1.0, "Predict"] .= 1.0
+
+    # one conversion factor per valency
+    df[df."Predict" .< 0.0, "Predict"] .= 0.0
+    if conversion
+        for val in unique(df."Valency")
+            if any(df[df."Valency" .== val, "Predict"] .> 0.0)
+                rows = (df."Valency" .== val) .& (df."Predict" .> 0.0)
+                df[(df."Valency" .== val), "Predict"] ./= geomean(df[rows, "Predict"]) / geomean(df[rows, "Value"])
+            end
+        end
+    end
     return df
 end
 
