@@ -8,13 +8,9 @@ const f4Dist = LogNormal(log(4), 0.2)   # std ~= 0.82
 const f33Dist = LogNormal(log(33), 0.2)   # std ~= 6.80
 const KxStarDist = LogNormal(log(KxConst), 2.0)   # std ~= 4.37 in Robinett
 
-@model function sfit(df, values; robinett = false, Kavd = importKav(; murine = false, invitro = true, retdf = true))
+@model function sfit(df, values; robinett = false, Kavd::AbstractDataFrame = importKav(; murine = false, invitro = true, retdf = true))
     Rtot_dist = importInVitroRtotDist(robinett)
-    Kav_dist = importKavDist()
-    Kav_dist = Matrix(Kav_dist[:, Not("IgG")])
-
     Rtot = Vector(undef, length(Rtot_dist))
-    Kav = Matrix(undef, size(Kav_dist)...)
 
     # Order of distribution definitions here matches MAPLikelihood()
     for ii in eachindex(Rtot)
@@ -22,11 +18,14 @@ const KxStarDist = LogNormal(log(KxConst), 2.0)   # std ~= 4.37 in Robinett
     end
     Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
 
-    for ii in eachindex(Kav)
-        Kav[ii] ~ Kav_dist[ii]
-    end
-
     if !robinett    # Don't fit affinity for Robinett data
+        Kav_dist = importKavDist()
+        Kav_dist = Matrix(Kav_dist[:, Not("IgG")])
+        Kav = Matrix(undef, size(Kav_dist)...)
+
+        for ii in eachindex(Kav)
+            Kav[ii] ~ Kav_dist[ii]
+        end
         Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(Kav)
     end
 
@@ -35,7 +34,7 @@ const KxStarDist = LogNormal(log(KxConst), 2.0)   # std ~= 4.37 in Robinett
     KxStar ~ KxStarDist
 
     # fit predictions
-    if all(Rtot .>= 0.0) && all(0.0 .<= Kav .< Inf) && all(0.0 .< [f4, f33, KxStar] .< Inf)
+    if all(Rtot .>= 0.0) && all(0.0 .<= Matrix(Kavd[!, Not("IgG")]) .< Inf) && all(0.0 .< [f4, f33, KxStar] .< Inf)
         df = predictMix(deepcopy(df); recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
     else
         df = deepcopy(df)
@@ -137,9 +136,12 @@ function extractMCMCresults(c = runMCMC())
     Rtot = [median(c["Rtot[$i]"].data) for i = 1:length(humanFcgRiv)]
     Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
 
-    Kavd = importKav(; murine = false, invitro = true, retdf = true)
-    Kav = [median(c["Kav[$i]"].data) for i = 1:length(importKav(; murine = false, invitro = true, retdf = false))]
-    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
+    Kavd = nothing
+    if Symbol("Kav[1]") in c.name_map[1]
+        Kavd = importKav(; murine = false, invitro = true, retdf = true)
+        Kav = [median(c["Kav[$i]"].data) for i = 1:length(importKav(; murine = false, invitro = true, retdf = false))]
+        Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
+    end
 
     f4 = median(c["f4"].data)
     f33 = median(c["f33"].data)
@@ -148,8 +150,12 @@ function extractMCMCresults(c = runMCMC())
     return Rtotd, Kavd, [f4, f33, KxStar]
 end
 
-function MCMC_params_predict_plot(c = runMCMC(), df = loadMixData(); kwargs...)
+function MCMC_params_predict_plot(c = runMCMC(), df = loadMixData(); 
+        Kav::Union{Nothing, AbstractDataFrame} = nothing, kwargs...)
     Rtotd, Kavd, (f4, f33, KxStar) = extractMCMCresults(c)
+    if Kav !== nothing
+        Kavd = Kav
+    end
 
     if !("xmin" in names(df))
         df = averageMixData(df)
