@@ -155,6 +155,5 @@ function MCMC_params_predict_plot(c = runMCMC(), df = loadMixData(); kwargs...)
         df = averageMixData(df)
     end
     ndf = predictMix(df; recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
-    return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Cell", shape = "Valency",
-        title = "Human NUTS fitting results", kwargs...)
+    return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Cell", shape = "Valency", title = "Human NUTS fitting results", kwargs...)
 end

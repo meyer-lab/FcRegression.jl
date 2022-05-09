@@ -43,12 +43,8 @@ function validateRobinett(fname = "MCMC_robinett_0505.dat", c = runMCMC(); mcmc_
         f = serialize(fname, [c_old, c_new])
     end
 
-    pl1 = MCMC_params_predict_plot(c_old, df; xx = "Value", yy = "Predict", 
-        title = "Robinett with documented affinities", 
-        R2pos = (0, -1.5))
-    pl2 = MCMC_params_predict_plot(c_new, df; xx = "Value", yy = "Predict", 
-        title = "Robinett with updated affinities", 
-        R2pos = (0, -1.5))
+    pl1 = MCMC_params_predict_plot(c_old, df; xx = "Value", yy = "Predict", title = "Robinett with documented affinities", R2pos = (0, -1.5))
+    pl2 = MCMC_params_predict_plot(c_new, df; xx = "Value", yy = "Predict", title = "Robinett with updated affinities", R2pos = (0, -1.5))
 
     pp = plotGrid((1, 2), [pl1, pl2])
     draw(PDF("figure2robinett.pdf", 7inch, 3inch), pp)
