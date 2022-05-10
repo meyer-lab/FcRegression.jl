@@ -107,7 +107,7 @@ end
 
     # fit predictions
     if all(Rtot .>= 0.0) && all(0.0 .<= Matrix(Kavd[!, Not("IgG")]) .< Inf)
-        df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kavd, KxStar = KxConst, f33 = f33)
+        df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, f33 = f33)
     else
         df = deepcopy(df)
         df."Predict" .= Inf
@@ -123,7 +123,7 @@ function runMurineMCMC(fname = "murineNUTSdepfit_0505.dat"; mcmc_iter = 1_000, K
         return deserialize(fname)
     end
     df = importMurineInVitro()
-    m = murineFit(df, df."Value"; KxStar = KxConst)
+    m = murineFit(df, df."Value"; KxStar = KxStar)
     # use MAP estimate as starting point
     opts = Optim.Options(iterations = 200, show_every = 10, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
@@ -208,7 +208,7 @@ end
 
 function validateMurineInVitro(c::Chains = fitLeukocyteMCMC(); KxStar = KxConst, mcmc_iter = 1_000)
     df = importMurineInVitro()
-    opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
+    opts = Optim.Options(iterations = 200, show_every = 10, show_trace = true)
 
     Kav_old = murineKavDist(; regularKav = true, retdf = true)
     m_old = murineFit(df, df."Value"; KxStar = KxStar, Kavd = Kav_old)
@@ -222,10 +222,10 @@ function validateMurineInVitro(c::Chains = fitLeukocyteMCMC(); KxStar = KxConst,
 
     m_new = murineFit(df, df."Value"; KxStar = KxStar, Kavd = Kav_new)
     opt_new = optimize(m_new, MAP(), LBFGS(; m = 20), opts)
-    c_new = sample(m_new, NUTS(), mcmc_iter, init_params = opt_old.values.array)
+    c_new = sample(m_new, NUTS(), mcmc_iter, init_params = opt_new.values.array)
 
     pl1 = plotPredvsMeasured(
-        predictMurine(df; Kav = Kav_old);
+        predictMurine(c_old, df; Kav = Kav_old);
         xx = "Value",
         yy = "Predict",
         color = "Receptor",
@@ -234,7 +234,7 @@ function validateMurineInVitro(c::Chains = fitLeukocyteMCMC(); KxStar = KxConst,
         title = "Murine in vitro binding prediction\nwith documented affinities",
     )
     pl2 = plotPredvsMeasured(
-        predictMurine(df; Kav = Kav_new);
+        predictMurine(c_new, df; Kav = Kav_new);
         xx = "Value",
         yy = "Predict",
         color = "Receptor",

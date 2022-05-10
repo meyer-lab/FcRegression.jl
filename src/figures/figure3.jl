@@ -27,7 +27,7 @@ function figure3_v1()
         title = "Raw murine prediction\nwith documented affinities",
     )
 
-    c = runMurineMCMC("murineNUTSdepfit_0505.dat"; KxStar = KxStar)
+    c = runMurineMCMC("murineNUTSdepfit_0509.dat"; KxStar = KxStar)
     pl2 = plot_murineMCMC_predict(c, df; title = "Murine prediction with fitted parameters", KxStar = KxStar, R2pos = (0, -0.3))
 
     apls = plot_murine_MCMC_affinity(c)
@@ -53,7 +53,7 @@ function figure3()
         title = "Raw murine leukocyte prediction\nwith documented affinities",
     )
 
-    c = fitLeukocyteMCMC("leukNUTSfit_0505.dat")
+    c = fitLeukocyteMCMC("leukNUTSfit_0509.dat"; KxStar = KxStar)
     ndf2 = predictLeukocyte(c, df; KxStar = KxStar)
     pl2 = plotPredvsMeasured(
         ndf2;
@@ -66,7 +66,6 @@ function figure3()
     )
 
     apls = plot_murine_MCMC_affinity(c)
-
     vpl1, vpl2 = validateMurineInVitro(c; KxStar = KxStar)
 
     pp = plotGrid((3, 3), [pl1, pl2, apls[1], apls[2], apls[3], vpl1, vpl2])
