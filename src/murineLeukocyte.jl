@@ -23,7 +23,7 @@ end
 
 function predictLeukocyte(dfr::DataFrameRow; KxStar = KxConst, Kav = murineKavDist(; regularKav = true, retdf = true), f = [4, 33])
     igg = dfr."Subclass"
-    igg = (igg == "IgG2c") ? "IgG2a" : igg
+    igg = (igg == "IgG2a") ? "IgG2c" : igg
     Kav_vs = Matrix(Kav[Kav."IgG" .== igg, Not("IgG")])
     Rtot_vs = Vector(dfr[murineFcgR])
     val = (dfr."Valency" > 12) ? f[2] : f[1]
@@ -61,20 +61,23 @@ function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(; averag
     return rdf
 end
 
-function predictLeukocyte(c::Chains, df::AbstractDataFrame; kwargs...)
+function extractLeukocyteKav(c::Chains; retdf = false)
+    Kavd = murineKavDist(; regularKav = true, retdf = true)
+    Kav = retdf ? [c["Kav[$i]"].data for i = 1:12] : [median(c["Kav[$i]"].data) for i = 1:12]
+    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
+    return Kavd
+end
+
+function predictLeukocyte(c::Chains, df::AbstractDataFrame)
     Rtotd = importCellRtotDist()
     Rtotd = Rtotd[!, ["Receptor"; names(Rtotd)[in(unique(df."Cell")).(names(Rtotd))]]]
     Rtot = [median(c["Rtot[$i]"].data) for i = 1:24]
     Rtotd[!, Not("Receptor")] = typeof(Rtot[1, 1]).(reshape(Rtot, size(Rtotd)[1], :))
 
-    Kavd = murineKavDist(; regularKav = true, retdf = true)
-    Kav = [median(c["Kav[$i]"].data) for i = 1:12]
-    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
-
     f4 = median(c["f4"])
     f33 = median(c["f33"])
-
-    return predictLeukocyte(df; Rtot = Rtotd, Kav = Kavd, f = [f4, f33], kwargs...)
+    KxStar = median(c["KxStar"])
+    return predictLeukocyte(df; Rtot = Rtotd, Kav = extractLeukocyteKav(c), KxStar = KxStar, f = [f4, f33])
 end
 
 
@@ -85,7 +88,7 @@ function plot_murine_leukocyte(ndf; kwargs...)
     return plotPredvsMeasured(pldf; xx = "Value", yy = "Predict", color = "Cell", shape = "Valency", R2pos = (0, -1.5), kwargs...)
 end
 
-@model function mLeukocyteModel(df, values; KxStar = KxConst)
+@model function mLeukocyteModel(df, values)
     # sample Rtot
     Rtotd = importCellRtotDist()
     Rtotd = Rtotd[!, ["Receptor"; names(Rtotd)[in(unique(df."Cell")).(names(Rtotd))]]]
@@ -109,9 +112,10 @@ end
     # sample valency
     f4 ~ f4Dist
     f33 ~ f33Dist
+    KxStar ~ KxStarDist
 
     # fit predictions
-    if all(0.0 .<= Rtot .< Inf) && all(0.0 .<= Kav .< Inf) && all(0.0 .< [f4, f33] .< Inf)
+    if all(0.0 .<= Rtot .< Inf) && all(0.0 .<= Kav .< Inf) && all(0.0 .< [f4, f33, KxStar] .< Inf)
         df = predictLeukocyte(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, f = [f4, f33])
     else
         df = deepcopy(df)
@@ -123,12 +127,12 @@ end
     nothing
 end
 
-function fitLeukocyteMCMC(fname = "leukNUTSfit_0509.dat"; mcmc_iter = 1_000, KxStar = KxConst)
+function fitLeukocyteMCMC(fname = "leukNUTSfit_0509.dat"; mcmc_iter = 1_000)
     if isfile(fname)
         return deserialize(fname)
     end
     df = importMurineLeukocyte(; average = false)
-    m = mLeukocyteModel(df, df."Value"; KxStar = KxStar)
+    m = mLeukocyteModel(df, df."Value")
     # use MAP estimate as starting point
     opts = Optim.Options(iterations = 200, show_every = 10, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
@@ -139,20 +143,20 @@ function fitLeukocyteMCMC(fname = "leukNUTSfit_0509.dat"; mcmc_iter = 1_000, KxS
 end
 
 #=
-function validateLeukocyte(c = runMurineMCMC(); KxStar = KxConst)
+function validateLeukocyte(c = runMurineMCMC())
     df = importMurineLeukocyte(; average = true)
 
     Kav1 = importKav(; murine = true, retdf = true)
-    ndf1 = predictLeukocyte(deepcopy(df); KxStar = KxStar, 
-        f = fitLeukocyteMCMC(; KxStar = KxStar))
+    ndf1 = predictLeukocyte(deepcopy(df), 
+        f = fitLeukocyteMCMC())
     pl1 = plot_murine_leukocyte(ndf1; title = "Murine Leukocyte Raw Predictions")
 
     Kavd = murineKavDist(; regularKav = true)
     Kav = [median(c["Kav[$i]"].data) for i = 1:12]
     Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
 
-    ndf2 = predictLeukocyte(deepcopy(df); Kav = Kavd, KxStar = KxStar, 
-        f = fitLeukocyteMCMC(; KxStar = KxStar, Kav = Kavd))
+    ndf2 = predictLeukocyte(deepcopy(df); Kav = Kavd, 
+        f = fitLeukocyteMCMC(; Kav = Kavd))
     pl2 = plot_murine_leukocyte(ndf2; title = "Murine Leukocyte Updated Predictions")
     return pl1, pl2
 end
@@ -192,9 +196,10 @@ function plot_MCMCLeuk_dists(c = fitLeukocyteMCMC())
     draw(PDF("MCMCLeuk_Rtot.pdf", 11inch, 14inch), Rtot_plot)
 
     # Plot f4, f33, KxStar
-    other_pls = Vector{Plot}(undef, 2)
+    other_pls = Vector{Plot}(undef, 3)
     other_pls[1] = plotHistPriorDist(c["f4"].data, f4Dist, "f = 4 effective valency")
     other_pls[2] = plotHistPriorDist(c["f33"].data, f33Dist, "f = 33 effective valency")
-    other_plot = plotGrid((1, 2), other_pls; sublabels = false)
-    draw(PDF("MCMCLeuk_others.pdf", 6inch, 3inch), other_plot)
+    other_pls[3] = plotHistPriorDist(c["KxStar"].data, f33Dist, "KxStar")
+    other_plot = plotGrid((1, 3), other_pls; sublabels = false)
+    draw(PDF("MCMCLeuk_others.pdf", 9inch, 3inch), other_plot)
 end
