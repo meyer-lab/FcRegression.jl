@@ -169,19 +169,10 @@ function plot_murineMCMC_dists(c::Union{Chains, MultivariateDistribution} = runM
 end
 
 function plot_murineMCMC_predict(c::Chains = runMurineMCMC(), df = importMurineInVitro(); title = nothing, kwargs...)
-    # Extract MCMC results
-    Rtot = [median(c["Rtot[$i]"].data) for i = 1:length(murineFcgR)]
-    Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(murineFcgR)])
-
-    Kavd = murineKavDist(; regularKav = true)
-    Kav = [median(c["Kav[$i]"].data) for i = 1:12]
-    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
+    p = extractMCMC(c; murine = true)
     title = (title === nothing) ? "Murine fitting with NUTS (median)" : title
 
-    f33 = median(c["f33"].data)
-    KxStar = median(c["KxStar"].data)
-
-    ndf = predictMurine(df; recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, f33 = f33)
+    ndf = predictMurine(df; recepExp = p["Rtot"], Kav = p["Kav"], KxStar = p["KxStar"], f33 = p["f33"])
     return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Receptor", shape = "Subclass", R2pos = (0, -1), title = title, kwargs...)
 end
 
@@ -217,7 +208,7 @@ function validateMurineInVitro(c::Chains = fitLeukocyteMCMC(); mcmc_iter = 1_000
     opt_old = optimize(m_old, MAP(), LBFGS(; m = 20), opts)
     c_old = sample(m_old, NUTS(), mcmc_iter, init_params = opt_old.values.array)
 
-    Kav_new = extractLeukocyteKav(c)
+    Kav_new = extractMCMC(c; murine = true)["Kav"]
     m_new = murineFit(df, df."Value"; Kavd = Kav_new)
     opt_new = optimize(m_new, MAP(), LBFGS(; m = 20), opts)
     c_new = sample(m_new, NUTS(), mcmc_iter, init_params = opt_new.values.array)

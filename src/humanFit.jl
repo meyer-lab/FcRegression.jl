@@ -1,6 +1,4 @@
-import Turing: ~, sample, NUTS, @model, Chains, ADVI, vi, rand, MAP, MLE
 import Serialization: serialize, deserialize
-using Distributions
 using LinearAlgebra
 
 
@@ -78,23 +76,7 @@ function MAPLikelihood(df; robinett = false)
     return predictMix(df; recepExp = Rtot, Kav = Kav, KxStar = x[9], vals = [x[7], x[8]])
 end
 
-""" Making a single subplot for priors and posteriors """
-function plotHistPriorDist(dat::Array{Float64}, dist::Distribution, name::String = ""; bincount = 20)
-    dat = reshape(dat, :)
-    xxs = exp.(LinRange(dist.μ - 4 * dist.σ, dist.μ + 4 * dist.σ, 100))
-    yys = [pdf(dist, xx) for xx in xxs]
-    yys = yys ./ maximum(yys)
-    pl = plot(
-        layer(x = xxs, y = yys, Geom.line, color = [colorant"red"], order = 1),
-        layer(DataFrame("Value" => dat), x = "Value", Geom.histogram(bincount = bincount, density = true)),
-        Scale.x_log10(),
-        Guide.xticks(orientation = :horizontal),
-        Guide.xlabel("Value"),
-        Guide.ylabel(nothing),
-        Guide.title(name),
-    )
-    return pl
-end
+
 
 function plot_MCMC_dists(c = runMCMC())
     setGadflyTheme()
@@ -132,34 +114,14 @@ function plot_MCMC_dists(c = runMCMC())
     draw(PDF("MCMC_others.pdf", 12inch, 4inch), other_plot)
 end
 
-function extractMCMCresults(c = runMCMC())
-    Rtot = [median(c["Rtot[$i]"].data) for i = 1:length(humanFcgRiv)]
-    Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
-
-    Kavd = nothing
-    if Symbol("Kav[1]") in c.name_map[1]
-        Kavd = importKav(; murine = false, invitro = true, retdf = true)
-        Kav = [median(c["Kav[$i]"].data) for i = 1:length(importKav(; murine = false, invitro = true, retdf = false))]
-        Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
-    end
-
-    f4 = median(c["f4"].data)
-    f33 = median(c["f33"].data)
-    KxStar = median(c["KxStar"].data)
-
-    return Rtotd, Kavd, [f4, f33, KxStar]
-end
-
 function MCMC_params_predict_plot(c = runMCMC(), df = loadMixData(); 
         Kav::Union{Nothing, AbstractDataFrame} = nothing, kwargs...)
-    Rtotd, Kavd, (f4, f33, KxStar) = extractMCMCresults(c)
-    if Kav !== nothing
-        Kavd = Kav
-    end
+    p = extractMCMC(c; murine = false)
+    Kavd = (Kav !== nothing) ? Kav : p["Kav"]
 
     if !("xmin" in names(df))
         df = averageMixData(df)
     end
-    ndf = predictMix(df; recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
+    ndf = predictMix(df; recepExp = p["Rtot"], Kav = Kavd, KxStar = p["KxStar"], vals = [p["f4"], p["f33"]])
     return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Cell", shape = "Valency", title = "Human NUTS fitting results", kwargs...)
 end

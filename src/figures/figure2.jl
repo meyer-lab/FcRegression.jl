@@ -142,7 +142,7 @@ function figure2()
         title = "Mixture predictions with \nsingle IgG fitted parameters",
         R2pos = (0, -2.5),
     )
-    _, pl_igg, _ = plot_MCMC_affinity(c)
+    pl_igg = plotAffinityViolin(c; murine = false)
     rob1, rob2 = validateRobinett("MCMC_robinett_0505.dat", c; mcmc_iter = 1_000)
 
     pp = plotGrid((4, 3), [nothing, nothing, raw_pred_pl, pl1, pl2, pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], rob1, rob2])

@@ -1,7 +1,7 @@
 using DataFrames
 using Memoize
 import CSV
-import Distributions: fit_mle, LogNormal, pdf
+using Distributions
 using NLsolve
 
 const KxConst = 6.31e-13 # 10^(-12.2)

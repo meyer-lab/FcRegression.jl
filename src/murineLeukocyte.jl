@@ -61,25 +61,13 @@ function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(; averag
     return rdf
 end
 
-function extractLeukocyteKav(c::Chains; retdf = false)
-    Kavd = murineKavDist(; regularKav = true, retdf = true)
-    Kav = retdf ? [c["Kav[$i]"].data for i = 1:12] : [median(c["Kav[$i]"].data) for i = 1:12]
-    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
-    return Kavd
-end
-
 function predictLeukocyte(c::Chains, df::AbstractDataFrame; Kavd = nothing)
-    @assert (Symbol("Kav[1]") in c.name_map[1]) ⊻ (Kavd isa AbstractDataFrame)    # either providing Kavd, or from chain
-    Rtotd = importCellRtotDist()
-    Rtotd = Rtotd[!, ["Receptor"; names(Rtotd)[in(unique(df."Cell")).(names(Rtotd))]]]
-    Rtot = [median(c["Rtot[$i]"].data) for i = 1:24]
-    Rtotd[!, Not("Receptor")] = typeof(Rtot[1, 1]).(reshape(Rtot, size(Rtotd)[1], :))
-
-    f4 = median(c["f4"])
-    f33 = median(c["f33"])
-    KxStar = median(c["KxStar"])
-    return predictLeukocyte(df; Rtot = Rtotd, Kav = ((Kavd !== nothing) ? Kavd : extractLeukocyteKav(c)), 
-        KxStar = KxStar, f = [f4, f33])
+    p = extractMCMC(c; murine = true)
+    @assert (p["Kav"] !== nothing) ⊻ (Kavd isa AbstractDataFrame)    # either providing Kavd, or from chain
+    if Kavd === nothing
+        Kavd = p["Kav"]
+    end
+    return predictLeukocyte(df; Rtot = p["Rtot"], Kav = Kavd, KxStar = p["KxStar"], f = [p["f4"], p["f33"]])
 end
 
 
