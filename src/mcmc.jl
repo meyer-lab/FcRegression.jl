@@ -1,19 +1,22 @@
 import Turing: ~, sample, NUTS, @model, Chains, rand, MAP, MLE
 
 """ A generic function to extract fitted parameters from an MCMC """
-function extractMCMC(c::Chains; murine::Bool)
+function extractMCMC(c::Chains; murine::Bool, CHO = false)
     pnames = [String(s) for s in c.name_map[1]]
     out = Dict{String, Union{Number, Dict, DataFrame, Nothing}}()
     if "Rtot[1]" in pnames
         local Rtotd
+        Rtot = [median(c["Rtot[$i]"].data) for i = 1:sum(startswith.(pnames, "Rtot"))]
         if murine
-            cells = unique(importMurineLeukocyte()."Cell")
-            Rtotd = importCellRtotDist()
-            Rtotd = Rtotd[!, ["Receptor"; names(Rtotd)[in(cells).(names(Rtotd))]]]
-            Rtot = [median(c["Rtot[$i]"].data) for i = 1:sum(startswith.(pnames, "Rtot"))]
-            Rtotd[!, Not("Receptor")] = typeof(Rtot[1, 1]).(reshape(Rtot, size(Rtotd)[1], :))
+            if CHO
+                Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(Rtot)])
+            else # Leukocyte
+                cells = unique(importMurineLeukocyte()."Cell")
+                Rtotd = importCellRtotDist()
+                Rtotd = Rtotd[!, ["Receptor"; names(Rtotd)[in(cells).(names(Rtotd))]]]
+                Rtotd[!, Not("Receptor")] = typeof(Rtot[1, 1]).(reshape(Rtot, size(Rtotd)[1], :))
+            end
         else # human
-            Rtot = [median(c["Rtot[$i]"].data) for i = 1:length(humanFcgRiv)]
             Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
         end
         out["Rtot"] = Rtotd
@@ -155,4 +158,32 @@ function plotMCMCdists(c::Chains, fname::String = ""; murine::Bool)
     other_pls[3] = plot_dist_histogram(c["KxStar"].data, KxStarDist, "KxStar")
     other_plot = plotGrid((1, 3), other_pls; sublabels = false)
     draw(PDF("MCMC_others_$fname.pdf", 9inch, 3inch), other_plot)
+end
+
+
+function plotMCMCPredict(c::Chains, df::AbstractDataFrame; murine::Bool, CHO = false,
+        Kav::Union{Nothing, AbstractDataFrame} = nothing, kwargs...)
+    p = extractMCMC(c; murine = murine, CHO = CHO)
+    # either providing Kavd, or from chain; can't have both
+    #@assert (p["Kav"] !== nothing) ⊻ (Kav isa AbstractDataFrame)
+    Kavd = (Kav !== nothing) ? Kav : p["Kav"]
+    if (p["Kav"] !== nothing) && (Kav isa AbstractDataFrame)
+        @warn "Using provided Kav, even though Kav's are fitted in MCMC chain"
+    end
+
+    if !("xmin" in names(df))
+        df = averageMixData(df)
+    end
+    if murine
+        if CHO
+            ndf = predictMurine(df; Kav = Kavd, KxStar = p["KxStar"], recepExp = p["Rtot"], f33 = p["f33"])
+            return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Receptor", shape = "Subclass", kwargs...)
+        else # Leukocyte
+            ndf = predictLeukocyte(df; Rtot = p["Rtot"], Kav = Kavd, KxStar = p["KxStar"], f = [p["f4"], p["f33"]])
+            return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Cell", shape = "Subclass", kwargs...)
+        end
+    else # human
+        ndf = predictMix(df; recepExp = p["Rtot"], Kav = Kavd, KxStar = p["KxStar"], vals = [p["f4"], p["f33"]])
+        return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Cell", shape = "Valency", kwargs...)
+    end
 end

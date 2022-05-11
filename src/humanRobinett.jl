@@ -1,10 +1,3 @@
-function figure2d()
-    df = averageData(loadMixData("robinett/Luxetal2013-Fig2BRef.csv"))
-    df = predictMix(df; recepExp = RobMeasuredRecepExp)
-    df."Adjusted" = df."Value" .* (geocmean(df."Predict") / geocmean(df."Value"))
-    draw(SVG("figure2d.svg", 1300px, 600px), plotGrid((1, 2), [nothing, plotPredvsMeasured(df)]))
-end
-
 function importRobinett()
     df = CSV.File(joinpath(dataDir, "robinett/Luxetal2013-Fig2Bmod.csv"), delim = ",", comment = "#") |> DataFrame
     for i = 1:4
@@ -43,25 +36,10 @@ function validateRobinett(fname = "MCMC_robinett_0505.dat", c = runMCMC(); mcmc_
         f = serialize(fname, [c_old, c_new])
     end
 
-    pl1 = MCMC_params_predict_plot(c_old, df; Kav = Kav_old, xx = "Value", yy = "Predict", 
+    pl1 = plotMCMCPredict(c_old, df; murine = false, Kav = Kav_old,
         title = "Robinett with documented affinities", R2pos = (-0.5, -2))
-    pl2 = MCMC_params_predict_plot(c_new, df; Kav = Kav_new, xx = "Value", yy = "Predict", 
+    pl2 = plotMCMCPredict(c_new, df; murine = false, Kav = Kav_new,
         title = "Robinett with updated affinities", R2pos = (-0.5, -2))
     
     return pl1, pl2
-
-    ### not fitting Robinett, just use different Kav
-    rob_old = FcRegression.predictMix(deepcopy(rob); recepExp = Rtotd, 
-        Kav = Kav_old, KxStar = KxStar, vals = [f4, f33])
-    rob_old = FcRegression.averageMixData(rob_old)
-    pl_old = FcRegression.plotPredvsMeasured(rob_old; xx = "Value", yy = "Predict", 
-        color = "Cell", shape = "subclass_1", title = "Robinett with old Kav")
-    # R2 = 0.27006476231733434
-
-    rob_new = FcRegression.predictMix(deepcopy(rob); recepExp = Rtotd, 
-        Kav = Kav_new, KxStar = KxStar, vals = [f4, f33])
-    rob_new = FcRegression.averageMixData(rob_new)
-    pl_new = FcRegression.plotPredvsMeasured(rob_new; xx = "Value", yy = "Predict", 
-        color = "Cell", shape = "subclass_1", title = "Robinett with new Kav")
-    # R2 = 0.5713581390208943
 end

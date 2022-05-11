@@ -3,7 +3,7 @@
 """ A general plotting function for Adjusted vs. Predicted plots """
 function plotPredvsMeasured(
     df;
-    xx = "Adjusted",
+    xx = "Value",
     yy = "Predict",
     xxlabel = "Actual",
     yylabel = "Predicted",
@@ -126,19 +126,18 @@ function figure2()
 
     c = runMCMC("humanNUTSfit_0505.dat"; mcmc_iter = 1_000)
     df = loadMixData()
-    pl1 = MCMC_params_predict_plot(
+
+    pl1 = plotMCMCPredict(
         c, 
         df; 
-        xx = "Value", 
-        yy = "Predict", 
-        title = "All predictions with \nsingle IgG fitted parameters", 
+        murine = false,
+        title = "All predictions with \nsingle hIgG fitted parameters", 
         R2pos = (0, -2.5),
     )
-    pl2 = MCMC_params_predict_plot(
-        c,
+    pl2 = plotMCMCPredict(
+        c, 
         df[(df."%_1" .!= 1.0) .& (df."%_2" .!= 1.0), :];
-        xx = "Value",
-        yy = "Predict",
+        murine = false,
         title = "Mixture predictions with \nsingle IgG fitted parameters",
         R2pos = (0, -2.5),
     )

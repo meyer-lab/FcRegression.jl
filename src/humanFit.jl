@@ -78,14 +78,3 @@ function MAPLikelihood(df; robinett = false)
 end
 
 
-function MCMC_params_predict_plot(c = runMCMC(), df = loadMixData(); 
-        Kav::Union{Nothing, AbstractDataFrame} = nothing, kwargs...)
-    p = extractMCMC(c; murine = false)
-    Kavd = (Kav !== nothing) ? Kav : p["Kav"]
-
-    if !("xmin" in names(df))
-        df = averageMixData(df)
-    end
-    ndf = predictMix(df; recepExp = p["Rtot"], Kav = Kavd, KxStar = p["KxStar"], vals = [p["f4"], p["f33"]])
-    return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Cell", shape = "Valency", title = "Human NUTS fitting results", kwargs...)
-end

@@ -47,18 +47,6 @@ function predictMurine(df::AbstractDataFrame; Kav = importKavDist(; murine = tru
     return dft
 end
 
-function predictMurine(
-    c::Chains = runMurineMCMC(),
-    df::AbstractDataFrame = importMurineInVitro();
-    Kav = importKavDist(; murine = true, regularKav = true),
-    kwargs...,
-)
-    Rtot = [median(c["Rtot[$i]"].data) for i = 1:4]
-    Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(Rtot)])
-    f33 = median(c["f33"].data)
-    KxStar = median(c["KxStar"].data)
-    return predictMurine(df; Kav = Kav, KxStar = KxStar, recepExp = Rtotd, f33 = f33, kwargs...)
-end
 
 @model function murineFit(df, values; Kavd::Union{Nothing, AbstractDataFrame} = nothing)
     # Rtot sample
@@ -113,14 +101,6 @@ function runMurineMCMC(fname = "murineNUTSdepfit_0505.dat"; mcmc_iter = 1_000)
 end
 
 
-function plot_murineMCMC_predict(c::Chains = runMurineMCMC(), df = importMurineInVitro(); title = nothing, kwargs...)
-    p = extractMCMC(c; murine = true)
-    title = (title === nothing) ? "Murine fitting with NUTS (median)" : title
-
-    ndf = predictMurine(df; recepExp = p["Rtot"], Kav = p["Kav"], KxStar = p["KxStar"], f33 = p["f33"])
-    return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Receptor", shape = "Subclass", R2pos = (0, -1), title = title, kwargs...)
-end
-
 function MAPmurineLikelihood(df = importMurineInVitro())
     m = murineFit(df, df."Value")
     opts = Optim.Options(iterations = 200, show_every = 10, show_trace = true)
@@ -158,26 +138,9 @@ function validateMurineInVitro(c::Chains = fitLeukocyteMCMC(); mcmc_iter = 1_000
     opt_new = optimize(m_new, MAP(), LBFGS(; m = 20), opts)
     c_new = sample(m_new, NUTS(), mcmc_iter, init_params = opt_new.values.array)
 
-    pl1 = plotPredvsMeasured(
-        predictMurine(c_old, df; Kav = Kav_old);
-        xx = "Value",
-        yy = "Predict",
-        color = "Receptor",
-        shape = "Subclass",
-        R2pos = (-1.5, 0.0),
-        title = "Murine in vitro binding prediction\nwith documented affinities",
-    )
-    pl2 = plotPredvsMeasured(
-        predictMurine(c_new, df; Kav = Kav_new);
-        xx = "Value",
-        yy = "Predict",
-        color = "Receptor",
-        shape = "Subclass",
-        R2pos = (-1.5, 0.2),
-        title = "Murine in vitro binding prediction\nwith updated affinities",
-    )
-
-    #pp = plotGrid((1, 2), [pl1, pl2])
-    #draw(PDF("figure3CHO.pdf", 7inch, 3inch), pp)
+    pl1 = plotMCMCPredict(c_old, df; murine = true, CHO = true, Kav = Kav_old, 
+        R2pos = (-1.5, 0.0), title = "Murine in vitro binding prediction\nwith documented affinities")
+    pl2 = plotMCMCPredict(c_new, df; murine = true, CHO = true, Kav = Kav_new, 
+        R2pos = (-1.5, 0.2), title = "Murine in vitro binding prediction\nwith updated affinities")
     return pl1, pl2
 end
