@@ -228,7 +228,7 @@ function validateMurineInVitro(c::Chains = fitLeukocyteMCMC(); mcmc_iter = 1_000
         yy = "Predict",
         color = "Receptor",
         shape = "Subclass",
-        R2pos = (0, -1),
+        R2pos = (-1.5, 0.0),
         title = "Murine in vitro binding prediction\nwith documented affinities",
     )
     pl2 = plotPredvsMeasured(
@@ -237,7 +237,7 @@ function validateMurineInVitro(c::Chains = fitLeukocyteMCMC(); mcmc_iter = 1_000
         yy = "Predict",
         color = "Receptor",
         shape = "Subclass",
-        R2pos = (0, -0.4),
+        R2pos = (-1.5, 0.2),
         title = "Murine in vitro binding prediction\nwith updated affinities",
     )
 

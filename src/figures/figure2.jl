@@ -17,8 +17,8 @@ function plotPredvsMeasured(
     df = deepcopy(df)
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
 
-    df[(df[!, xx]) .<= 0.0, xx] .= minimum(df[(df[!, xx]) .> 0.0, xx]) / 1e-2
-    df[(df[!, yy]) .<= 0.0, yy] .= minimum(df[(df[!, yy]) .> 0.0, yy]) / 1e-2
+    df[(df[!, xx]) .<= 0.0, xx] .= minimum(df[(df[!, xx]) .> 0.0, xx]) / 10
+    df[(df[!, yy]) .<= 0.0, yy] .= minimum(df[(df[!, yy]) .> 0.0, yy]) / 10
 
     r2 = R2((df[!, xx]), (df[!, yy]))
     println(r2)
@@ -121,19 +121,26 @@ function figure2()
     data = averageMixData(data)
     raw_predict = predictMix(data)
 
-    raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Prediction without fitting", R2pos = (0, -2.2))
+    raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Raw model predictions without fitting", R2pos = (0, -2.7))
 
 
     c = runMCMC("humanNUTSfit_0505.dat"; mcmc_iter = 1_000)
     df = loadMixData()
-    pl1 = MCMC_params_predict_plot(c, df; xx = "Value", yy = "Predict", title = "All predictions with \nsingle IgG fitted params", R2pos = (0, -2.2))
+    pl1 = MCMC_params_predict_plot(
+        c, 
+        df; 
+        xx = "Value", 
+        yy = "Predict", 
+        title = "All predictions with \nsingle IgG fitted parameters", 
+        R2pos = (0, -2.5),
+    )
     pl2 = MCMC_params_predict_plot(
         c,
         df[(df."%_1" .!= 1.0) .& (df."%_2" .!= 1.0), :];
         xx = "Value",
         yy = "Predict",
-        title = "Mixture predictions with \nsingle IgG fitted params",
-        R2pos = (0, -2.2),
+        title = "Mixture predictions with \nsingle IgG fitted parameters",
+        R2pos = (0, -2.5),
     )
     _, pl_igg, _ = plot_MCMC_affinity(c)
     rob1, rob2 = validateRobinett("MCMC_robinett_0505.dat", c; mcmc_iter = 1_000)

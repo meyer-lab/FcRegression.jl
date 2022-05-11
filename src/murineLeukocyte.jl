@@ -167,7 +167,7 @@ function plot_MCMCLeuk_dists(c = fitLeukocyteMCMC())
     setGadflyTheme()
 
     # Plot Kav's
-    mIgGs = murineIgG[murineIgG .!= "IgG3"]
+    mIgGs = murineKavDist(; retdf = true)."IgG"
     ligg, lfcr = length(mIgGs), length(murineFcgR)
     Kav_dist = murineKavDist(; retdf = false)
     Kav_pls = Matrix{Plot}(undef, ligg, lfcr)

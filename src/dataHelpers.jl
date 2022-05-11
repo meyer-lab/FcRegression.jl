@@ -282,10 +282,7 @@ importKavDist(; kwargs...) = deepcopy(importKavDist_readcsv(; kwargs...))
         if length(x) <= 1
             return inferLogNormal(x[1], x[1])
         end
-        if std(x) <= 5.0
-            return inferLogNormal(geomean(x), 5.0)
-        end
-        return inferLogNormal(geomean(x), quantile(x, 0.9) - quantile(x, 0.1))
+        return inferLogNormal(geomean(x), maximum([quantile(x, 0.7) - quantile(x, 0.3), 5.0]))
     end
 
     ndf = combine(groupby(df, ["Cells", "Receptor"]), "Count" => findDist => "Distribution")
