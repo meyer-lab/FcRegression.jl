@@ -48,7 +48,7 @@ const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
 const humanActYmax = [5.5e4, 1.5e5, 4.5e4, 3.5e4, 3e3] # ymax for synergy plots
 const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
-@memoize function importRtot_readcsv(; murine = true, genotype = "HIV", retdf = false, cellTypes = nothing)
+@memoize function importRtot_readcsv(; murine::Bool, genotype = "HIV", retdf = false, cellTypes = nothing)
     if murine
         df = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame
     else
@@ -98,13 +98,10 @@ end
 importRtot(; kwargs...) = deepcopy(importRtot_readcsv(; kwargs...))
 
 """ Import human or murine affinity data. """
-@memoize function importKav_readcsv(; murine = true, c1q = false, invitro = false, IgG2bFucose = false, retdf = false)
+@memoize function importKav_readcsv(; murine::Bool, c1q = false, IgG2bFucose = false, retdf = false)
     if murine
         df = CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#") |> DataFrame
     else
-        if invitro
-            return importKavDist(; regularKav = true, retdf = retdf)
-        end
         df = CSV.File(joinpath(dataDir, "human-affinities.csv"), comment = "#") |> DataFrame
     end
 
@@ -246,28 +243,40 @@ end
     return LogNormal(xs[1], xs[2])
 end
 
-@memoize function importKavDist_readcsv(; regularKav = false, retdf = true)
-    df = CSV.File(joinpath(dataDir, "FcgR-Ka-Bruhns_with_variance.csv"), delim = ",", comment = "#") |> DataFrame
-    function parstr(x, regularKav = false)
-        params = parse.(Float64, split(x, "|"))
-        params .*= 1e5      # Bruhns data is written in 1e5 units
-        if params[1] < 1e4
-            params[1] = 1e4
-        end    # minimum affinity as 1e4 M-1
-        if params[2] < 1e5
-            params[2] = 1e5
-        end    # minimum variance as 1e5 M-1
-        if regularKav
-            return params[1]
+@memoize function importKavDist_readcsv(; murine::Bool, regularKav = false, retdf = true)
+    local Kav
+    if murine
+        Kav = importKav(; murine = true, retdf = true)
+        Kav = Kav[Kav."IgG" .!= "IgG3", :]
+        function retDist(x; regularKav = regularKav)
+            x = maximum([1e4, x])
+            if regularKav
+                return x
+            end
+            return inferLogNormal(x, x * 10)
         end
-        return inferLogNormal(params[1], params[2])
+        Kav[Kav."IgG" .== "IgG2a", "IgG"] .= "IgG2c"
+        Kav[!, Not("IgG")] = retDist.(Kav[!, Not("IgG")], regularKav = regularKav)
+        sort!(Kav, "IgG")
+    else # human
+        df = CSV.File(joinpath(dataDir, "FcgR-Ka-Bruhns_with_variance.csv"), delim = ",", comment = "#") |> DataFrame
+        function parstr(x, regularKav = false)
+            params = parse.(Float64, split(x, "|"))
+            params .*= 1e5      # Bruhns data is written in 1e5 units
+            params[1] = maximum([params[1], 1e4])   # minimum affinity as 1e4 M-1
+            params[2] = maximum([params[2], 1e5])   # minimum variance as 1e5 M-1
+            if regularKav
+                return params[1]
+            end
+            return inferLogNormal(params[1], params[2])
+        end
+        Kav = parstr.(df[:, Not("IgG")], regularKav)
+        insertcols!(Kav, 1, "IgG" => df[:, "IgG"])
     end
-    xdf = parstr.(df[:, Not("IgG")], regularKav)
-    insertcols!(xdf, 1, "IgG" => df[:, "IgG"])
     if retdf
-        return xdf
+        return Kav
     else
-        return Matrix(xdf[:, Not("IgG")])
+        return Matrix(Kav[:, Not("IgG")])
     end
 end
 

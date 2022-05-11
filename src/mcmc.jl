@@ -10,7 +10,7 @@ function extractMCMC(c::Chains; murine::Bool)
             cells = unique(importMurineLeukocyte()."Cell")
             Rtotd = importCellRtotDist()
             Rtotd = Rtotd[!, ["Receptor"; names(Rtotd)[in(cells).(names(Rtotd))]]]
-            Rtot = [median(c["Rtot[$i]"].data) for i = 1:24]
+            Rtot = [median(c["Rtot[$i]"].data) for i = 1:sum(startswith.(pnames, "Rtot"))]
             Rtotd[!, Not("Receptor")] = typeof(Rtot[1, 1]).(reshape(Rtot, size(Rtotd)[1], :))
         else # human
             Rtot = [median(c["Rtot[$i]"].data) for i = 1:length(humanFcgRiv)]
@@ -19,11 +19,7 @@ function extractMCMC(c::Chains; murine::Bool)
         out["Rtot"] = Rtotd
     end
     if "Kav[1]" in pnames
-        if murine
-            Kavd = murineKavDist(; regularKav = true, retdf = true)
-        else # human
-            Kavd = importKav(; murine = false, invitro = true, retdf = true)
-        end
+        Kavd = importKavDist(; murine = murine, regularKav = true, retdf = true)
         Kav = [median(c["Kav[$i]"].data) for i = 1:sum(startswith.(pnames, "Kav"))]
         Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
         out["Kav"] = Kavd
@@ -63,7 +59,7 @@ end
 function plotAffinityViolin(c::Chains; murine::Bool)
     pref = murine ? "m" : "h"
     y_range = murine ? (4, 9) : (5, 8)
-    Kav_priors = murine ? murineKavDist(; retdf = true) : importKavDist(; retdf = true)
+    Kav_priors = importKavDist(; murine = murine, retdf = true)
 
     len = length(Matrix(Kav_priors[!, Not("IgG")]))
     Kav_posts = deepcopy(Kav_priors)
@@ -105,15 +101,9 @@ function plotMCMCdists(c::Chains, fname::String = ""; murine::Bool)
     pnames = [String(s) for s in c.name_map[1]]
 
     local Kav_dist, IgGs
-    if murine
-        Kav_dist = murineKavDist(; retdf = false)
-        IgGs = murineKavDist(; retdf = true)."IgG"
-        FcgRs = murineFcgR
-    else # human
-        Kav_dist = importKavDist(; retdf = false)
-        IgGs = humanIgG
-        FcgRs = humanFcgRiv
-    end
+    Kav_dist = importKavDist(; murine = murine, retdf = false)
+    IgGs = importKavDist(; murine = murine, retdf = true)."IgG"
+    FcgRs = murine ? murineFcgR : humanFcgRiv
     pref = murine ? "m" : "h"
     ligg, lfcr = length(IgGs), length(FcgRs)
     

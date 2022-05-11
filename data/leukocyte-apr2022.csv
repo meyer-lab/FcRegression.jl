@@ -89,7 +89,6 @@ ncMO,3,33,660,4015,1777,7728
 ncMO,4,33,563,5776,1479,7921
 ncMO,5,33,1283,2377,3563,4355
 ncMO,6,33,1218,4383,6125,8110
-,,,,,,
 # IgG immune complexes were generated with anti-TNP mouse IgG1,, IgG2b or IgG2c and TNP-4-BSA or TNP-33-BSA as antigen. ,,,,
 # 10µg/ml of immune complexes were incubated with 200,,000 spleen cells isolated from C57BL/6 mice for 1h gently shaking on ice.,,,,
 # Bound immune complexes were detected by staining with PE-conjugated anti-mouse IgG F(ab)2 on leukocyte populations identified by specific surface marker expression.,,,,,,

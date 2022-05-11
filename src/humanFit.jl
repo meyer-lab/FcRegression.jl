@@ -6,7 +6,7 @@ const f4Dist = LogNormal(log(4), 0.2)   # std ~= 0.82
 const f33Dist = LogNormal(log(33), 0.2)   # std ~= 6.80
 const KxStarDist = LogNormal(log(KxConst), 2.0)   # std ~= 4.37 in Robinett
 
-@model function sfit(df, values; robinett = false, Kavd::AbstractDataFrame = importKav(; murine = false, invitro = true, retdf = true))
+@model function sfit(df, values; robinett = false, Kavd::AbstractDataFrame = importKavDist(; murine = false, regularKav = true, retdf = true))
     Rtot_dist = importInVitroRtotDist(robinett)
     Rtot = Vector(undef, length(Rtot_dist))
 
@@ -17,7 +17,7 @@ const KxStarDist = LogNormal(log(KxConst), 2.0)   # std ~= 4.37 in Robinett
     Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
 
     if !robinett    # Don't fit affinity for Robinett data
-        Kav_dist = importKavDist()
+        Kav_dist = importKavDist(; murine = false)
         Kav_dist = Matrix(Kav_dist[:, Not("IgG")])
         Kav = Matrix(undef, size(Kav_dist)...)
 
@@ -70,7 +70,8 @@ function MAPLikelihood(df; robinett = false)
     x = opt.values.array
 
     Rtot = Dict([humanFcgRiv[ii] => x[ii] for ii = 1:length(humanFcgRiv)])
-    Kav = deepcopy(importKav(; murine = false, invitro = true, retdf = true))
+    
+    Kav = deepcopy(importKavDist(; murine = false, regularKav = true, retdf = true))
     Kav[!, Not("IgG")] = reshape(x[10:33], length(humanIgG), length(humanFcgRiv))
 
     return predictMix(df; recepExp = Rtot, Kav = Kav, KxStar = x[9], vals = [x[7], x[8]])

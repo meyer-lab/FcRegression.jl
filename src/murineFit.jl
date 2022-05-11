@@ -12,28 +12,6 @@ function importMurineInVitro(fn = "CHO-mFcgR-apr2022.csv")
     return sort!(df, ["Receptor", "Subclass"])
 end
 
-""" Priors for murine affinities. Not including IgG3"""
-@memoize function murineKavDist_nested(; regularKav = false, retdf = true)
-    Kav = importKav(; murine = true, retdf = true)
-    Kav = Kav[Kav."IgG" .!= "IgG3", :]
-    function retDist(x; regularKav = regularKav)
-        x = maximum([1e4, x])
-        if regularKav
-            return x
-        end
-        return inferLogNormal(x, x * 10)
-    end
-    Kav[Kav."IgG" .== "IgG2a", "IgG"] .= "IgG2c"
-    Kav[!, Not("IgG")] = retDist.(Kav[!, Not("IgG")], regularKav = regularKav)
-    sort!(Kav, "IgG")
-    if !retdf
-        return Matrix(Kav[!, Not("IgG")])
-    end
-    return Kav
-end
-
-murineKavDist(; kwargs...) = deepcopy(murineKavDist_nested(; kwargs...))
-
 const InVitroMurineRcpExp = Dict("FcgRI" => 1e6, "FcgRIIB" => 1e6, "FcgRIII" => 1e6, "FcgRIV" => 1e6)
 
 function predictMurine(dfr::DataFrameRow; KxStar = KxConst, recepExp = InVitroMurineRcpExp, f33 = 33)
@@ -47,7 +25,7 @@ function predictMurine(dfr::DataFrameRow; KxStar = KxConst, recepExp = InVitroMu
     return polyfc(1e-9, KxStar, f33, [recepExp[dfr."Receptor"] * dfr."Expression" / 100], [1.0], reshape([dfr."Affinity"], 1, 1)).Lbound
 end
 
-function predictMurine(df::AbstractDataFrame; Kav = murineKavDist(; regularKav = true), kwargs...)
+function predictMurine(df::AbstractDataFrame; Kav = importKavDist(; murine = true, regularKav = true), kwargs...)
     # Add affinity information to df
     Kav = deepcopy(Kav)
     Kav[Kav."IgG" .== "IgG2a", "IgG"] .= "IgG2c"
@@ -72,7 +50,7 @@ end
 function predictMurine(
     c::Chains = runMurineMCMC(),
     df::AbstractDataFrame = importMurineInVitro();
-    Kav = murineKavDist(; regularKav = true),
+    Kav = importKavDist(; murine = true, regularKav = true),
     kwargs...,
 )
     Rtot = [median(c["Rtot[$i]"].data) for i = 1:4]
@@ -94,8 +72,8 @@ end
 
     if Kavd === nothing
         # fit Kav
-        Kav_dist = Matrix(murineKavDist()[:, Not("IgG")])
-        Kavd = murineKavDist(; regularKav = true)
+        Kav_dist = Matrix(importKavDist(; murine = true, regularKav = false)[:, Not("IgG")])
+        Kavd = importKavDist(; murine = true, regularKav = true)
         Kavd = Kavd[Kavd."IgG" .!= "IgG3", :]
         Kav = Matrix(undef, size(Kav_dist)...)
         for ii in eachindex(Kav)
@@ -150,7 +128,7 @@ function MAPmurineLikelihood(df = importMurineInVitro())
     x = opt.values
 
     Rtot = Dict([rcp => x[Symbol("Rtot[$i]")] for (i, rcp) in enumerate(murineFcgR)])
-    Kav = murineKavDist(; regularKav = true, retdf = true)
+    Kav = importKavDist(; murine = true, regularKav = true, retdf = true)
     Kav[!, Not("IgG")] = reshape([x[Symbol("Kav[$i]")] for i = 1:12], 3, 4)
 
     ndf = predictMurine(df; Kav = Kav, recepExp = Rtot)

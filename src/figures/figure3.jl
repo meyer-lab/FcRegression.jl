@@ -6,7 +6,7 @@ function figure3()
     #Kav_old = Kav_old[Kav_old."IgG" .!= "IgG3", :];
     #sort!(Kav_old, "IgG");
 
-    Kav_old = murineKavDist(; regularKav = true, retdf = true)
+    Kav_old = importKavDist(; murine = true, regularKav = true, retdf = true)
 
     ndf1 = predictLeukocyte(df; Kav = Kav_old)
     pl1 = plotPredvsMeasured(

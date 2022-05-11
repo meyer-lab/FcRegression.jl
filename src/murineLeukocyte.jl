@@ -21,7 +21,7 @@ function importMurineLeukocyte(fn = "leukocyte-apr2022.csv"; average = true)
     return sort!(df, ["Cell", "Subclass", "Valency"])
 end
 
-function predictLeukocyte(dfr::DataFrameRow; KxStar = KxConst, Kav = murineKavDist(; regularKav = true, retdf = true), f = [4, 33])
+function predictLeukocyte(dfr::DataFrameRow; KxStar = KxConst, Kav = importKavDist(; murine = true, regularKav = true, retdf = true), f = [4, 33])
     igg = dfr."Subclass"
     igg = (igg == "IgG2a") ? "IgG2c" : igg
     Kav_vs = Matrix(Kav[Kav."IgG" .== igg, Not("IgG")])
@@ -92,8 +92,8 @@ end
 
     if Kavd === nothing
         # sample Kav
-        Kav_dist = Matrix(murineKavDist()[:, Not("IgG")])
-        Kavd = murineKavDist(; regularKav = true)
+        Kav_dist = Matrix(importKavDist(; murine = true)[:, Not("IgG")])
+        Kavd = importKavDist(; murine = true, regularKav = true)
         Kavd = Kavd[Kavd."IgG" .!= "IgG3", :]
         Kav = Matrix(undef, size(Kav_dist)...)
         for ii in eachindex(Kav)

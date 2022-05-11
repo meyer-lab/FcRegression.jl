@@ -24,7 +24,7 @@ end
 function validateRobinett(fname = "MCMC_robinett_0505.dat", c = runMCMC(); mcmc_iter = 1_000)
     local c_old, c_new
     df = importRobinett()
-    Kav_old = importKav(; murine = false, invitro = true, retdf = true)
+    Kav_old = importKavDist(; murine = false, regularKav = true, retdf = true)
     Kav_new = extractMCMC(c; murine = false)["Kav"]
 
     if isfile(fname)
