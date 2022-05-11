@@ -77,43 +77,6 @@ function MAPLikelihood(df; robinett = false)
 end
 
 
-
-function plot_MCMC_dists(c = runMCMC())
-    setGadflyTheme()
-
-    # Plot Kav's
-    ligg = length(humanIgG)
-    lfcr = length(humanFcgRiv)
-    Kav_dist = importKavDist(; retdf = false)
-    Kav_pls = Matrix{Plot}(undef, ligg, lfcr)
-    for ii in eachindex(Kav_pls)
-        IgGname = humanIgG[(ii - 1) % ligg + 1]
-        FcRname = humanFcgRiv[(ii - 1) ÷ ligg + 1]
-        name = IgGname * " to " * FcRname
-        Kav_pls[ii] = plotHistPriorDist(c["Kav[$ii]"].data, Kav_dist[ii], name)
-    end
-    Kav_plot = plotGrid((ligg, lfcr), permutedims(Kav_pls, (2, 1)); sublabels = false)
-    draw(PDF("MCMC_Kav.pdf", 16inch, 13inch), Kav_plot)
-
-    # Plot Rtot's
-    Rtot_pls = Vector{Plot}(undef, lfcr)
-    Rtot_dist = importInVitroRtotDist()
-    for ii in eachindex(Rtot_pls)
-        FcRname = humanFcgRiv[ii]
-        Rtot_pls[ii] = plotHistPriorDist(c["Rtot[$ii]"].data, Rtot_dist[ii], FcRname)
-    end
-    Rtot_plot = plotGrid((1, lfcr), Rtot_pls; sublabels = false)
-    draw(PDF("MCMC_Rtot.pdf", 16inch, 4inch), Rtot_plot)
-
-    # Plot f4, f33, KxStar
-    other_pls = Vector{Plot}(undef, 3)
-    other_pls[1] = plotHistPriorDist(c["f4"].data, f4Dist, "f = 4 effective valency")
-    other_pls[2] = plotHistPriorDist(c["f33"].data, f33Dist, "f = 33 effective valency")
-    other_pls[3] = plotHistPriorDist(c["KxStar"].data, KxStarDist, "K<sub>x</sub><sup>*</sup>")
-    other_plot = plotGrid((1, 3), other_pls; sublabels = false)
-    draw(PDF("MCMC_others.pdf", 12inch, 4inch), other_plot)
-end
-
 function MCMC_params_predict_plot(c = runMCMC(), df = loadMixData(); 
         Kav::Union{Nothing, AbstractDataFrame} = nothing, kwargs...)
     p = extractMCMC(c; murine = false)

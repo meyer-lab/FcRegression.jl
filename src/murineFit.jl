@@ -134,39 +134,6 @@ function runMurineMCMC(fname = "murineNUTSdepfit_0505.dat"; mcmc_iter = 1_000)
     return c
 end
 
-function plot_murineMCMC_dists(c::Union{Chains, MultivariateDistribution} = runMurineMCMC(); bincount = 20)
-    setGadflyTheme()
-
-    # Plot Kav's
-    Kav = murineKavDist()
-    ligg, lfcr = size(Kav)
-    lfcr -= 1
-    Kav_pls = Matrix{Plot}(undef, ligg, lfcr)
-    if c isa MultivariateDistribution
-        cc = rand(c, 100_000)
-        @assert size(c)[1] == 18
-    end
-    for ii in eachindex(Kav_pls)
-        IgGname = Kav."IgG"[(ii - 1) % ligg + 1]
-        FcRname = names(Kav)[2:end][(ii - 1) ÷ ligg + 1]
-        name = IgGname * " to " * FcRname
-        dat = (c isa Chains) ? c["Kav[$ii]"].data : cc[4 + ii, :]  # 5-16 are Kav's
-        Kav_pls[ii] = plotHistPriorDist(dat, Kav[(ii - 1) % ligg + 1, FcRname], name; bincount = bincount)
-    end
-    Kav_plot = plotGrid((ligg, lfcr), permutedims(Kav_pls, (2, 1)); sublabels = false)
-    draw(PDF("MCMCmurine_Kav.pdf", 16inch, 13inch), Kav_plot)
-
-    # Plot Rtot's
-    Rtot_pls = Vector{Plot}(undef, lfcr)
-    Rtot_dist = [inferLogNormal(InVitroMurineRcpExp[fcr], InVitroMurineRcpExp[fcr] * 1e2) for fcr in names(Kav)[2:end]]
-    for ii in eachindex(Rtot_pls)
-        FcRname = names(Kav)[2:end][ii]
-        dat = (c isa Chains) ? c["Rtot[$ii]"].data : cc[ii, :]   # 1-4 are Rtot's
-        Rtot_pls[ii] = plotHistPriorDist(dat, Rtot_dist[ii], FcRname; bincount = bincount)
-    end
-    Rtot_plot = plotGrid((1, lfcr), Rtot_pls; sublabels = false)
-    draw(PDF("MCMCmurine_Rtot.pdf", 16inch, 4inch), Rtot_plot)
-end
 
 function plot_murineMCMC_predict(c::Chains = runMurineMCMC(), df = importMurineInVitro(); title = nothing, kwargs...)
     p = extractMCMC(c; murine = true)
@@ -232,7 +199,7 @@ function validateMurineInVitro(c::Chains = fitLeukocyteMCMC(); mcmc_iter = 1_000
         title = "Murine in vitro binding prediction\nwith updated affinities",
     )
 
-    pp = plotGrid((1, 2), [pl1, pl2])
-    draw(PDF("figure3CHO.pdf", 7inch, 3inch), pp)
+    #pp = plotGrid((1, 2), [pl1, pl2])
+    #draw(PDF("figure3CHO.pdf", 7inch, 3inch), pp)
     return pl1, pl2
 end

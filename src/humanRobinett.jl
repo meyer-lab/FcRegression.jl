@@ -47,9 +47,7 @@ function validateRobinett(fname = "MCMC_robinett_0505.dat", c = runMCMC(); mcmc_
         title = "Robinett with documented affinities", R2pos = (-0.5, -2))
     pl2 = MCMC_params_predict_plot(c_new, df; Kav = Kav_new, xx = "Value", yy = "Predict", 
         title = "Robinett with updated affinities", R2pos = (-0.5, -2))
-
-    pp = plotGrid((1, 2), [pl1, pl2])
-    draw(PDF("figure2robinett.pdf", 7inch, 3inch), pp)
+    
     return pl1, pl2
 
     ### not fitting Robinett, just use different Kav

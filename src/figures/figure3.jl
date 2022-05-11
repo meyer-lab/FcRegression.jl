@@ -31,7 +31,7 @@ function figure3()
         title = "Murine leukocyte prediction\nwith all but affinity fitting",
     )
 
-    c = fitLeukocyteMCMC("leukNUTSfit_0509_2.dat")
+    c = fitLeukocyteMCMC("leukNUTSfit_0509.dat")
     ndf2 = predictLeukocyte(c, df)
     pl2 = plotPredvsMeasured(
         ndf2;
@@ -47,5 +47,5 @@ function figure3()
     vpl1, vpl2 = validateMurineInVitro(c)
 
     pp = plotGrid((3, 3), [pl1, pl_noKav, pl2, apls[1], apls[2], apls[3], vpl1, vpl2])
-    draw(PDF("figure3_v2.pdf", 12inch, 9inch), pp)
+    draw(PDF("figure3.pdf", 12inch, 9inch), pp)
 end

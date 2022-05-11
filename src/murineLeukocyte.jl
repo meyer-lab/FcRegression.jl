@@ -67,6 +67,7 @@ function predictLeukocyte(c::Chains, df::AbstractDataFrame; Kavd = nothing)
     if Kavd === nothing
         Kavd = p["Kav"]
     end
+
     return predictLeukocyte(df; Rtot = p["Rtot"], Kav = Kavd, KxStar = p["KxStar"], f = [p["f4"], p["f33"]])
 end
 
@@ -134,46 +135,4 @@ function fitLeukocyteMCMC(fname = "leukNUTSfit_0509.dat"; mcmc_iter = 1_000, Kav
         f = serialize(fname, c)
     end
     return c
-end
-
-
-function plot_MCMCLeuk_dists(c = fitLeukocyteMCMC())
-    setGadflyTheme()
-
-    # Plot Kav's
-    mIgGs = murineKavDist(; retdf = true)."IgG"
-    ligg, lfcr = length(mIgGs), length(murineFcgR)
-    Kav_dist = murineKavDist(; retdf = false)
-    Kav_pls = Matrix{Plot}(undef, ligg, lfcr)
-    for ii in eachindex(Kav_pls)
-        IgGname = mIgGs[(ii - 1) % ligg + 1]
-        FcRname = murineFcgR[(ii - 1) ÷ ligg + 1]
-        name = "m$IgGname to m$FcRname"
-        Kav_pls[ii] = plotHistPriorDist(c["Kav[$ii]"].data, Kav_dist[ii], name)
-    end
-    Kav_plot = plotGrid((ligg, lfcr), permutedims(Kav_pls, (2, 1)); sublabels = false)
-    draw(PDF("MCMCLeuk_Kav.pdf", 11inch, 8inch), Kav_plot)
-
-    # Plot Rtot's
-    cellTypes = unique(importMurineLeukocyte(; average = true)."Cell")
-    lcell, lfcr = length(cellTypes), length(murineFcgR)
-    Rtotd = importCellRtotDist(; retdf = true)
-    Rtotd = Matrix(Rtotd[!, names(Rtotd)[in(cellTypes).(names(Rtotd))]])
-    Rtot_pls = Matrix{Plot}(undef, lcell, lfcr)
-    for ii in eachindex(Rtot_pls)
-        cellname = cellTypes[(ii - 1) % lcell + 1]
-        FcRname = murineFcgR[(ii - 1) ÷ lcell + 1]
-        name = "m$FcRname on $cellname"
-        Rtot_pls[ii] = plotHistPriorDist(c["Rtot[$ii]"].data, Rtotd[ii], name)
-    end
-    Rtot_plot = plotGrid((lcell, lfcr), permutedims(Rtot_pls, (2, 1)); sublabels = false)
-    draw(PDF("MCMCLeuk_Rtot.pdf", 11inch, 14inch), Rtot_plot)
-
-    # Plot f4, f33, KxStar
-    other_pls = Vector{Plot}(undef, 3)
-    other_pls[1] = plotHistPriorDist(c["f4"].data, f4Dist, "f = 4 effective valency")
-    other_pls[2] = plotHistPriorDist(c["f33"].data, f33Dist, "f = 33 effective valency")
-    other_pls[3] = plotHistPriorDist(c["KxStar"].data, f33Dist, "KxStar")
-    other_plot = plotGrid((1, 3), other_pls; sublabels = false)
-    draw(PDF("MCMCLeuk_others.pdf", 9inch, 3inch), other_plot)
 end
