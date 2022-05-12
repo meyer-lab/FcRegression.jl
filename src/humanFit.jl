@@ -7,7 +7,7 @@ const f33Dist = LogNormal(log(33), 0.2)   # std ~= 6.80
 const KxStarDist = LogNormal(log(KxConst), 2.0)   # std ~= 4.37 in Robinett
 
 @model function sfit(df, values; robinett = false, Kavd::AbstractDataFrame = importKavDist(; murine = false, regularKav = true, retdf = true))
-    Rtot_dist = importInVitroRtotDist(robinett)
+    Rtot_dist = importRtotDist((robinett ? :hRob : :hCHO); retdf = false)
     Rtot = Vector(undef, length(Rtot_dist))
 
     # Order of distribution definitions here matches MAPLikelihood()

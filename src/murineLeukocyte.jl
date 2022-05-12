@@ -24,7 +24,7 @@ end
 
 @model function mLeukocyteModel(df, values; Kavd::Union{Nothing, AbstractDataFrame} = nothing)
     # sample Rtot
-    Rtotd = importCellRtotDist()
+    Rtotd = importRtotDist(:mLeuk; retdf = true)
     Rtotd = Rtotd[!, ["Receptor"; names(Rtotd)[in(unique(df."ImCell")).(names(Rtotd))]]]
     Rtot_dist = Matrix(Rtotd[:, Not("Receptor")])
     Rtot = Matrix(undef, size(Rtot_dist)...)

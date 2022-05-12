@@ -88,7 +88,7 @@ function plotMCMCdists(c::Chains, fname::String = ""; murine::Bool)
     if murine
         cellTypes = unique(importMurineLeukocyte(; average = true)."ImCell")
         lcell = length(cellTypes)
-        Rtotd = importCellRtotDist(; retdf = true)
+        Rtotd = importRtotDist(:mLeuk; retdf = true)
         Rtotd = Matrix(Rtotd[!, names(Rtotd)[in(cellTypes).(names(Rtotd))]])
         Rtot_pls = Matrix{Plot}(undef, lcell, lfcr)
         for ii in eachindex(Rtot_pls)
@@ -101,7 +101,7 @@ function plotMCMCdists(c::Chains, fname::String = ""; murine::Bool)
         draw(PDF("MCMC_Rtot_$fname.pdf", 11inch, 14inch), Rtot_plot)
     else # human
         Rtot_pls = Vector{Plot}(undef, lfcr)
-        Rtot_dist = importInVitroRtotDist()
+        Rtot_dist = importRtotDist(:hCHO)
         for ii in eachindex(Rtot_pls)
             FcRname = humanFcgRiv[ii]
             Rtot_pls[ii] = plot_dist_histogram(c["Rtot[$ii]"].data, Rtot_dist[ii], FcRname)
