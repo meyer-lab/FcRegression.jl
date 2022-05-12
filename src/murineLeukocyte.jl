@@ -1,6 +1,6 @@
 function importMurineLeukocyte(fn = "leukocyte-apr2022.csv"; average = true)
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
-    #df = df[df."Cell" .!= "Tcell", :]   # throw away T cells
+    #df = df[df."ImCell" .!= "Tcell", :]   # throw away T cells
     df = df[df."Experiment" .!= 7, :]   # throw away Exp. 7
     df[!, ["IgG1", "IgG2b", "IgG2c"]] .-= df[!, "TNP-BSA"]  # subtract TNP-BSA control from meas
     df = df[!, Not("TNP-BSA")]
@@ -18,7 +18,7 @@ function importMurineLeukocyte(fn = "leukocyte-apr2022.csv"; average = true)
             "Value" => (xs -> quantile(xs, 0.75)) => "xmax",
         )
     end
-    return sort!(df, ["Cell", "Subclass", "Valency"])
+    return sort!(df, ["ImCell", "Subclass", "Valency"])
 end
 
 function predictLeukocyte(dfr::DataFrameRow; KxStar = KxConst, Kav = importKavDist(; murine = true, regularKav = true, retdf = true), f = [4, 33])
@@ -32,16 +32,16 @@ end
 
 function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(; average = true); Rtot = nothing, kwargs...)
     # transpose Rtot
-    cellTypes = unique(df."Cell")
+    cellTypes = unique(df."ImCell")
     if Rtot === nothing
         Rtot = importRtot(; murine = true, retdf = true, cellTypes = cellTypes)
     else
         Rtot = Rtot[!, ["Receptor"; names(Rtot)[in(cellTypes).(names(Rtot))]]]
     end
-    Rtot = stack(Rtot, Not("Receptor"), variable_name = "Cell", value_name = "Abundance")
-    Rtot = dropmissing(unstack(Rtot, "Cell", "Receptor", "Abundance"))
-    rdf = innerjoin(df, Rtot, on = "Cell")
-    sort!(rdf, ["Cell", "Subclass", "Valency"])
+    Rtot = stack(Rtot, Not("Receptor"), variable_name = "ImCell", value_name = "Abundance")
+    Rtot = dropmissing(unstack(Rtot, "ImCell", "Receptor", "Abundance"))
+    rdf = innerjoin(df, Rtot, on = "ImCell")
+    sort!(rdf, ["ImCell", "Subclass", "Valency"])
     @assert df."Value" == rdf."Value"
     preds = Vector(undef, size(rdf)[1])
     Threads.@threads for i = 1:size(rdf)[1]
@@ -75,14 +75,14 @@ end
 function plot_murine_leukocyte(ndf; kwargs...)
     @assert "Predict" in names(ndf)
     pldf = deepcopy(ndf)
-    pldf."Cell" = replace.(pldf."Cell", cellTypeFullName...)
-    return plotPredvsMeasured(pldf; xx = "Value", yy = "Predict", color = "Cell", shape = "Valency", R2pos = (0, -1.5), kwargs...)
+    pldf."ImCell" = replace.(pldf."ImCell", cellTypeFullName...)
+    return plotPredvsMeasured(pldf; xx = "Value", yy = "Predict", color = "ImCell", shape = "Valency", R2pos = (0, -1.5), kwargs...)
 end
 
 @model function mLeukocyteModel(df, values; Kavd::Union{Nothing, AbstractDataFrame} = nothing)
     # sample Rtot
     Rtotd = importCellRtotDist()
-    Rtotd = Rtotd[!, ["Receptor"; names(Rtotd)[in(unique(df."Cell")).(names(Rtotd))]]]
+    Rtotd = Rtotd[!, ["Receptor"; names(Rtotd)[in(unique(df."ImCell")).(names(Rtotd))]]]
     Rtot_dist = Matrix(Rtotd[:, Not("Receptor")])
     Rtot = Matrix(undef, size(Rtot_dist)...)
     for ii in eachindex(Rtot)

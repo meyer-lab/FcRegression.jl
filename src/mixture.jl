@@ -15,18 +15,19 @@ import Statistics: cor
     df = innerjoin(df, baseline, on = "Experiment")
     df[!, "Value"] ./= df[!, "Baseline"]    # normalize fluorescence by daily geomean
     df = df[!, Not(["Experiment", "Baseline"])]
+    rename!(df, "Cell" => "Receptor")
 
     df[!, "%_1"] ./= 100.0
     df[!, "%_2"] ./= 100.0
 
-    replace!(df."Cell", "CHO-hFcgRIIA-131His" => "FcgRIIA-131H")
-    replace!(df."Cell", "CHO-hFcgRIIB" => "FcgRIIB-232I")
-    replace!(df."Cell", "CHO-hFcgRIIIA-131Val" => "FcgRIIIA-158V")
-    replace!(df."Cell", "CHO-FcgRIA" => "FcgRI")
-    replace!(df."Cell", "CHO-hFcgRIIA-131Arg" => "FcgRIIA-131R")
-    replace!(df."Cell", "CHO-hFcgRIIIA-158Phe" => "FcgRIIIA-158F")
+    replace!(df."Receptor", "CHO-hFcgRIIA-131His" => "FcgRIIA-131H")
+    replace!(df."Receptor", "CHO-hFcgRIIB" => "FcgRIIB-232I")
+    replace!(df."Receptor", "CHO-hFcgRIIIA-131Val" => "FcgRIIIA-158V")
+    replace!(df."Receptor", "CHO-FcgRIA" => "FcgRI")
+    replace!(df."Receptor", "CHO-hFcgRIIA-131Arg" => "FcgRIIA-131R")
+    replace!(df."Receptor", "CHO-hFcgRIIIA-158Phe" => "FcgRIIIA-158F")
 
-    return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "%_2"])
+    return sort!(df, ["Valency", "Receptor", "subclass_1", "subclass_2", "%_2"])
 end
 
 """ Make statistics of individual cell types and subclass types """
@@ -81,7 +82,7 @@ function combSing2pair(df)
             push!(ndf, row)
         end
     end
-    return sort!(ndf, names(df)[in(["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"]).(names(df))])
+    return sort!(ndf, names(df)[in(["Valency", "Receptor", "subclass_1", "subclass_2", "Experiment", "%_2"]).(names(df))])
 end
 
 
@@ -93,7 +94,7 @@ splot() is a function that take dataframe with only a single cell type and IgG p
 function plotMixSubplots(splot::Function, df = loadMixData(); kwargs...)
     setGadflyTheme()
 
-    cells = unique(df."Cell")
+    cells = unique(df."Receptor")
     pairs = unique(df[df."subclass_2" .!= "None", ["subclass_1", "subclass_2"]])
     lcells = length(cells)
     lpairs = size(pairs, 1)
@@ -103,7 +104,7 @@ function plotMixSubplots(splot::Function, df = loadMixData(); kwargs...)
     for (i, pairrow) in enumerate(eachrow(pairs))
         for (j, cell) in enumerate(cells)
             IgGXname, IgGYname = pairrow."subclass_1", pairrow."subclass_2"
-            ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== IgGXname) .& (df."subclass_2" .== IgGYname), :]
+            ndf = df[(df."Receptor" .== cell) .& (df."subclass_1" .== IgGXname) .& (df."subclass_2" .== IgGYname), :]
             pls[(j - 1) * lpairs + (i - 1) + 1] = splot(ndf; kwargs...)
         end
     end
@@ -167,7 +168,7 @@ end
 
 function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; kwargs...)
     val = "NewValency" in names(dfrow) ? dfrow."NewValency" : dfrow."Valency"
-    return predictMix(dfrow."Cell", val, IgGXname, IgGYname, IgGX, IgGY; kwargs...)
+    return predictMix(dfrow."Receptor", val, IgGXname, IgGYname, IgGX, IgGY; kwargs...)
 end
 
 predictMix(dfrow::DataFrameRow; kwargs...) = predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; kwargs...)
@@ -206,7 +207,7 @@ function mixtureDataPCA(; val = 0)
         df = df[df."Valency" .== val, :]
     end
     id_cols = ["Valency", "subclass_1", "subclass_2", "%_1", "%_2"]
-    wide = unstack(df, id_cols, "Cell", "Value")
+    wide = unstack(df, id_cols, "Receptor", "Value")
     mat = Matrix(wide[!, Not(id_cols)])
     mat = coalesce.(mat, 0)
     M = MultivariateStats.fit(PCA, mat'; maxoutdim = 4)
@@ -219,7 +220,7 @@ function mixtureDataPCA(; val = 0)
     wide[!, "PC 3"] = score[:, 3]
     loading = projection(M)
     score_df = wide[!, vcat(id_cols, ["PC 1", "PC 2", "PC 3"])]
-    loading_df = DataFrame("Cell" => unique(df."Cell"), "PC 1" => loading[:, 1], "PC 2" => loading[:, 2], "PC 3" => loading[:, 3])
+    loading_df = DataFrame("Receptor" => unique(df."Receptor"), "PC 1" => loading[:, 1], "PC 2" => loading[:, 2], "PC 3" => loading[:, 3])
     if "None" in df."subclass_2"
         score_df = combSing2pair(score_df)
     end
@@ -233,7 +234,7 @@ function mixtureANOVA()
     using GLM
     import ANOVA: anova
     df = loadMixData()
-    df."Measurement" = string.(df."Valency") .* df."Cell" .* df."subclass_1" .* " " .* 
+    df."Measurement" = string.(df."Valency") .* df."Receptor" .* df."subclass_1" .* " " .* 
             string.(df."%_1") .* ", " .* df."subclass_2" .* " " .* string.(df."%_2")
     df."logValue" = log.(df."Value")
 

@@ -4,13 +4,11 @@ function importRobinett()
         cn = "Replicate $i"
         df[!, cn] ./= geomean(df[Not(ismissing.(df[!, cn])), cn])
     end
-    df = dropmissing(stack(df, Not(["Cell", "Antibody", "Valency"])))
+    df = dropmissing(stack(df, Not(["Receptor", "Antibody", "Valency"])))
     rename!(df, ["variable" => "Experiment", "value" => "Value"])
-    rename!(df, ["Antibody" => "subclass_1"])
-    df[!, "%_1"] .= 1.0
-    df[!, "subclass_2"] .= "None"
-    df[!, "%_2"] .= 0.0
-    return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"])
+    rename!(df, ["Antibody" => "Subclass"])
+
+    return sort!(df, ["Valency", "Receptor", "Subclass", "Experiment"])
 end
 
 """ Fit everything but affinities for Robinett data with MCMC, compare new and old affinities"""
