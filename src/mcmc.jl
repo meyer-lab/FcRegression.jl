@@ -11,7 +11,7 @@ function extractMCMC(c::Chains; murine::Bool, CHO = false)
             if CHO
                 Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(Rtot)])
             else # Leukocyte
-                cells = unique(importMurineLeukocyte()."Cell")
+                cells = unique(importMurineLeukocyte()."ImCell")
                 Rtotd = importCellRtotDist()
                 Rtotd = Rtotd[!, ["Receptor"; names(Rtotd)[in(cells).(names(Rtotd))]]]
                 Rtotd[!, Not("Receptor")] = typeof(Rtot[1, 1]).(reshape(Rtot, size(Rtotd)[1], :))
@@ -32,6 +32,8 @@ function extractMCMC(c::Chains; murine::Bool, CHO = false)
     for var in ["f4", "f33", "KxStar"]
         if var in pnames
             out[var] = median(c[var].data)
+        else
+            out[var] = nothing
         end
     end
     return out
@@ -126,7 +128,7 @@ function plotMCMCdists(c::Chains, fname::String = ""; murine::Bool)
     # Plot Rtot's
     ## TODO: simplify this
     if murine
-        cellTypes = unique(importMurineLeukocyte(; average = true)."Cell")
+        cellTypes = unique(importMurineLeukocyte(; average = true)."ImCell")
         lcell = length(cellTypes)
         Rtotd = importCellRtotDist(; retdf = true)
         Rtotd = Matrix(Rtotd[!, names(Rtotd)[in(cellTypes).(names(Rtotd))]])
@@ -172,18 +174,9 @@ function plotMCMCPredict(c::Chains, df::AbstractDataFrame; murine::Bool, CHO = f
     if !("xmin" in names(df))
         df = averageMixData(df)
     end
-    if murine
-        if CHO
-            ndf = predictMurine(df; Kav = Kavd, KxStar = p["KxStar"], recepExp = p["Rtot"], f33 = p["f33"])
-            return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Receptor", shape = "Subclass", kwargs...)
-        else # Leukocyte
-            ndf = predictLeukocyte(df; Rtot = p["Rtot"], Kav = Kavd, KxStar = p["KxStar"], f = [p["f4"], p["f33"]])
-            return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "ImCell", shape = "Subclass", kwargs...)
-        end
-    else # human
-        ndf = predictMix(df; recepExp = p["Rtot"], Kav = Kavd, KxStar = p["KxStar"], vals = [p["f4"], p["f33"]])
-        return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = "Cell", shape = "Valency", kwargs...)
-    end
+    ndf = predMix(df; Kav = Kavd, KxStar = p["KxStar"], Rtot = p["Rtot"], fs = [p["f4"], p["f33"]])
+    return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = ((murine && (!CHO)) ? "ImCell" : "Receptor"), 
+        shape = (murine ? "Subclass" : "Valency"), kwargs...)
 end
 
 

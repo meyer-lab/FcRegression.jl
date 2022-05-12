@@ -14,40 +14,6 @@ end
 
 const InVitroMurineRcpExp = Dict("FcgRI" => 1e6, "FcgRIIB" => 1e6, "FcgRIII" => 1e6, "FcgRIV" => 1e6)
 
-function predictMurine(dfr::DataFrameRow; KxStar = KxConst, recepExp = InVitroMurineRcpExp, f33 = 33)
-    if (dfr."Subclass" == "TNP-BSA") || (dfr."Affinity" <= 0.0)
-        return 0.0
-    end
-    if dfr."Affinity" >= Inf
-        return Inf
-    end
-    @assert dfr."Valency" == 33     # use valency fitted from human; only deal with f = 33 here
-    return polyfc(1e-9, KxStar, f33, [recepExp[dfr."Receptor"] * dfr."Expression" / 100], [1.0], reshape([dfr."Affinity"], 1, 1)).Lbound
-end
-
-function predictMurine(df::AbstractDataFrame; Kav = importKavDist(; murine = true, regularKav = true), kwargs...)
-    # Add affinity information to df
-    Kav = deepcopy(Kav)
-    Kav[Kav."IgG" .== "IgG2a", "IgG"] .= "IgG2c"
-    dft = innerjoin(df, Kav, on = "Subclass" => "IgG")
-    dft = stack(dft, murineFcgR)
-    rename!(dft, "value" => "Affinity")
-    dft = dft[dft."Receptor" .== dft."variable", Not("variable")]
-    sort!(dft, ["Receptor", "Subclass"])
-    @assert df."Value" == dft."Value"   # must ensure the right order
-    preds = Vector(undef, size(dft)[1])
-    Threads.@threads for i = 1:size(dft)[1]
-        preds[i] = predictMurine(dft[i, :]; kwargs...)
-    end
-    dft."Predict" = preds
-    if any(dft."Predict" .> 0.0)
-        dft."Predict" ./= geomean(dft."Predict"[dft."Predict" .> 0.0]) / geomean(dft."Value"[dft."Predict" .> 0.0])
-    end
-
-    return dft
-end
-
-
 @model function murineFit(df, values; Kavd::Union{Nothing, AbstractDataFrame} = nothing)
     # Rtot sample
     Rtot = Vector(undef, length(murineFcgR))
@@ -75,7 +41,7 @@ end
 
     # fit predictions
     if all(Rtot .>= 0.0) && all(0.0 .<= Matrix(Kavd[!, Not("IgG")]) .< Inf)
-        df = predictMurine(deepcopy(df); recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, f33 = f33)
+        df = predMix(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, fs = [4, f33])
     else
         df = deepcopy(df)
         df."Predict" .= Inf
@@ -111,7 +77,7 @@ function MAPmurineLikelihood(df = importMurineInVitro())
     Kav = importKavDist(; murine = true, regularKav = true, retdf = true)
     Kav[!, Not("IgG")] = reshape([x[Symbol("Kav[$i]")] for i = 1:12], 3, 4)
 
-    ndf = predictMurine(df; Kav = Kav, recepExp = Rtot)
+    ndf = predMix(df; Kav = Kav, Rtot = Rtot)
     pl = plotPredvsMeasured(
         ndf;
         xx = "Value",

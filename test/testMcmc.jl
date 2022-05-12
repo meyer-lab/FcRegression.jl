@@ -1,5 +1,7 @@
-import Turing: sample, Prior
+import Turing: sample, Prior, MH, NUTS
 import StatsBase: mean, std
+using ForwardDiff
+using Random
 
 @testset "Test the MCMC model can make sane Priors" begin
     df = FcRegression.loadMixData()
@@ -9,6 +11,15 @@ end
 
 function testAllApproxSame(x::Array)
     return std(x) / mean(x) < 1e-12
+end
+
+@testset "Test predMix() perform correctly" begin
+    mKav = FcRegression.importKavDist(; murine = true, regularKav = true, retdf = true)
+    hKav = FcRegression.importKavDist(; murine = false, regularKav = true, retdf = true)
+    df1 = FcRegression.loadMixData()
+    df2 = FcRegression.importRobinett()
+    df3 = FcRegression.importMurineLeukocyte()
+    df4 = FcRegression.importMurineInVitro()
 end
 
 @testset "Test predictMurine() perform correctly" begin
@@ -43,4 +54,21 @@ end
     @test all(ndf[(ndf."Receptor" .== "FcgRIIB"), "Predict"] .<= 1e-8)
     @test all(ndf[(ndf."Receptor" .!= "FcgRIIB"), "Predict"] .> 1e-8)
     @test testAllApproxSame(ndf[Not(ndf."Receptor" .== "FcgRIIB"), "Predict"] ./ ndf[Not(ndf."Receptor" .== "FcgRIIB"), "Predict"])
+end
+
+
+
+@testset "Building the MCMC model can work" begin
+    rng = MersenneTwister(1234)
+    df = FcRegression.loadMixData()
+    model = FcRegression.sfit(df, df."Value")
+    model(rng)
+
+    df = FcRegression.MAPLikelihood(df)
+end
+
+@testset "Check murine fitting model can work" begin
+    df = FcRegression.importMurineInVitro()
+    model = FcRegression.murineFit(df, df."Value")
+    df = FcRegression.MAPmurineLikelihood(df)
 end

@@ -21,63 +21,6 @@ function importMurineLeukocyte(fn = "leukocyte-apr2022.csv"; average = true)
     return sort!(df, ["ImCell", "Subclass", "Valency"])
 end
 
-function predictLeukocyte(dfr::DataFrameRow; KxStar = KxConst, Kav = importKavDist(; murine = true, regularKav = true, retdf = true), f = [4, 33])
-    igg = dfr."Subclass"
-    igg = (igg == "IgG2a") ? "IgG2c" : igg
-    Kav_vs = Matrix(Kav[Kav."IgG" .== igg, Not("IgG")])
-    Rtot_vs = Vector(dfr[murineFcgR])
-    val = (dfr."Valency" > 12) ? f[2] : f[1]
-    return polyfc(1e-9, KxStar, val, Rtot_vs, [1.0], Kav_vs).Lbound
-end
-
-function predictLeukocyte(df::AbstractDataFrame = importMurineLeukocyte(; average = true); Rtot = nothing, kwargs...)
-    # transpose Rtot
-    cellTypes = unique(df."ImCell")
-    if Rtot === nothing
-        Rtot = importRtot(; murine = true, retdf = true, cellTypes = cellTypes)
-    else
-        Rtot = Rtot[!, ["Receptor"; names(Rtot)[in(cellTypes).(names(Rtot))]]]
-    end
-    Rtot = stack(Rtot, Not("Receptor"), variable_name = "ImCell", value_name = "Abundance")
-    Rtot = dropmissing(unstack(Rtot, "ImCell", "Receptor", "Abundance"))
-    rdf = innerjoin(df, Rtot, on = "ImCell")
-    sort!(rdf, ["ImCell", "Subclass", "Valency"])
-    @assert df."Value" == rdf."Value"
-    preds = Vector(undef, size(rdf)[1])
-    Threads.@threads for i = 1:size(rdf)[1]
-        preds[i] = predictLeukocyte(rdf[i, :]; kwargs...)
-    end
-    rdf."Predict" = typeof(preds[1]).(preds)
-    rdf = rdf[!, Not(murineFcgR)]
-
-    # one conversion factor per valency
-    rdf[rdf."Predict" .< 0.0, "Predict"] .= 0.0
-    for val in unique(rdf."Valency")
-        if any(rdf[rdf."Valency" .== val, "Predict"] .> 0.0)
-            rows = (rdf."Valency" .== val) .& (rdf."Predict" .> 0.0)
-            rdf[(rdf."Valency" .== val), "Predict"] ./= geomean(rdf[rows, "Predict"]) / geomean(rdf[rows, "Value"])
-        end
-    end
-    return rdf
-end
-
-function predictLeukocyte(c::Chains, df::AbstractDataFrame; Kavd = nothing)
-    p = extractMCMC(c; murine = true)
-    @assert (p["Kav"] !== nothing) ⊻ (Kavd isa AbstractDataFrame)    # either providing Kavd, or from chain
-    if Kavd === nothing
-        Kavd = p["Kav"]
-    end
-
-    return predictLeukocyte(df; Rtot = p["Rtot"], Kav = Kavd, KxStar = p["KxStar"], f = [p["f4"], p["f33"]])
-end
-
-
-function plot_murine_leukocyte(ndf; kwargs...)
-    @assert "Predict" in names(ndf)
-    pldf = deepcopy(ndf)
-    pldf."ImCell" = replace.(pldf."ImCell", cellTypeFullName...)
-    return plotPredvsMeasured(pldf; xx = "Value", yy = "Predict", color = "ImCell", shape = "Valency", R2pos = (0, -1.5), kwargs...)
-end
 
 @model function mLeukocyteModel(df, values; Kavd::Union{Nothing, AbstractDataFrame} = nothing)
     # sample Rtot
@@ -109,7 +52,7 @@ end
 
     # fit predictions
     if all(0.0 .<= Rtot .< Inf) && all(0.0 .<= Matrix(Kavd[!, Not("IgG")]) .< Inf) && all(0.0 .< [f4, f33, KxStar] .< Inf)
-        df = predictLeukocyte(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, f = [f4, f33])
+        df = predMix(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, fs = [f4, f33])
     else
         df = deepcopy(df)
         df."Predict" .= Inf

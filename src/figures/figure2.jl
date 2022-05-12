@@ -7,7 +7,7 @@ function plotPredvsMeasured(
     yy = "Predict",
     xxlabel = "Actual",
     yylabel = "Predicted",
-    color = "Cell",
+    color = "Receptor",
     shape = "Valency",
     title = "Predicted vs Actual",
     R2pos = (3, 1),
@@ -57,6 +57,9 @@ function plotPredvsMeasured(
     )
 end
 
+## Disabled because current predMix() cannot handle
+## TODO: enable predMix() to take this
+#=
 """ Individual measurement with prediction curve """
 function splot_contPred(df)
     df = copy(df)
@@ -115,14 +118,14 @@ function splot_pred(cell; Lbound = true)
     )
     return pl
 end
+=#
 
 function figure2()
-    data = loadMixData()
-    data = averageMixData(data)
-    raw_predict = predictMix(data)
+    raw_predict = predMix(averageMixData(loadMixData()); Kav = importKav(; murine = false, retdf = true), 
+        Rtot = measuredRecepExp)
 
-    raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", title = "Raw model predictions without fitting", R2pos = (0, -2.7))
-
+    raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", color = "Receptor", 
+        shape = "Valency", title = "Raw model predictions without fitting", R2pos = (0, -2.7))
 
     c = runMCMC("humanNUTSfit_0505.dat"; mcmc_iter = 1_000)
     df = loadMixData()

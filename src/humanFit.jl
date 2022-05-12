@@ -33,7 +33,7 @@ const KxStarDist = LogNormal(log(KxConst), 2.0)   # std ~= 4.37 in Robinett
 
     # fit predictions
     if all(Rtot .>= 0.0) && all(0.0 .<= Matrix(Kavd[!, Not("IgG")]) .< Inf) && all(0.0 .< [f4, f33, KxStar] .< Inf)
-        df = predictMix(deepcopy(df); recepExp = Rtotd, Kav = Kavd, KxStar = KxStar, vals = [f4, f33])
+        df = predMix(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, fs = [f4, f33])
     else
         df = deepcopy(df)
         df."Predict" .= Inf
@@ -74,7 +74,7 @@ function MAPLikelihood(df; robinett = false)
     Kav = deepcopy(importKavDist(; murine = false, regularKav = true, retdf = true))
     Kav[!, Not("IgG")] = reshape(x[10:33], length(humanIgG), length(humanFcgRiv))
 
-    return predictMix(df; recepExp = Rtot, Kav = Kav, KxStar = x[9], vals = [x[7], x[8]])
+    return predMix(df; Rtot = Rtot, Kav = Kav, KxStar = x[9], fs = [x[7], x[8]])
 end
 
 
