@@ -6,6 +6,9 @@ using NLsolve
 
 const KxConst = 6.31e-13 # 10^(-12.2)
 
+lower(x) = quantile(x, 0.25)
+upper(x) = quantile(x, 0.75)
+
 function geocmean(x)
     x = convert(Vector, x)
     x[x .<= 1.0] .= 1.0

@@ -9,15 +9,14 @@ using DataFrames
 using Printf
 import Cairo, Fontconfig
 
-lower(x) = quantile(x, 0.25)
-upper(x) = quantile(x, 0.75)
 
 include("figures/figureCommon.jl")
 
 include("fcBindingModel.jl")
 include("dataHelpers.jl")
 include("mixture.jl")
-include("mcmc.jl")
+include("runMCMC.jl")
+include("plotMCMC.jl")
 include("humanFit.jl")
 include("humanRobinett.jl")
 include("murineFit.jl")
