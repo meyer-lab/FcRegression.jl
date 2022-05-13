@@ -235,17 +235,19 @@ end
 end
 
 """ Import measurements of receptor amounts. """
-@memoize function importRtotDist_readcsv(dat::Symbol; retdf = false)
+@memoize function importRtotDist_readcsv(dat::Symbol; regular = false, retdf = false)
     @assert dat in [:hCHO, :hRob, :mCHO, :mLeuk]
     if dat in [:hCHO, :hRob]
-        local df
-        if dat == :hRob
-            df = CSV.File(joinpath(dataDir, "robinett/FcgRquant.csv"), delim = ",", comment = "#") |> DataFrame
+        df = if dat == :hRob
+            CSV.File(joinpath(dataDir, "robinett/FcgRquant.csv"), delim = ",", comment = "#") |> DataFrame
         else
-            df = CSV.File(joinpath(dataDir, "receptor_amount_mar2021.csv"), delim = ",", comment = "#") |> DataFrame
+            CSV.File(joinpath(dataDir, "receptor_amount_mar2021.csv"), delim = ",", comment = "#") |> DataFrame
         end
-        sort!(df, "Receptor")
-        res = [fit_mle(LogNormal, df[df."Receptor" .== rcp, "Measurements"]) for rcp in unique(df."Receptor")]
+        res = if regular
+            [geomean(df[df."Receptor" .== rcp, "Measurements"]) for rcp in unique(df."Receptor")]
+        else
+            [fit_mle(LogNormal, df[df."Receptor" .== rcp, "Measurements"]) for rcp in unique(df."Receptor")]
+        end
         if retdf
             return Dict([humanFcgRiv[i] => res[i] for i = 1:length(res)])
         else
@@ -254,7 +256,7 @@ end
     end
     if dat == :mCHO
         ref = 1e6
-        res = [inferLogNormal(ref, ref * 1e2) for ref in 1:length(murineFcgR)]
+        res = [regular ? ref : inferLogNormal(ref, ref * 1e2) for ii in 1:length(murineFcgR)]
         if retdf
             return Dict([murineFcgR[i] => res[i] for i = 1:length(res)])
         else

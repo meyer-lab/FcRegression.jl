@@ -45,14 +45,14 @@ function predMix(dfr::DataFrameRow; Kav::AbstractDataFrame, Rtot = nothing, fs::
     val = dfr."Valency" < 12 ? fs[1] : fs[2]
 
     local recepExp
-    if Rtot isa Dict
-        recepExp = [Rtot[dfr."Receptor"]]
+    recepExp = if Rtot isa Dict
+        [Rtot[dfr."Receptor"]]
     elseif Rtot isa Vector
-        recepExp = Rtot[names(Kav)[2:end] .== dfr."Receptor"]
+        Rtot[names(Kav)[2:end] .== dfr."Receptor"]
     elseif "ImCell" in names(dfr)   # must have receptor amount already looked up
-        recepExp = Vector(dfr[names(Kav)[2:end]])
+        Vector(dfr[names(Kav)[2:end]])
     elseif Rtot isa AbstractDataFrame
-        recepExp = [Rtot[1, dfr."Receptor"]]
+        [Rtot[1, dfr."Receptor"]]
     else
         @error "Failed at predMix(): cannot look up * recepExp *"
     end

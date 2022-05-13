@@ -113,16 +113,6 @@ function plotMixSubplots(splot::Function, df = loadMixData(); kwargs...)
 end
 
 
-const measuredRecepExp = Dict(
-    "FcgRI" => 101493.689,
-    "FcgRIIA-131H" => 1006302.484,
-    "FcgRIIA-131R" => 190432.6753,
-    "FcgRIIB-232I" => 75085.07599,
-    "FcgRIIIA-158F" => 634324.0675,
-    "FcgRIIIA-158V" => 979451.9884,
-)  # geometric mean precalculated
-
-
 function R2(Actual, Predicted; logscale = true)
     if logscale
         return cor(log10.(Actual), log10.(Predicted))^2
