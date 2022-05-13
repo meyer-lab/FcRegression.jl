@@ -104,9 +104,9 @@ function validateMurineInVitro(c::Chains = fitLeukocyteMCMC(); mcmc_iter = 1_000
     opt_new = optimize(m_new, MAP(), LBFGS(; m = 20), opts)
     c_new = sample(m_new, NUTS(), mcmc_iter, init_params = opt_new.values.array)
 
-    pl1 = plotMCMCPredict(c_old, df; murine = true, CHO = true, Kav = Kav_old, 
+    pl1 = plotMCMCPredict(c_old, df; dat = :mCHO, Kav = Kav_old, 
         R2pos = (-1.5, 0.0), title = "Murine in vitro binding prediction\nwith documented affinities")
-    pl2 = plotMCMCPredict(c_new, df; murine = true, CHO = true, Kav = Kav_new, 
+    pl2 = plotMCMCPredict(c_new, df; dat = :mCHO, Kav = Kav_new, 
         R2pos = (-1.5, 0.2), title = "Murine in vitro binding prediction\nwith updated affinities")
     return pl1, pl2
 end

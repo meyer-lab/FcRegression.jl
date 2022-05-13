@@ -1,29 +1,29 @@
 import Turing: ~, sample, NUTS, @model, Chains, rand, MAP, MLE
 
 """ A generic function to extract fitted parameters from an MCMC """
-function extractMCMC(c::Chains; murine::Bool, CHO = false)
-    pnames = [String(s) for s in c.name_map[1]]
+function extractMCMC(c::Union{Chains, StatisticalModel}; dat::Symbol)
+    @assert dat in [:hCHO, :hRob, :mCHO, :mLeuk]
+    pnames = [String(s) for s in (c isa Chains ? c.name_map[1] : names(c.values)[1])]
+    ext(s::String) = c isa Chains ? median(c[s].data) : c.values[Symbol(s)]
     out = Dict{String, Union{Number, Dict, DataFrame, Nothing}}()
     if "Rtot[1]" in pnames
         local Rtotd
-        Rtot = [median(c["Rtot[$i]"].data) for i = 1:sum(startswith.(pnames, "Rtot"))]
-        if murine
-            if CHO
-                Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(Rtot)])
-            else # Leukocyte
-                cells = unique(importMurineLeukocyte()."ImCell")
-                Rtotd = importCellRtotDist()
-                Rtotd = Rtotd[!, ["Receptor"; names(Rtotd)[in(cells).(names(Rtotd))]]]
-                Rtotd[!, Not("Receptor")] = typeof(Rtot[1, 1]).(reshape(Rtot, size(Rtotd)[1], :))
-            end
+        Rtot = [ext("Rtot[$i]") for i = 1:sum(startswith.(pnames, "Rtot"))]
+        if dat == :mCHO
+            Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(Rtot)])
+        elseif dat == :mLeuk
+            cells = unique(importMurineLeukocyte()."ImCell")
+            Rtotd = importRtotDist(:mLeuk; retdf = true)
+            Rtotd = Rtotd[!, ["Receptor"; names(Rtotd)[in(cells).(names(Rtotd))]]]
+            Rtotd[!, Not("Receptor")] = typeof(Rtot[1, 1]).(reshape(Rtot, size(Rtotd)[1], :))
         else # human
             Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
         end
         out["Rtot"] = Rtotd
     end
     if "Kav[1]" in pnames
-        Kavd = importKavDist(; murine = murine, regularKav = true, retdf = true)
-        Kav = [median(c["Kav[$i]"].data) for i = 1:sum(startswith.(pnames, "Kav"))]
+        Kavd = importKavDist(; murine = (dat in [:mCHO, :mLeuk]), regularKav = true, retdf = true)
+        Kav = [ext("Kav[$i]") for i = 1:sum(startswith.(pnames, "Kav"))]
         Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
         out["Kav"] = Kavd
     else
@@ -31,7 +31,7 @@ function extractMCMC(c::Chains; murine::Bool, CHO = false)
     end
     for var in ["f4", "f33", "KxStar"]
         if var in pnames
-            out[var] = median(c[var].data)
+            out[var] = ext(var)
         else
             out[var] = nothing
         end
@@ -51,6 +51,8 @@ function predMix(dfr::DataFrameRow; Kav::AbstractDataFrame, Rtot = nothing, fs::
         recepExp = Rtot[names(Kav)[2:end] .== dfr."Receptor"]
     elseif "ImCell" in names(dfr)   # must have receptor amount already looked up
         recepExp = Vector(dfr[names(Kav)[2:end]])
+    elseif Rtot isa AbstractDataFrame
+        recepExp = [Rtot[1, dfr."Receptor"]]
     else
         @error "Failed at predMix(): cannot look up * recepExp *"
     end

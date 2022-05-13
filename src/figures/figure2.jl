@@ -132,15 +132,15 @@ function figure2()
 
     pl1 = plotMCMCPredict(
         c, 
-        df; 
-        murine = false,
+        df;
+        dat = :hCHO,
         title = "All predictions with \nsingle hIgG fitted parameters", 
         R2pos = (0, -2.5),
     )
     pl2 = plotMCMCPredict(
         c, 
         df[(df."%_1" .!= 1.0) .& (df."%_2" .!= 1.0), :];
-        murine = false,
+        dat = :hCHO,
         title = "Mixture predictions with \nsingle IgG fitted parameters",
         R2pos = (0, -2.5),
     )

@@ -121,9 +121,8 @@ function plotMCMCdists(c::Chains, fname::String = ""; murine::Bool)
 end
 
 
-function plotMCMCPredict(c::Chains, df::AbstractDataFrame; murine::Bool, CHO = false,
-        Kav::Union{Nothing, AbstractDataFrame} = nothing, kwargs...)
-    p = extractMCMC(c; murine = murine, CHO = CHO)
+function plotMCMCPredict(c, df::AbstractDataFrame; dat::Symbol, Kav::Union{Nothing, AbstractDataFrame} = nothing, kwargs...)
+    p = extractMCMC(c; dat = dat)
     Kavd = (Kav !== nothing) ? Kav : p["Kav"]
     if (p["Kav"] !== nothing) && (Kav isa AbstractDataFrame)
         @warn "Using provided Kav, even though Kav's are fitted in MCMC chain"
@@ -133,6 +132,6 @@ function plotMCMCPredict(c::Chains, df::AbstractDataFrame; murine::Bool, CHO = f
         df = averageMixData(df)
     end
     ndf = predMix(df; Kav = Kavd, KxStar = p["KxStar"], Rtot = p["Rtot"], fs = [p["f4"], p["f33"]])
-    return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = ((murine && (!CHO)) ? "ImCell" : "Receptor"), 
-        shape = (murine ? "Subclass" : "Valency"), kwargs...)
+    return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = (("ImCell" in names(df)) ? "ImCell" : "Receptor"), 
+        shape = (("Subclass" in names(df)) ? "Subclass" : "Valency"), kwargs...)
 end
