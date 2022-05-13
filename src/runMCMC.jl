@@ -107,7 +107,7 @@ function predMix(df::AbstractDataFrame; Kav::AbstractDataFrame, Rtot = nothing, 
 
     if "ImCell" in names(dft)
         cellTypes = unique(df."ImCell")
-        if !(Rtot isa AbstractDataFrame)  # default mode only works for mice
+        if !(Rtot isa AbstractDataFrame)  # default mode only works for mice leukocyte
             Rtot = importRtot(; murine = true, retdf = true, cellTypes = cellTypes)
         end
         @assert all(in(cellTypes).(names(Rtot)[2:end]))
@@ -135,3 +135,86 @@ function predMix(df::AbstractDataFrame; Kav::AbstractDataFrame, Rtot = nothing, 
     return dft[!, [names(df); "Predict"]]
 end
 
+
+
+@model function gmodel(df, values; dat::Symbol, Kavd::Union{Nothing, AbstractDataFrame} = nothing)
+    @assert dat in [:hCHO, :hRob, :mCHO, :mLeuk]
+    murine = dat in [:mCHO, :mLeuk]
+
+    # sample Rtot
+    local Rtotd
+    Rtot_dist = importRtotDist(dat; retdf = false)
+    Rtot = Array{Any}(undef, size(Rtot_dist)...)
+    for ii in eachindex(Rtot)
+        Rtot[ii] ~ Rtot_dist[ii]
+    end
+    if dat == :mLeuk
+        Rtotd = importRtotDist(dat; retdf = true)
+        Rtotd[!, Not("Receptor")] = typeof(Rtot[1, 1]).(Rtot)
+    else
+        Rtotd = Dict([(murine ? murineFcgR : humanFcgRiv)[ii] => Rtot[ii] for ii = 1:length(Rtot)])
+    end
+
+    # sample Kav
+    if Kavd === nothing
+        Kavd = importKavDist(; murine = murine, regularKav = true, retdf = true)
+        Kav_dist = importKavDist(; murine = murine, regularKav = false, retdf = false)
+        Kav = Matrix(undef, size(Kav_dist)...)
+        for ii in eachindex(Kav)
+            Kav[ii] ~ Kav_dist[ii]
+        end
+        Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(Kav)
+    end
+
+    # sample f4, f33, KxStar
+    local f4, f33
+    if any(df."Valency" .< 12)
+        f4 ~ f4Dist
+    else
+        f4 = 4
+    end
+    if any(df."Valency" .>= 12)
+        f33 ~ f33Dist
+    else
+        f33 = 33
+    end
+    KxStar ~ KxStarDist
+
+    # fit predictions
+    if all(0.0 .<= Rtot .< Inf) && all(0.0 .<= Matrix(Kavd[!, Not("IgG")]) .< Inf) && 
+            all(0.0 .< [f4, f33, KxStar] .< Inf)
+        df = predMix(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, fs = [f4, f33])
+    else
+        df = deepcopy(df)
+        df."Predict" .= Inf
+    end
+
+    stdv = std(log.(df."Predict") - log.(values))
+    values ~ MvLogNormal(log.(df."Predict"), stdv * I)
+    nothing
+end
+
+function rungMCMC(fname::String; dat::Symbol = :none, mcmc_iter = 1_000, Kavd = nothing)
+    if isfile(fname)
+        return deserialize(fname)
+    end
+    @assert dat in [:hCHO, :hRob, :mCHO, :mLeuk]
+    if dat == :hCHO
+        df = loadMixData()
+        df = df[(df."%_1" .== 1.0) .| (df."%_2" .== 1.0), :]    # fit with only single IgG
+    elseif dat == :hRob
+        df = importRobinett()
+    elseif dat == :mCHO
+        df = importMurineInVitro()
+    else # dat == :Leuk
+        df = importMurineLeukocyte()
+    end
+
+    m = gmodel(df, df."Value"; dat = dat, Kavd = Kavd)
+    opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
+    opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
+    c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
+
+    f = serialize(fname, c)
+    return c
+end

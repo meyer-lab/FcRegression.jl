@@ -127,7 +127,7 @@ function figure2()
     raw_pred_pl = plotPredvsMeasured(raw_predict; xx = "Value", xxlabel = "Measured", color = "Receptor", 
         shape = "Valency", title = "Raw model predictions without fitting", R2pos = (0, -2.7))
 
-    c = runMCMC("humanNUTSfit_0505.dat"; mcmc_iter = 1_000)
+    c = rungMCMC("humanNUTSfit_0505.dat"; dat = :hLeuk, mcmc_iter = 1_000)
     df = loadMixData()
 
     pl1 = plotMCMCPredict(

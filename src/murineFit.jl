@@ -90,17 +90,17 @@ function MAPmurineLikelihood(df = importMurineInVitro())
     return pl, [Rtot, Kav]
 end
 
-function validateMurineInVitro(c::Chains = fitLeukocyteMCMC(); mcmc_iter = 1_000)
+function validateMurineInVitro(c::Chains = rungMCMC("leukNUTSfit_0509.dat"); mcmc_iter = 1_000)
     df = importMurineInVitro()
     opts = Optim.Options(iterations = 200, show_every = 10, show_trace = true)
 
     Kav_old = importKav(; murine = true, retdf = true)
-    m_old = murineFit(df, df."Value"; Kavd = Kav_old)
+    m_old = gmodel(df, df."Value"; dat = :mCHO, Kavd = Kav_old)
     opt_old = optimize(m_old, MAP(), LBFGS(; m = 20), opts)
     c_old = sample(m_old, NUTS(), mcmc_iter, init_params = opt_old.values.array)
 
-    Kav_new = extractMCMC(c; murine = true)["Kav"]
-    m_new = murineFit(df, df."Value"; Kavd = Kav_new)
+    Kav_new = extractMCMC(c; dat = :mLeuk)["Kav"]
+    m_new = gmodel(df, df."Value"; dat = :mCHO, Kavd = Kav_new)
     opt_new = optimize(m_new, MAP(), LBFGS(; m = 20), opts)
     c_new = sample(m_new, NUTS(), mcmc_iter, init_params = opt_new.values.array)
 
