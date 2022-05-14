@@ -1,4 +1,4 @@
-Cell,Experiment,Valency,TNP-BSA,IgG1,IgG2b,IgG2c
+ImCell,Experiment,Valency,TNP-BSA,IgG1,IgG2b,IgG2c
 Tcell,1,4,442,171,105,92
 Tcell,2,4,217,75,170,34
 Tcell,3,4,225,178,231,141
@@ -77,6 +77,18 @@ cMO,3,33,1613,7613,2720,12363
 cMO,4,33,1534,8307,2566,12875
 cMO,5,33,1606,3833,4701,7380
 cMO,6,33,2093,6115,9092,13005
+ncMO,1,4,1039,1937,2331,2390
+ncMO,2,4,669,2250,8633,7434
+ncMO,3,4,775,1419,1213,2964
+ncMO,4,4,556,1079,917,4095
+ncMO,5,4,1162,1620,2079,1966
+ncMO,6,4,1095,1555,2937,2613
+ncMO,1,33,1335,3876,3425,8250
+ncMO,2,33,540,3755,3320,18625
+ncMO,3,33,660,4015,1777,7728
+ncMO,4,33,563,5776,1479,7921
+ncMO,5,33,1283,2377,3563,4355
+ncMO,6,33,1218,4383,6125,8110
 # IgG immune complexes were generated with anti-TNP mouse IgG1,, IgG2b or IgG2c and TNP-4-BSA or TNP-33-BSA as antigen. ,,,,
 # 10µg/ml of immune complexes were incubated with 200,,000 spleen cells isolated from C57BL/6 mice for 1h gently shaking on ice.,,,,
 # Bound immune complexes were detected by staining with PE-conjugated anti-mouse IgG F(ab)2 on leukocyte populations identified by specific surface marker expression.,,,,,,

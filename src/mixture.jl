@@ -3,7 +3,7 @@ using StatsBase
 import Statistics: cor
 
 """ Load mixture in vitro binding data """
-@memoize function loadMixData(fn = "lux_mixture_mar2021.csv")
+function loadMixData(fn = "lux_mixture_mar2021.csv")
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
 
     df = stack(df, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]), variable_name = "Experiment", value_name = "Value")
@@ -15,19 +15,71 @@ import Statistics: cor
     df = innerjoin(df, baseline, on = "Experiment")
     df[!, "Value"] ./= df[!, "Baseline"]    # normalize fluorescence by daily geomean
     df = df[!, Not(["Experiment", "Baseline"])]
+    rename!(df, "Cell" => "Receptor")
 
     df[!, "%_1"] ./= 100.0
     df[!, "%_2"] ./= 100.0
 
-    replace!(df."Cell", "CHO-hFcgRIIA-131His" => "FcgRIIA-131H")
-    replace!(df."Cell", "CHO-hFcgRIIB" => "FcgRIIB-232I")
-    replace!(df."Cell", "CHO-hFcgRIIIA-131Val" => "FcgRIIIA-158V")
-    replace!(df."Cell", "CHO-FcgRIA" => "FcgRI")
-    replace!(df."Cell", "CHO-hFcgRIIA-131Arg" => "FcgRIIA-131R")
-    replace!(df."Cell", "CHO-hFcgRIIIA-158Phe" => "FcgRIIIA-158F")
+    replace!(df."Receptor", "CHO-hFcgRIIA-131His" => "FcgRIIA-131H")
+    replace!(df."Receptor", "CHO-hFcgRIIB" => "FcgRIIB-232I")
+    replace!(df."Receptor", "CHO-hFcgRIIIA-131Val" => "FcgRIIIA-158V")
+    replace!(df."Receptor", "CHO-FcgRIA" => "FcgRI")
+    replace!(df."Receptor", "CHO-hFcgRIIA-131Arg" => "FcgRIIA-131R")
+    replace!(df."Receptor", "CHO-hFcgRIIIA-158Phe" => "FcgRIIIA-158F")
 
-    return sort!(df, ["Valency", "Cell", "subclass_1", "subclass_2", "%_2"])
+    return sort!(df, ["Valency", "Receptor", "subclass_1", "subclass_2", "%_2"])
 end
+
+function importRobinett()
+    df = CSV.File(joinpath(dataDir, "robinett/Luxetal2013-Fig2Bmod.csv"), delim = ",", comment = "#") |> DataFrame
+    for i = 1:4
+        cn = "Replicate $i"
+        df[!, cn] ./= geomean(df[Not(ismissing.(df[!, cn])), cn])
+    end
+    df = dropmissing(stack(df, Not(["Receptor", "Antibody", "Valency"])))
+    rename!(df, ["variable" => "Experiment", "value" => "Value"])
+    rename!(df, ["Antibody" => "Subclass"])
+
+    return sort!(df, ["Valency", "Receptor", "Subclass", "Experiment"])
+end
+
+function importMurineLeukocyte(fn = "leukocyte-apr2022.csv"; average = true)
+    df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
+    #df = df[df."ImCell" .!= "Tcell", :]   # throw away T cells
+    df = df[df."Experiment" .!= 7, :]   # throw away Exp. 7
+    df[!, ["IgG1", "IgG2b", "IgG2c"]] .-= df[!, "TNP-BSA"]  # subtract TNP-BSA control from meas
+    df = df[!, Not("TNP-BSA")]
+    df = dropmissing(stack(df, ["IgG1", "IgG2b", "IgG2c"], variable_name = "Subclass", value_name = "Value"))
+    df[df."Value" .< 1.0, "Value"] .= 1.0   # clip values to 1.0
+    baseline = combine(groupby(df, "Experiment"), "Value" => geomean => "Baseline")
+    df = innerjoin(df, baseline, on = "Experiment")
+    df[!, "Value"] ./= df[!, "Baseline"]    # normalize fluorescence by daily geomean
+    df = df[!, Not(["Experiment", "Baseline"])]
+    if average
+        df = combine(
+            groupby(df, Not("Value")),
+            "Value" => geomean => "Value",
+            "Value" => (xs -> quantile(xs, 0.25)) => "xmin",
+            "Value" => (xs -> quantile(xs, 0.75)) => "xmax",
+        )
+    end
+    return sort!(df, ["ImCell", "Subclass", "Valency"])
+end
+
+""" Import Apr 2022 murine in vitro data """
+function importMurineInVitro(fn = "CHO-mFcgR-apr2022.csv")
+    df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
+    df = df[df."Experiment" .!= 5, :]   # throw away Exp. 5
+    df[!, ["IgG1", "IgG2b", "IgG2c"]] .-= df[!, "TNP-BSA"]  # subtract TNP-BSA control from meas
+    df = df[df."Receptor" .!= "CHO", Not("TNP-BSA")]
+    df = dropmissing(stack(df, ["IgG1", "IgG2b", "IgG2c"], variable_name = "Subclass", value_name = "Value"))
+    baseline = combine(groupby(df, "Experiment"), "Value" => geomean => "Baseline")
+    df = innerjoin(df, baseline, on = "Experiment")
+    df[!, "Value"] ./= df[!, "Baseline"]    # normalize fluorescence by daily geomean
+    df = df[!, Not(["Experiment", "Baseline"])]
+    return sort!(df, ["Receptor", "Subclass"])
+end
+
 
 """ Make statistics of individual cell types and subclass types """
 function averageMixData(df = loadMixData(); combSingle = false)
@@ -81,7 +133,7 @@ function combSing2pair(df)
             push!(ndf, row)
         end
     end
-    return sort!(ndf, names(df)[in(["Valency", "Cell", "subclass_1", "subclass_2", "Experiment", "%_2"]).(names(df))])
+    return sort!(ndf, names(df)[in(["Valency", "Receptor", "subclass_1", "subclass_2", "Experiment", "%_2"]).(names(df))])
 end
 
 
@@ -93,7 +145,7 @@ splot() is a function that take dataframe with only a single cell type and IgG p
 function plotMixSubplots(splot::Function, df = loadMixData(); kwargs...)
     setGadflyTheme()
 
-    cells = unique(df."Cell")
+    cells = unique(df."Receptor")
     pairs = unique(df[df."subclass_2" .!= "None", ["subclass_1", "subclass_2"]])
     lcells = length(cells)
     lpairs = size(pairs, 1)
@@ -103,23 +155,13 @@ function plotMixSubplots(splot::Function, df = loadMixData(); kwargs...)
     for (i, pairrow) in enumerate(eachrow(pairs))
         for (j, cell) in enumerate(cells)
             IgGXname, IgGYname = pairrow."subclass_1", pairrow."subclass_2"
-            ndf = df[(df."Cell" .== cell) .& (df."subclass_1" .== IgGXname) .& (df."subclass_2" .== IgGYname), :]
+            ndf = df[(df."Receptor" .== cell) .& (df."subclass_1" .== IgGXname) .& (df."subclass_2" .== IgGYname), :]
             pls[(j - 1) * lpairs + (i - 1) + 1] = splot(ndf; kwargs...)
         end
     end
     return plotGrid((lcells, lpairs), pls; sublabels = false)
 
 end
-
-
-const measuredRecepExp = Dict(
-    "FcgRI" => 101493.689,
-    "FcgRIIA-131H" => 1006302.484,
-    "FcgRIIA-131R" => 190432.6753,
-    "FcgRIIB-232I" => 75085.07599,
-    "FcgRIIIA-158F" => 634324.0675,
-    "FcgRIIIA-158V" => 979451.9884,
-)  # geometric mean precalculated
 
 
 function R2(Actual, Predicted; logscale = true)
@@ -130,75 +172,6 @@ function R2(Actual, Predicted; logscale = true)
     end
 end
 
-
-""" Four predictMix() below provide model predictions"""
-function predictMix(
-    cell,
-    val::Real,
-    IgGXname,
-    IgGYname,
-    IgGX,
-    IgGY;
-    recepExp = measuredRecepExp,
-    KxStar::Real = KxConst,
-    Lbound = true,
-    Kav::DataFrame = importKav(; murine = false, retdf = true),
-)::Real
-    IgGC = zeros(size(humanIgG))
-    IgGC[IgGXname .== humanIgG] .= IgGX
-    IgGC[IgGYname .== humanIgG] .= IgGY
-
-    Kav = Matrix(Kav[!, [cell]])
-    if IgGC' * Kav * [recepExp[cell]] <= 0.0
-        return 0.0
-    end
-    res = try
-        if Lbound
-            polyfc(1e-9, KxStar, val, [recepExp[cell]], IgGC, Kav).Lbound
-        else
-            polyfc(1e-9, KxStar, val, [recepExp[cell]], IgGC, Kav).Rmulti
-        end
-    catch e
-        println("Failed at predictMix():\n f = $val\n Rtot = $([recepExp[cell]])\n IgGC = $IgGC\n Kav = $Kav\n")
-        rethrow(e)
-    end
-    return res
-end
-
-function predictMix(dfrow::DataFrameRow, IgGXname, IgGYname, IgGX, IgGY; kwargs...)
-    val = "NewValency" in names(dfrow) ? dfrow."NewValency" : dfrow."Valency"
-    return predictMix(dfrow."Cell", val, IgGXname, IgGYname, IgGX, IgGY; kwargs...)
-end
-
-predictMix(dfrow::DataFrameRow; kwargs...) = predictMix(dfrow, dfrow."subclass_1", dfrow."subclass_2", dfrow."%_1", dfrow."%_2"; kwargs...)
-
-function predictMix(df::DataFrame; vals = [4.0, 33.0], conversion = true, kwargs...)
-    """ Will return another df object. Have already considered conversion factors"""
-    df = deepcopy(df)
-    if length(unique(df."Valency")) == 2
-        df[!, "NewValency"] .= vals[1]
-        df[df."Valency" .> 12, "NewValency"] .= vals[2]
-    end
-
-    # Setup column
-    df[!, "Predict"] .= predictMix(df[1, :]; kwargs...)
-    Threads.@threads for i = 2:size(df)[1]
-        df[i, "Predict"] = predictMix(df[i, :]; kwargs...)
-    end
-
-    # one conversion factor per valency
-    df[df."Predict" .< 0.0, "Predict"] .= 0.0
-    if conversion
-        for val in unique(df."Valency")
-            if any(df[df."Valency" .== val, "Predict"] .> 0.0)
-                rows = (df."Valency" .== val) .& (df."Predict" .> 0.0)
-                df[(df."Valency" .== val), "Predict"] ./= geomean(df[rows, "Predict"]) / geomean(df[rows, "Value"])
-            end
-        end
-    end
-    return df
-end
-
 """ PCA of isotype/combination x receptor matrix """
 function mixtureDataPCA(; val = 0)
     df = averageMixData(loadMixData(); combSingle = true)
@@ -206,7 +179,7 @@ function mixtureDataPCA(; val = 0)
         df = df[df."Valency" .== val, :]
     end
     id_cols = ["Valency", "subclass_1", "subclass_2", "%_1", "%_2"]
-    wide = unstack(df, id_cols, "Cell", "Value")
+    wide = unstack(df, id_cols, "Receptor", "Value")
     mat = Matrix(wide[!, Not(id_cols)])
     mat = coalesce.(mat, 0)
     M = MultivariateStats.fit(PCA, mat'; maxoutdim = 4)
@@ -219,7 +192,7 @@ function mixtureDataPCA(; val = 0)
     wide[!, "PC 3"] = score[:, 3]
     loading = projection(M)
     score_df = wide[!, vcat(id_cols, ["PC 1", "PC 2", "PC 3"])]
-    loading_df = DataFrame("Cell" => unique(df."Cell"), "PC 1" => loading[:, 1], "PC 2" => loading[:, 2], "PC 3" => loading[:, 3])
+    loading_df = DataFrame("Receptor" => unique(df."Receptor"), "PC 1" => loading[:, 1], "PC 2" => loading[:, 2], "PC 3" => loading[:, 3])
     if "None" in df."subclass_2"
         score_df = combSing2pair(score_df)
     end
@@ -233,7 +206,7 @@ function mixtureANOVA()
     using GLM
     import ANOVA: anova
     df = loadMixData()
-    df."Measurement" = string.(df."Valency") .* df."Cell" .* df."subclass_1" .* " " .* 
+    df."Measurement" = string.(df."Valency") .* df."Receptor" .* df."subclass_1" .* " " .* 
             string.(df."%_1") .* ", " .* df."subclass_2" .* " " .* string.(df."%_2")
     df."logValue" = log.(df."Value")
 

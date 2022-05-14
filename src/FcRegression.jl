@@ -4,23 +4,18 @@ import Distances
 using polyBindingModel
 using Optim
 using StatsBase
-import StatsBase: geomean, std
 using DataFrames
 using Printf
 import Cairo, Fontconfig
 
-lower(x) = quantile(x, 0.25)
-upper(x) = quantile(x, 0.75)
 
 include("figures/figureCommon.jl")
 
 include("fcBindingModel.jl")
 include("dataHelpers.jl")
 include("mixture.jl")
-include("humanFit.jl")
-include("humanRobinett.jl")
-include("murineFit.jl")
-include("murineLeukocyte.jl")
+include("runMCMC.jl")
+include("plotMCMC.jl")
 include("regression.jl")
 include("synergy.jl")
 include("invivo.jl")
@@ -30,7 +25,6 @@ include("figures/figureW.jl")
 include("figures/figure1.jl")
 include("figures/figure2.jl")
 include("figures/figure2a.jl")
-include("figures/figure2b.jl")
 include("figures/figure3.jl")
 include("figures/figure4.jl")
 include("figures/figure5.jl")
@@ -53,10 +47,8 @@ function figureAll()
     figure4()
     figure6()
 
-    figureS1()
+    #figureS1()
     figureS2()
-
-    plot_MCMC_dists()
 end
 
 export polyfc, polyfc_ActV

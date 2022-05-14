@@ -1,10 +1,13 @@
 using DataFrames
 using Memoize
 import CSV
-import Distributions: fit_mle, LogNormal, pdf
+using Distributions
 using NLsolve
 
 const KxConst = 6.31e-13 # 10^(-12.2)
+
+lower(x) = quantile(x, 0.25)
+upper(x) = quantile(x, 0.75)
 
 function geocmean(x)
     x = convert(Vector, x)
@@ -48,7 +51,7 @@ const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
 const humanActYmax = [5.5e4, 1.5e5, 4.5e4, 3.5e4, 3e3] # ymax for synergy plots
 const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
-@memoize function importRtot_readcsv(; murine = true, genotype = "HIV", retdf = false, cellTypes = nothing)
+@memoize function importRtot_readcsv(; murine::Bool, genotype = "HIV", retdf = false, cellTypes = nothing)
     if murine
         df = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame
     else
@@ -98,13 +101,10 @@ end
 importRtot(; kwargs...) = deepcopy(importRtot_readcsv(; kwargs...))
 
 """ Import human or murine affinity data. """
-@memoize function importKav_readcsv(; murine = true, c1q = false, invitro = false, IgG2bFucose = false, retdf = false)
+@memoize function importKav_readcsv(; murine::Bool, c1q = false, IgG2bFucose = false, retdf = false)
     if murine
         df = CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#") |> DataFrame
     else
-        if invitro
-            return importKavDist(; regularKav = true, retdf = retdf)
-        end
         df = CSV.File(joinpath(dataDir, "human-affinities.csv"), comment = "#") |> DataFrame
     end
 
@@ -223,18 +223,6 @@ function importDeplExp()
 end
 
 
-""" Import measurements of receptor amounts. """
-@memoize function importInVitroRtotDist(robinett = false)
-    local df
-    if robinett
-        df = CSV.File(joinpath(dataDir, "robinett/FcgRquant.csv"), delim = ",", comment = "#") |> DataFrame
-    else
-        df = CSV.File(joinpath(dataDir, "receptor_amount_mar2021.csv"), delim = ",", comment = "#") |> DataFrame
-    end
-    sort!(df, "Receptor")
-    return [fit_mle(LogNormal, df[df."Receptor" .== rcp, "Measurements"]) for rcp in humanFcgRiv]
-end
-
 """ A more accurate way to infer logNormal distribution with exact mode and IQR """
 @memoize function inferLogNormal(mode, iqr)
     function logNormalParams!(f, v)
@@ -246,56 +234,99 @@ end
     return LogNormal(xs[1], xs[2])
 end
 
-@memoize function importKavDist_readcsv(; regularKav = false, retdf = true)
-    df = CSV.File(joinpath(dataDir, "FcgR-Ka-Bruhns_with_variance.csv"), delim = ",", comment = "#") |> DataFrame
-    function parstr(x, regularKav = false)
-        params = parse.(Float64, split(x, "|"))
-        params .*= 1e5      # Bruhns data is written in 1e5 units
-        if params[1] < 1e4
-            params[1] = 1e4
-        end    # minimum affinity as 1e4 M-1
-        if params[2] < 1e5
-            params[2] = 1e5
-        end    # minimum variance as 1e5 M-1
-        if regularKav
-            return params[1]
+""" Import measurements of receptor amounts. """
+@memoize function importRtotDist_readcsv(dat::Symbol; regular = false, retdf = false)
+    @assert dat in [:hCHO, :hRob, :mCHO, :mLeuk]
+    if dat in [:hCHO, :hRob]
+        df = if dat == :hRob
+            CSV.File(joinpath(dataDir, "robinett/FcgRquant.csv"), delim = ",", comment = "#") |> DataFrame
+        else
+            CSV.File(joinpath(dataDir, "receptor_amount_mar2021.csv"), delim = ",", comment = "#") |> DataFrame
         end
-        return inferLogNormal(params[1], params[2])
+        res = if regular
+            [geomean(df[df."Receptor" .== rcp, "Measurements"]) for rcp in unique(df."Receptor")]
+        else
+            [fit_mle(LogNormal, df[df."Receptor" .== rcp, "Measurements"]) for rcp in unique(df."Receptor")]
+        end
+        if retdf
+            return Dict([humanFcgRiv[i] => res[i] for i = 1:length(res)])
+        else
+            return res
+        end
     end
-    xdf = parstr.(df[:, Not("IgG")], regularKav)
-    insertcols!(xdf, 1, "IgG" => df[:, "IgG"])
+    if dat == :mCHO
+        ref = 1e6
+        res = [regular ? ref : inferLogNormal(ref, ref * 1e2) for ii in 1:length(murineFcgR)]
+        if retdf
+            return Dict([murineFcgR[i] => res[i] for i = 1:length(res)])
+        else
+            return res
+        end
+    elseif dat == :mLeuk
+        cells = unique(importMurineLeukocyte(; average = false)."ImCell")
+        df = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame
+        df[df."Count" .< 1.0, "Count"] .= 1.0
+
+        function findDist(x)
+            if regular
+                return geomean(x)
+            end
+            if length(x) <= 1
+                return inferLogNormal(x[1], x[1])
+            end
+            return inferLogNormal(geomean(x), maximum([quantile(x, 0.7) - quantile(x, 0.3), 5.0]))
+        end
+
+        ndf = combine(groupby(df, ["Cells", "Receptor"]), "Count" => findDist => "Distribution")
+        ndf = dropmissing(unstack(ndf, "Receptor", "Cells", "Distribution"))
+        @assert ndf."Receptor" == murineFcgR
+        ndf = ndf[!, ["Receptor"; names(ndf)[in(cells).(names(ndf))]]]
+        if retdf
+            return ndf
+        else
+            return Matrix(ndf[!, Not("Receptor")])
+        end
+    end
+end
+
+importRtotDist(dat; kwargs...) = deepcopy(importRtotDist_readcsv(dat; kwargs...))
+
+@memoize function importKavDist_readcsv(; murine::Bool, regularKav = false, retdf = true)
+    local Kav
+    if murine
+        Kav = importKav(; murine = true, retdf = true)
+        Kav = Kav[Kav."IgG" .!= "IgG3", :]
+        function retDist(x; regularKav = regularKav)
+            x = maximum([1e4, x])
+            if regularKav
+                return x
+            end
+            return inferLogNormal(x, x * 10)
+        end
+        Kav[Kav."IgG" .== "IgG2a", "IgG"] .= "IgG2c"
+        Kav[!, Not("IgG")] = retDist.(Kav[!, Not("IgG")], regularKav = regularKav)
+        sort!(Kav, "IgG")
+    else # human
+        df = CSV.File(joinpath(dataDir, "FcgR-Ka-Bruhns_with_variance.csv"), delim = ",", comment = "#") |> DataFrame
+        function parstr(x, regularKav = false)
+            params = parse.(Float64, split(x, "|"))
+            params .*= 1e5      # Bruhns data is written in 1e5 units
+            params[1] = maximum([params[1], 1e4])   # minimum affinity as 1e4 M-1
+            params[2] = maximum([params[2], 1e5])   # minimum variance as 1e5 M-1
+            if regularKav
+                return params[1]
+            end
+            return inferLogNormal(params[1], params[2])
+        end
+        Kav = parstr.(df[:, Not("IgG")], regularKav)
+        insertcols!(Kav, 1, "IgG" => df[:, "IgG"])
+    end
     if retdf
-        return xdf
+        return Kav
     else
-        return Matrix(xdf[:, Not("IgG")])
+        return Matrix(Kav[:, Not("IgG")])
     end
 end
 
 importKavDist(; kwargs...) = deepcopy(importKavDist_readcsv(; kwargs...))
 
-@memoize function importCellRtotDist_readcsv(; murine = true, retdf = true)
-    @assert murine
-    df = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame
-    df[df."Count" .< 1.0, "Count"] .= 1.0
-
-    function findDist(x)
-        if length(x) <= 1
-            return inferLogNormal(x[1], x[1])
-        end
-        if std(x) <= 5.0
-            return inferLogNormal(geomean(x), 5.0)
-        end
-        return inferLogNormal(geomean(x), quantile(x, 0.9) - quantile(x, 0.1))
-    end
-
-    ndf = combine(groupby(df, ["Cells", "Receptor"]), "Count" => findDist => "Distribution")
-    ndf = unstack(ndf, "Receptor", "Cells", "Distribution")
-    @assert ndf."Receptor" == murineFcgR
-    if retdf
-        return ndf
-    else
-        return Matrix(ndf[!, Not("Receptor")])
-    end
-end
-
-importCellRtotDist(; kwargs...) = deepcopy(importCellRtotDist_readcsv(; kwargs...))

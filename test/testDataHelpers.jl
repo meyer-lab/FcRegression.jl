@@ -1,11 +1,11 @@
 @testset "dataHelpers.jl tests" begin
     @testset "Testing deepcopy indeed gives us different objects" begin
-        @test FcRegression.importRtot(; retdf = true) == FcRegression.importRtot(; retdf = true)    # same results
-        @test FcRegression.importRtot(; retdf = true) !== FcRegression.importRtot(; retdf = true)   # different references
+        @test FcRegression.importRtot(; murine = true, retdf = true) == FcRegression.importRtot(; murine = true, retdf = true)    # same results
+        @test FcRegression.importRtot(; murine = true, retdf = true) !== FcRegression.importRtot(; murine = true, retdf = true)   # different references
         @test FcRegression.importRtot(; murine = false) == FcRegression.importRtot(; murine = false)
         @test FcRegression.importRtot(; murine = false) !== FcRegression.importRtot(; murine = false)
-        @test FcRegression.importKav(; retdf = true) == FcRegression.importKav(; retdf = true)
-        @test FcRegression.importKav(; retdf = true) !== FcRegression.importKav(; retdf = true)
+        @test FcRegression.importKav(; murine = true, retdf = true) == FcRegression.importKav(; murine = true, retdf = true)
+        @test FcRegression.importKav(; murine = true, retdf = true) !== FcRegression.importKav(; murine = true, retdf = true)
         @test FcRegression.importKav(; murine = false) == FcRegression.importKav(; murine = false)
         @test FcRegression.importKav(; murine = false) !== FcRegression.importKav(; murine = false)
     end
@@ -17,7 +17,6 @@
         @test FcRegression.importRtot(; murine = false, retdf = true) isa DataFrame
         @test FcRegression.importKav(; murine = true, retdf = false) isa Matrix
         @test size(FcRegression.importKav(murine = false, retdf = false), 2) == length(FcRegression.humanFcgR)
-        @test size(FcRegression.importKav(murine = false, invitro = true, retdf = false), 2) == length(FcRegression.humanFcgRiv)
         @test FcRegression.importKav(; murine = true, retdf = true) isa DataFrame
         @test FcRegression.importKav(; murine = false, retdf = true) isa DataFrame
         @test FcRegression.importDeplExp() isa DataFrame
