@@ -137,7 +137,8 @@ function figure1()
     # Specific IgG pair - receptor interaction
     df = averageMixData()
     igg12_1 = splot_origData(df[(df."Receptor" .== "FcgRI") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG2"), :]; match_y = false)
-    igg14_1 = splot_origData(df[(df."Receptor" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
+    igg14_1 =
+        splot_origData(df[(df."Receptor" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
 
     score, loading, vars_expl = mixtureDataPCA()
     vars = plot(

@@ -55,7 +55,13 @@ function plotPredvsMeasured(
 end
 
 """ Making one single violin plot. Called by plotAffinityViolin() """
-function plot_distribution_violins(df::AbstractDataFrame, dist_list::Vector{T}; title = "", x_name = "Receptor", y_range = (5, 8)) where {T <: Distribution}
+function plot_distribution_violins(
+    df::AbstractDataFrame,
+    dist_list::Vector{T};
+    title = "",
+    x_name = "Receptor",
+    y_range = (5, 8),
+) where {T <: Distribution}
     setGadflyTheme()
     @assert size(df)[2] == length(dist_list)
 
@@ -84,11 +90,14 @@ function plotAffinityViolin(c::Chains; murine::Bool)
     Kav_posts = deepcopy(Kav_priors)
     Kav = [c["Kav[$i]"].data for i = 1:len]
     Kav_posts[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kav_posts)[1], :))
-    
+
     pls = Vector{Union{Gadfly.Plot, Context}}(undef, size(Kav_priors)[1])
     for (ii, igg) in enumerate(Kav_priors[!, "IgG"])
         priors = reshape(Matrix(Kav_priors[Kav_priors."IgG" .== igg, Not("IgG")]), :)
-        posts = DataFrame(hcat([reshape(Kav_posts[Kav_posts."IgG" .== igg, Not("IgG")][1, i], :) for i = 1:(size(Kav_posts)[2]-1)]...), names(Kav_posts)[2:end])
+        posts = DataFrame(
+            hcat([reshape(Kav_posts[Kav_posts."IgG" .== igg, Not("IgG")][1, i], :) for i = 1:(size(Kav_posts)[2] - 1)]...),
+            names(Kav_posts)[2:end],
+        )
         pls[ii] = plot_distribution_violins(posts, priors; y_range = y_range, title = "$pref$igg Affinities Distributions")
     end
     return pls
@@ -125,7 +134,7 @@ function plotMCMCdists(c::Chains, fname::String = ""; murine::Bool)
     FcgRs = murine ? murineFcgR : humanFcgRiv
     pref = murine ? "m" : "h"
     ligg, lfcr = length(IgGs), length(FcgRs)
-    
+
     # Plot Kav's
     if "Kav[1]" in pnames
         Kav_pls = Matrix{Plot}(undef, ligg, lfcr)
@@ -188,8 +197,14 @@ function plotMCMCPredict(c, df::AbstractDataFrame; dat::Symbol, Kav::Union{Nothi
         df = averageMixData(df)
     end
     ndf = predMix(df; Kav = Kavd, KxStar = p["KxStar"], Rtot = p["Rtot"], fs = [p["f4"], p["f33"]])
-    return plotPredvsMeasured(ndf; xx = "Value", yy = "Predict", color = (("ImCell" in names(df)) ? "ImCell" : "Receptor"), 
-        shape = (("Subclass" in names(df)) ? "Subclass" : "Valency"), kwargs...)
+    return plotPredvsMeasured(
+        ndf;
+        xx = "Value",
+        yy = "Predict",
+        color = (("ImCell" in names(df)) ? "ImCell" : "Receptor"),
+        shape = (("Subclass" in names(df)) ? "Subclass" : "Valency"),
+        kwargs...,
+    )
 end
 
 function plotMAPPredict(df::AbstractDataFrame; dat::Symbol)
@@ -198,4 +213,3 @@ function plotMAPPredict(df::AbstractDataFrame; dat::Symbol)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
     return plotMCMCPredict(opt, df; dat = dat, title = "$dat MAP fitting results")
 end
-
