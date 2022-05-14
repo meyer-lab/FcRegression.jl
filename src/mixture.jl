@@ -3,7 +3,7 @@ using StatsBase
 import Statistics: cor
 
 """ Load mixture in vitro binding data """
-@memoize function loadMixData(fn = "lux_mixture_mar2021.csv")
+function loadMixData(fn = "lux_mixture_mar2021.csv")
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
 
     df = stack(df, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]), variable_name = "Experiment", value_name = "Value")
@@ -29,6 +29,57 @@ import Statistics: cor
 
     return sort!(df, ["Valency", "Receptor", "subclass_1", "subclass_2", "%_2"])
 end
+
+function importRobinett()
+    df = CSV.File(joinpath(dataDir, "robinett/Luxetal2013-Fig2Bmod.csv"), delim = ",", comment = "#") |> DataFrame
+    for i = 1:4
+        cn = "Replicate $i"
+        df[!, cn] ./= geomean(df[Not(ismissing.(df[!, cn])), cn])
+    end
+    df = dropmissing(stack(df, Not(["Receptor", "Antibody", "Valency"])))
+    rename!(df, ["variable" => "Experiment", "value" => "Value"])
+    rename!(df, ["Antibody" => "Subclass"])
+
+    return sort!(df, ["Valency", "Receptor", "Subclass", "Experiment"])
+end
+
+function importMurineLeukocyte(fn = "leukocyte-apr2022.csv"; average = true)
+    df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
+    #df = df[df."ImCell" .!= "Tcell", :]   # throw away T cells
+    df = df[df."Experiment" .!= 7, :]   # throw away Exp. 7
+    df[!, ["IgG1", "IgG2b", "IgG2c"]] .-= df[!, "TNP-BSA"]  # subtract TNP-BSA control from meas
+    df = df[!, Not("TNP-BSA")]
+    df = dropmissing(stack(df, ["IgG1", "IgG2b", "IgG2c"], variable_name = "Subclass", value_name = "Value"))
+    df[df."Value" .< 1.0, "Value"] .= 1.0   # clip values to 1.0
+    baseline = combine(groupby(df, "Experiment"), "Value" => geomean => "Baseline")
+    df = innerjoin(df, baseline, on = "Experiment")
+    df[!, "Value"] ./= df[!, "Baseline"]    # normalize fluorescence by daily geomean
+    df = df[!, Not(["Experiment", "Baseline"])]
+    if average
+        df = combine(
+            groupby(df, Not("Value")),
+            "Value" => geomean => "Value",
+            "Value" => (xs -> quantile(xs, 0.25)) => "xmin",
+            "Value" => (xs -> quantile(xs, 0.75)) => "xmax",
+        )
+    end
+    return sort!(df, ["ImCell", "Subclass", "Valency"])
+end
+
+""" Import Apr 2022 murine in vitro data """
+function importMurineInVitro(fn = "CHO-mFcgR-apr2022.csv")
+    df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
+    df = df[df."Experiment" .!= 5, :]   # throw away Exp. 5
+    df[!, ["IgG1", "IgG2b", "IgG2c"]] .-= df[!, "TNP-BSA"]  # subtract TNP-BSA control from meas
+    df = df[df."Receptor" .!= "CHO", Not("TNP-BSA")]
+    df = dropmissing(stack(df, ["IgG1", "IgG2b", "IgG2c"], variable_name = "Subclass", value_name = "Value"))
+    baseline = combine(groupby(df, "Experiment"), "Value" => geomean => "Baseline")
+    df = innerjoin(df, baseline, on = "Experiment")
+    df[!, "Value"] ./= df[!, "Baseline"]    # normalize fluorescence by daily geomean
+    df = df[!, Not(["Experiment", "Baseline"])]
+    return sort!(df, ["Receptor", "Subclass"])
+end
+
 
 """ Make statistics of individual cell types and subclass types """
 function averageMixData(df = loadMixData(); combSingle = false)

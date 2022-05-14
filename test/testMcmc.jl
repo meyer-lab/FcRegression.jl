@@ -1,74 +1,59 @@
-import Turing: sample, Prior, MH, NUTS
+import Turing: sample, Prior, MAP
 import StatsBase: mean, std
+using Optim
 using ForwardDiff
 using Random
 
-@testset "Test the MCMC model can make sane Priors" begin
-    df = FcRegression.loadMixData()
-    m = FcRegression.sfit(df, df."Value")
-    c = sample(m, Prior(), 2)
-end
-
-function testAllApproxSame(x::Array)
-    return std(x) / mean(x) < 1e-12
-end
+dfs = [FcRegression.loadMixData(), FcRegression.importRobinett(), 
+        FcRegression.importMurineLeukocyte(), FcRegression.importMurineInVitro()]
+dats = [:hCHO, :hRob, :mLeuk, :mCHO]
+murines = [false, false, true, true]
 
 @testset "Test predMix() perform correctly" begin
-    mKav = FcRegression.importKavDist(; murine = true, regularKav = true, retdf = true)
-    hKav = FcRegression.importKavDist(; murine = false, regularKav = true, retdf = true)
-    df1 = FcRegression.loadMixData()
-    df2 = FcRegression.importRobinett()
-    df3 = FcRegression.importMurineLeukocyte()
-    df4 = FcRegression.importMurineInVitro()
+    for (ii, df) in enumerate(dfs)
+        Kav = FcRegression.importKavDist(; murine = murines[ii], regularKav = true, retdf = true)   # no 0 affinity
+        Rtot = FcRegression.importRtotDist(dats[ii]; regular = true, retdf = true)
+        ndf0 = FcRegression.predMix(df; Kav = Kav, Rtot = Rtot)
+        @test all(ndf0."Predict" .> 0.0)
+
+        if "Subclass" in names(df)
+            # remove one IgG's affinities
+            rIgG = rand(unique(df."Subclass"))
+            Kav1 = deepcopy(Kav)
+            Kav1[Kav1."IgG" .== rIgG, Not("IgG")] .= 0.0
+            ndf1 = FcRegression.predMix(df; Kav = Kav1, Rtot = Rtot)
+            @test all(ndf1[ndf1."Subclass" .== rIgG, "Predict"] .<= 0.0)
+            @test all(ndf1[ndf1."Subclass" .!= rIgG, "Predict"] .> 0.0)
+        end
+
+        if "Receptor" in names(df)
+            # remove one FcgR's abundance
+            rFcgR = rand(unique(df."Receptor"))
+            Rtot2 = deepcopy(Rtot)
+            Rtot2[rFcgR] = 0.0
+            ndf2 = FcRegression.predMix(df; Kav = Kav, Rtot = Rtot2)
+            @assert all(ndf2[ndf2."Receptor" .== rFcgR, "Predict"] .<= 0.0)
+            @assert all(ndf2[ndf2."Receptor" .!= rFcgR, "Predict"] .> 0.0)
+        end
+    end
 end
 
-@testset "Test predictMurine() perform correctly" begin
-    df = FcRegression.importMurineInVitro()
-    mKav = FcRegression.murineKavDist(; regularKav = true)
-    mRecepExp = deepcopy(FcRegression.InVitroMurineRcpExp)
-    ndf0 = FcRegression.predictMurine(df; Kav = mKav, recepExp = mRecepExp)
-    @test all(ndf0."Predict" .> 1e-8)
-
-    # remove a single IgG-FcgR affinity
-    mKav[mKav."IgG" .== "IgG2a", "FcgRI"] .= 0.0
-    ndf = FcRegression.predictMurine(df; Kav = mKav, recepExp = mRecepExp)
-    @test all(ndf[(ndf."Receptor" .== "FcgRI") .& (ndf."Subclass" .== "IgG2c"), "Predict"] .<= 1e-8)
-    @test all(ndf[Not((ndf."Receptor" .== "FcgRI") .& (ndf."Subclass" .== "IgG2c")), "Predict"] .> 1e-8)
-    @test testAllApproxSame(
-        ndf0[Not((ndf0."Receptor" .== "FcgRI") .& (ndf0."Subclass" .== "IgG2c")), "Predict"] ./
-        ndf[Not((ndf."Receptor" .== "FcgRI") .& (ndf."Subclass" .== "IgG2c")), "Predict"],
-    )
-
-    # remove one IgG's affinities
-    mKav = FcRegression.murineKavDist(; regularKav = true)
-    mKav[mKav."IgG" .== "IgG2b", Not("IgG")] .= 0.0
-    ndf = FcRegression.predictMurine(df; Kav = mKav, recepExp = mRecepExp)
-    @test all(ndf[(ndf."Subclass" .== "IgG2b"), "Predict"] .<= 1e-8)
-    @test all(ndf[(ndf."Subclass" .!= "IgG2b"), "Predict"] .> 1e-8)
-    @test testAllApproxSame(ndf[Not(ndf."Subclass" .== "IgG2b"), "Predict"] ./ ndf[Not(ndf."Subclass" .== "IgG2b"), "Predict"])
-
-    # remove one Recep's abundance
-    mKav = FcRegression.murineKavDist(; regularKav = true)
-    mRecepExp["FcgRIIB"] = 0.0
-    ndf = FcRegression.predictMurine(df; Kav = mKav, recepExp = mRecepExp)
-    @test all(ndf[(ndf."Receptor" .== "FcgRIIB"), "Predict"] .<= 1e-8)
-    @test all(ndf[(ndf."Receptor" .!= "FcgRIIB"), "Predict"] .> 1e-8)
-    @test testAllApproxSame(ndf[Not(ndf."Receptor" .== "FcgRIIB"), "Predict"] ./ ndf[Not(ndf."Receptor" .== "FcgRIIB"), "Predict"])
+@testset "Test the MCMC model can make sane Priors" begin
+    for (ii, df) in enumerate(dfs)
+        m = FcRegression.gmodel(df, df."Value"; dat = dats[ii])
+        c = sample(m, Prior(), 2)
+    end
 end
 
-
-
-@testset "Building the MCMC model can work" begin
-    rng = MersenneTwister(1234)
-    df = FcRegression.loadMixData()
-    model = FcRegression.sfit(df, df."Value")
-    model(rng)
-
-    df = FcRegression.MAPLikelihood(df)
-end
-
-@testset "Check murine fitting model can work" begin
-    df = FcRegression.importMurineInVitro()
-    model = FcRegression.murineFit(df, df."Value")
-    df = FcRegression.MAPmurineLikelihood(df)
+@testset "Building the MCMC model can make sane MAP" begin
+    opts = Optim.Options(iterations = 1000, show_every = 10, show_trace = true)
+    for (ii, df) in enumerate(dfs)
+        m = FcRegression.gmodel(df, df."Value"; dat = dats[ii], Kavd = nothing)
+        rng = MersenneTwister(1234)
+        m(rng)
+        opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
+        p = FcRegression.extractMCMC(opt; dat = dats[ii])
+        ndf = FcRegression.predMix(df; Kav = p["Kav"], KxStar = p["KxStar"], Rtot = p["Rtot"], fs = [p["f4"], p["f33"]])
+        @test FcRegression.R2(ndf."Value", ndf."Predict") > 0.5
+    end
 end

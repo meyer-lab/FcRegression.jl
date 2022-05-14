@@ -14,6 +14,7 @@ function plotPredvsMeasured(
     df = deepcopy(df)
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
 
+    # Move 0 to a small nonzero only when plotting
     df[(df[!, xx]) .<= 0.0, xx] .= minimum(df[(df[!, xx]) .> 0.0, xx]) / 10
     df[(df[!, yy]) .<= 0.0, yy] .= minimum(df[(df[!, yy]) .> 0.0, yy]) / 10
     r2 = R2((df[!, xx]), (df[!, yy]))
@@ -191,7 +192,12 @@ function plotMCMCPredict(c, df::AbstractDataFrame; dat::Symbol, Kav::Union{Nothi
         shape = (("Subclass" in names(df)) ? "Subclass" : "Valency"), kwargs...)
 end
 
-
+function plotMAPPredict(df::AbstractDataFrame; dat::Symbol)
+    m = gmodel(df, df."Value"; dat = dat)
+    opts = Optim.Options(iterations = 1000, show_every = 10, show_trace = true)
+    opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
+    return plotMCMCPredict(opt, df; dat = dat, title = "$dat MAP fitting results")
+end
 
 
 
