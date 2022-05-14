@@ -47,10 +47,8 @@ function figureAll()
     figure4()
     figure6()
 
-    figureS1()
+    #figureS1()
     figureS2()
-
-    plot_MCMC_dists()
 end
 
 export polyfc, polyfc_ActV
