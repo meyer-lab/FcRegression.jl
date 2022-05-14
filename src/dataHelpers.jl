@@ -268,6 +268,9 @@ end
         df[df."Count" .< 1.0, "Count"] .= 1.0
 
         function findDist(x)
+            if regular
+                return geomean(x)
+            end
             if length(x) <= 1
                 return inferLogNormal(x[1], x[1])
             end

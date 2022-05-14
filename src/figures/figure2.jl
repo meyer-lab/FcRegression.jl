@@ -25,7 +25,7 @@ function figure2()
         R2pos = (0, -2.5),
     )
     pl_igg = plotAffinityViolin(c; murine = false)
-    rob1, rob2 = validateRobinett("MCMC_robinett_0505.dat", c; mcmc_iter = 1_000)
+    rob1, rob2 = validateFittedKav(c; murine = false)
 
     pp = plotGrid((4, 3), [nothing, nothing, raw_pred_pl, pl1, pl2, pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], rob1, rob2])
     draw(PDF("figure2.pdf", 12inch, 12inch), pp)

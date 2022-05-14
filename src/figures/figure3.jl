@@ -23,7 +23,7 @@ function figure3()
         R2pos = (0, -2), title = "Murine leukocyte prediction\nwith updated affinities")
 
     apls = plotAffinityViolin(c; murine = true)
-    vpl1, vpl2 = validateMurineInVitro(c)
+    vpl1, vpl2 = validateFittedKav(c; murine = true)
 
     pp = plotGrid((3, 3), [pl1, pl_noKav, pl2, apls[1], apls[2], apls[3], vpl1, vpl2])
     draw(PDF("figure3.pdf", 12inch, 9inch), pp)

@@ -1,4 +1,9 @@
 import Turing: ~, sample, NUTS, @model, Chains, rand, MAP, MLE
+import Serialization: serialize, deserialize
+
+const f4Dist = LogNormal(log(4), 0.2)   # std ~= 0.82
+const f33Dist = LogNormal(log(33), 0.2)   # std ~= 6.80
+const KxStarDist = LogNormal(log(KxConst), 2.0)   # std ~= 4.37 in Robinett
 
 """ A generic function to extract fitted parameters from an MCMC """
 function extractMCMC(c::Union{Chains, StatisticalModel}; dat::Symbol)
@@ -194,8 +199,8 @@ end
     nothing
 end
 
-function rungMCMC(fname::String; dat::Symbol = :none, mcmc_iter = 1_000, Kavd = nothing)
-    if isfile(fname)
+function rungMCMC(fname::Union{String, Nothing}; dat::Symbol = :none, mcmc_iter = 1_000, Kavd = nothing)
+    if (fname !== nothing) && isfile(fname)
         return deserialize(fname)
     end
     @assert dat in [:hCHO, :hRob, :mCHO, :mLeuk]
@@ -206,8 +211,8 @@ function rungMCMC(fname::String; dat::Symbol = :none, mcmc_iter = 1_000, Kavd = 
         df = importRobinett()
     elseif dat == :mCHO
         df = importMurineInVitro()
-    else # dat == :Leuk
-        df = importMurineLeukocyte()
+    else # dat == :mLeuk
+        df = importMurineLeukocyte(; average = false)
     end
 
     m = gmodel(df, df."Value"; dat = dat, Kavd = Kavd)
@@ -215,6 +220,27 @@ function rungMCMC(fname::String; dat::Symbol = :none, mcmc_iter = 1_000, Kavd = 
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
     c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
 
-    f = serialize(fname, c)
+    if fname !== nothing
+        f = serialize(fname, c)
+    end
     return c
+end
+
+function validateFittedKav(c::Chains; murine::Bool)
+    dfit, dval = murine ? (:mLeuk, :mCHO) : (:hCHO, :hRob)
+    figname = murine ? "Murine CHO binding prediction\n" : "Robinett"
+    df = murine ? importMurineInVitro() : importRobinett()
+
+    Kav_old = importKav(; murine = murine, retdf = true)
+    c_old = rungMCMC(nothing; dat = dval, Kavd = Kav_old)
+
+    Kav_new = extractMCMC(c; dat = dfit)["Kav"]
+    c_new = rungMCMC(nothing; dat = dval, Kavd = Kav_new)
+    
+    R2pos = murine ? (-1.5, 0.2) : (-0.5, -2)
+    pl1 = plotMCMCPredict(c_old, df; dat = dval, Kav = Kav_old, 
+        R2pos = R2pos, title = "$figname with documented affinities")
+    pl2 = plotMCMCPredict(c_new, df; dat = dval, Kav = Kav_new, 
+        R2pos = R2pos, title = "$figname with updated affinities")
+    return pl1, pl2
 end
