@@ -4,7 +4,7 @@ using ColorSchemes
 
 """ Original measurements with middle 50% as error bar """
 function splot_origData(df; match_y = true)
-    cell = unique(df."Cell")[1]
+    cell = unique(df."Receptor")[1]
     IgGX = unique(df."subclass_1")[1]
     IgGY = unique(df."subclass_2")[1]
     palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
@@ -44,14 +44,14 @@ function bindVSaff()
     df = averageMixData(loadMixData())
     df = df[(df."%_1" .== 1.0) .| (df."%_2" .== 1.0), :]
     df."Subclass" = [r."%_1" >= 1 ? r."subclass_1" : r."subclass_2" for r in eachrow(df)]
-    df = df[!, ["Valency", "Cell", "Subclass", "Value"]]
+    df = df[!, ["Valency", "Receptor", "Subclass", "Value"]]
     df = combine(
-        groupby(df, ["Valency", "Cell", "Subclass"]),
+        groupby(df, ["Valency", "Receptor", "Subclass"]),
         "Value" => StatsBase.median => "Value",
         "Value" => lower => "xmin",
         "Value" => upper => "xmax",
     )
-    df."Affinity" = [hKav[hKav."IgG" .== r."Subclass", r."Cell"][1] for r in eachrow(df)]
+    df."Affinity" = [hKav[hKav."IgG" .== r."Subclass", r."Receptor"][1] for r in eachrow(df)]
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
     pl1 = plot(
         df,
@@ -59,7 +59,7 @@ function bindVSaff()
         y = "Value",
         ymin = "xmin",
         ymax = "xmax",
-        color = "Cell",
+        color = "Receptor",
         shape = "Subclass",
         Geom.point,
         Geom.errorbar,
@@ -70,16 +70,16 @@ function bindVSaff()
         Guide.ylabel("Binding quantification"),
     )
 
-    val_ratio = combine(groupby(df, ["Cell", "Subclass"])) do df
+    val_ratio = combine(groupby(df, ["Receptor", "Subclass"])) do df
         (Ratio = df[df."Valency" .== Symbol("33"), "Value"][1] / df[df."Valency" .== Symbol("4"), "Value"][1],)
     end
-    val_ratio."Affinity" = [hKav[hKav."IgG" .== r."Subclass", r."Cell"][1] for r in eachrow(val_ratio)]
+    val_ratio."Affinity" = [hKav[hKav."IgG" .== r."Subclass", r."Receptor"][1] for r in eachrow(val_ratio)]
 
     pl2 = plot(
         val_ratio,
         x = "Affinity",
         y = "Ratio",
-        color = "Cell",
+        color = "Receptor",
         shape = "Subclass",
         Geom.point,
         Scale.x_log10,
@@ -136,8 +136,8 @@ function figure1()
 
     # Specific IgG pair - receptor interaction
     df = averageMixData()
-    igg12_1 = splot_origData(df[(df."Cell" .== "FcgRI") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG2"), :]; match_y = false)
-    igg14_1 = splot_origData(df[(df."Cell" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
+    igg12_1 = splot_origData(df[(df."Receptor" .== "FcgRI") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG2"), :]; match_y = false)
+    igg14_1 = splot_origData(df[(df."Receptor" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :]; match_y = false)
 
     score, loading, vars_expl = mixtureDataPCA()
     vars = plot(
@@ -163,8 +163,8 @@ function figure1()
         loading,
         x = "PC 1",
         y = "PC 2",
-        color = "Cell",
-        label = "Cell",
+        color = "Receptor",
+        label = "Receptor",
         Geom.point,
         Geom.label,
         Guide.title("PCA Loadings"),
@@ -175,8 +175,8 @@ function figure1()
         loading,
         x = "PC 1",
         y = "PC 3",
-        color = "Cell",
-        label = "Cell",
+        color = "Receptor",
+        label = "Receptor",
         Geom.point,
         Geom.label,
         Guide.title("PCA Loadings"),
@@ -185,5 +185,5 @@ function figure1()
     )
 
     pl = plotGrid((3, 5), [nothing, nothing, p1, p2, vars, SP4, SP33, LP, igg12_1, igg14_1, SP4_13, SP33_13, LP_13];)
-    return draw(SVG("figure1.svg", 20inch, 10inch), pl)
+    return draw(PDF("figure1.pdf", 20inch, 10inch), pl)
 end

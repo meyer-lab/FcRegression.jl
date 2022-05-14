@@ -6,7 +6,7 @@ using LinearAlgebra
 using DataFrames
 
 include("testDataHelpers.jl")
-include("testMCMC.jl")
+include("testRunMCMC.jl")
 include("testRegression.jl")
 
 #include("testSynergy.jl")
