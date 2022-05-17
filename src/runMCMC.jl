@@ -73,14 +73,13 @@ function predMix(dfr::DataFrameRow; Kav::AbstractDataFrame, Rtot = nothing, fs::
     elseif all(in(names(dfr)).(["affinity_1", "affinity_2"]))
         aff = reshape([dfr."affinity_1", dfr."affinity_2"], 2, 1)
         ratio = [dfr."%_1", dfr."%_2"]
-    # look up affinity
+        # look up affinity
     elseif all(in(names(dfr)).(["Subclass", "ImCell"]))  # ImCell needs all receptors
         aff = Matrix(Kav[Kav."IgG" .== dfr."Subclass", Not("IgG")])
     elseif all(in(names(dfr)).(["Subclass", "Receptor"]))  # probably slow, avoid this
         aff = reshape([Kav[Kav."IgG" .== dfr."Subclass", dfr."Receptor"][1]], 1, 1)
     elseif all(in(names(dfr)).(["subclass_1", "subclass_2", "Receptor"]))  # probably slow, avoid this
-        aff = reshape([Kav[Kav."IgG" .== dfr."subclass_1", dfr."Receptor"][1], 
-                       Kav[Kav."IgG" .== dfr."subclass_2", dfr."Receptor"][1]], 2, 1)
+        aff = reshape([Kav[Kav."IgG" .== dfr."subclass_1", dfr."Receptor"][1], Kav[Kav."IgG" .== dfr."subclass_2", dfr."Receptor"][1]], 2, 1)
         ratio = [dfr."%_1", dfr."%_2"]
     else
         @error "Failed at predMix(): cannot look up * aff *"
@@ -102,10 +101,16 @@ function predMix(df::AbstractDataFrame; Kav::AbstractDataFrame, Rtot = nothing, 
     end
     if all(in(names(dft)).(["subclass_1", "subclass_2"]))
         @assert all(in(Kav."IgG").(unique([dft."subclass_1"; dft."subclass_2"]))) "Expected IgG subclass names not in df, possibly wrong murine/human setup."
-        dft = innerjoin(dft, stack(Kav, Not("IgG"), variable_name = "recepp", value_name = "affinity_1"), 
-            on = ["Receptor" => "recepp", "subclass_1" => "IgG"])
-        dft = innerjoin(dft, stack(Kav, Not("IgG"), variable_name = "recepp", value_name = "affinity_2"), 
-            on = ["Receptor" => "recepp", "subclass_2" => "IgG"])
+        dft = innerjoin(
+            dft,
+            stack(Kav, Not("IgG"), variable_name = "recepp", value_name = "affinity_1"),
+            on = ["Receptor" => "recepp", "subclass_1" => "IgG"],
+        )
+        dft = innerjoin(
+            dft,
+            stack(Kav, Not("IgG"), variable_name = "recepp", value_name = "affinity_2"),
+            on = ["Receptor" => "recepp", "subclass_2" => "IgG"],
+        )
     elseif "Subclass" in names(dft)
         @assert all(in(Kav."IgG").(unique(dft."Subclass"))) "Expected IgG subclass names not in df, possibly wrong murine/human setup."
     end
@@ -186,8 +191,7 @@ end
     KxStar ~ KxStarDist
 
     # fit predictions
-    if all(0.0 .<= Rtot .< Inf) && all(0.0 .<= Matrix(Kavd[!, Not("IgG")]) .< Inf) && 
-            all(0.0 .< [f4, f33, KxStar] .< Inf)
+    if all(0.0 .<= Rtot .< Inf) && all(0.0 .<= Matrix(Kavd[!, Not("IgG")]) .< Inf) && all(0.0 .< [f4, f33, KxStar] .< Inf)
         df = predMix(deepcopy(df); Rtot = Rtotd, Kav = Kavd, KxStar = KxStar, fs = [f4, f33])
     else
         df = deepcopy(df)
@@ -236,11 +240,9 @@ function validateFittedKav(c::Chains; murine::Bool)
 
     Kav_new = extractMCMC(c; dat = dfit)["Kav"]
     c_new = rungMCMC(nothing; dat = dval, Kavd = Kav_new)
-    
+
     R2pos = murine ? (-1.5, 0.2) : (-0.5, -2)
-    pl1 = plotMCMCPredict(c_old, df; dat = dval, Kav = Kav_old, 
-        R2pos = R2pos, title = "$figname with documented affinities")
-    pl2 = plotMCMCPredict(c_new, df; dat = dval, Kav = Kav_new, 
-        R2pos = R2pos, title = "$figname with updated affinities")
+    pl1 = plotMCMCPredict(c_old, df; dat = dval, Kav = Kav_old, R2pos = R2pos, title = "$figname with documented affinities")
+    pl2 = plotMCMCPredict(c_new, df; dat = dval, Kav = Kav_new, R2pos = R2pos, title = "$figname with updated affinities")
     return pl1, pl2
 end

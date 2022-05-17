@@ -4,8 +4,7 @@ using Optim
 using ForwardDiff
 using Random
 
-dfs = [FcRegression.loadMixData(), FcRegression.importRobinett(), 
-        FcRegression.importMurineLeukocyte(), FcRegression.importMurineInVitro()]
+dfs = [FcRegression.loadMixData(), FcRegression.importRobinett(), FcRegression.importMurineLeukocyte(), FcRegression.importMurineInVitro()]
 dats = [:hCHO, :hRob, :mLeuk, :mCHO]
 murines = [false, false, true, true]
 

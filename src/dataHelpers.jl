@@ -256,7 +256,7 @@ end
     end
     if dat == :mCHO
         ref = 1e6
-        res = [regular ? ref : inferLogNormal(ref, ref * 1e2) for ii in 1:length(murineFcgR)]
+        res = [regular ? ref : inferLogNormal(ref, ref * 1e2) for ii = 1:length(murineFcgR)]
         if retdf
             return Dict([murineFcgR[i] => res[i] for i = 1:length(res)])
         else
@@ -329,4 +329,3 @@ importRtotDist(dat; kwargs...) = deepcopy(importRtotDist_readcsv(dat; kwargs...)
 end
 
 importKavDist(; kwargs...) = deepcopy(importKavDist_readcsv(; kwargs...))
-
