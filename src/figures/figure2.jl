@@ -28,7 +28,7 @@ function figure2()
         title = "Mixture predictions with \nsingle IgG fitted parameters",
         R2pos = (0, -2.5),
     )
-    pl_igg = plotAffinityViolin(c; murine = false)
+    pl_igg = plotAffinityViolin(c; murine = false, y_range = (5, 8))
     rob1, rob2 = validateFittedKav(c; murine = false)
 
     pp = plotGrid((4, 3), [nothing, nothing, raw_pred_pl, pl1, pl2, pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], rob1, rob2])
