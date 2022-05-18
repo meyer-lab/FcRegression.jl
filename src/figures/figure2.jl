@@ -17,8 +17,19 @@ function figure2()
         R2pos = (0, -2.7),
     )
 
-    c = rungMCMC("humanNUTSfit_0505.dat"; dat = :hCHO, mcmc_iter = 1_000)
     df = loadMixData()
+    Kav_old = importKavDist(; murine = false, regularKav = true, retdf = true)
+    c_noKav = rungMCMC("humanNUTSfit_0517_KavOnly_v1.8.dat"; dat = :hCHO, Kavd = Kav_old)
+    pl_noKav = plotMCMCPredict(
+        c_noKav,
+        df;
+        dat = :hCHO,
+        Kav = Kav_old,
+        R2pos = (0, -2),
+        title = "Predictions with all but affinity fitting",
+    )
+
+    c = rungMCMC("humanNUTSfit_0505.dat"; dat = :hCHO, mcmc_iter = 1_000)
 
     pl1 = plotMCMCPredict(c, df; dat = :hCHO, title = "All predictions with \nsingle hIgG fitted parameters", R2pos = (0, -2.5))
     pl2 = plotMCMCPredict(
@@ -31,6 +42,6 @@ function figure2()
     pl_igg = plotAffinityViolin(c; murine = false, y_range = (5, 8))
     rob1, rob2 = validateFittedKav(c; murine = false)
 
-    pp = plotGrid((4, 3), [nothing, nothing, raw_pred_pl, pl1, pl2, pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], rob1, rob2])
+    pp = plotGrid((4, 3), [nothing, nothing, raw_pred_pl, pl_noKav, pl1, pl2, pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], rob1, rob2])
     draw(PDF("figure2.pdf", 12inch, 12inch), pp)
 end
