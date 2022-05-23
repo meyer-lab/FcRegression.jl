@@ -145,8 +145,8 @@ function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine = true)
 end
 
 
-function regResult(dataType; L0, f, murine::Bool, exp_method = true)
-    df = murine ? importDepletion(dataType) : importHumanized(dataType)
+function regResult(dataType; L0, f, murine::Bool, exp_method = true, Kav = nothing)
+    df = murine ? importDepletion(dataType; Kav = Kav) : importHumanized(dataType)
 
     Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = nothing)
     res = fitRegNNLS(Xdf; murine = murine, cellTypes = nothing, exp_method = exp_method)

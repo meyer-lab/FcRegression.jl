@@ -1,5 +1,5 @@
-function figureW(dataType::String; L0 = 1e-9, f = 4, murine::Bool, exp_method = true, legend = true)
-    res, odf, loo_res, boot_res = regResult(dataType; L0 = L0, f = f, murine = murine, exp_method = exp_method)
+function figureW(dataType::String; L0 = 1e-9, f = 4, murine::Bool, Kav = nothing, exp_method = true, legend = true)
+    res, odf, loo_res, boot_res = regResult(dataType; L0 = L0, f = f, murine = murine, Kav = Kav, exp_method = exp_method)
     if murine
         df = importDepletion(dataType)
         if dataType == "HIV"
@@ -17,6 +17,7 @@ function figureW(dataType::String; L0 = 1e-9, f = 4, murine::Bool, exp_method = 
     end
     @assert all(in(names(odf)).([color, shape]))
 
+    setGadflyTheme()
     p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
     p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
     p3 = plotCellTypeEffects(df, res, loo_res, dataType; legend = legend, L0 = L0, f = f, murine = murine)

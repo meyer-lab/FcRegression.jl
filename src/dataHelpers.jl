@@ -131,7 +131,7 @@ end
 importKav(; kwargs...) = deepcopy(importKav_readcsv(; kwargs...))
 
 """ Import cell depletion data. """
-function importDepletion(dataType)
+function importDepletion(dataType; Kav::Union{AbstractDataFrame, Nothing} = nothing)
     c1q = false
     if dataType == "ITP"
         filename = "nimmerjahn-ITP.csv"
@@ -159,8 +159,15 @@ function importDepletion(dataType)
         df[!, "Neutralization"] .= replace!(neut, Inf => 0.0)
     end
 
-    affinity = importKav(murine = true, c1q = c1q, IgG2bFucose = true, retdf = true)
-    df = leftjoin(df, affinity, on = "Condition" => "IgG")
+    Kavd = importKav(murine = true, c1q = c1q, IgG2bFucose = true, retdf = true)
+    if Kav !== nothing
+        Kav[Kav."IgG" .== "IgG2c", "IgG"] .= "IgG2a"
+        # replace tha value in
+        for igg in Kav."IgG"
+            Kavd[Kavd."IgG" .== igg, names(Kav)[2:end]] = Kav[Kav."IgG" .== igg, names(Kav)[2:end]]
+        end
+    end
+    df = leftjoin(df, Kavd, on = "Condition" => "IgG")
 
     # The mG053 antibody doesn't bind to the virus
     if dataType == "HIV"
@@ -256,7 +263,7 @@ end
     end
     if dat == :mCHO
         ref = 1e6
-        res = [regular ? ref : inferLogNormal(ref, ref * 1e2) for ii = 1:length(murineFcgR)]
+        res = [regular ? ref : inferLogNormal(ref, ref * 10) for ii = 1:length(murineFcgR)]
         if retdf
             return Dict([murineFcgR[i] => res[i] for i = 1:length(res)])
         else
