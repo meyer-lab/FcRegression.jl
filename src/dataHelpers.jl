@@ -208,7 +208,7 @@ importRtotDist(dat; kwargs...) = deepcopy(importRtotDist_readcsv(dat; kwargs...)
             if regularKav
                 return x
             end
-            return inferLogNormal(x, x * 10)
+            return inferLogNormal(x, x)
         end
         Kav[Kav."IgG" .== "IgG2a", "IgG"] .= "IgG2c"
         Kav[!, Not("IgG")] = retDist.(Kav[!, Not("IgG")], regularKav = regularKav)
