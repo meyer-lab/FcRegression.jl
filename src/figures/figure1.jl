@@ -124,8 +124,8 @@ function plot_PCA_score(df; title = "Score", xx = "PC 1", yy = "PC 2")
         size = [3mm],
         Geom.point,
         Guide.title(title),
-        Guide.xticks(ticks = [-1.5e4, 0, 1.5e4], orientation = :horizontal),
-        Guide.yticks(ticks = [-6e3, 0, 6e3]),
+        Guide.xticks(ticks = [-15, 0, 15], orientation = :horizontal),
+        Guide.yticks(ticks = [-5, 0, 5]),
     )
 end
 
