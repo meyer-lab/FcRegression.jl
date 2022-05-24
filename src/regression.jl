@@ -20,10 +20,12 @@ end
 
 
 """ plug in reg df, and output binding model results """
-function modelPred(df; L0, f, murine::Bool = true, cellTypes = nothing)
+function modelPred(df; L0, f, murine::Bool = true, cellTypes = nothing, ActI = nothing)
     df = deepcopy(df)
     FcRecep = murine ? murineFcgR : humanFcgR
-    ActI = murine ? murineActI : humanActI
+    if ActI == nothing
+        ActI = murine ? murineActI : humanActI
+    end
     if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
@@ -73,7 +75,7 @@ end
 
 regPred(Xfc::Matrix, opt::regResult; exp_method) = regPred(Xfc, opt.cellWs; exp_method = exp_method)
 
-function regPred(Xdf::DataFrame, opt::regResult; murine, exp_method, cellTypes = nothing)
+function regPred(Xdf::DataFrame, opt::regResult; murine, exp_method, cellTypes = nothing, ActI = nothing)
     if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
@@ -117,7 +119,7 @@ function regBootstrap(bootsize, Xdf; kwargs...)
 end
 
 
-function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine = true, Kav = nothing)
+function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine = true, Kav = nothing, cellTypes = nothing)
     # Prepare for cell type weights in wildtype
     Kavd = importKav(; murine = murine, c1q = ("C1q" in names(df)), IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true)
     if Kav !== nothing
@@ -142,7 +144,9 @@ function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine = true, Ka
     rename!(wildtype, "IgG" => "Condition")
 
     wtXdf = modelPred(wildtype; L0 = L0, f = f, murine = murine, cellTypes = nothing)
-    cellTypes = murine ? murineCellTypes : humanCellTypes
+    if cellTypes == nothing
+        cellTypes = murine ? murineCellTypes : humanCellTypes
+    end
 
     wtXdf[!, cellTypes] .*= res.cellWs'
     wtXdf = wtXdf[!, vcat(["Condition"], cellTypes)]
@@ -153,13 +157,13 @@ function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine = true, Ka
 end
 
 
-function regResult(dataType; L0, f, murine::Bool, exp_method = true, Kav = nothing)
+function regResult(dataType; L0, f, murine::Bool, exp_method = true, Kav = nothing, cellTypes = nothing)
     df = murine ? importDepletion(dataType; Kav = Kav) : importHumanized(dataType)
 
-    Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = nothing)
-    res = fitRegNNLS(Xdf; murine = murine, cellTypes = nothing, exp_method = exp_method)
-    loo_res = regLOO(Xdf; murine = murine, cellTypes = nothing, exp_method = exp_method)
-    boot_res = regBootstrap(10, Xdf; murine = murine, cellTypes = nothing, exp_method = exp_method)
+    Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes)
+    res = fitRegNNLS(Xdf; murine = murine, cellTypes = cellTypes, exp_method = exp_method)
+    loo_res = regLOO(Xdf; murine = murine, cellTypes = cellTypes, exp_method = exp_method)
+    boot_res = regBootstrap(10, Xdf; murine = murine, cellTypes = cellTypes, exp_method = exp_method)
 
     odf = df[!, in(["Condition", "Background"]).(names(df))]
     odf[!, "Concentration"] .= ("Concentration" in names(df)) ? (df[!, "Concentration"] .* L0) : L0

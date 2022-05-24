@@ -1,5 +1,5 @@
-function figureW(dataType::String; L0 = 1e-9, f = 4, murine::Bool, Kav = nothing, exp_method = true, legend = true)
-    res, odf, loo_res, boot_res = regResult(dataType; L0 = L0, f = f, murine = murine, Kav = Kav, exp_method = exp_method)
+function figureW(dataType::String; L0 = 1e-9, f = 4, murine::Bool, Kav = nothing, exp_method = true, legend = true, cellTypes = nothing)
+    res, odf, loo_res, boot_res = regResult(dataType; L0 = L0, f = f, murine = murine, Kav = Kav, exp_method = exp_method, cellTypes = cellTypes)
     if murine
         df = importDepletion(dataType)
         if dataType == "HIV"
@@ -20,7 +20,7 @@ function figureW(dataType::String; L0 = 1e-9, f = 4, murine::Bool, Kav = nothing
     setGadflyTheme()
     p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
     p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
-    p3 = plotCellTypeEffects(df, res, loo_res, dataType; legend = legend, L0 = L0, f = f, murine = murine, Kav = Kav)
+    p3 = plotCellTypeEffects(df, res, loo_res, dataType; legend = legend, L0 = L0, f = f, murine = murine, Kav = Kav, cellTypes = cellTypes)
     return p1, p2, p3
 end
 
@@ -69,9 +69,9 @@ function plotActualvPredict(odf, dataType, colorL::Union{Symbol, String}, shapeL
 end
 
 
-function plotCellTypeEffects(df, res, loo_res, dataType; legend = true, L0 = 1e-9, f = 4, murine = true, Kav = nothing)
-    Cell_df = wildtypeWeights(res, df; L0 = L0, f = f, murine = murine, Kav = Kav)
-    Cell_loo = vcat([wildtypeWeights(loo, df; Kav = Kav) for loo in loo_res]...)
+function plotCellTypeEffects(df, res, loo_res, dataType; legend = true, L0 = 1e-9, f = 4, murine = true, Kav = nothing, cellTypes = nothing)
+    Cell_df = wildtypeWeights(res, df; L0 = L0, f = f, murine = murine, Kav = Kav, cellTypes = cellTypes)
+    Cell_loo = vcat([wildtypeWeights(loo, df; Kav = Kav, cellTypes = cellTypes) for loo in loo_res]...)
     Cell_conf = combine(groupby(Cell_loo, ["Condition", "Component"]), "Weight" => lower => "ymin", "Weight" => upper => "ymax")
     Cell_df = innerjoin(Cell_df, Cell_conf, on = ["Condition", "Component"])
 
