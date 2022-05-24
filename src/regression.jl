@@ -21,7 +21,7 @@ end
 
 """ plug in reg df, and output binding model results """
 function modelPred(df; L0, f, murine::Bool = true, cellTypes = nothing)
-    df = copy(df)
+    df = deepcopy(df)
     FcRecep = murine ? murineFcgR : humanFcgR
     ActI = murine ? murineActI : humanActI
     if cellTypes === nothing
@@ -29,6 +29,7 @@ function modelPred(df; L0, f, murine::Bool = true, cellTypes = nothing)
     end
 
     if "Concentration" in names(df)
+        df[!, "Concentration"] ./= maximum(df[!, "Concentration"])
         df[!, "Concentration"] .*= L0
     else
         insertcols!(df, 3, "Concentration" => L0)
@@ -40,14 +41,10 @@ function modelPred(df; L0, f, murine::Bool = true, cellTypes = nothing)
         Kav = reshape(Kav, 1, :)
         Rtot = copy(importRtot(; murine = murine, genotype = murine ? "NA" : df[k, :Genotype], cellTypes = cellTypes))
         if "Background" in names(df)
-            if df[k, "Background"] == "NeuKO"
-                Rtot[:, "Neu" .== cellTypes] .= 0.0
-            elseif df[k, "Background"] == "ncMOKO"
-                Rtot[:, "ncMO" .== cellTypes] .= 0.0
-            elseif df[k, "Background"] == "cMOKO"
-                Rtot[:, "cMO" .== cellTypes] .= 0.0
-            elseif df[k, "Background"] == "EOKO"
-                Rtot[:, "EO" .== cellTypes] .= 0.0
+            for cname in ["Neu", "ncMO", "cMO", "EO"]
+                if occursin(cname, df[k, "Background"])
+                    Rtot[:, cname .== cellTypes] .= 0.0
+                end
             end
         end
         for i = 1:size(Xfc, 2)    # cell type
@@ -120,9 +117,20 @@ function regBootstrap(bootsize, Xdf; kwargs...)
 end
 
 
-function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine = true)
+function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine = true, Kav = nothing)
     # Prepare for cell type weights in wildtype
-    wildtype = copy(importKav(; murine = murine, c1q = ("C1q" in names(df)), IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true))
+    Kavd = importKav(; murine = murine, c1q = ("C1q" in names(df)), IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true)
+    if Kav !== nothing
+        if murine
+            Kav[Kav."IgG" .== "IgG2c", "IgG"] .= "IgG2a"
+        end
+        # replace the value in
+        for igg in Kav."IgG"
+            Kavd[Kavd."IgG" .== igg, names(Kav)[2:end]] = Kav[Kav."IgG" .== igg, names(Kav)[2:end]]
+        end
+    end
+
+    wildtype = copy(Kavd)
     wildtype[!, "Background"] .= "wt"
     wildtype[!, "Target"] .= 0.0
     if !murine

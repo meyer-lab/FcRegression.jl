@@ -1,7 +1,9 @@
 """ Import cell depletion data. """
 function importDepletion(dataType; Kav::Union{AbstractDataFrame, Nothing} = nothing)
     c1q = false
-    if dataType == "ITP"
+    if dataType == "melanomaNew"
+        filename = "science2005-melanoma.csv"
+    elseif dataType == "ITP"
         filename = "nimmerjahn-ITP.csv"
     elseif dataType == "blood"
         filename = "nimmerjahn-CD20-blood.csv"
@@ -21,7 +23,22 @@ function importDepletion(dataType; Kav::Union{AbstractDataFrame, Nothing} = noth
     end
 
     df = CSV.File(joinpath(dataDir, filename), delim = ",", comment = "#") |> DataFrame
-    df[!, "Target"] = 1.0 .- df[!, "Target"] ./ 100.0
+
+    if !("Target" in names(df))  # Target: the larger, the more effect
+        df."Target" =  1 .- df."Measurement" ./ df."Baseline"
+        df[df."Target" .> 1.0, "Target"] .= 1.0
+        df[df."Target" .< 0.0, "Target"] .= 0.0
+    else
+        df[!, "Target"] = 1.0 .- df[!, "Target"] ./ 100.0
+    end
+
+    if "Subclass" in names(df)
+        rename!(df, "Subclass" => "Condition")
+    end
+    if "Dose" in names(df)
+        rename!(df, "Dose" => "Concentration")
+    end
+
     if "Neutralization" in names(df)
         neut = -log.(df[!, "Neutralization"] / 50.0)
         df[!, "Neutralization"] .= replace!(neut, Inf => 0.0)
@@ -30,25 +47,25 @@ function importDepletion(dataType; Kav::Union{AbstractDataFrame, Nothing} = noth
     Kavd = importKav(murine = true, c1q = c1q, IgG2bFucose = true, retdf = true)
     if Kav !== nothing
         Kav[Kav."IgG" .== "IgG2c", "IgG"] .= "IgG2a"
-        # replace tha value in
+        # replace the value in
         for igg in Kav."IgG"
             Kavd[Kavd."IgG" .== igg, names(Kav)[2:end]] = Kav[Kav."IgG" .== igg, names(Kav)[2:end]]
         end
     end
     df = leftjoin(df, Kavd, on = "Condition" => "IgG")
 
-    # The mG053 antibody doesn't bind to the virus
+    # In HIV, The mG053 antibody doesn't bind to the virus
     if dataType == "HIV"
         df[df[:, "Label"] .== "mG053", ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]] .= 0.0
     end
 
-    df[df[:, "Background"] .== "R1KO", "FcgRI"] .= 0.0
-    df[df[:, "Background"] .== "R2KO", "FcgRIIB"] .= 0.0
-    df[df[:, "Background"] .== "R3KO", "FcgRIII"] .= 0.0
+    df[occursin.("R1", df."Background"), "FcgRI"] .= 0.0
+    df[occursin.("R2", df."Background"), "FcgRIIB"] .= 0.0
+    df[occursin.("R3", df."Background"), "FcgRIII"] .= 0.0
+    df[occursin.("R4", df."Background"), "FcgRIV"] .= 0.0
+    df[occursin.("gc", df."Background"), ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]] .= 0.0
     df[df[:, "Background"] .== "R1/3KO", ["FcgRI", "FcgRIII"]] .= 0.0
     df[df[:, "Background"] .== "R1/4KO", ["FcgRI", "FcgRIV"]] .= 0.0
-    df[df[:, "Background"] .== "R4block", "FcgRIV"] .= 0.0
-    df[df[:, "Background"] .== "gcKO", ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]] .= 0.0
     df[df[:, "Condition"] .== "IgG1D265A", ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]] .= 0.0
 
     for pair in ["R" => "FcγR", "1" => "I", "2" => "II", "3" => "III", "4" => "IV", "gc" => "γc"]

@@ -20,7 +20,7 @@ function figureW(dataType::String; L0 = 1e-9, f = 4, murine::Bool, Kav = nothing
     setGadflyTheme()
     p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
     p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
-    p3 = plotCellTypeEffects(df, res, loo_res, dataType; legend = legend, L0 = L0, f = f, murine = murine)
+    p3 = plotCellTypeEffects(df, res, loo_res, dataType; legend = legend, L0 = L0, f = f, murine = murine, Kav = Kav)
     return p1, p2, p3
 end
 
@@ -69,9 +69,9 @@ function plotActualvPredict(odf, dataType, colorL::Union{Symbol, String}, shapeL
 end
 
 
-function plotCellTypeEffects(df, res, loo_res, dataType; legend = true, L0 = 1e-9, f = 4, murine = true)
-    Cell_df = wildtypeWeights(res, df; L0 = L0, f = f, murine = murine)
-    Cell_loo = vcat([wildtypeWeights(loo, df) for loo in loo_res]...)
+function plotCellTypeEffects(df, res, loo_res, dataType; legend = true, L0 = 1e-9, f = 4, murine = true, Kav = nothing)
+    Cell_df = wildtypeWeights(res, df; L0 = L0, f = f, murine = murine, Kav = Kav)
+    Cell_loo = vcat([wildtypeWeights(loo, df; Kav = Kav) for loo in loo_res]...)
     Cell_conf = combine(groupby(Cell_loo, ["Condition", "Component"]), "Weight" => lower => "ymin", "Weight" => upper => "ymax")
     Cell_df = innerjoin(Cell_df, Cell_conf, on = ["Condition", "Component"])
 
