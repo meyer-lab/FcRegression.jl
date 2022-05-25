@@ -24,6 +24,9 @@ function importDepletion(dataType; Kav::Union{AbstractDataFrame, Nothing} = noth
 
     df = CSV.File(joinpath(dataDir, filename), delim = ",", comment = "#") |> DataFrame
 
+    if "Source" in names(df)
+        df = df[!, Not("Source")]
+    end
     if !("Target" in names(df))  # Target: the larger, the more effect
         df."Target" =  1 .- df."Measurement" ./ df."Baseline"
         df[df."Target" .> 1.0, "Target"] .= 1.0
