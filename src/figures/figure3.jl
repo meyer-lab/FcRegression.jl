@@ -14,7 +14,7 @@ function figure3()
         title = "Raw murine leukocyte prediction\nwith documented affinities",
     )
 
-    c_noKav = rungMCMC("leukNUTSfit_0511_KavOnly_v1.7.dat"; dat = :mLeuk, Kavd = Kav_old)
+    c_noKav = rungMCMC("leukNUTSfit_0524_KavOnly_v1.7.dat"; dat = :mLeuk, Kavd = Kav_old)
     pl_noKav = plotMCMCPredict(
         c_noKav,
         df;
@@ -24,7 +24,7 @@ function figure3()
         title = "Murine leukocyte prediction\nwith all but affinity fitting",
     )
 
-    c = rungMCMC("leukNUTSfit_0511_v1.7.dat"; dat = :mLeuk)
+    c = rungMCMC("leukNUTSfit_0524_v1.7.dat"; dat = :mLeuk)
     pl2 = plotMCMCPredict(c, df; dat = :mLeuk, Kav = nothing, R2pos = (0, -2), title = "Murine leukocyte prediction\nwith updated affinities")
 
     apls = plotAffinityViolin(c; murine = true, y_range = (5, 9))
