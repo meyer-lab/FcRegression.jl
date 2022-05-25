@@ -27,7 +27,7 @@ function figure3()
     c = rungMCMC("leukNUTSfit_0524_v1.7.dat"; dat = :mLeuk)
     pl2 = plotMCMCPredict(c, df; dat = :mLeuk, Kav = nothing, R2pos = (0, -2), title = "Murine leukocyte prediction\nwith updated affinities")
 
-    apls = plotAffinityViolin(c; murine = true, y_range = (5, 9))
+    apls = plotAffinityViolin(c; murine = true, y_range = (4, 9))
     vpl1, vpl2 = validateFittedKav(c; murine = true)
 
     pp = plotGrid((3, 3), [pl1, pl_noKav, pl2, apls[1], apls[2], apls[3], vpl1, vpl2])

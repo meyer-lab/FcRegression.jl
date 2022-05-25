@@ -25,7 +25,10 @@ IgG2b,R4block,79.7,Sci Fig2E
 IgG1,R2KO,15.9,Sci Fig3C
 IgG2a,R2KO,7.8,Sci Fig3C
 IgG2b,R2KO,11.8,Sci Fig3C
+IgG1SA,wt,90.9,Sial Fig1C
+IgG2bSA,wt,50.4,Sial Fig1C
 # R2KO cases are approximate. From Nimmerjahn, Science,2005,
 # IgG2a,NeuKO and EOKO duplicated from IgG2a,wt, based on 10.1016/j.immuni.2011.11.009
-# Sci = Nimmerjahn, F. & Ravetch, J. V. Divergent Immunoglobulin G Subclass Activity Through Selective Fc Receptor Binding. Science 310, 1510Ð1512 (2005).,,,
+# Sci = Nimmerjahn, F. & Ravetch, J. V. Divergent Immunoglobulin G Subclass Activity Through Selective Fc Receptor Binding. Science 310, 1510Ð1512 (2005).
 # Imm = Biburger, M. et al. Monocyte Subsets Responsible for Immunoglobulin G-Dependent Effector Functions In Vivo. Immunity 35, 932Ð944 (2011).,
+# Sial = Kaneko, Y., Nimmerjahn, F. & Ravetch, J.V., 2006. Anti-inflammatory activity of immunoglobulin G resulting from Fc sialylation. Science, 313(5787), pp.670-673.

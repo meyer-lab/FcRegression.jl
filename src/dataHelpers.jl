@@ -111,7 +111,7 @@ importRtot(; kwargs...) = deepcopy(importRtot_readcsv(; kwargs...))
     IgGlist = copy(murine ? murineIgG : humanIgG)
     FcRecep = copy(murine ? murineFcgR : humanFcgR)
     if IgG2bFucose
-        append!(IgGlist, ["IgG2bFucose"])
+        append!(IgGlist, ["IgG2bFucose", "IgG1SA", "IgG2bSA"])
     end
     if c1q
         append!(FcRecep, ["C1q"])
