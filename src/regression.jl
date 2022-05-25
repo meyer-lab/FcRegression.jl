@@ -4,14 +4,16 @@ import Distributions: cdf, Exponential
 import StatsBase: sample, mode
 using NonNegLeastSquares
 import Base: tanh
+using InverseFunctions
 
 exponential(x::Real) = cdf(Exponential(), x)
 exponential(X::Array) = cdf.(Exponential(), X)
 exponential(X::Matrix, p::Vector) = cdf.(Exponential(), X * p)
-inv_exponential(y::Real) = -log(1 - y)
+InverseFunctions.inverse(::typeof(exponential)) = y -> -log(1 - y)
 
 tanh(X::Array) = tanh.(X)
 tanh(X::Matrix, p::Vector) = tanh.(X * p)
+InverseFunctions.inverse(::typeof(tanh)) = atanh
 
 mutable struct regResult{T}
     cellWs::Array{T}
@@ -67,34 +69,35 @@ function modelPred(df; L0, f, murine::Bool = true, cellTypes = nothing, ActI = n
     return Xdf
 end
 
-
-function regPred(Xfc::Matrix, cellWeights::Vector; exp_method = true)
-    Yr = Xfc * cellWeights
-    return exp_method ? exponential(Yr) : tanh(Yr)
-end
-
-regPred(Xfc::Matrix, opt::regResult; exp_method) = regPred(Xfc, opt.cellWs; exp_method = exp_method)
-
-function regPred(Xdf::DataFrame, opt::regResult; murine, exp_method, cellTypes = nothing, ActI = nothing)
+function regPred(
+        Xdf::DataFrame, 
+        opt::regResult; 
+        murine = true, 
+        link::Function = exponential, 
+        cellTypes = nothing, 
+        ActI = nothing
+    )
     if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
     Xmat = Matrix(Xdf[!, in(cellTypes).(names(Xdf))])
-    return regPred(Xmat, opt; exp_method = exp_method)
+
+    return link(Xmat * opt.cellWs)
 end
 
 
-function fitRegNNLS(Xdf::DataFrame; murine = true, cellTypes = nothing, exp_method = true)
+function fitRegNNLS(Xdf::DataFrame; murine = true, cellTypes = nothing, link::Function = exponential)
     if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
     Xmat = Matrix(Xdf[!, in(cellTypes).(names(Xdf))])
     Y = Xdf[!, "Target"]
-    cY = exp_method ? inv_exponential.(Y) : atanh.(Y)
+    @assert !(inverse(link) isa NoInverse)
+    cY = inverse(link).(Y)
 
     w = vec(nonneg_lsq(Xmat, cY; alg = :nnls))  # cell type weight found by NNLS
     Yr = Xmat * w
-    R2val = R2(Y, (exp_method ? exponential(Yr) : tanh(Yr)); logscale = false)
+    R2val = R2(Y, link(Yr); logscale = false)
     return regResult(w, R2val)
 end
 
@@ -119,7 +122,7 @@ function regBootstrap(bootsize, Xdf; kwargs...)
 end
 
 
-function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine = true, Kav = nothing, cellTypes = nothing)
+function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine = true, Kav = nothing, cellTypes = nothing, ActI = nothing)
     # Prepare for cell type weights in wildtype
     Kavd = importKav(; murine = murine, c1q = ("C1q" in names(df)), IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true)
     if Kav !== nothing
@@ -142,34 +145,32 @@ function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine = true, Ka
         wildtype[!, "Neutralization"] .= 0.0
     end
     rename!(wildtype, "IgG" => "Condition")
-
-    wtXdf = modelPred(wildtype; L0 = L0, f = f, murine = murine, cellTypes = nothing)
+    
     if cellTypes == nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
+    wtXdf = modelPred(wildtype; L0 = L0, f = f, murine = murine, cellTypes = cellTypes, ActI = ActI)
 
     wtXdf[!, cellTypes] .*= res.cellWs'
     wtXdf = wtXdf[!, vcat(["Condition"], cellTypes)]
-    Cell_df = stack(wtXdf, Not("Condition"))
-    rename!(Cell_df, "value" => "Weight")
-    rename!(Cell_df, "variable" => "Component")
+    Cell_df = stack(wtXdf, Not("Condition"), variable_name = "Component", value_name = "Weight")
     return Cell_df
 end
 
 
-function regResult(dataType; L0, f, murine::Bool, exp_method = true, Kav = nothing, cellTypes = nothing)
+function regResult(dataType; L0 = 1e-9, f = 4, murine::Bool = true, link::Function = exponential, Kav = nothing, cellTypes = nothing, ActI = nothing)
     df = murine ? importDepletion(dataType; Kav = Kav) : importHumanized(dataType)
 
-    Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes)
-    res = fitRegNNLS(Xdf; murine = murine, cellTypes = cellTypes, exp_method = exp_method)
-    loo_res = regLOO(Xdf; murine = murine, cellTypes = cellTypes, exp_method = exp_method)
-    boot_res = regBootstrap(10, Xdf; murine = murine, cellTypes = cellTypes, exp_method = exp_method)
+    Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes, ActI = ActI)
+    res = fitRegNNLS(Xdf; murine = murine, cellTypes = cellTypes, link = link)
+    loo_res = regLOO(Xdf; murine = murine, cellTypes = cellTypes, link = link)
+    boot_res = regBootstrap(10, Xdf; murine = murine, cellTypes = cellTypes, link = link)
 
     odf = df[!, in(["Condition", "Background"]).(names(df))]
     odf[!, "Concentration"] .= ("Concentration" in names(df)) ? (df[!, "Concentration"] .* L0) : L0
     odf[!, "Y"] = df[!, "Target"]
-    odf[!, "Fitted"] = regPred(Xdf, res; murine = murine, exp_method = exp_method)
-    odf[!, "LOOPredict"] = [regPred(Xdf[[ii], :], loo_res[ii]; murine = murine, exp_method = exp_method)[1] for ii = 1:length(loo_res)]
+    odf[!, "Fitted"] = regPred(Xdf, res; murine = murine)
+    odf[!, "LOOPredict"] = [regPred(Xdf[[ii], :], loo_res[ii]; murine = murine, link = link)[1] for ii = 1:length(loo_res)]
 
     if "Label" in names(df)
         odf[!, "Label"] .= df[!, "Label"]
@@ -178,5 +179,11 @@ function regResult(dataType; L0, f, murine::Bool, exp_method = true, Kav = nothi
         odf[!, "Genotype"] .= df[!, "Genotype"]
     end
 
-    return res, odf, loo_res, boot_res
+    # Cell type weight
+    Cell_df = wildtypeWeights(res, df; L0 = L0, f = f, murine = murine, Kav = Kav, cellTypes = cellTypes, ActI = ActI)
+    Cell_loo = vcat([wildtypeWeights(loo, df; Kav = Kav, cellTypes = cellTypes, ActI = ActI) for loo in loo_res]...)
+    Cell_conf = combine(groupby(Cell_loo, ["Condition", "Component"]), "Weight" => lower => "ymin", "Weight" => upper => "ymax")
+    Cell_df = innerjoin(Cell_df, Cell_conf, on = ["Condition", "Component"])
+
+    return res, odf, loo_res, boot_res, Cell_df
 end

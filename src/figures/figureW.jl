@@ -1,5 +1,5 @@
-function figureW(dataType::String; L0 = 1e-9, f = 4, murine::Bool, Kav = nothing, exp_method = true, legend = true, cellTypes = nothing)
-    res, odf, loo_res, boot_res = regResult(dataType; L0 = L0, f = f, murine = murine, Kav = Kav, exp_method = exp_method, cellTypes = cellTypes)
+function figureW(dataType::String; legend = true, murine::Bool = true, title = nothing, kwargs...)
+    res, odf, loo_res, boot_res, Cell_df = regResult(dataType; murine = murine, kwargs...)
     if murine
         df = importDepletion(dataType)
         if dataType == "HIV"
@@ -18,13 +18,17 @@ function figureW(dataType::String; L0 = 1e-9, f = 4, murine::Bool, Kav = nothing
     @assert all(in(names(odf)).([color, shape]))
 
     setGadflyTheme()
-    p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
-    p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
-    p3 = plotCellTypeEffects(df, res, loo_res, dataType; legend = legend, L0 = L0, f = f, murine = murine, Kav = Kav, cellTypes = cellTypes)
+    ptitle = "$dataType"
+    if title !== nothing
+        ptitle *= " $title"
+    end
+    p1 = plotActualvFit(odf, color, shape, ptitle; legend = legend)
+    p2 = plotActualvPredict(odf, color, shape, ptitle; legend = legend)
+    p3 = plotCellTypeEffects(Cell_df, ptitle; legend = legend)
     return p1, p2, p3
 end
 
-function plotActualvFit(odf, dataType, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}; legend = true)
+function plotActualvFit(odf, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}, ptitle = ""; legend = true)
     R2anno = "<i>R</i><sup>2</sup>" * @sprintf("=%.3f", R2(odf.Y, odf.Fitted; logscale = false))
     pl = plot(
         odf,
@@ -39,7 +43,7 @@ function plotActualvFit(odf, dataType, colorL::Union{Symbol, String}, shapeL::Un
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
         Guide.ylabel("Fitted effect"),
-        Guide.title("Actual vs fitted effect for $dataType"),
+        Guide.title("Actual vs fitted effect ($ptitle)"),
         Guide.annotation(compose(context(), text(0.1, 0.8, R2anno), fill("black"), fontsize(10pt), font("Helvetica"))),
         style(point_size = 5px, key_position = legend ? :right : :none),
     )
@@ -47,7 +51,7 @@ function plotActualvFit(odf, dataType, colorL::Union{Symbol, String}, shapeL::Un
 end
 
 
-function plotActualvPredict(odf, dataType, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}; legend = true)
+function plotActualvPredict(odf, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}, ptitle = ""; legend = true)
     R2anno = "<i>R</i><sup>2</sup>" * @sprintf("=%.3f", R2(odf.Y, odf.LOOPredict; logscale = false))
     pl = plot(
         odf,
@@ -61,7 +65,7 @@ function plotActualvPredict(odf, dataType, colorL::Union{Symbol, String}, shapeL
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
         Guide.ylabel("LOO predicted effect"),
-        Guide.title("Actual vs LOO prediction for $dataType"),
+        Guide.title("Actual vs LOO prediction ($ptitle)"),
         Guide.annotation(compose(context(), text(0.1, 0.8, R2anno), fill("black"), fontsize(10pt), font("Helvetica"))),
         style(point_size = 5px, key_position = legend ? :right : :none),
     )
@@ -69,12 +73,7 @@ function plotActualvPredict(odf, dataType, colorL::Union{Symbol, String}, shapeL
 end
 
 
-function plotCellTypeEffects(df, res, loo_res, dataType; legend = true, L0 = 1e-9, f = 4, murine = true, Kav = nothing, cellTypes = nothing)
-    Cell_df = wildtypeWeights(res, df; L0 = L0, f = f, murine = murine, Kav = Kav, cellTypes = cellTypes)
-    Cell_loo = vcat([wildtypeWeights(loo, df; Kav = Kav, cellTypes = cellTypes) for loo in loo_res]...)
-    Cell_conf = combine(groupby(Cell_loo, ["Condition", "Component"]), "Weight" => lower => "ymin", "Weight" => upper => "ymax")
-    Cell_df = innerjoin(Cell_df, Cell_conf, on = ["Condition", "Component"])
-
+function plotCellTypeEffects(Cell_df, ptitle = ""; legend = true)
     pl = plot(
         Cell_df,
         x = "Condition",
@@ -89,7 +88,7 @@ function plotCellTypeEffects(df, res, loo_res, dataType; legend = true, L0 = 1e-
         Scale.x_discrete(levels = unique(Cell_df.Condition)),
         Scale.y_continuous(minvalue = 0.0),
         Scale.color_discrete(levels = unique(Cell_df.Component)),
-        Guide.title("Predicted cell type weights for $dataType"),
+        Guide.title("Predicted cell type weights ($ptitle)"),
         style(key_position = legend ? :right : :none, stroke_color = c -> "black", errorbar_cap_length = 4px),
     )
     return pl
