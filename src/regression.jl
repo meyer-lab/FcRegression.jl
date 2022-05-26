@@ -9,6 +9,7 @@ using InverseFunctions
 exponential(x::Real) = cdf(Exponential(), x)
 exponential(X::Array) = cdf.(Exponential(), X)
 exponential(X::Matrix, p::Vector) = cdf.(Exponential(), X * p)
+inv_exponential(y::Real) = -log(1 - y)
 InverseFunctions.inverse(::typeof(exponential)) = y -> -log(1 - y)
 
 tanh(X::Array) = tanh.(X)
@@ -86,14 +87,17 @@ function regPred(
 end
 
 
-function fitRegNNLS(Xdf::DataFrame; murine = true, cellTypes = nothing, link::Function = exponential)
+function fitRegNNLS(Xdf::DataFrame; murine = true, cellTypes = nothing, link::Function = exponential, inv_link::Function = inv_exponential)
     if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
     Xmat = Matrix(Xdf[!, in(cellTypes).(names(Xdf))])
     Y = Xdf[!, "Target"]
-    @assert !(inverse(link) isa NoInverse)
-    cY = inverse(link).(Y)
+    cY = if inverse(link) isa NoInverse
+        inv_link.(Y)
+    else
+        inverse(link).(Y)
+    end
 
     w = vec(nonneg_lsq(Xmat, cY; alg = :nnls))  # cell type weight found by NNLS
     Yr = Xmat * w
@@ -158,13 +162,13 @@ function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine = true, Ka
 end
 
 
-function regResult(dataType; L0 = 1e-9, f = 4, murine::Bool = true, link::Function = exponential, Kav = nothing, cellTypes = nothing, ActI = nothing)
+function regResult(dataType; L0 = 1e-9, f = 4, murine::Bool = true, link::Function = exponential, Kav = nothing, cellTypes = nothing, ActI = nothing, inv_link::Function = inv_exponential)
     df = murine ? importDepletion(dataType; Kav = Kav) : importHumanized(dataType)
 
     Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes, ActI = ActI)
-    res = fitRegNNLS(Xdf; murine = murine, cellTypes = cellTypes, link = link)
-    loo_res = regLOO(Xdf; murine = murine, cellTypes = cellTypes, link = link)
-    boot_res = regBootstrap(10, Xdf; murine = murine, cellTypes = cellTypes, link = link)
+    res = fitRegNNLS(Xdf; murine = murine, cellTypes = cellTypes, link = link, inv_link = inv_link)
+    loo_res = regLOO(Xdf; murine = murine, cellTypes = cellTypes, link = link, inv_link = inv_link)
+    boot_res = regBootstrap(10, Xdf; murine = murine, cellTypes = cellTypes, link = link, inv_link = inv_link)
 
     odf = df[!, in(["Condition", "Background"]).(names(df))]
     odf[!, "Concentration"] .= ("Concentration" in names(df)) ? (df[!, "Concentration"] .* L0) : L0

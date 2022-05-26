@@ -28,6 +28,26 @@ function figureW(dataType::String; legend = true, murine::Bool = true, title = n
     return p1, p2, p3
 end
 
+function exploreLinkActI(dataType::String)
+    ActIs = [[1,-1,1,1], [1,-0.1,1,1], [1,-0.01,1,1], [1,0,1,1], [1,0.1,1,1]]
+    λs = [0.1, 0.25, 0.5, 1.0, 1.5]
+    lλs, lActIs = length(λs), length(ActIs)
+    pvfs = Matrix{Plot}(undef, lλs, lActIs)
+    wgts = Matrix{Plot}(undef, lλs, lActIs)
+    for (ii, λ) in enumerate(λs)
+        expp(x::Real) = cdf(Exponential(), x * λ)
+        expp(X::Array) = cdf.(Exponential(), X .* λ)
+        inv_expp(y) = -log(1 - y) / λ
+        for (jj, ActI) in enumerate(ActIs)
+            pls = figureW(dataType; link = expp, inv_link = inv_expp, ActI = ActI, title = "\n$ActI, λ=$λ", legend = (ii == length(λs) ? true : false))
+            pvfs[ii, jj] = pls[1]
+            wgts[ii, jj] = pls[3]
+        end
+    end
+    draw(PDF("linkNActI_pvf.pdf", lλs * 3inch, lActIs * 3inch), plotGrid((lActIs, lλs), pvfs))
+    draw(PDF("linkNActI_wgt.pdf", lλs * 3inch, lActIs * 3inch), plotGrid((lActIs, lλs), wgts))
+end
+
 function plotActualvFit(odf, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}, ptitle = ""; legend = true)
     R2anno = "<i>R</i><sup>2</sup>" * @sprintf("=%.3f", R2(odf.Y, odf.Fitted; logscale = false))
     pl = plot(
