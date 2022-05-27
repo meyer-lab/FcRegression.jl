@@ -1,11 +1,11 @@
-""" Figure 3: deconvolve the receptor and cell type functionality """
+""" Figure 4: deconvolve the receptor and cell type functionality """
 
 function oneCellTypeOnlyR2(dataType; L0 = 1e-9, f = 4, murine = true, cellTypes = ["ncMO", "cMO"])
     # Only testing on exponential method
     df = murine ? importDepletion(dataType) : importHumanized(dataType)
     Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes)
-    res = fitRegNNLS(Xdf; murine = murine, cellTypes = cellTypes, exp_method = true)
-    loo_res = regLOO(Xdf; murine = murine, cellTypes = cellTypes, exp_method = true)
+    res = fitRegNNLS(Xdf; murine = murine, cellTypes = cellTypes)
+    loo_res = regLOO(Xdf; murine = murine, cellTypes = cellTypes)
     return res.R2, [l.R2 for l in loo_res]
 end
 
@@ -46,5 +46,5 @@ function figure4()
     ip1, ip2, ip3 = figureW("ITP"; L0 = 1e-8, f = 10, murine = true, legend = true)
     ip4 = oneCellTypeOnlyplot("ITP"; L0 = 1e-8, f = 10, murine = true)
 
-    draw(SVG("figure4.svg", 1600px, 600px), plotGrid((2, 4), [mp1, mp2, mp3, mp4, ip1, ip2, ip3, ip4]))
+    draw(PDF("figure4.pdf", 1600px, 600px), plotGrid((2, 4), [mp1, mp2, mp3, mp4, ip1, ip2, ip3, ip4]))
 end

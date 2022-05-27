@@ -28,8 +28,8 @@ function figure3()
     pl2 = plotMCMCPredict(c, df; dat = :mLeuk, Kav = nothing, R2pos = (0, -2), title = "Murine leukocyte prediction\nwith updated affinities")
 
     apls = plotAffinityViolin(c; murine = true, y_range = (4, 9))
-    vpl1, vpl2 = validateFittedKav(c; murine = true)
+    #vpl1, vpl2 = validateFittedKav(c; murine = true)
 
-    pp = plotGrid((3, 3), [pl1, pl_noKav, pl2, apls[1], apls[2], apls[3], vpl1, vpl2])
-    draw(PDF("figure3.pdf", 12inch, 9inch), pp)
+    pp = plotGrid((2, 3), [pl1, pl_noKav, pl2, apls[1], apls[2], apls[3]])
+    draw(PDF("figure3.pdf", 11inch, 6inch), pp)
 end

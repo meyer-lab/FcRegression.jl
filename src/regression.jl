@@ -165,6 +165,14 @@ end
 function regResult(dataType; L0 = 1e-9, f = 4, murine::Bool = true, link::Function = exponential, Kav = nothing, cellTypes = nothing, ActI = nothing, inv_link::Function = inv_exponential)
     df = murine ? importDepletion(dataType; Kav = Kav) : importHumanized(dataType)
 
+    if (cellTypes == nothing) && (dataType in ["melanoma", "ITP"])
+        if dataType == "melanoma"
+            cellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO"]
+        elseif dataType == "ITP"
+            cellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO", "Kupffer", "KupfferHi"]
+        end
+    end
+
     Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes, ActI = ActI)
     res = fitRegNNLS(Xdf; murine = murine, cellTypes = cellTypes, link = link, inv_link = inv_link)
     loo_res = regLOO(Xdf; murine = murine, cellTypes = cellTypes, link = link, inv_link = inv_link)
