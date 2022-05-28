@@ -5,45 +5,6 @@ const f4Dist = LogNormal(log(4), 0.2)   # std ~= 0.82
 const f33Dist = LogNormal(log(33), 0.2)   # std ~= 6.80
 const KxStarDist = LogNormal(log(KxConst), 2.0)   # std ~= 4.37 in Robinett
 
-""" A generic function to extract fitted parameters from an MCMC """
-function extractMCMC(c::Union{Chains, StatisticalModel}; dat::Symbol)
-    @assert dat in [:hCHO, :hRob, :mCHO, :mLeuk]
-    pnames = [String(s) for s in (c isa Chains ? c.name_map[1] : names(c.values)[1])]
-    ext(s::String) = c isa Chains ? median(c[s].data) : c.values[Symbol(s)]
-    out = Dict{String, Union{Number, Dict, DataFrame, Nothing}}()
-    if "Rtot[1]" in pnames
-        local Rtotd
-        Rtot = [ext("Rtot[$i]") for i = 1:sum(startswith.(pnames, "Rtot"))]
-        if dat == :mCHO
-            Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(Rtot)])
-        elseif dat == :mLeuk
-            cells = unique(importMurineLeukocyte()."ImCell")
-            Rtotd = importRtotDist(:mLeuk; retdf = true)
-            Rtotd = Rtotd[!, ["Receptor"; names(Rtotd)[in(cells).(names(Rtotd))]]]
-            Rtotd[!, Not("Receptor")] = typeof(Rtot[1, 1]).(reshape(Rtot, size(Rtotd)[1], :))
-        else # human
-            Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
-        end
-        out["Rtot"] = Rtotd
-    end
-    if "Kav[1]" in pnames
-        Kavd = importKavDist(; murine = (dat in [:mCHO, :mLeuk]), regularKav = true, retdf = true)
-        Kav = [ext("Kav[$i]") for i = 1:sum(startswith.(pnames, "Kav"))]
-        Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
-        out["Kav"] = Kavd
-    else
-        out["Kav"] = nothing
-    end
-    for var in ["f4", "f33", "KxStar"]
-        if var in pnames
-            out[var] = ext(var)
-        else
-            out[var] = nothing
-        end
-    end
-    return out
-end
-
 
 """ A general prediction function which can handle all data """
 function predMix(dfr::DataFrameRow; Kav::AbstractDataFrame, Rtot = nothing, fs::Vector = [4, 33], KxStar = KxConst)
@@ -146,7 +107,7 @@ function predMix(df::AbstractDataFrame; Kav::AbstractDataFrame, Rtot = nothing, 
 end
 
 
-
+""" A general MCMC model that works for all dataset """
 @model function gmodel(df, values; dat::Symbol, Kavd::Union{Nothing, AbstractDataFrame} = nothing)
     @assert dat in [:hCHO, :hRob, :mCHO, :mLeuk]
     murine = dat in [:mCHO, :mLeuk]
@@ -203,6 +164,7 @@ end
     nothing
 end
 
+""" Running that general MCMC model """
 function rungMCMC(fname::Union{String, Nothing}; dat::Symbol = :none, mcmc_iter = 1_000, Kavd = nothing)
     if (fname !== nothing) && isfile(fname)
         return deserialize(fname)
@@ -215,6 +177,7 @@ function rungMCMC(fname::Union{String, Nothing}; dat::Symbol = :none, mcmc_iter 
         df = importRobinett()
     elseif dat == :mCHO
         df = importMurineInVitro()
+        mcmc_iter = 100_000
     else # dat == :mLeuk
         df = importMurineLeukocyte(; average = false)
     end
@@ -224,12 +187,56 @@ function rungMCMC(fname::Union{String, Nothing}; dat::Symbol = :none, mcmc_iter 
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
     c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
 
+    if dat == :mCHO
+        c = c[2000:end]
+    end
+
     if fname !== nothing
         f = serialize(fname, c)
     end
     return c
 end
 
+""" A generic function to extract fitted parameters from an MCMC """
+function extractMCMC(c::Union{Chains, StatisticalModel}; dat::Symbol)
+    @assert dat in [:hCHO, :hRob, :mCHO, :mLeuk]
+    pnames = [String(s) for s in (c isa Chains ? c.name_map[1] : names(c.values)[1])]
+    ext(s::String) = c isa Chains ? median(c[s].data) : c.values[Symbol(s)]
+    out = Dict{String, Union{Number, Dict, DataFrame, Nothing}}()
+    if "Rtot[1]" in pnames
+        local Rtotd
+        Rtot = [ext("Rtot[$i]") for i = 1:sum(startswith.(pnames, "Rtot"))]
+        if dat == :mCHO
+            Rtotd = Dict([murineFcgR[ii] => Rtot[ii] for ii = 1:length(Rtot)])
+        elseif dat == :mLeuk
+            cells = unique(importMurineLeukocyte()."ImCell")
+            Rtotd = importRtotDist(:mLeuk; retdf = true)
+            Rtotd = Rtotd[!, ["Receptor"; names(Rtotd)[in(cells).(names(Rtotd))]]]
+            Rtotd[!, Not("Receptor")] = typeof(Rtot[1, 1]).(reshape(Rtot, size(Rtotd)[1], :))
+        else # human
+            Rtotd = Dict([humanFcgRiv[ii] => Rtot[ii] for ii = 1:length(humanFcgRiv)])
+        end
+        out["Rtot"] = Rtotd
+    end
+    if "Kav[1]" in pnames
+        Kavd = importKavDist(; murine = (dat in [:mCHO, :mLeuk]), regularKav = true, retdf = true)
+        Kav = [ext("Kav[$i]") for i = 1:sum(startswith.(pnames, "Kav"))]
+        Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
+        out["Kav"] = Kavd
+    else
+        out["Kav"] = nothing
+    end
+    for var in ["f4", "f33", "KxStar"]
+        if var in pnames
+            out[var] = ext(var)
+        else
+            out[var] = nothing
+        end
+    end
+    return out
+end
+
+""" Validate those fitted affinities with independent (Robinett or mCHO) dataset """
 function validateFittedKav(c::Chains; murine::Bool)
     dfit, dval = murine ? (:mLeuk, :mCHO) : (:hCHO, :hRob)
     figname = murine ? "Murine CHO binding prediction\n" : "Robinett"

@@ -46,5 +46,5 @@ function figureS2()
         style(bar_spacing = 1.5mm),
         Guide.title("Human immune cell FcR expression"),
     )
-    draw(SVG("figureS2.svg", 1000px, 400px), plotGrid((1, 2), [pl1, pl2]))
+    draw(PDF("figureS2.pdf", 1000px, 400px), plotGrid((1, 2), [pl1, pl2]))
 end

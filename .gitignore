@@ -7,3 +7,5 @@ venv
 cache/requests-cache.sqlite
 
 *.pdf
+
+*.xls

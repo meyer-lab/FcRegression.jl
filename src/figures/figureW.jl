@@ -1,5 +1,5 @@
-function figureW(dataType::String; L0 = 1e-9, f = 4, murine::Bool, exp_method = true, legend = true)
-    res, odf, loo_res, boot_res = regResult(dataType; L0 = L0, f = f, murine = murine, exp_method = exp_method)
+function figureW(dataType::String; legend = true, murine::Bool = true, title = nothing, kwargs...)
+    res, odf, loo_res, boot_res, Cell_df = regResult(dataType; murine = murine, kwargs...)
     if murine
         df = importDepletion(dataType)
         if dataType == "HIV"
@@ -17,13 +17,38 @@ function figureW(dataType::String; L0 = 1e-9, f = 4, murine::Bool, exp_method = 
     end
     @assert all(in(names(odf)).([color, shape]))
 
-    p1 = plotActualvFit(odf, dataType, color, shape; legend = legend)
-    p2 = plotActualvPredict(odf, dataType, color, shape; legend = legend)
-    p3 = plotCellTypeEffects(df, res, loo_res, dataType; legend = legend, L0 = L0, f = f, murine = murine)
+    setGadflyTheme()
+    ptitle = "$dataType"
+    if title !== nothing
+        ptitle *= " $title"
+    end
+    p1 = plotActualvFit(odf, color, shape, ptitle; legend = legend)
+    p2 = plotActualvPredict(odf, color, shape, ptitle; legend = legend)
+    p3 = plotCellTypeEffects(Cell_df, ptitle; legend = legend)
     return p1, p2, p3
 end
 
-function plotActualvFit(odf, dataType, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}; legend = true)
+function exploreLinkActI(dataType::String)
+    ActIs = [[1,-1,1,1], [1,-0.1,1,1], [1,-0.01,1,1], [1,0,1,1], [1,0.1,1,1]]
+    λs = [0.1, 0.25, 0.5, 1.0, 1.5]
+    lλs, lActIs = length(λs), length(ActIs)
+    pvfs = Matrix{Plot}(undef, lλs, lActIs)
+    wgts = Matrix{Plot}(undef, lλs, lActIs)
+    for (ii, λ) in enumerate(λs)
+        expp(x::Real) = cdf(Exponential(), x * λ)
+        expp(X::Array) = cdf.(Exponential(), X .* λ)
+        inv_expp(y) = -log(1 - y) / λ
+        for (jj, ActI) in enumerate(ActIs)
+            pls = figureW(dataType; link = expp, inv_link = inv_expp, ActI = ActI, title = "\n$ActI, λ=$λ", legend = (ii == length(λs) ? true : false))
+            pvfs[ii, jj] = pls[1]
+            wgts[ii, jj] = pls[3]
+        end
+    end
+    draw(PDF("linkNActI_pvf.pdf", lλs * 3inch, lActIs * 3inch), plotGrid((lActIs, lλs), pvfs))
+    draw(PDF("linkNActI_wgt.pdf", lλs * 3inch, lActIs * 3inch), plotGrid((lActIs, lλs), wgts))
+end
+
+function plotActualvFit(odf, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}, ptitle = ""; legend = true)
     R2anno = "<i>R</i><sup>2</sup>" * @sprintf("=%.3f", R2(odf.Y, odf.Fitted; logscale = false))
     pl = plot(
         odf,
@@ -38,7 +63,7 @@ function plotActualvFit(odf, dataType, colorL::Union{Symbol, String}, shapeL::Un
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
         Guide.ylabel("Fitted effect"),
-        Guide.title("Actual vs fitted effect for $dataType"),
+        Guide.title("Actual vs fitted effect ($ptitle)"),
         Guide.annotation(compose(context(), text(0.1, 0.8, R2anno), fill("black"), fontsize(10pt), font("Helvetica"))),
         style(point_size = 5px, key_position = legend ? :right : :none),
     )
@@ -46,7 +71,7 @@ function plotActualvFit(odf, dataType, colorL::Union{Symbol, String}, shapeL::Un
 end
 
 
-function plotActualvPredict(odf, dataType, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}; legend = true)
+function plotActualvPredict(odf, colorL::Union{Symbol, String}, shapeL::Union{Symbol, String}, ptitle = ""; legend = true)
     R2anno = "<i>R</i><sup>2</sup>" * @sprintf("=%.3f", R2(odf.Y, odf.LOOPredict; logscale = false))
     pl = plot(
         odf,
@@ -60,7 +85,7 @@ function plotActualvPredict(odf, dataType, colorL::Union{Symbol, String}, shapeL
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
         Guide.ylabel("LOO predicted effect"),
-        Guide.title("Actual vs LOO prediction for $dataType"),
+        Guide.title("Actual vs LOO prediction ($ptitle)"),
         Guide.annotation(compose(context(), text(0.1, 0.8, R2anno), fill("black"), fontsize(10pt), font("Helvetica"))),
         style(point_size = 5px, key_position = legend ? :right : :none),
     )
@@ -68,12 +93,7 @@ function plotActualvPredict(odf, dataType, colorL::Union{Symbol, String}, shapeL
 end
 
 
-function plotCellTypeEffects(df, res, loo_res, dataType; legend = true, L0 = 1e-9, f = 4, murine = true)
-    Cell_df = wildtypeWeights(res, df; L0 = L0, f = f, murine = murine)
-    Cell_loo = vcat([wildtypeWeights(loo, df) for loo in loo_res]...)
-    Cell_conf = combine(groupby(Cell_loo, ["Condition", "Component"]), "Weight" => lower => "ymin", "Weight" => upper => "ymax")
-    Cell_df = innerjoin(Cell_df, Cell_conf, on = ["Condition", "Component"])
-
+function plotCellTypeEffects(Cell_df, ptitle = ""; legend = true)
     pl = plot(
         Cell_df,
         x = "Condition",
@@ -88,7 +108,7 @@ function plotCellTypeEffects(df, res, loo_res, dataType; legend = true, L0 = 1e-
         Scale.x_discrete(levels = unique(Cell_df.Condition)),
         Scale.y_continuous(minvalue = 0.0),
         Scale.color_discrete(levels = unique(Cell_df.Component)),
-        Guide.title("Predicted cell type weights for $dataType"),
+        Guide.title("Predicted cell type weights ($ptitle)"),
         style(key_position = legend ? :right : :none, stroke_color = c -> "black", errorbar_cap_length = 4px),
     )
     return pl

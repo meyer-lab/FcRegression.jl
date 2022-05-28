@@ -81,9 +81,8 @@ function plot_distribution_violins(
 end
 
 """ Make violin plot of affinities from a chain """
-function plotAffinityViolin(c::Chains; murine::Bool)
+function plotAffinityViolin(c::Chains; murine::Bool, y_range = (4, 9))
     pref = murine ? "m" : "h"
-    y_range = murine ? (4, 9) : (5, 8)
     Kav_priors = importKavDist(; murine = murine, retdf = true)
 
     len = length(Matrix(Kav_priors[!, Not("IgG")]))

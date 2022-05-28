@@ -65,6 +65,6 @@ end
 
 function figureS1()
     setGadflyTheme()
-    draw(SVG("figureS1.svg", 20inch, 16inch), plotMixSubplots(splot_origData, averageMixData()))
-    draw(SVG("figureS3.svg", 20inch, 16inch), plotMixSubplots(splot_contPred, loadMixData()))
+    draw(PDF("figureS1.pdf", 20inch, 16inch), plotMixSubplots(splot_origData, averageMixData()))
+    draw(PDF("figureS3.pdf", 20inch, 16inch), plotMixSubplots(splot_contPred, loadMixData()))
 end
