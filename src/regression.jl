@@ -21,6 +21,11 @@ mutable struct regResult{T}
     R2::T
 end
 
+mutable struct regParams{T}
+    cellWs::Vector{T}
+    ActIs::Vector{T}
+end
+
 
 """ plug in reg df, and output binding model results """
 function modelPred(df; L0, f, murine::Bool = true, cellTypes = nothing, ActI = nothing)
@@ -40,8 +45,9 @@ function modelPred(df; L0, f, murine::Bool = true, cellTypes = nothing, ActI = n
         insertcols!(df, 3, "Concentration" => L0)
     end
     # Xfc = items * cellTypes
-    Xfc = Array{Float64}(undef, size(df, 1), length(cellTypes))
-    for k = 1:size(Xfc, 1)    # dataframe row
+    ansType = promote_type(eltype(df."Target"), eltype(ActI))
+    Xfc = Array{ansType}(undef, size(df, 1), length(cellTypes))
+    Threads.@threads for k = 1:size(Xfc, 1)    # dataframe row
         Kav = Vector{Float64}(df[k, FcRecep])
         Kav = reshape(Kav, 1, :)
         Rtot = copy(importRtot(; murine = murine, genotype = murine ? "NA" : df[k, :Genotype], cellTypes = cellTypes))
@@ -84,6 +90,10 @@ function regPred(
     Xmat = Matrix(Xdf[!, in(cellTypes).(names(Xdf))])
 
     return link(Xmat * opt.cellWs)
+end
+
+function regPred(df, opt::regParams; cellTypes = nothing)
+    Xdf = modelPred(df; ActI = opt.ActIs, L0, f, murine::Bool = true, cellTypes = nothing)
 end
 
 
@@ -198,4 +208,49 @@ function regResult(dataType; L0 = 1e-9, f = 4, murine::Bool = true, link::Functi
     Cell_df = innerjoin(Cell_df, Cell_conf, on = ["Condition", "Component"])
 
     return res, odf, loo_res, boot_res, Cell_df
+end
+
+
+@model function regmodel(df, targets; murine = true, L0 = 1e-9, f = 4, cellTypes = nothing)
+    ActI_means = murine ? murineActI : humanActI
+    ActIs = Vector(undef, length(ActI_means))
+    for ii in eachindex(ActI_means)
+        ActIs[ii] ~ Normal(ActI_means[ii], 1.0)
+    end
+
+    if cellTypes === nothing
+        cellTypes = murine ? murineCellTypes : humanCellTypes
+    end
+    cellWs = Vector(undef, length(cellTypes))
+    for ii in eachindex(cellTypes)
+        cellWs[ii] ~ Exponential(Float64(length(cellTypes)))
+    end
+
+    Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes, ActI = ActIs)
+    Yfit = regPred(Xdf, regResult(cellWs, 0.0); murine = murine, cellTypes = cellTypes, ActI = ActIs)
+
+    stdv = std(Yfit - targets)
+    targets ~ MvNormal(Yfit, stdv * I)
+    nothing
+end
+
+function runRegMCMC(dataType; mcmc_iter = 1_000)
+    df = importDepletion(dataType)
+    m = regmodel(df, df."Target")
+    opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
+    opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
+    c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
+    return c
+end
+
+function extractRegMCMC(c::Union{Chains, StatisticalModel})
+    pnames = [String(s) for s in (c isa Chains ? c.name_map[1] : names(c.values)[1])]
+    ext(s::String) = c isa Chains ? median(c[s].data) : c.values[Symbol(s)]
+
+    cellWs = [ext("cellWs[$i]") for i = 1:sum(startswith.(pnames, "cellWs"))]
+    ActIs = [ext("ActIs[$i]") for i = 1:sum(startswith.(pnames, "ActIs"))]
+    return regParams(cellWs, ActIs)
+end
+
+function plotRegMCMC()
 end
