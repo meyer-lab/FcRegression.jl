@@ -92,8 +92,14 @@ function regPred(
     return link(Xmat * opt.cellWs)
 end
 
-function regPred(df, opt::regParams; cellTypes = nothing)
-    Xdf = modelPred(df; ActI = opt.ActIs, L0, f, murine::Bool = true, cellTypes = nothing)
+function regPred(df, opt::regParams; cellTypes = nothing, murine::Bool = true, link::Function = exponential, kwargs...)
+    if cellTypes === nothing
+        cellTypes = murine ? murineCellTypes : humanCellTypes
+    end
+    @assert length(cellTypes) == length(opt.cellWs)
+    Xdf = modelPred(df; ActI = opt.ActIs, cellTypes = cellTypes, murine = murine, kwargs...)
+    Xmat = Matrix(Xdf[!, in(cellTypes).(names(Xdf))])
+    return link(Xmat * opt.cellWs)
 end
 
 
@@ -229,18 +235,57 @@ end
     Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes, ActI = ActIs)
     Yfit = regPred(Xdf, regResult(cellWs, 0.0); murine = murine, cellTypes = cellTypes, ActI = ActIs)
 
-    stdv = std(Yfit - targets)
+    stdv = std(Yfit - targets) / 10
     targets ~ MvNormal(Yfit, stdv * I)
     nothing
 end
 
-function runRegMCMC(dataType; mcmc_iter = 1_000)
+function runRegMCMC(dataType; mcmc_iter = 1_000, ret_opt = false)
     df = importDepletion(dataType)
     m = regmodel(df, df."Target")
     opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
+    if ret_opt
+        return opt
+    end
     c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
-    return c
+
+    # Put model parameters into a df
+    cdf = DataFrame(c)
+    cdf = cdf[!, startswith.(names(cdf), "ActIs") .| startswith.(names(cdf), "cellWs")]
+    cdf = stack(cdf, variable_name = "Parameter")
+    cdf = combine(
+        groupby(cdf, "Parameter"),
+        "value" => median => "Value",
+        "value" => (xs -> quantile(xs, 0.25)) => "xmin",
+        "value" => (xs -> quantile(xs, 0.75)) => "xmax",
+    )
+    cdf."MAP" = opt.values.array
+    return c, cdf
+end
+
+""" Run a MAP parameter estimation, with LOO/jackknife as errorbar """
+function runRegMAP(dataType; mcmc_iter = 1_000, ret_opt = false)
+    df = importDepletion(dataType)
+    m = regmodel(df, df."Target")
+    opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
+    opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
+    cdf = DataFrame(Parameter = String.(names(opt.values)[1]), Value = opt.values.array)
+
+    LOOindex = LOOCV(size(df)[1])
+    for (i, idx) in enumerate(LOOindex)
+        mv = regmodel(df[idx, :], df[idx, :]."Target")
+        optv = optimize(mv, MAP(), LBFGS(; m = 20), opts)
+        cdf[!, "CV$i"] = optv.values.array
+    end
+
+    cdf = combine(
+        groupby(DataFrames.stack(cdf, Not(["Parameter", "Value"])), ["Parameter", "Value"]),
+        "value" => median => "Median",
+        "value" => (xs -> quantile(xs, 0.25)) => "xmin",
+        "value" => (xs -> quantile(xs, 0.75)) => "xmax",
+    )
+    return cdf
 end
 
 function extractRegMCMC(c::Union{Chains, StatisticalModel})
@@ -252,5 +297,50 @@ function extractRegMCMC(c::Union{Chains, StatisticalModel})
     return regParams(cellWs, ActIs)
 end
 
-function plotRegMCMC()
+function plotRegMCMC(c::Union{Chains, StatisticalModel, regParams}, df::Union{DataFrame, String}; L0 = 1e-9, f = 4, ptitle = "",  kwargs...)
+    if df isa String
+        if ptitle === nothing
+            ptitle = df
+        end
+        df = importDepletion(df)
+    end
+    if c isa Chains
+        fits = hcat([regPred(df, extractRegMCMC(c[ii]); L0 = 1e-9, f = 4) for ii = 1:length(c)]...)
+        df."Fitted" .= mapslices(median, fits, dims = 2)
+        df."ymax" .= mapslices(xs -> quantile(xs, 0.75), fits, dims = 2)
+        df."ymin" .= mapslices(xs -> quantile(xs, 0.25), fits, dims = 2)
+    else
+        if c isa StatisticalModel
+            c = extractRegMCMC(c)
+        end
+        df."Fitted" = regPred(df, c; L0 = L0, f = f, kwargs...)
+    end
+
+    setGadflyTheme()
+    R2anno = "<i>R</i><sup>2</sup>" * @sprintf("=%.3f", R2(df.Target, df.Fitted; logscale = false))
+    pl = plot(
+        df,
+        x = "Target",
+        y = "Fitted",
+        ymin = (c isa Chains ? "ymin" : "Fitted"),
+        ymax = (c isa Chains ? "ymax" : "Fitted"),
+        Geom.point,
+        "ymin" in names(df) ? Geom.errorbar : Guide.xlabel(xxlabel),
+        color = "Background",
+        shape = "Condition",
+        Guide.colorkey(),
+        Guide.shapekey(),
+        Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
+        Geom.abline(color = "red"),
+        Guide.xlabel("Actual effect"),
+        Guide.ylabel("Fitted effect"),
+        Guide.title("Actual vs fitted effect ($ptitle)"),
+        Guide.annotation(compose(context(), text(0.1, 0.8, R2anno), fill("black"), fontsize(10pt), font("Helvetica"))),
+        style(point_size = 5px, key_position = :right),
+    )
+    return pl
+end
+
+function plotRegParams(cdf::DataFrame)
+    
 end
