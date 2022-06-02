@@ -36,14 +36,14 @@ function modelPred(dfr::DataFrameRow; f = 4, ActI = murineActI,
 
     IgGs = String[]
     cps = [1.0]
-    if "Condition" in names(dfr)
-        IgGs = [dfr."Condition"]
-    elseif any(startswith.(names(dfr), "subclass"))
+    if any(startswith.(names(dfr), "subclass"))
         iggv = Vector(dfr[startswith.(names(dfr), "subclass")])
-        cps = Vector(dfr[startswith.(names(dfr), "%_")])
+        cps = Vector(dfr[startswith.(names(dfr), "%_")]) .* 1.0
         cps = cps[iggv .!= "PBS"]
         cps ./= sum(cps)
         append!(IgGs, iggv[iggv .!= "PBS"])
+    elseif "Condition" in names(dfr)
+        IgGs = [dfr."Condition"]
     end
     IgGs[IgGs .== "IgG2c"] .= "IgG2a"
     Kav = Kav[in(IgGs).(Kav."IgG"), :]
@@ -62,13 +62,17 @@ function modelPred(dfr::DataFrameRow; f = 4, ActI = murineActI,
             end
         end
     end
-    if dfr."Condition" == "IgG1D265A"
+    if ("Condition" in names(dfr)) && (dfr."Condition" == "IgG1D265A")
         Kav[:, ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]] .= 0.0
     end
     Kav = Matrix(Kav[:, Not("IgG")])
     Rtot = Matrix(Rtot[:, Not("Receptor")])
 
-    cellActs = zeros(size(Rtot)[2])
+    cellActs = Vector(undef, size(Rtot)[2])
+    if length(cps) <= 0
+        cellActs .= 0.0
+        return cellActs
+    end
     for jj = 1:size(Rtot)[2]
         pred = polyfc(dfr."Concentration", KxConst, f, Rtot[:, jj], cps, Kav).Rmulti_n
         cellActs[jj] = maximum([dot(ActI, pred), 0.0])
@@ -95,12 +99,14 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool = true, cellTypes = no
     Xfc = Array{ansType}(undef, size(df, 1), length(cellTypes))  
     Threads.@threads for k = 1:size(df, 1)
         Xfc[k, :] = modelPred(df[k, :]; ActI = ActI, 
-             Kav = importKav(; murine = murine, retdf = true, IgG2bFucose = true),
+            Kav = importKav(; murine = murine, retdf = true, IgG2bFucose = true),
             Rtot = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes),
             kwargs...)
     end
         
-    Xdf = df[!, in(["Condition", "Background", "Concentration", "Genotype", "C1q", "Neutralization", "Target"]).(names(df))]
+    rcps = murine ? murineFcgR : humanFcgR
+    colls = (rcps[1] in names(df)) ? vcat(rcps, ["Target"]) : ["Target"]
+    Xdf = df[!, Not(colls)]
     Xdf = hcat(Xdf, DataFrame(Xfc, cellTypes))
     if "C1q" in names(df)
         Xdf[!, "C1q"] = Xdf[!, "C1q"] .* Xdf[!, "Concentration"]
@@ -303,6 +309,9 @@ function runRegMAP(dataType; mcmc_iter = 1_000, ret_opt = false)
     m = regmodel(df, df."Target")
     opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
+    if ret_opt
+        return opt
+    end
     cdf = DataFrame(Parameter = String.(names(opt.values)[1]), Value = opt.values.array)
 
     LOOindex = LOOCV(size(df)[1])
@@ -330,7 +339,8 @@ function extractRegMCMC(c::Union{Chains, StatisticalModel})
     return regParams(cellWs, ActIs)
 end
 
-function plotRegMCMC(c::Union{Chains, StatisticalModel, regParams}, df::Union{DataFrame, String}; L0 = 1e-9, f = 4, ptitle = "",  kwargs...)
+function plotRegMCMC(c::Union{Chains, StatisticalModel, regParams}, df::Union{DataFrame, String}; 
+        L0 = 1e-9, f = 4, ptitle = "", colorL = "Background", shapeL = "Condition", kwargs...)
     if df isa String
         if ptitle === nothing
             ptitle = df
@@ -358,9 +368,9 @@ function plotRegMCMC(c::Union{Chains, StatisticalModel, regParams}, df::Union{Da
         ymin = (c isa Chains ? "ymin" : "Fitted"),
         ymax = (c isa Chains ? "ymax" : "Fitted"),
         Geom.point,
-        "ymin" in names(df) ? Geom.errorbar : Guide.xlabel(xxlabel),
-        color = "Background",
-        shape = "Condition",
+        "ymin" in names(df) ? Geom.errorbar : Guide.xlabel("Measured"),
+        color = colorL,
+        shape = shapeL,
         Guide.colorkey(),
         Guide.shapekey(),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),

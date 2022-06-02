@@ -12,8 +12,8 @@ function invivo_mix_predict(dfr::DataFrameRow; L0 = 1e-9, f = 4, KxStar = KxCons
         IgGC ./= sum(IgGC)
     end
 
-    Kav = importKav(; murine = murine)
-    Rtot = importRtot(; murine = murine)
+    Kav = importKav(; murine = murine, retdf = false)
+    Rtot = importRtot(; murine = murine, retdf = false)
     ActI = murine ? murineActI : humanActI
     return polyfc_ActV(L0, KxStar, f, Rtot, IgGC, Kav, false)[:, :, 1] * ActI
 end
