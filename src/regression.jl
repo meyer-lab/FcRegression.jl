@@ -30,9 +30,7 @@ end
 function modelPred(dfr::DataFrameRow; f = 4, ActI = murineActI,
     Kav = importKav(; murine = true, retdf = true, IgG2bFucose = true), 
     Rtot = importRtot(; murine = true, retdf = true))
-
-    ## upper layer deal with L0, murine, cellTypes
-    ## cellTypes selects Rtot in upper layer!
+    Kav[Kav."IgG" .== "IgG2c", "IgG"] .= "IgG2a"
 
     IgGs = String[]
     cps = [1.0]
@@ -279,8 +277,8 @@ end
     nothing
 end
 
-function runRegMCMC(dataType; mcmc_iter = 1_000, ret_opt = false)
-    df = importDepletion(dataType)
+function runRegMCMC(dataType::Union{DataFrame, String}; mcmc_iter = 1_000, ret_opt = false)
+    df = (dataType isa String) ? importDepletion(dataType) : dataType
     m = regmodel(df, df."Target")
     opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
@@ -304,14 +302,11 @@ function runRegMCMC(dataType; mcmc_iter = 1_000, ret_opt = false)
 end
 
 """ Run a MAP parameter estimation, with LOO/jackknife as errorbar """
-function runRegMAP(dataType; mcmc_iter = 1_000, ret_opt = false)
-    df = importDepletion(dataType)
+function runRegMAP(dataType::Union{DataFrame, String})
+    df = (dataType isa String) ? importDepletion(dataType) : dataType
     m = regmodel(df, df."Target")
     opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
-    if ret_opt
-        return opt
-    end
     cdf = DataFrame(Parameter = String.(names(opt.values)[1]), Value = opt.values.array)
 
     LOOindex = LOOCV(size(df)[1])
@@ -327,7 +322,7 @@ function runRegMAP(dataType; mcmc_iter = 1_000, ret_opt = false)
         "value" => (xs -> quantile(xs, 0.25)) => "xmin",
         "value" => (xs -> quantile(xs, 0.75)) => "xmax",
     )
-    return cdf
+    return opt, cdf
 end
 
 function extractRegMCMC(c::Union{Chains, StatisticalModel})
@@ -340,7 +335,7 @@ function extractRegMCMC(c::Union{Chains, StatisticalModel})
 end
 
 function plotRegMCMC(c::Union{Chains, StatisticalModel, regParams}, df::Union{DataFrame, String}; 
-        L0 = 1e-9, f = 4, ptitle = "", colorL = "Background", shapeL = "Condition", kwargs...)
+        L0 = 1e-9, f = 4, ptitle = "", colorL = nothing, shapeL = nothing, kwargs...)
     if df isa String
         if ptitle === nothing
             ptitle = df
@@ -357,6 +352,13 @@ function plotRegMCMC(c::Union{Chains, StatisticalModel, regParams}, df::Union{Da
             c = extractRegMCMC(c)
         end
         df."Fitted" = regPred(df, c; L0 = L0, f = f, kwargs...)
+    end
+
+    if shapeL === nothing
+        shapeL = names(df)[1]
+    end
+    if colorL === nothing
+        colorL = names(df)[2]
     end
 
     setGadflyTheme()
