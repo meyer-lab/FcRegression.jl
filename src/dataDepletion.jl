@@ -70,10 +70,7 @@ function importDepletion(dataType; Kav::Union{AbstractDataFrame, Nothing} = noth
     df[df[:, "Background"] .== "R1/3KO", ["FcgRI", "FcgRIII"]] .= 0.0
     df[df[:, "Background"] .== "R1/4KO", ["FcgRI", "FcgRIV"]] .= 0.0
     df[df[:, "Condition"] .== "IgG1D265A", ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]] .= 0.0
-
-    for pair in ["R" => "FcγR", "1" => "I", "2" => "II", "3" => "III", "4" => "IV", "gc" => "γc"]
-        df[!, "Background"] = map(x -> replace(x, pair), df.Background)
-    end
+    
     return df
 end
 
@@ -114,5 +111,8 @@ function importDeplExp()
     df[ismissing.(df."subclass_2"), "subclass_2"] .= "PBS"
     df = coalesce.(df, 0)
     df."depletion" /= 100.0
+    df[df."depletion" .< 0.0] .= 0.0
+    df."Background" .= "wt"
+    rename(df, "depletion" => "Target")
     return df
 end

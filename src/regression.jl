@@ -27,47 +27,79 @@ mutable struct regParams{T}
 end
 
 
-""" plug in reg df, and output binding model results """
-function modelPred(df; L0, f, murine::Bool = true, cellTypes = nothing, ActI = nothing)
+function modelPred(dfr::DataFrameRow; f = 4, ActI = murineActI,
+    Kav = importKav(; murine = true, retdf = true, IgG2bFucose = true), 
+    Rtot = importRtot(; murine = true, retdf = true))
+
+    ## upper layer deal with L0, murine, cellTypes
+    ## cellTypes selects Rtot in upper layer!
+
+    IgGs = String[]
+    cps = [1.0]
+    if "Condition" in names(dfr)
+        IgGs = [dfr."Condition"]
+    elseif any(startswith.(names(dfr), "subclass"))
+        iggv = Vector(dfr[startswith.(names(dfr), "subclass")])
+        cps = Vector(dfr[startswith.(names(dfr), "%_")])
+        cps = cps[iggv .!= "PBS"]
+        cps ./= sum(cps)
+        append!(IgGs, iggv[iggv .!= "PBS"])
+    end
+    IgGs[IgGs .== "IgG2c"] .= "IgG2a"
+    Kav = Kav[in(IgGs).(Kav."IgG"), :]
+
+    if ("Background" in names(dfr)) && (dfr."Background" != "wt")
+        rr_names = ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV", ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"], 
+            ["FcgRI", "FcgRIII"], ["FcgRI", "FcgRIV"]]
+        for (ii, rr) in enumerate(["R1", "R2", "R3", "R4", "gc", "R1/3KO", "R1/4KO"])
+            if occursin(rr, dfr."Background")
+                Kav[:, rr_names[ii]] .= 0.0
+            end
+        end
+        for cname in ["Neu", "ncMO", "cMO", "EO"]
+            if occursin(cname, dfr."Background")
+                Rtot[:, cname .== names(Rtot)] .= 0.0
+            end
+        end
+    end
+    if dfr."Condition" == "IgG1D265A"
+        Kav[:, ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]] .= 0.0
+    end
+    Kav = Matrix(Kav[:, Not("IgG")])
+    Rtot = Matrix(Rtot[:, Not("Receptor")])
+
+    cellActs = zeros(size(Rtot)[2])
+    for jj = 1:size(Rtot)[2]
+        pred = polyfc(dfr."Concentration", KxConst, f, Rtot[:, jj], cps, Kav).Rmulti_n
+        cellActs[jj] = maximum([dot(ActI, pred), 0.0])
+    end
+    return cellActs
+end
+
+function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool = true, cellTypes = nothing, ActI = nothing, kwargs...)
     df = deepcopy(df)
-    FcRecep = murine ? murineFcgR : humanFcgR
-    if ActI == nothing
+    if ActI === nothing
         ActI = murine ? murineActI : humanActI
     end
     if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
-
     if "Concentration" in names(df)
         df[!, "Concentration"] ./= maximum(df[!, "Concentration"])
         df[!, "Concentration"] .*= L0
     else
         insertcols!(df, 3, "Concentration" => L0)
     end
-    # Xfc = items * cellTypes
+
     ansType = promote_type(eltype(df."Target"), eltype(ActI))
-    Xfc = Array{ansType}(undef, size(df, 1), length(cellTypes))
-    Threads.@threads for k = 1:size(Xfc, 1)    # dataframe row
-        Kav = Vector{Float64}(df[k, FcRecep])
-        Kav = reshape(Kav, 1, :)
-        Rtot = copy(importRtot(; murine = murine, genotype = murine ? "NA" : df[k, :Genotype], cellTypes = cellTypes))
-        if "Background" in names(df)
-            for cname in ["Neu", "ncMO", "cMO", "EO"]
-                if occursin(cname, df[k, "Background"])
-                    Rtot[:, cname .== cellTypes] .= 0.0
-                end
-            end
-        end
-        for i = 1:size(Xfc, 2)    # cell type
-            Rtotc = Rtot[:, i]
-            if dot(Rtotc, Kav) == 0.0
-                Xfc[k, i] = 0.0
-            else
-                pred = polyfc(df[k, :Concentration], KxConst, f, Rtotc, [1.0], Kav).Rmulti_n
-                Xfc[k, i] = maximum([dot(ActI, pred), 0.0])
-            end
-        end
+    Xfc = Array{ansType}(undef, size(df, 1), length(cellTypes))  
+    Threads.@threads for k = 1:size(df, 1)
+        Xfc[k, :] = modelPred(df[k, :]; ActI = ActI, 
+             Kav = importKav(; murine = murine, retdf = true, IgG2bFucose = true),
+            Rtot = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes),
+            kwargs...)
     end
+        
     Xdf = df[!, in(["Condition", "Background", "Concentration", "Genotype", "C1q", "Neutralization", "Target"]).(names(df))]
     Xdf = hcat(Xdf, DataFrame(Xfc, cellTypes))
     if "C1q" in names(df)
@@ -75,6 +107,7 @@ function modelPred(df; L0, f, murine::Bool = true, cellTypes = nothing, ActI = n
     end
     return Xdf
 end
+
 
 function regPred(
         Xdf::DataFrame, 
