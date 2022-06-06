@@ -23,10 +23,10 @@
     end
 
     @testset "Testing human FcgR abundance import for genotypes" begin
-        arr_HIV = FcRegression.importRtot(murine = false)
-        arr_heterozygote = FcRegression.importRtot(murine = false, genotype = "ZZZ")
-        arr_RTF = FcRegression.importRtot(murine = false, genotype = "RTF")
-        arr_HZF = FcRegression.importRtot(murine = false, genotype = "HZF")
+        arr_HIV = FcRegression.importRtot(murine = false, retdf = false)
+        arr_heterozygote = FcRegression.importRtot(murine = false, genotype = "ZZZ", retdf = false)
+        arr_RTF = FcRegression.importRtot(murine = false, genotype = "RTF", retdf = false)
+        arr_HZF = FcRegression.importRtot(murine = false, genotype = "HZF", retdf = false)
 
         ## Set up mapping
         receps = FcRegression.humanFcgR
