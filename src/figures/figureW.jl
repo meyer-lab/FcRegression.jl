@@ -94,6 +94,7 @@ end
 
 
 function plotCellTypeEffects(Cell_df, ptitle = ""; legend = true)
+    setGadflyTheme()
     pl = plot(
         Cell_df,
         x = "Condition",

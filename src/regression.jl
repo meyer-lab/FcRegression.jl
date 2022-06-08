@@ -93,7 +93,7 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool = true, cellTypes = no
         insertcols!(df, 3, "Concentration" => L0)
     end
 
-    ansType = promote_type(eltype(df."Target"), eltype(ActI))
+    ansType = ("Target" in names(df)) ? promote_type(eltype(df."Target"), eltype(ActI)) : eltype(ActI)
     Xfc = Array{ansType}(undef, size(df, 1), length(cellTypes))  
     Threads.@threads for k = 1:size(df, 1)
         Xfc[k, :] = modelPred(df[k, :]; ActI = ActI, 
@@ -103,11 +103,16 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool = true, cellTypes = no
     end
         
     rcps = murine ? murineFcgR : humanFcgR
-    colls = (rcps[1] in names(df)) ? vcat(rcps, ["Target"]) : ["Target"]
-    Xdf = df[!, Not(colls)]
+    colls = (rcps[1] in names(df)) ? rcps : String[]
+    for its in ["Target", "Concentration", "Baseline", "Measurement"]
+        if its in names(df)
+            append!(colls, [its])
+        end
+    end
+    Xdf = (length(colls) > 0) ? df[!, Not(colls)] : df
     Xdf = hcat(Xdf, DataFrame(Xfc, cellTypes))
     if "C1q" in names(df)
-        Xdf[!, "C1q"] = Xdf[!, "C1q"] .* Xdf[!, "Concentration"]
+        Xdf[!, "C1q"] = df[!, "C1q"] .* df[!, "Concentration"]
     end
     return Xdf
 end
@@ -137,6 +142,18 @@ function regPred(df, opt::regParams; cellTypes = nothing, murine::Bool = true, l
     Xdf = modelPred(df; ActI = opt.ActIs, cellTypes = cellTypes, murine = murine, kwargs...)
     Xmat = Matrix(Xdf[!, in(cellTypes).(names(Xdf))])
     return link(Xmat * opt.cellWs)
+end
+
+function wildtypeWeights(opt::regParams; murine = true, cellTypes = nothing, kwargs...)
+    IgGs = murine ? murineIgG[murineIgG .!= "IgG3"] : humanIgG
+    df = DataFrame(:Condition => IgGs, :Background .=> "wt")
+    df = modelPred(df; ActI = opt.ActIs, kwargs...)
+    if cellTypes === nothing
+        cellTypes = murine ? murineCellTypes : humanCellTypes
+    end
+    df[!, cellTypes] .*= opt.cellWs'
+    df = stack(df, cellTypes, variable_name = "Component", value_name = "Weight")
+    return df[!, ["Condition", "Component", "Weight"]]
 end
 
 
@@ -277,14 +294,11 @@ end
     nothing
 end
 
-function runRegMCMC(dataType::Union{DataFrame, String}; mcmc_iter = 1_000, ret_opt = false)
+function runRegMCMC(dataType::Union{DataFrame, String}; mcmc_iter = 1_000)
     df = (dataType isa String) ? importDepletion(dataType) : dataType
     m = regmodel(df, df."Target")
     opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
-    if ret_opt
-        return opt
-    end
     c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
 
     # Put model parameters into a df
@@ -310,10 +324,11 @@ function runRegMAP(dataType::Union{DataFrame, String})
     cdf = DataFrame(Parameter = String.(names(opt.values)[1]), Value = opt.values.array)
 
     LOOindex = LOOCV(size(df)[1])
+    optcv = Vector{StatisticalModel}(undef, size(df)[1])
     for (i, idx) in enumerate(LOOindex)
         mv = regmodel(df[idx, :], df[idx, :]."Target")
-        optv = optimize(mv, MAP(), LBFGS(; m = 20), opts)
-        cdf[!, "CV$i"] = optv.values.array
+        optcv[i] = optimize(mv, MAP(), LBFGS(; m = 20), opts)
+        cdf[!, "CV$i"] = optcv[i].values.array
     end
 
     cdf = combine(
@@ -322,7 +337,7 @@ function runRegMAP(dataType::Union{DataFrame, String})
         "value" => (xs -> quantile(xs, 0.25)) => "xmin",
         "value" => (xs -> quantile(xs, 0.75)) => "xmax",
     )
-    return opt, cdf
+    return opt, optcv, cdf
 end
 
 function extractRegMCMC(c::Union{Chains, StatisticalModel})
@@ -386,6 +401,22 @@ function plotRegMCMC(c::Union{Chains, StatisticalModel, regParams}, df::Union{Da
     return pl
 end
 
-function plotRegParams(cdf::DataFrame)
-    
+function plotRegParams(c::Union{Chains, Vector{StatisticalModel}}; 
+        ptitle::String = "", legend = true, retdf = false)
+    df = if c isa Vector
+        vcat([wildtypeWeights(extractRegMCMC(cc)) for cc in c]...)
+    else
+        vcat([wildtypeWeights(extractRegMCMC(c[ii])) for ii = 1:length(c)]...)
+    end
+    df = combine(
+        groupby(df, Not("Weight")),
+        "Weight" => median => "Weight",
+        "Weight" => (xs -> quantile(xs, 0.25)) => "ymin",
+        "Weight" => (xs -> quantile(xs, 0.75)) => "ymax",
+    )
+    if retdf
+        return plotCellTypeEffects(df, ptitle; legend = legend), df
+    else
+        return plotCellTypeEffects(df, ptitle; legend = legend)
+    end
 end
