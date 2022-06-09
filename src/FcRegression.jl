@@ -5,7 +5,7 @@ using polyBindingModel
 using Optim
 using StatsBase
 using DataFrames
-using Printf
+import Printf: @sprintf
 import Cairo, Fontconfig
 
 

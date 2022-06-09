@@ -15,7 +15,7 @@ function calcSynergy(
     Kav_df = importKav(; murine = murine, IgG2bFucose = murine, c1q = c1q, retdf = true)
     Kav = Matrix{Float64}(Kav_df[!, murine ? murineFcgR : humanFcgR])
     if FcExpr === nothing
-        FcExpr = importRtot(; murine = murine)
+        FcExpr = importRtot(; murine = murine, retdf = false)
     end
 
     IgGC = zeros(Float64, size(Kav, 1), nPoints)
@@ -173,13 +173,13 @@ function plotDepletionSynergy(
 
     if Recepidx !== nothing # look at only one receptor
         FcExpr = zeros(length(Receps))
-        FcExpr[Recepidx] = importRtot(murine = murine)[Recepidx, Cellidx]
+        FcExpr[Recepidx] = importRtot(murine = murine, retdf = false)[Recepidx, Cellidx]
         ylabel = "Activity"
     elseif Cellidx !== nothing # look at only one cell FcExpr
-        FcExpr = importRtot(murine = murine)[:, Cellidx]
+        FcExpr = importRtot(murine = murine, retdf = false)[:, Cellidx]
         ylabel = "Activity"
     else
-        FcExpr = importRtot(; murine = murine)
+        FcExpr = importRtot(; murine = murine, retdf = false)
     end
 
     if fit !== nothing  # use disease model

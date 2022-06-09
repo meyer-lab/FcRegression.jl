@@ -1,5 +1,5 @@
 """ Import cell depletion data. """
-function importDepletion(dataType; Kav::Union{AbstractDataFrame, Nothing} = nothing)
+function importDepletion(dataType)
     c1q = false
     if dataType == "melanomaNew"
         filename = "science2005-melanoma.csv"
@@ -34,45 +34,15 @@ function importDepletion(dataType; Kav::Union{AbstractDataFrame, Nothing} = noth
     else
         df[!, "Target"] = 1.0 .- df[!, "Target"] ./ 100.0
     end
-
     if "Subclass" in names(df)
         rename!(df, "Subclass" => "Condition")
     end
     if "Dose" in names(df)
         rename!(df, "Dose" => "Concentration")
     end
-
     if "Neutralization" in names(df)
         neut = -log.(df[!, "Neutralization"] / 50.0)
         df[!, "Neutralization"] .= replace!(neut, Inf => 0.0)
-    end
-
-    Kavd = importKav(murine = true, c1q = c1q, IgG2bFucose = true, retdf = true)
-    if Kav !== nothing
-        Kav[Kav."IgG" .== "IgG2c", "IgG"] .= "IgG2a"
-        # replace the value in
-        for igg in Kav."IgG"
-            Kavd[Kavd."IgG" .== igg, names(Kav)[2:end]] = Kav[Kav."IgG" .== igg, names(Kav)[2:end]]
-        end
-    end
-    df = leftjoin(df, Kavd, on = "Condition" => "IgG")
-
-    # In HIV, The mG053 antibody doesn't bind to the virus
-    if dataType == "HIV"
-        df[df[:, "Label"] .== "mG053", ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]] .= 0.0
-    end
-
-    df[occursin.("R1", df."Background"), "FcgRI"] .= 0.0
-    df[occursin.("R2", df."Background"), "FcgRIIB"] .= 0.0
-    df[occursin.("R3", df."Background"), "FcgRIII"] .= 0.0
-    df[occursin.("R4", df."Background"), "FcgRIV"] .= 0.0
-    df[occursin.("gc", df."Background"), ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]] .= 0.0
-    df[df[:, "Background"] .== "R1/3KO", ["FcgRI", "FcgRIII"]] .= 0.0
-    df[df[:, "Background"] .== "R1/4KO", ["FcgRI", "FcgRIV"]] .= 0.0
-    df[df[:, "Condition"] .== "IgG1D265A", ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]] .= 0.0
-
-    for pair in ["R" => "FcγR", "1" => "I", "2" => "II", "3" => "III", "4" => "IV", "gc" => "γc"]
-        df[!, "Background"] = map(x -> replace(x, pair), df.Background)
     end
     return df
 end
@@ -114,5 +84,14 @@ function importDeplExp()
     df[ismissing.(df."subclass_2"), "subclass_2"] .= "PBS"
     df = coalesce.(df, 0)
     df."depletion" /= 100.0
+    df[df."depletion" .< 0.0, "depletion"] .= 0.0
+    rename!(df, "depletion" => "Target")
+
+    df = combine(
+        groupby(df, Not("Target")),
+        "Target" => geomean => "Target",
+        "Target" => (x -> quantile(x, 0.25)) => "xmin",
+        "Target" => (x -> quantile(x, 0.75)) => "xmax",
+    )
     return df
 end

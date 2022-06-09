@@ -51,7 +51,7 @@ const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
 const humanActYmax = [5.5e4, 1.5e5, 4.5e4, 3.5e4, 3e3] # ymax for synergy plots
 const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
-@memoize function importRtot_readcsv(; murine::Bool, genotype = "HIV", retdf = false, cellTypes = nothing)
+@memoize function importRtot_readcsv(; murine::Bool, genotype = "HIV", retdf = true, cellTypes = nothing)
     if murine
         df = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame
     else
@@ -101,7 +101,7 @@ end
 importRtot(; kwargs...) = deepcopy(importRtot_readcsv(; kwargs...))
 
 """ Import human or murine affinity data. """
-@memoize function importKav_readcsv(; murine::Bool, c1q = false, IgG2bFucose = false, retdf = false)
+@memoize function importKav_readcsv(; murine::Bool, c1q = false, IgG2bFucose = false, retdf = true)
     if murine
         df = CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#") |> DataFrame
     else
@@ -142,7 +142,7 @@ importKav(; kwargs...) = deepcopy(importKav_readcsv(; kwargs...))
 end
 
 """ Import measurements of receptor amounts. """
-@memoize function importRtotDist_readcsv(dat::Symbol; regular = false, retdf = false)
+@memoize function importRtotDist_readcsv(dat::Symbol; regular = false, retdf = true)
     @assert dat in [:hCHO, :hRob, :mCHO, :mLeuk]
     if dat in [:hCHO, :hRob]
         df = if dat == :hRob
