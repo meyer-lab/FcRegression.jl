@@ -27,9 +27,13 @@ mutable struct regParams{T}
 end
 
 
-function modelPred(dfr::DataFrameRow; f = 4, ActI = murineActI,
-    Kav = importKav(; murine = true, retdf = true, IgG2bFucose = true), 
-    Rtot = importRtot(; murine = true, retdf = true))
+function modelPred(
+    dfr::DataFrameRow;
+    f = 4,
+    ActI = murineActI,
+    Kav = importKav(; murine = true, retdf = true, IgG2bFucose = true),
+    Rtot = importRtot(; murine = true, retdf = true),
+)
     Kav[Kav."IgG" .== "IgG2c", "IgG"] .= "IgG2a"
 
     IgGs = String[]
@@ -47,8 +51,7 @@ function modelPred(dfr::DataFrameRow; f = 4, ActI = murineActI,
     Kav = Kav[in(IgGs).(Kav."IgG"), :]
 
     if ("Background" in names(dfr)) && (dfr."Background" != "wt")
-        rr_names = ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV", ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"], 
-            ["FcgRI", "FcgRIII"], ["FcgRI", "FcgRIV"]]
+        rr_names = ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV", ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"], ["FcgRI", "FcgRIII"], ["FcgRI", "FcgRIV"]]
         for (ii, rr) in enumerate(["R1", "R2", "R3", "R4", "gc", "R1/3KO", "R1/4KO"])
             if occursin(rr, dfr."Background")
                 Kav[:, rr_names[ii]] .= 0.0
@@ -94,14 +97,17 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool = true, cellTypes = no
     end
 
     ansType = ("Target" in names(df)) ? promote_type(eltype(df."Target"), eltype(ActI)) : eltype(ActI)
-    Xfc = Array{ansType}(undef, size(df, 1), length(cellTypes))  
+    Xfc = Array{ansType}(undef, size(df, 1), length(cellTypes))
     Threads.@threads for k = 1:size(df, 1)
-        Xfc[k, :] = modelPred(df[k, :]; ActI = ActI, 
+        Xfc[k, :] = modelPred(
+            df[k, :];
+            ActI = ActI,
             Kav = importKav(; murine = murine, retdf = true, IgG2bFucose = true),
             Rtot = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes),
-            kwargs...)
+            kwargs...,
+        )
     end
-        
+
     rcps = murine ? murineFcgR : humanFcgR
     colls = (rcps[1] in names(df)) ? rcps : String[]
     for its in ["Target", "Concentration", "Baseline", "Measurement"]
@@ -118,14 +124,7 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool = true, cellTypes = no
 end
 
 
-function regPred(
-        Xdf::DataFrame, 
-        opt::regResult; 
-        murine = true, 
-        link::Function = exponential, 
-        cellTypes = nothing, 
-        ActI = nothing
-    )
+function regPred(Xdf::DataFrame, opt::regResult; murine = true, link::Function = exponential, cellTypes = nothing, ActI = nothing)
     if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
@@ -219,7 +218,7 @@ function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine = true, Ka
         wildtype[!, "Neutralization"] .= 0.0
     end
     rename!(wildtype, "IgG" => "Condition")
-    
+
     if cellTypes == nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
@@ -232,7 +231,17 @@ function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine = true, Ka
 end
 
 
-function regResult(dataType; L0 = 1e-9, f = 4, murine::Bool = true, link::Function = exponential, Kav = nothing, cellTypes = nothing, ActI = nothing, inv_link::Function = inv_exponential)
+function regResult(
+    dataType;
+    L0 = 1e-9,
+    f = 4,
+    murine::Bool = true,
+    link::Function = exponential,
+    Kav = nothing,
+    cellTypes = nothing,
+    ActI = nothing,
+    inv_link::Function = inv_exponential,
+)
     df = murine ? importDepletion(dataType; Kav = Kav) : importHumanized(dataType)
 
     if (cellTypes == nothing) && (dataType in ["melanoma", "ITP"])
@@ -349,8 +358,16 @@ function extractRegMCMC(c::Union{Chains, StatisticalModel})
     return regParams(cellWs, ActIs)
 end
 
-function plotRegMCMC(c::Union{Chains, StatisticalModel, regParams}, df::Union{DataFrame, String}; 
-        L0 = 1e-9, f = 4, ptitle = "", colorL = nothing, shapeL = nothing, kwargs...)
+function plotRegMCMC(
+    c::Union{Chains, StatisticalModel, regParams},
+    df::Union{DataFrame, String};
+    L0 = 1e-9,
+    f = 4,
+    ptitle = "",
+    colorL = nothing,
+    shapeL = nothing,
+    kwargs...,
+)
     if df isa String
         if ptitle === nothing
             ptitle = df
@@ -401,8 +418,7 @@ function plotRegMCMC(c::Union{Chains, StatisticalModel, regParams}, df::Union{Da
     return pl
 end
 
-function plotRegParams(c::Union{Chains, Vector{StatisticalModel}}; 
-        ptitle::String = "", legend = true, retdf = false)
+function plotRegParams(c::Union{Chains, Vector{StatisticalModel}}; ptitle::String = "", legend = true, retdf = false)
     df = if c isa Vector
         vcat([wildtypeWeights(extractRegMCMC(cc)) for cc in c]...)
     else

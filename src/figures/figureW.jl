@@ -29,7 +29,7 @@ function figureW(dataType::String; legend = true, murine::Bool = true, title = n
 end
 
 function exploreLinkActI(dataType::String)
-    ActIs = [[1,-1,1,1], [1,-0.1,1,1], [1,-0.01,1,1], [1,0,1,1], [1,0.1,1,1]]
+    ActIs = [[1, -1, 1, 1], [1, -0.1, 1, 1], [1, -0.01, 1, 1], [1, 0, 1, 1], [1, 0.1, 1, 1]]
     λs = [0.1, 0.25, 0.5, 1.0, 1.5]
     lλs, lActIs = length(λs), length(ActIs)
     pvfs = Matrix{Plot}(undef, lλs, lActIs)
@@ -39,7 +39,8 @@ function exploreLinkActI(dataType::String)
         expp(X::Array) = cdf.(Exponential(), X .* λ)
         inv_expp(y) = -log(1 - y) / λ
         for (jj, ActI) in enumerate(ActIs)
-            pls = figureW(dataType; link = expp, inv_link = inv_expp, ActI = ActI, title = "\n$ActI, λ=$λ", legend = (ii == length(λs) ? true : false))
+            pls =
+                figureW(dataType; link = expp, inv_link = inv_expp, ActI = ActI, title = "\n$ActI, λ=$λ", legend = (ii == length(λs) ? true : false))
             pvfs[ii, jj] = pls[1]
             wgts[ii, jj] = pls[3]
         end

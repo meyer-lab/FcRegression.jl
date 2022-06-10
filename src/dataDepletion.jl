@@ -28,7 +28,7 @@ function importDepletion(dataType)
         df = df[!, Not("Source")]
     end
     if !("Target" in names(df))  # Target: the larger, the more effect
-        df."Target" =  1 .- df."Measurement" ./ df."Baseline"
+        df."Target" = 1 .- df."Measurement" ./ df."Baseline"
         df[df."Target" .> 1.0, "Target"] .= 1.0
         df[df."Target" .< 0.0, "Target"] .= 0.0
     else
