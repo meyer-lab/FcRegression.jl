@@ -31,7 +31,7 @@ function modelPred(
     dfr::DataFrameRow;
     f = 4,
     ActI = murineActI,
-    Kav = importKav(; murine = true, retdf = true, IgG2bFucose = true),
+    Kav,
     Rtot = importRtot(; murine = true, retdf = true),
 )
     Kav[Kav."IgG" .== "IgG2c", "IgG"] .= "IgG2a"
@@ -46,9 +46,13 @@ function modelPred(
         append!(IgGs, iggv[iggv .!= "PBS"])
     elseif "Condition" in names(dfr)
         IgGs = [dfr."Condition"]
+    elseif "Subclass" in names(dfr)
+        IgGs = [dfr."Subclass"]
     end
+    @assert length(IgGs) > 0
     IgGs[IgGs .== "IgG2c"] .= "IgG2a"
     Kav = Kav[in(IgGs).(Kav."IgG"), :]
+    @assert size(Kav)[1] > 0
 
     if ("Background" in names(dfr)) && (dfr."Background" != "wt")
         rr_names = ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV", ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"], ["FcgRI", "FcgRIII"], ["FcgRI", "FcgRIV"]]
@@ -81,7 +85,7 @@ function modelPred(
     return cellActs
 end
 
-function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool = true, cellTypes = nothing, ActI = nothing, kwargs...)
+function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool, cellTypes = nothing, ActI = nothing, Kav = nothing, kwargs...)
     df = deepcopy(df)
     if ActI === nothing
         ActI = murine ? murineActI : humanActI
@@ -95,6 +99,9 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool = true, cellTypes = no
     else
         insertcols!(df, 3, "Concentration" => L0)
     end
+    if Kav === nothing
+        Kav = importKav(; murine = murine, retdf = true, IgG2bFucose = true)
+    end
 
     ansType = ("Target" in names(df)) ? promote_type(eltype(df."Target"), eltype(ActI)) : eltype(ActI)
     Xfc = Array{ansType}(undef, size(df, 1), length(cellTypes))
@@ -102,7 +109,7 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool = true, cellTypes = no
         Xfc[k, :] = modelPred(
             df[k, :];
             ActI = ActI,
-            Kav = importKav(; murine = murine, retdf = true, IgG2bFucose = true),
+            Kav = Kav,
             Rtot = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes),
             kwargs...,
         )
@@ -133,7 +140,7 @@ function regPred(Xdf::DataFrame, opt::regResult; murine = true, link::Function =
     return link(Xmat * opt.cellWs)
 end
 
-function regPred(df, opt::regParams; cellTypes = nothing, murine::Bool = true, link::Function = exponential, kwargs...)
+function regPred(df, opt::regParams; cellTypes = nothing, murine::Bool, link::Function = exponential, kwargs...)
     if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
@@ -146,7 +153,7 @@ end
 function wildtypeWeights(opt::regParams; murine = true, cellTypes = nothing, kwargs...)
     IgGs = murine ? murineIgG[murineIgG .!= "IgG3"] : humanIgG
     df = DataFrame(:Condition => IgGs, :Background .=> "wt")
-    df = modelPred(df; ActI = opt.ActIs, kwargs...)
+    df = modelPred(df; ActI = opt.ActIs, murine = murine, kwargs...)
     if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
@@ -195,7 +202,7 @@ function regBootstrap(bootsize, Xdf; kwargs...)
 end
 
 
-function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine = true, Kav = nothing, cellTypes = nothing, ActI = nothing)
+function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine::Bool, Kav = nothing, cellTypes = nothing, ActI = nothing)
     # Prepare for cell type weights in wildtype
     Kavd = importKav(; murine = murine, c1q = ("C1q" in names(df)), IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true)
     if Kav !== nothing
@@ -222,7 +229,7 @@ function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine = true, Ka
     if cellTypes == nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
-    wtXdf = modelPred(wildtype; L0 = L0, f = f, murine = murine, cellTypes = cellTypes, ActI = ActI)
+    wtXdf = modelPred(wildtype; L0 = L0, f = f, murine = murine, cellTypes = cellTypes, ActI = ActI, Kav = Kav)
 
     wtXdf[!, cellTypes] .*= res.cellWs'
     wtXdf = wtXdf[!, vcat(["Condition"], cellTypes)]
@@ -252,7 +259,7 @@ function regResult(
         end
     end
 
-    Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes, ActI = ActI)
+    Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes, ActI = ActI, Kav = Kav)
     res = fitRegNNLS(Xdf; murine = murine, cellTypes = cellTypes, link = link, inv_link = inv_link)
     loo_res = regLOO(Xdf; murine = murine, cellTypes = cellTypes, link = link, inv_link = inv_link)
     boot_res = regBootstrap(10, Xdf; murine = murine, cellTypes = cellTypes, link = link, inv_link = inv_link)
@@ -280,7 +287,7 @@ function regResult(
 end
 
 
-@model function regmodel(df, targets; murine = true, L0 = 1e-9, f = 4, cellTypes = nothing)
+@model function regmodel(df, targets; murine::Bool, L0 = 1e-9, f = 4, cellTypes = nothing, Kav = nothing)
     ActI_means = murine ? murineActI : humanActI
     ActIs = Vector(undef, length(ActI_means))
     for ii in eachindex(ActI_means)
@@ -295,17 +302,17 @@ end
         cellWs[ii] ~ Exponential(Float64(length(cellTypes)))
     end
 
-    Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes, ActI = ActIs)
-    Yfit = regPred(Xdf, regResult(cellWs, 0.0); murine = murine, cellTypes = cellTypes, ActI = ActIs)
+    Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes, ActI = ActIs, Kav = Kav)
+    Yfit = regPred(Xdf, regResult(cellWs, 0.0); murine = murine, cellTypes = cellTypes, ActI = ActIs, Kav = Kav)
 
     stdv = std(Yfit - targets) / 10
     targets ~ MvNormal(Yfit, stdv * I)
     nothing
 end
 
-function runRegMCMC(dataType::Union{DataFrame, String}; mcmc_iter = 1_000)
+function runRegMCMC(dataType::Union{DataFrame, String}; mcmc_iter = 1_000, murine = true, Kav = nothing)
     df = (dataType isa String) ? importDepletion(dataType) : dataType
-    m = regmodel(df, df."Target")
+    m = regmodel(df, df."Target"; murine = murine, Kav = Kav)
     opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
     c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
@@ -325,17 +332,22 @@ function runRegMCMC(dataType::Union{DataFrame, String}; mcmc_iter = 1_000)
 end
 
 """ Run a MAP parameter estimation, with LOO/jackknife as errorbar """
-function runRegMAP(dataType::Union{DataFrame, String})
-    df = (dataType isa String) ? importDepletion(dataType) : dataType
-    m = regmodel(df, df."Target")
+function runRegMAP(dataType::Union{DataFrame, String}; murine = true, Kav = nothing)
+    df = if (dataType isa String)
+        murine ? importDepletion(dataType) : importHumanized(dataType)
+    else
+        dataType
+    end
+    m = regmodel(df, df."Target"; murine = murine, Kav = Kav)
     opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
     cdf = DataFrame(Parameter = String.(names(opt.values)[1]), Value = opt.values.array)
 
     LOOindex = LOOCV(size(df)[1])
+    opts = Optim.Options(iterations = 500, show_trace = false)
     optcv = Vector{StatisticalModel}(undef, size(df)[1])
     for (i, idx) in enumerate(LOOindex)
-        mv = regmodel(df[idx, :], df[idx, :]."Target")
+        mv = regmodel(df[idx, :], df[idx, :]."Target"; murine = murine, Kav = Kav)
         optcv[i] = optimize(mv, MAP(), LBFGS(; m = 20), opts)
         cdf[!, "CV$i"] = optcv[i].values.array
     end
@@ -363,6 +375,7 @@ function plotRegMCMC(
     df::Union{DataFrame, String};
     L0 = 1e-9,
     f = 4,
+    murine::Bool,
     ptitle = "",
     colorL = nothing,
     shapeL = nothing,
@@ -375,7 +388,7 @@ function plotRegMCMC(
         df = importDepletion(df)
     end
     if c isa Chains
-        fits = hcat([regPred(df, extractRegMCMC(c[ii]); L0 = 1e-9, f = 4) for ii = 1:length(c)]...)
+        fits = hcat([regPred(df, extractRegMCMC(c[ii]); L0 = 1e-9, f = 4, murine = murine) for ii = 1:length(c)]...)
         df."Fitted" .= mapslices(median, fits, dims = 2)
         df."ymax" .= mapslices(xs -> quantile(xs, 0.75), fits, dims = 2)
         df."ymin" .= mapslices(xs -> quantile(xs, 0.25), fits, dims = 2)
@@ -383,7 +396,7 @@ function plotRegMCMC(
         if c isa StatisticalModel
             c = extractRegMCMC(c)
         end
-        df."Fitted" = regPred(df, c; L0 = L0, f = f, kwargs...)
+        df."Fitted" = regPred(df, c; L0 = L0, f = f, murine = murine, kwargs...)
     end
 
     if shapeL === nothing
@@ -418,11 +431,11 @@ function plotRegMCMC(
     return pl
 end
 
-function plotRegParams(c::Union{Chains, Vector{StatisticalModel}}; ptitle::String = "", legend = true, retdf = false)
+function plotRegParams(c::Union{Chains, Vector{StatisticalModel}}; ptitle::String = "", murine = true, legend = true, retdf = false)
     df = if c isa Vector
-        vcat([wildtypeWeights(extractRegMCMC(cc)) for cc in c]...)
+        vcat([wildtypeWeights(extractRegMCMC(cc); murine = murine) for cc in c]...)
     else
-        vcat([wildtypeWeights(extractRegMCMC(c[ii])) for ii = 1:length(c)]...)
+        vcat([wildtypeWeights(extractRegMCMC(c[ii]); murine = murine) for ii = 1:length(c)]...)
     end
     df = combine(
         groupby(df, Not("Weight")),

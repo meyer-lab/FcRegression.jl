@@ -48,3 +48,18 @@ function figure4()
 
     draw(PDF("figure4.pdf", 1600px, 600px), plotGrid((2, 4), [mp1, mp2, mp3, mp4, ip1, ip2, ip3, ip4]))
 end
+
+
+function figure4Fig5c()
+    df = importHumanized("bloodFig5c")
+    Kav = extractNewHumanKav()
+
+    c, cdf2 = FcRegression.runRegMCMC(df; murine = false);
+    opt, optcv, cdf = FcRegression.runRegMAP(df; murine = false);
+    pl = FcRegression.plotRegMCMC(opt, df; murine = false, ptitle = "Fig5c, MAP");
+    pl2 = FcRegression.plotRegMCMC(c, df; murine = false, ptitle = "Fig5c, MCMC, old affinity");
+    cpl = FcRegression.plotCellTypeEffects(cwdf, "Fig5c, MCMC"; legend = true);
+
+
+    
+end
