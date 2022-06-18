@@ -27,7 +27,7 @@ function importDepletion(dataType)
     if "Source" in names(df)
         df = df[!, Not("Source")]
     end
-    if !("Target" in names(df))  # Target: the larger, the more effect
+    if !("Target" in names(df))  # Target: the larger, the greater effect
         df."Target" = 1 .- df."Measurement" ./ df."Baseline"
         df[df."Target" .> 1.0, "Target"] .= 1.0
         df[df."Target" .< 0.0, "Target"] .= 0.0
@@ -57,19 +57,22 @@ function importHumanized(dataType)
         df[!, "Condition"] .= "IgG1"
         df = df[!, ["Genotype", "Concentration", "Condition", "Target"]]
         affinity = importKav(murine = false, c1q = true, retdf = true)
+        df = leftjoin(df, affinity, on = "Condition" => "IgG")
     elseif dataType == "ITP"
         df = CSV.File(joinpath(dataDir, "schwab_ITP_humanized.csv"), delim = ",", comment = "#") |> DataFrame
         df = stack(df, ["IgG1", "IgG2", "IgG3", "IgG4"])
         df = disallowmissing!(df[completecases(df), :])
         rename!(df, ["variable" => "Condition", "value" => "Target"])
-
         df[!, "Target"] .= 1.0 .- df.Target ./ 100.0
         affinity = importKav(murine = false, c1q = false, retdf = true)
+        df = leftjoin(df, affinity, on = "Condition" => "IgG")
+    elseif dataType == "bloodFig5c"
+        df = CSV.File(joinpath(dataDir, "cell_report_2014_fig5c.csv"), delim = ",", comment = "#") |> DataFrame
+        df[!, "Target"] = df."Target" ./ 100.0
     else
         @error "Data type not found"
     end
-
-    df = leftjoin(df, affinity, on = "Condition" => "IgG")
+    @assert maximum(df."Target") <= 1.0
     return df
 end
 
