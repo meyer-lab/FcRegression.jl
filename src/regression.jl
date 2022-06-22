@@ -9,21 +9,15 @@ using InverseFunctions
 exponential(x::Real) = cdf(Exponential(), x)
 exponential(X::Array) = cdf.(Exponential(), X)
 exponential(X::Matrix, p::Vector) = cdf.(Exponential(), X * p)
-inv_exponential(y::Real) = -log(1 - y)
-InverseFunctions.inverse(::typeof(exponential)) = y -> -log(1 - y)
 
 tanh(X::Array) = tanh.(X)
 tanh(X::Matrix, p::Vector) = tanh.(X * p)
-InverseFunctions.inverse(::typeof(tanh)) = atanh
 
-mutable struct regResult{T}
-    cellWs::Array{T}
-    R2::T
-end
 
 mutable struct regParams{T}
     cellWs::Vector{T}
     ActIs::Vector{T}
+    murine::Bool
 end
 
 
@@ -115,15 +109,10 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool, cellTypes = nothing, 
         )
     end
 
-    rcps = murine ? murineFcgR : humanFcgR
-    colls = (rcps[1] in names(df)) ? rcps : String[]
-    for its in ["Target", "Concentration", "Baseline", "Measurement"]
-        if its in names(df)
-            append!(colls, [its])
-        end
-    end
-    Xdf = (length(colls) > 0) ? df[!, Not(colls)] : df
-    Xdf = hcat(Xdf, DataFrame(Xfc, cellTypes))
+    colls = murine ? murineFcgR : humanFcgR
+    colls = vcat(["Target", "Concentration", "Baseline", "Measurement"], colls, cellTypes)
+    ldf = df[!, (!).(in(colls).(names(df)))]
+    Xdf = hcat(ldf, DataFrame(Xfc, cellTypes))
     if "C1q" in names(df)
         Xdf[!, "C1q"] = df[!, "C1q"] .* df[!, "Concentration"]
     end
@@ -131,31 +120,22 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool, cellTypes = nothing, 
 end
 
 
-function regPred(Xdf::DataFrame, opt::regResult; murine = true, link::Function = exponential, cellTypes = nothing, ActI = nothing)
+function regPred(df, opt::regParams; cellTypes = nothing, link::Function = exponential, kwargs...)
     if cellTypes === nothing
-        cellTypes = murine ? murineCellTypes : humanCellTypes
-    end
-    Xmat = Matrix(Xdf[!, in(cellTypes).(names(Xdf))])
-
-    return link(Xmat * opt.cellWs)
-end
-
-function regPred(df, opt::regParams; cellTypes = nothing, murine::Bool, link::Function = exponential, kwargs...)
-    if cellTypes === nothing
-        cellTypes = murine ? murineCellTypes : humanCellTypes
+        cellTypes = opt.murine ? murineCellTypes : humanCellTypes
     end
     @assert length(cellTypes) == length(opt.cellWs)
-    Xdf = modelPred(df; ActI = opt.ActIs, cellTypes = cellTypes, murine = murine, kwargs...)
+    Xdf = modelPred(df; ActI = opt.ActIs, cellTypes = cellTypes, murine = opt.murine, kwargs...)
     Xmat = Matrix(Xdf[!, in(cellTypes).(names(Xdf))])
     return link(Xmat * opt.cellWs)
 end
 
-function wildtypeWeights(opt::regParams; murine = true, cellTypes = nothing, kwargs...)
-    IgGs = murine ? murineIgG[murineIgG .!= "IgG3"] : humanIgG
+function wildtypeWeights(opt::regParams; cellTypes = nothing, kwargs...)
+    IgGs = opt.murine ? murineIgG[murineIgG .!= "IgG3"] : humanIgG
     df = DataFrame(:Condition => IgGs, :Background .=> "wt")
-    df = modelPred(df; ActI = opt.ActIs, murine = murine, kwargs...)
+    df = modelPred(df; ActI = opt.ActIs, murine = opt.murine, kwargs...)
     if cellTypes === nothing
-        cellTypes = murine ? murineCellTypes : humanCellTypes
+        cellTypes = opt.murine ? murineCellTypes : humanCellTypes
     end
     df[!, cellTypes] .*= opt.cellWs'
     df = stack(df, cellTypes, variable_name = "Component", value_name = "Weight")
@@ -163,46 +143,7 @@ function wildtypeWeights(opt::regParams; murine = true, cellTypes = nothing, kwa
 end
 
 
-function fitRegNNLS(Xdf::DataFrame; murine = true, cellTypes = nothing, link::Function = exponential, inv_link::Function = inv_exponential)
-    if cellTypes === nothing
-        cellTypes = murine ? murineCellTypes : humanCellTypes
-    end
-    Xmat = Matrix(Xdf[!, in(cellTypes).(names(Xdf))])
-    Y = Xdf[!, "Target"]
-    cY = if inverse(link) isa NoInverse
-        inv_link.(Y)
-    else
-        inverse(link).(Y)
-    end
-
-    w = vec(nonneg_lsq(Xmat, cY; alg = :nnls))  # cell type weight found by NNLS
-    Yr = Xmat * w
-    R2val = R2(Y, link(Yr); logscale = false)
-    return regResult(w, R2val)
-end
-
-function regLOO(Xdf; kwargs...)
-    n = size(Xdf, 1)
-    fitResults = Vector{regResult}(undef, n)
-    LOOindex = LOOCV(n)
-    for (i, idx) in enumerate(LOOindex)
-        fitResults[i] = fitRegNNLS(Xdf[idx, :]; kwargs...)
-    end
-    return fitResults
-end
-
-function regBootstrap(bootsize, Xdf; kwargs...)
-    ress = Vector{regResult}(undef, bootsize)
-    n = size(Xdf, 1)
-    for b = 1:bootsize
-        idx = rand(1:n, n)
-        ress[b] = fitRegNNLS(Xdf[idx, :]; kwargs...)
-    end
-    return ress
-end
-
-
-function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine::Bool, Kav = nothing, cellTypes = nothing, ActI = nothing)
+function wildtypeWeights(res::regParams, df::DataFrame; L0 = 1e-9, f = 4, murine::Bool, Kav = nothing, cellTypes = nothing, ActI = nothing)
     # Prepare for cell type weights in wildtype
     Kavd = importKav(; murine = murine, c1q = ("C1q" in names(df)), IgG2bFucose = (:IgG2bFucose in df.Condition), retdf = true)
     if Kav !== nothing
@@ -238,55 +179,6 @@ function wildtypeWeights(res::regResult, df; L0 = 1e-9, f = 4, murine::Bool, Kav
 end
 
 
-function regResult(
-    dataType;
-    L0 = 1e-9,
-    f = 4,
-    murine::Bool = true,
-    link::Function = exponential,
-    Kav = nothing,
-    cellTypes = nothing,
-    ActI = nothing,
-    inv_link::Function = inv_exponential,
-)
-    df = murine ? importDepletion(dataType; Kav = Kav) : importHumanized(dataType)
-
-    if (cellTypes == nothing) && (dataType in ["melanoma", "ITP"])
-        if dataType == "melanoma"
-            cellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO"]
-        elseif dataType == "ITP"
-            cellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO", "Kupffer", "KupfferHi"]
-        end
-    end
-
-    Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes, ActI = ActI, Kav = Kav)
-    res = fitRegNNLS(Xdf; murine = murine, cellTypes = cellTypes, link = link, inv_link = inv_link)
-    loo_res = regLOO(Xdf; murine = murine, cellTypes = cellTypes, link = link, inv_link = inv_link)
-    boot_res = regBootstrap(10, Xdf; murine = murine, cellTypes = cellTypes, link = link, inv_link = inv_link)
-
-    odf = df[!, in(["Condition", "Background"]).(names(df))]
-    odf[!, "Concentration"] .= ("Concentration" in names(df)) ? (df[!, "Concentration"] .* L0) : L0
-    odf[!, "Y"] = df[!, "Target"]
-    odf[!, "Fitted"] = regPred(Xdf, res; murine = murine)
-    odf[!, "LOOPredict"] = [regPred(Xdf[[ii], :], loo_res[ii]; murine = murine, link = link)[1] for ii = 1:length(loo_res)]
-
-    if "Label" in names(df)
-        odf[!, "Label"] .= df[!, "Label"]
-    end
-    if "Genotype" in names(df)
-        odf[!, "Genotype"] .= df[!, "Genotype"]
-    end
-
-    # Cell type weight
-    Cell_df = wildtypeWeights(res, df; L0 = L0, f = f, murine = murine, Kav = Kav, cellTypes = cellTypes, ActI = ActI)
-    Cell_loo = vcat([wildtypeWeights(loo, df; Kav = Kav, cellTypes = cellTypes, ActI = ActI) for loo in loo_res]...)
-    Cell_conf = combine(groupby(Cell_loo, ["Condition", "Component"]), "Weight" => lower => "ymin", "Weight" => upper => "ymax")
-    Cell_df = innerjoin(Cell_df, Cell_conf, on = ["Condition", "Component"])
-
-    return res, odf, loo_res, boot_res, Cell_df
-end
-
-
 @model function regmodel(df, targets; murine::Bool, L0 = 1e-9, f = 4, cellTypes = nothing, Kav = nothing)
     ActI_means = murine ? murineActI : humanActI
     ActIs = Vector(undef, length(ActI_means))
@@ -303,7 +195,7 @@ end
     end
 
     Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes, ActI = ActIs, Kav = Kav)
-    Yfit = regPred(Xdf, regResult(cellWs, 0.0); murine = murine, cellTypes = cellTypes, ActI = ActIs, Kav = Kav)
+    Yfit = regPred(Xdf, regParams(cellWs, ActIs, murine); cellTypes = cellTypes, ActI = ActIs, Kav = Kav)
 
     stdv = std(Yfit - targets) / 10
     targets ~ MvNormal(Yfit, stdv * I)
@@ -367,7 +259,8 @@ function extractRegMCMC(c::Union{Chains, StatisticalModel})
 
     cellWs = [ext("cellWs[$i]") for i = 1:sum(startswith.(pnames, "cellWs"))]
     ActIs = [ext("ActIs[$i]") for i = 1:sum(startswith.(pnames, "ActIs"))]
-    return regParams(cellWs, ActIs)
+    murine = length(ActIs) <= 4  # assume mice have only 4 receptors
+    return regParams(cellWs, ActIs, murine)
 end
 
 function plotRegMCMC(
@@ -375,7 +268,6 @@ function plotRegMCMC(
     df::Union{DataFrame, String};
     L0 = 1e-9,
     f = 4,
-    murine::Bool,
     ptitle = "",
     colorL = nothing,
     shapeL = nothing,
@@ -388,7 +280,7 @@ function plotRegMCMC(
         df = importDepletion(df)
     end
     if c isa Chains
-        fits = hcat([regPred(df, extractRegMCMC(c[ii]); L0 = 1e-9, f = 4, murine = murine) for ii = 1:length(c)]...)
+        fits = hcat([regPred(df, extractRegMCMC(c[ii]); L0 = 1e-9, f = 4) for ii = 1:length(c)]...)
         df."Fitted" .= mapslices(median, fits, dims = 2)
         df."ymax" .= mapslices(xs -> quantile(xs, 0.75), fits, dims = 2)
         df."ymin" .= mapslices(xs -> quantile(xs, 0.25), fits, dims = 2)
@@ -396,7 +288,7 @@ function plotRegMCMC(
         if c isa StatisticalModel
             c = extractRegMCMC(c)
         end
-        df."Fitted" = regPred(df, c; L0 = L0, f = f, murine = murine, kwargs...)
+        df."Fitted" = regPred(df, c; L0 = L0, f = f, kwargs...)
     end
 
     if shapeL === nothing
@@ -431,7 +323,8 @@ function plotRegMCMC(
     return pl
 end
 
-function plotRegParams(c::Union{Chains, Vector{StatisticalModel}}; ptitle::String = "", murine = true, legend = true, retdf = false)
+function plotRegParams(c::Union{Chains, Vector{StatisticalModel}}; ptitle::String = "", legend = true, retdf = false)
+    murine = extractRegMCMC(c[1]).murine
     df = if c isa Vector
         vcat([wildtypeWeights(extractRegMCMC(cc); murine = murine) for cc in c]...)
     else

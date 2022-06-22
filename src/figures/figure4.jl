@@ -51,15 +51,15 @@ end
 
 
 function figure4Fig5c()
-    df = importHumanized("bloodFig5c")
-    Kav = extractNewHumanKav()
+    df = FcRegression.importHumanized("bloodFig5c")
+    Kav = FcRegression.extractNewHumanKav()
 
     c, cdf2 = FcRegression.runRegMCMC(df; murine = false);
     opt, optcv, cdf = FcRegression.runRegMAP(df; murine = false);
-    pl = FcRegression.plotRegMCMC(opt, df; murine = false, ptitle = "Fig5c, MAP");
-    pl2 = FcRegression.plotRegMCMC(c, df; murine = false, ptitle = "Fig5c, MCMC, old affinity");
+    pl = FcRegression.plotRegMCMC(opt, df; ptitle = "Fig5c, MAP");
+    pl2 = FcRegression.plotRegMCMC(c, df; ptitle = "Fig5c, MCMC, old affinity");
     cpl = FcRegression.plotCellTypeEffects(cwdf, "Fig5c, MCMC"; legend = true);
 
 
-    
+
 end
