@@ -69,6 +69,7 @@ function importHumanized(dataType)
     elseif dataType == "bloodFig5c"
         df = CSV.File(joinpath(dataDir, "cell_report_2014_fig5c.csv"), delim = ",", comment = "#") |> DataFrame
         df[!, "Target"] = df."Target" ./ 100.0
+        df[!, "Target"] = 1 .- df."Target"
     else
         @error "Data type not found"
     end
