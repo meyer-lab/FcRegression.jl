@@ -6,7 +6,7 @@ function calcSynergy(
     f,
     FcExpr = nothing;
     murine,
-    fit::Union{regResult, Nothing} = nothing,
+    fit::Union{regParams, Nothing} = nothing,
     Rbound = false,
     c1q = false,
     neutralization = false,

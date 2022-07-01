@@ -253,3 +253,15 @@ function validateFittedKav(c::Chains; murine::Bool)
     pl2 = plotMCMCPredict(c_new, df; dat = dval, Kav = Kav_new, R2pos = R2pos, title = "$figname with updated affinities")
     return pl1, pl2
 end
+
+function extractNewHumanKav(; replace = true)
+    c = rungMCMC("humanNUTSfit_0505.dat"; dat = :hCHO, mcmc_iter = 1_000)
+    Kav = extractMCMC(c; dat = :hCHO)["Kav"]
+    if replace
+        oldKav = importKav(; murine = false, retdf = true, IgG2bFucose = true)
+        oldKav[:, names(Kav)[2:end]] = Kav[:, Not("IgG")]
+        return oldKav
+    else
+        return Kav
+    end
+end
