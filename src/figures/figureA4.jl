@@ -37,7 +37,7 @@ function oneCellTypeOnlyplot(dataType; L0 = 1e-9, f = 4, murine = true)
     )
 end
 
-function figure4()
+function figureA4()
     setGadflyTheme()
 
     mp1, mp2, mp3 = figureW("melanoma"; L0 = 1e-9, f = 6, murine = true, legend = true)

@@ -1,6 +1,6 @@
 """ Figure 5: analyze synergism in IgG mixture """
 
-function figure5()
+function figureA5()
 
     setGadflyTheme()
 

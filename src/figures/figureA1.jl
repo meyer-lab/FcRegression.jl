@@ -129,7 +129,7 @@ function plot_PCA_score(df; title = "Score", xx = "PC 1", yy = "PC 2")
     )
 end
 
-function figure1()
+function figureA1()
     setGadflyTheme()
 
     p1, p2 = bindVSaff()

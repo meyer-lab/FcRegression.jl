@@ -1,6 +1,6 @@
 """ Figure 2: we can accurately account for mixed ICs """
 
-function figure2()
+function figureA2()
     raw_predict = predMix(
         averageMixData(loadMixData());
         Kav = importKav(; murine = false, retdf = true),
