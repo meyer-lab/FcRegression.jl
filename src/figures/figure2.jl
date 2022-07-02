@@ -1,5 +1,6 @@
 """ Figure 2: Explore mixture binding data with PCA """
 
+using ColorSchemes
 igg_color_designation = Dict([humanIgG[i] => Scale.color_discrete().f(4)[i] for i = 1:length(humanIgG)])
 igg_pair_color(iggA, iggB; tot = 5) = reverse([i for i in ColorScheme(range(igg_color_designation[iggA], igg_color_designation[iggB], length = tot))])
 
@@ -15,7 +16,7 @@ function plot_PCA_score(df; title = "Score", xx = "PC 1", yy = "PC 2")
                 push!(arrdf, [ddf[ii, xx], ddf[ii, yy], ddf[ii + 1, xx], ddf[ii + 1, yy], "Mixed"])
             end
             append!(layers, layer(arrdf, x = :xstart, y = :ystart, xend = :xend, yend = :yend, color = [colorant"black"], Geom.segment))
-            # color=igg_pair_color(ddf."subclass_1"[1], ddf."subclass_2"[1]; tot=nrow(arrdf))
+            #color=igg_pair_color(ddf."subclass_1"[1], ddf."subclass_2"[1]; tot=nrow(arrdf))
         end
     end
 
@@ -56,6 +57,8 @@ function figure2()
         Guide.xlabel("Number of components"),
         Guide.ylabel("R2X"),
     )
+
+    ## TODO: add percent variance explained on each PC
 
     SP4 = plot_PCA_score(score[score."Valency" .== 4, :]; title = "PCA Score, 4-valent ICs", xx = "PC 1", yy = "PC 2")
     SP33 = plot_PCA_score(score[score."Valency" .== 33, :]; title = "PCA Score, 33-valent ICs", xx = "PC 1", yy = "PC 2")

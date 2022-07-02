@@ -23,7 +23,6 @@ include("invivo.jl")
 
 include("figures/figureW.jl")
 
-include("figures/figureA1.jl")
 include("figures/figureA2.jl")
 include("figures/figureA2a.jl")
 include("figures/figureA3.jl")
