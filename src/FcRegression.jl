@@ -23,15 +23,19 @@ include("invivo.jl")
 
 include("figures/figureW.jl")
 
+include("figures/figureA2a.jl")
+include("figures/figureA3.jl")
+include("figures/figureA4.jl")
+include("figures/figureA5.jl")
+include("figures/figureA6.jl")
+include("figures/figureS1.jl")
+include("figures/figureS2.jl")
+
 include("figures/figure1.jl")
 include("figures/figure2.jl")
-include("figures/figure2a.jl")
 include("figures/figure3.jl")
 include("figures/figure4.jl")
 include("figures/figure5.jl")
-include("figures/figure6.jl")
-include("figures/figureS1.jl")
-include("figures/figureS2.jl")
 
 include("figures/extra/figureS.jl")
 include("figures/extra/figureCelltypeSynergy.jl")
@@ -41,14 +45,13 @@ include("figures/extra/figureDiseaseSynergy.jl")
 
 function figureAll()
     setGadflyTheme()
-    # comment
+    
     figure1()
     figure2()
     figure3()
     figure4()
-    #figure6()
 
-    #figureS1()
+    figureS1()
     figureS2()
 end
 

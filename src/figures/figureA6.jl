@@ -18,7 +18,7 @@ function plot_mix_ITP_depletion()
     )
 end
 
-function figure6()
+function figureA6()
     setGadflyTheme()
     pl = plot_mix_ITP_depletion()
     draw(PDF("figure6.pdf", 6inch, 4inch), pl)

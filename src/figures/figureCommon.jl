@@ -26,7 +26,8 @@ function setGadflyTheme()
 end
 
 
-function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], heights = [], sublabels = true)
+function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], heights = [], 
+        sublabels::Union{Bool, Vector{Int}, String} = true)
     @assert length(grid_dim) == 2
     nplots = prod(grid_dim)
     if length(pls) != nplots
@@ -55,13 +56,15 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
     end
 
     if sublabels == true
-        sublabels = ones(nplots)
+        sublabels = trues(nplots)
     elseif sublabels == false
-        sublabels = zeros(nplots)
-    else
+        sublabels = falses(nplots)
+    elseif !(sublabels isa String)
         @assert length(sublabels) == nplots
+        sublabels = BitVector(sublabels)
+    else
+        @warn "In plotGrid(): sublabels cannot be convert to a BitVector"
     end
-    sublabels = sublabels .> 0
     letter_label = 'a'
 
     for i = 1:nplots
@@ -69,7 +72,11 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
         yi = (i - 1) ÷ grid_dim[2] + 1
         if i <= length(pls)
             label = ""
-            if sublabels[i]
+            if sublabels isa String
+                if 'a' <= sublabels[i] <= 'z'
+                    label = sublabels[i]
+                end
+            elseif sublabels[i] 
                 label = letter_label
                 letter_label += 1
             end
