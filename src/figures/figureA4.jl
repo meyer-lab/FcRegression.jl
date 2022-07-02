@@ -1,4 +1,4 @@
-""" Figure 4: deconvolve the receptor and cell type functionality """
+""" Figure A4: deconvolve the receptor and cell type functionality """
 
 function oneCellTypeOnlyR2(dataType; L0 = 1e-9, f = 4, murine = true, cellTypes = ["ncMO", "cMO"])
     # Only testing on exponential method

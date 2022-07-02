@@ -1,4 +1,4 @@
-""" Figure 3: fitted murine affinities """
+""" Figure A3: fitted murine affinities """
 function figureA3()
     df = importMurineLeukocyte(; average = true)
     Kav_old = importKavDist(; murine = true, regularKav = true, retdf = true)
