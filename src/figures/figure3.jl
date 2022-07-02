@@ -19,10 +19,10 @@ function figure3()
 
     df = loadMixData()
     Kav_old = importKavDist(; murine = false, regularKav = true, retdf = true)
-    c_noKav = rungMCMC("humanNUTSfit_0517_KavOnly_v1.8.dat"; dat = :hCHO, Kavd = Kav_old)
+    c_noKav = rungMCMC("humanfit_0701_noKav.dat"; dat = :hCHO, Kavd = Kav_old)
     pl_noKav = plotMCMCPredict(c_noKav, df; dat = :hCHO, Kav = Kav_old, R2pos = (0, -2), title = "Predictions with all but affinity fitting")
 
-    c = rungMCMC("humanNUTSfit_0505.dat"; dat = :hCHO, mcmc_iter = 1_000)
+    c = rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000)
 
     pl1 = plotMCMCPredict(c, df; dat = :hCHO, title = "All predictions with \nsingle hIgG fitted parameters", R2pos = (0, -2.5))
     pl2 = plotMCMCPredict(
