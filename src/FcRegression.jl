@@ -45,7 +45,7 @@ include("figures/extra/figureDiseaseSynergy.jl")
 
 function figureAll()
     setGadflyTheme()
-    
+
     figure1()
     figure2()
     figure3()

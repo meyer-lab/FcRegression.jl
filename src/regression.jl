@@ -21,13 +21,7 @@ mutable struct regParams{T}
 end
 
 
-function modelPred(
-    dfr::DataFrameRow;
-    f = 4,
-    ActI = murineActI,
-    Kav::DataFrame,
-    Rtot = importRtot(; murine = true, retdf = true),
-)
+function modelPred(dfr::DataFrameRow; f = 4, ActI = murineActI, Kav::DataFrame, Rtot = importRtot(; murine = true, retdf = true))
     Kav[Kav."IgG" .== "IgG2c", "IgG"] .= "IgG2a"
 
     IgGs = String[]
@@ -101,13 +95,7 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool, cellTypes = nothing, 
     ansType = ("Target" in names(df)) ? promote_type(eltype(df."Target"), eltype(ActI)) : eltype(ActI)
     Xfc = Array{ansType}(undef, size(df, 1), length(cellTypes))
     Threads.@threads for k = 1:size(df, 1)
-        Xfc[k, :] = modelPred(
-            df[k, :];
-            ActI = ActI,
-            Kav = Kav,
-            Rtot = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes),
-            kwargs...,
-        )
+        Xfc[k, :] = modelPred(df[k, :]; ActI = ActI, Kav = Kav, Rtot = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes), kwargs...)
     end
 
     colls = murine ? murineFcgR : humanFcgR

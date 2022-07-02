@@ -150,7 +150,7 @@ function plotMixSubplots(splot::Function, df = loadMixData(); kwargs...)
     lcells = length(cells)
     lpairs = size(pairs, 1)
     pls = Vector(undef, lcells * lpairs)
-    
+
     for (i, pairrow) in enumerate(eachrow(pairs))
         for (j, cell) in enumerate(cells)
             IgGXname, IgGYname = pairrow."subclass_1", pairrow."subclass_2"
