@@ -26,8 +26,7 @@ function setGadflyTheme()
 end
 
 
-function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], heights = [], 
-        sublabels::Union{Bool, Vector{Int}, String} = true)
+function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], heights = [], sublabels::Union{Bool, Vector{Int}, String} = true)
     @assert length(grid_dim) == 2
     nplots = prod(grid_dim)
     if length(pls) != nplots
@@ -76,7 +75,7 @@ function plotGrid(grid_dim = (1, 1), pls = [], ptitle = nothing; widths = [], he
                 if 'a' <= sublabels[i] <= 'z'
                     label = sublabels[i]
                 end
-            elseif sublabels[i] 
+            elseif sublabels[i]
                 label = letter_label
                 letter_label += 1
             end

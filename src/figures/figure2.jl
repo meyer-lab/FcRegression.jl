@@ -89,6 +89,6 @@ function figure2()
         Scale.y_continuous(minvalue = -1.0, maxvalue = 1.0),
     )
 
-    pl = plotGrid((2, 4), [vars, SP4, SP33, LP, nothing, SP4_13, SP33_13, LP_13]; sublabels="abcd efg")
+    pl = plotGrid((2, 4), [vars, SP4, SP33, LP, nothing, SP4_13, SP33_13, LP_13]; sublabels = "abcd efg")
     return draw(PDF("figure2.pdf", 13inch, 6inch), pl)
 end

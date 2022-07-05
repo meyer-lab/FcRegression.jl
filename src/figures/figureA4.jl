@@ -57,21 +57,21 @@ function figure4Fig5c()
     Kav1 = FcRegression.extractNewHumanKav()
 
     # validate
-    opt0, _, _ = FcRegression.runRegMAP(df; murine = false, Kav = Kav0);
-    c0, _ = FcRegression.runRegMCMC(df; murine = false, Kav = Kav0, mcmc_iter = 200);
-    
-    plmap0 = FcRegression.plotRegMCMC(opt0, df; ptitle = "Fig5c, MAP, old affinity", Kav = Kav0);
-    plmc0 = FcRegression.plotRegMCMC(c0, df; ptitle = "Fig5c, MCMC, old affinity", Kav = Kav0);
-    cpl0 = FcRegression.plotRegParams(c0; ptitle = "Fig5c, MCMC, old affinity", legend = true, Kav = Kav0);
+    opt0, _, _ = FcRegression.runRegMAP(df; murine = false, Kav = Kav0)
+    c0, _ = FcRegression.runRegMCMC(df; murine = false, Kav = Kav0, mcmc_iter = 200)
+
+    plmap0 = FcRegression.plotRegMCMC(opt0, df; ptitle = "Fig5c, MAP, old affinity", Kav = Kav0)
+    plmc0 = FcRegression.plotRegMCMC(c0, df; ptitle = "Fig5c, MCMC, old affinity", Kav = Kav0)
+    cpl0 = FcRegression.plotRegParams(c0; ptitle = "Fig5c, MCMC, old affinity", legend = true, Kav = Kav0)
 
 
     # new
-    opt1, _, _ = FcRegression.runRegMAP(df; murine = false, Kav = Kav1);
-    c1, _ = FcRegression.runRegMCMC(df; murine = false, Kav = Kav1, mcmc_iter = 200);
+    opt1, _, _ = FcRegression.runRegMAP(df; murine = false, Kav = Kav1)
+    c1, _ = FcRegression.runRegMCMC(df; murine = false, Kav = Kav1, mcmc_iter = 200)
 
-    plmap1 = FcRegression.plotRegMCMC(opt1, df; ptitle = "Fig5c, MAP, new affinity", Kav = Kav1);
-    plmc1 = FcRegression.plotRegMCMC(c1, df; ptitle = "Fig5c, MCMC, new affinity", Kav = Kav1);
-    cpl1 = FcRegression.plotRegParams(c1; ptitle = "Fig5c, MCMC, new affinity", legend = true, Kav = Kav1);
+    plmap1 = FcRegression.plotRegMCMC(opt1, df; ptitle = "Fig5c, MAP, new affinity", Kav = Kav1)
+    plmc1 = FcRegression.plotRegMCMC(c1, df; ptitle = "Fig5c, MCMC, new affinity", Kav = Kav1)
+    cpl1 = FcRegression.plotRegParams(c1; ptitle = "Fig5c, MCMC, new affinity", legend = true, Kav = Kav1)
 
 
 
