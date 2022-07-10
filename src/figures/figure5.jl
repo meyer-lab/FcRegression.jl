@@ -1,8 +1,8 @@
 """ Figure 5: Predicted effector cell binding """
 
-function EffectorBinding(IgGs::BitVector = BitVector([0,1,0,1]))
+function EffectorBinding(IgGs::BitVector = BitVector([0, 1, 0, 1]))
     Rtot = importRtot(; murine = false, retdf = true, genotype = "HIV")
-    
+
     Kav_old = importKav(; murine = false, retdf = true)
     @assert length(IgGs) == length(Kav_old."IgG")
     @assert sum(IgGs) == 2
@@ -21,13 +21,13 @@ function EffectorBinding(IgGs::BitVector = BitVector([0,1,0,1]))
     pls = Vector(undef, size(Rmulti_old, 1))
     setGadflyTheme()
     for ii = 1:size(Rmulti_old, 1)
-        receps = Rtot[Rtot[!, ii+1] .> 2.0, "Receptor"]
-        olddf = DataFrame(transpose(Rmulti_old[ii, Rtot[!, ii+1] .> 2.0, :]), receps)
+        receps = Rtot[Rtot[!, ii + 1] .> 2.0, "Receptor"]
+        olddf = DataFrame(transpose(Rmulti_old[ii, Rtot[!, ii + 1] .> 2.0, :]), receps)
         olddf[!, IgGnames[1]] = IgGC[1, :]
         olddf[!, IgGnames[2]] = IgGC[2, :]
         olddf = stack(olddf, receps, variable_name = "Receptor", value_name = "Old")
 
-        newdf = DataFrame(transpose(Rmulti_new[ii, Rtot[!, ii+1] .> 2.0, :]), receps)
+        newdf = DataFrame(transpose(Rmulti_new[ii, Rtot[!, ii + 1] .> 2.0, :]), receps)
         newdf[!, IgGnames[1]] = IgGC[1, :]
         newdf = stack(newdf, receps, variable_name = "Receptor", value_name = "New")
 
@@ -37,7 +37,7 @@ function EffectorBinding(IgGs::BitVector = BitVector([0,1,0,1]))
         pls[ii] = plot(
             df,
             layer(x = IgGnames[1], y = "Old", Geom.line, style(line_style = [:dash])),
-            layer(x = IgGnames[1], y = "New", Geom.line, style(line_style = [:solid])), 
+            layer(x = IgGnames[1], y = "New", Geom.line, style(line_style = [:solid])),
             color = "Receptor",
             Scale.x_continuous(labels = n -> "$(IgGnames[1]) $(n*100)%\n$(IgGnames[2]) $(100-n*100)%"),
             Scale.y_log10,
@@ -52,7 +52,7 @@ end
 
 function figure5()
     pls = Matrix(undef, 5, 6)
-    IgGpairs = [BitVector(bv) for bv in [[1,1,0,0], [1,0,1,0], [1,0,0,1], [0,1,1,0], [0,1,0,1], [0,0,1,1]]]
+    IgGpairs = [BitVector(bv) for bv in [[1, 1, 0, 0], [1, 0, 1, 0], [1, 0, 0, 1], [0, 1, 1, 0], [0, 1, 0, 1], [0, 0, 1, 1]]]
     for ii = 1:6
         pls[:, ii] = EffectorBinding(IgGpairs[ii])
     end
