@@ -34,6 +34,6 @@ function figure3()
     )
     rob1, rob2 = validateFittedKav(c; murine = false)
 
-    pp = plotGrid((3, 3), [nothing, nothing, raw_pred_pl, pl_noKav, pl1, pl2, rob1, rob2])
+    pp = plotGrid((3, 3), [nothing, raw_pred_pl, nothing, pl_noKav, pl1, pl2, rob1, rob2])
     draw(PDF("figure3.pdf", 12inch, 10inch), pp)
 end
