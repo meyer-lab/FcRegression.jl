@@ -58,7 +58,7 @@ function EffectorPredict()
     Rmulti_new = polyfc_ActV(1e-9, KxConst, 4, Matrix(Rtot[!, Not("Receptor")]), Matrix(I, 4, 4), Matrix(Kav_new[!, Not("IgG")]), false; Mix = true)
     df = DataFrame()
     for (Rmulti, aff) in [(Rmulti_old, "Documented"), (Rmulti_new, "Updated")]
-        for ii in 1:length(humanIgG)
+        for ii = 1:length(humanIgG)
             ddf = DataFrame(Rmulti[:, :, ii], humanFcgR)
             insertcols!(ddf, 1, "Cell" => humanCellTypes)
             ddf = stack(ddf, Not("Cell"), variable_name = "Receptor", value_name = "Rmulti")
