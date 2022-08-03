@@ -87,15 +87,18 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool, cellTypes = nothing, 
     else
         insertcols!(df, 3, "Concentration" => L0)
     end
-    #=if Kav === nothing
-        @warn "Kav unprovided to modelPred(); use default "
-        Kav = importKav(; murine = murine, retdf = true, IgG2bFucose = true)
-    end=#
 
     ansType = ("Target" in names(df)) ? promote_type(eltype(df."Target"), eltype(ActI)) : eltype(ActI)
     Xfc = Array{ansType}(undef, size(df, 1), length(cellTypes))
     Threads.@threads for k = 1:size(df, 1)
-        Xfc[k, :] = modelPred(df[k, :]; ActI = ActI, Kav = Kav, Rtot = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes), kwargs...)
+        genotype = ("Genotype" in names(df)) ? df[k, "Genotype"] : "XXX"
+        Xfc[k, :] = modelPred(
+            df[k, :]; 
+            ActI = ActI, 
+            Kav = Kav, 
+            Rtot = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes, genotype = genotype), 
+            kwargs...
+        )
     end
 
     colls = murine ? murineFcgR : humanFcgR
