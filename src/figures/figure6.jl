@@ -1,35 +1,31 @@
+""" Plot in vivo regression results. Return predictions, cell weights, and receptor weights for MAP and MCMC. """
+function plot_regressions(df; Kav::DataFrame, murine = false, cellTypes = nothing, ptitle = "")
+    opt, optcv, cdf = runRegMAP(df; murine = murine, Kav = Kav, cellTypes = cellTypes)
+    c, ccdf = runRegMCMC(df; murine = murine, Kav = Kav, mcmc_iter = 200, cellTypes = cellTypes)
+
+    pl_map = plotRegMCMC(opt, deepcopy(df); ptitle = ptitle * "[MAP]", Kav = Kav, cellTypes = cellTypes, 
+        colorL="Genotype", shapeL="Condition")
+    pl_mcmc = plotRegMCMC(c, deepcopy(df); ptitle = ptitle * "[MCMC]", Kav = Kav, cellTypes = cellTypes,
+        colorL="Genotype", shapeL="Condition")
+    cell_map, act_map = plotRegParams(optcv; ptitle = ptitle * "[MAP]", legend = true, Kav = Kav, cellTypes = cellTypes)
+    cell_mcmc, act_mcmc = plotRegParams(c; ptitle = ptitle * "[MCMC]", legend = true, Kav = Kav, cellTypes = cellTypes)
+    return [pl_map, cell_map, act_map, pl_mcmc, cell_mcmc, act_mcmc]
+end
+
+
 function figure6()
     df = FcRegression.importHumanized("ITP")
 
     Kav0 = FcRegression.importKav(; murine = false)
     Kav1 = FcRegression.extractNewHumanKav()
 
-    #FcRegression.modelPred(df, murine = false, Kav = Kav0)
+    pls0a = FcRegression.plot_regressions(df; Kav = Kav1, ptitle = "Schwab, old Kav(A)")
+    pls1a = FcRegression.plot_regressions(df; Kav = Kav1, ptitle = "Schwab, new Kav(A)")
+    pls0t = FcRegression.plot_regressions(df; Kav = Kav0, ptitle = "Schwab, old Kav(3)")
+    pls1t = FcRegression.plot_regressions(df; Kav = Kav1, ptitle = "Schwab, new Kav(3)")
 
-    opt0, _, _ = FcRegression.runRegMAP(df; murine = false, Kav = Kav0)
-
-    plmap0 = FcRegression.plotRegMCMC(opt0, deepcopy(df); ptitle = "Schwab, MAP, old affinity", Kav = Kav0)
-
-
-    # validate
-    opt0, opt0l, _ = FcRegression.runRegMAP(df; murine = false, Kav = Kav0)
-    c0, _ = FcRegression.runRegMCMC(df; murine = false, Kav = Kav0, mcmc_iter = 200)
-
-    plmap0 = FcRegression.plotRegMCMC(opt0, deepcopy(df); ptitle = "Schwab, MAP, old affinity", 
-        Kav = Kav0, colorL="Genotype", shapeL="Condition")
-    plmc0 = FcRegression.plotRegMCMC(c0, deepcopy(df); ptitle = "Schwab, MCMC, old affinity", 
-        Kav = Kav0, colorL="Genotype", shapeL="Condition")
-    cpl0 = FcRegression.plotRegParams(c0; ptitle = "Schwab, MCMC, old affinity", legend = true, Kav = Kav0)
-
-
-    # new
-    opt1, opt1l, _ = FcRegression.runRegMAP(df; murine = false, Kav = Kav1)
-    c1, _ = FcRegression.runRegMCMC(df; murine = false, Kav = Kav1, mcmc_iter = 200)
-
-    plmap1 = FcRegression.plotRegMCMC(opt1, deepcopy(df); ptitle = "Schwab, MAP, new affinity",
-        Kav = Kav1, colorL="Genotype", shapeL="Condition")
-    plmc1 = FcRegression.plotRegMCMC(c1, deepcopy(df); ptitle = "Schwab, MCMC, new affinity", Kav = Kav1)
-    cpl1 = FcRegression.plotRegParams(c1; ptitle = "Schwab, MCMC, new affinity", legend = true, Kav = Kav1)
-
-
+    draw(PDF("old Kav, all cells.pdf", 12inch, 8inch),FcRegression.plotGrid((2, 3), pls0a))
+    draw(PDF("new Kav, all cells.pdf", 12inch, 8inch),FcRegression.plotGrid((2, 3), pls1a))
+    draw(PDF("old Kav, three cells.pdf", 12inch, 8inch),FcRegression.plotGrid((2, 3), pls0t))
+    draw(PDF("new Kav, three cells.pdf", 12inch, 8inch),FcRegression.plotGrid((2, 3), pls1t))
 end
