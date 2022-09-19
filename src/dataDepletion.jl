@@ -64,8 +64,6 @@ function importHumanized(dataType)
         df = disallowmissing!(df[completecases(df), :])
         rename!(df, ["variable" => "Condition", "value" => "Target"])
         df[!, "Target"] .= 1.0 .- df.Target ./ 100.0
-        affinity = importKav(murine = false, c1q = false, retdf = true)
-        df = leftjoin(df, affinity, on = "Condition" => "IgG")
     elseif dataType == "bloodFig5c"
         df = CSV.File(joinpath(dataDir, "cell_report_2014_fig5c.csv"), delim = ",", comment = "#") |> DataFrame
         df[!, "Target"] = df."Target" ./ 100.0

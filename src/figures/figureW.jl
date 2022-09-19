@@ -116,6 +116,25 @@ function plotCellTypeEffects(Cell_df, ptitle = ""; legend = true)
     return pl
 end
 
+function plotActI(ActI_df, ptitle = ""; legend = true)
+    setGadflyTheme()
+    pl = plot(
+        ActI_df,
+        x = "Receptor",
+        y = "Weight",
+        ymin = "ymin",
+        ymax = "ymax",
+        Geom.errorbar,
+        Stat.dodge(axis = :x),
+        Geom.bar(position = :dodge),
+        Scale.x_discrete(levels = unique(ActI_df.Receptor)),
+        Scale.y_continuous(),
+        Guide.title("Predicted receptor weights ($ptitle)"),
+        style(stroke_color = c -> "black", errorbar_cap_length = 4px, bar_spacing=10px),
+    )
+    return pl
+end
+
 
 function L0fSearchHeatmap(dataType, vmax = 10, clmin = -14, clmax = -8; murine = true)
     df = murine ? importDepletion(dataType) : importHumanized(dataType)

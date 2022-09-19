@@ -87,15 +87,18 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool, cellTypes = nothing, 
     else
         insertcols!(df, 3, "Concentration" => L0)
     end
-    #=if Kav === nothing
-        @warn "Kav unprovided to modelPred(); use default "
-        Kav = importKav(; murine = murine, retdf = true, IgG2bFucose = true)
-    end=#
 
     ansType = ("Target" in names(df)) ? promote_type(eltype(df."Target"), eltype(ActI)) : eltype(ActI)
     Xfc = Array{ansType}(undef, size(df, 1), length(cellTypes))
     Threads.@threads for k = 1:size(df, 1)
-        Xfc[k, :] = modelPred(df[k, :]; ActI = ActI, Kav = Kav, Rtot = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes), kwargs...)
+        genotype = ("Genotype" in names(df)) ? df[k, "Genotype"] : "XXX"
+        Xfc[k, :] = modelPred(
+            df[k, :]; 
+            ActI = ActI, 
+            Kav = Kav, 
+            Rtot = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes, genotype = genotype), 
+            kwargs...
+        )
     end
 
     colls = murine ? murineFcgR : humanFcgR
@@ -193,7 +196,7 @@ function runRegMAP(dataType::Union{DataFrame, String}; kwargs...)
     cdf = DataFrame(Parameter = String.(names(opt.values)[1]), Value = opt.values.array)
 
     LOOindex = LOOCV(size(df)[1])
-    opts = Optim.Options(iterations = 500, show_trace = false)
+    opts = Optim.Options(iterations = 100, show_trace = false)
     optcv = Vector{StatisticalModel}(undef, size(df)[1])
     for (i, idx) in enumerate(LOOindex)
         mv = regmodel(df[idx, :], df[idx, :]."Target"; kwargs...)
@@ -278,22 +281,30 @@ function plotRegMCMC(
     return pl
 end
 
-function plotRegParams(c::Union{Chains, Vector{StatisticalModel}}; ptitle::String = "", legend = true, retdf = false, Kav::DataFrame)
+function plotRegParams(c::Union{Chains, Vector{StatisticalModel}}; 
+        ptitle::String = "", legend = true, retdf = false, Kav::DataFrame, cellTypes = nothing)
     murine = extractRegMCMC(c[1]).isMurine
-    df = if c isa Vector
-        vcat([wildtypeWeights(extractRegMCMC(cc); murine = murine, Kav = Kav) for cc in c]...)
-    else
-        vcat([wildtypeWeights(extractRegMCMC(c[ii]); murine = murine, Kav = Kav) for ii = 1:length(c)]...)
-    end
+    df = vcat([wildtypeWeights(extractRegMCMC(c[ii]); cellTypes = cellTypes, murine = murine, Kav = Kav) for ii = 1:length(c)]...)
+    
+    receps = murine ? murineFcgR : humanFcgR
+    ActI_df = vcat([DataFrame(:Receptor => receps, :Weight => extractRegMCMC(c[ii]).ActIs) for ii = 1:length(c)]...)
+
     df = combine(
         groupby(df, Not("Weight")),
         "Weight" => median => "Weight",
         "Weight" => (xs -> quantile(xs, 0.25)) => "ymin",
         "Weight" => (xs -> quantile(xs, 0.75)) => "ymax",
     )
+    ActI_df = combine(
+        groupby(ActI_df, Not("Weight")),
+        "Weight" => median => "Weight",
+        "Weight" => (xs -> quantile(xs, 0.25)) => "ymin",
+        "Weight" => (xs -> quantile(xs, 0.75)) => "ymax",
+    )
+
     if retdf
-        return plotCellTypeEffects(df, ptitle; legend = legend), df
+        return plotCellTypeEffects(df, ptitle; legend = legend), plotActI(ActI_df, ptitle), df, ActI_df
     else
-        return plotCellTypeEffects(df, ptitle; legend = legend)
+        return plotCellTypeEffects(df, ptitle; legend = legend), plotActI(ActI_df, ptitle)
     end
 end
