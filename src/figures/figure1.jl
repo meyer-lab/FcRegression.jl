@@ -95,6 +95,25 @@ function bindVSaff()
     return pl1, pl2
 end
 
+function mixtureANOVA()
+    ## GLM and ANOVA are not included in the package. Results will be saved separately after run
+    import GLM: lm, @formula, ftest
+    df = loadMixData()
+    df."Condition" = string.(df."Valency") .* df."Receptor" .* df."subclass_1" .* " " .* 
+            string.(df."%_1") .* ", " .* df."subclass_2" .* " " .* string.(df."%_2")    
+    df."Dose" = df."subclass_1" .* " " .* string.(df."%_1") .* ", " .* df."subclass_2" .* 
+            " " .* string.(df."%_2")
+    
+    nullmodel = lm(@formula(Value ~ 1), df)
+    model = lm(@formula(Value ~ 1 + Condition), df)
+    return ftest(nullmodel.model, model.model)
+
+    vmodel = lm(@formula(Value ~ 1 + Valency), df)
+    vrmodel = lm(@formula(Value ~ 1 + Valency + Receptor), df)
+    vrdmodel = lm(@formula(Value ~ 1 + Valency + Receptor + Dose), df)
+    ftest(nullmodel.model, vmodel.model, vrmodel.model, vrdmodel.model)
+end
+
 function figure1()
     setGadflyTheme()
 

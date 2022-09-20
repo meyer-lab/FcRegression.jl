@@ -192,20 +192,3 @@ function mixtureDataPCA(; val = 0)
     return score_df, loading_df, vars_expl
 end
 
-#=
-function mixtureANOVA()
-    ## GLM and ANOVA are not included in the package. Results will be saved separately after run
-    using GLM
-    import ANOVA: anova
-    df = loadMixData()
-    df."Measurement" = string.(df."Valency") .* df."Receptor" .* df."subclass_1" .* " " .* 
-            string.(df."%_1") .* ", " .* df."subclass_2" .* " " .* string.(df."%_2")
-    df."logValue" = log.(df."Value")
-
-    model = fit(LinearModel,
-            @formula(logValue ~ Measurement),
-            df,
-            contrasts = Dict(:Measurement => EffectsCoding()))
-    return anova(model)
-end
-=#
