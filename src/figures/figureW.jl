@@ -130,7 +130,7 @@ function plotActI(ActI_df, ptitle = ""; legend = true)
         Scale.x_discrete(levels = unique(ActI_df.Receptor)),
         Scale.y_continuous(),
         Guide.title("Predicted receptor weights ($ptitle)"),
-        style(stroke_color = c -> "black", errorbar_cap_length = 4px, bar_spacing=10px),
+        style(stroke_color = c -> "black", errorbar_cap_length = 4px, bar_spacing = 10px),
     )
     return pl
 end

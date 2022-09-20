@@ -93,11 +93,11 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool, cellTypes = nothing, 
     Threads.@threads for k = 1:size(df, 1)
         genotype = ("Genotype" in names(df)) ? df[k, "Genotype"] : "XXX"
         Xfc[k, :] = modelPred(
-            df[k, :]; 
-            ActI = ActI, 
-            Kav = Kav, 
-            Rtot = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes, genotype = genotype), 
-            kwargs...
+            df[k, :];
+            ActI = ActI,
+            Kav = Kav,
+            Rtot = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes, genotype = genotype),
+            kwargs...,
         )
     end
 
@@ -281,11 +281,17 @@ function plotRegMCMC(
     return pl
 end
 
-function plotRegParams(c::Union{Chains, Vector{StatisticalModel}}; 
-        ptitle::String = "", legend = true, retdf = false, Kav::DataFrame, cellTypes = nothing)
+function plotRegParams(
+    c::Union{Chains, Vector{StatisticalModel}};
+    ptitle::String = "",
+    legend = true,
+    retdf = false,
+    Kav::DataFrame,
+    cellTypes = nothing,
+)
     murine = extractRegMCMC(c[1]).isMurine
     df = vcat([wildtypeWeights(extractRegMCMC(c[ii]); cellTypes = cellTypes, murine = murine, Kav = Kav) for ii = 1:length(c)]...)
-    
+
     receps = murine ? murineFcgR : humanFcgR
     ActI_df = vcat([DataFrame(:Receptor => receps, :Weight => extractRegMCMC(c[ii]).ActIs) for ii = 1:length(c)]...)
 

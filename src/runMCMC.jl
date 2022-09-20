@@ -255,7 +255,7 @@ function validateFittedKav(c::Chains, fname = nothing; murine::Bool, kwargs...)
 
     figname = murine ? "Murine CHO binding prediction\n" : "Robinett"
     df = murine ? importMurineInVitro() : importRobinett()
-    
+
     R2pos = murine ? (-1.5, 0.2) : (-0.5, -2)
     pl1 = plotMCMCPredict(c_old, df; dat = dval, Kav = Kav_old, R2pos = R2pos, title = "$figname with documented affinities", kwargs...)
     pl2 = plotMCMCPredict(c_new, df; dat = dval, Kav = Kav_new, R2pos = R2pos, title = "$figname with updated affinities", kwargs...)

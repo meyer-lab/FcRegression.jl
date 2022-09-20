@@ -52,8 +52,10 @@ function plotAffinityViolin(c::Chains; murine::Bool, y_range = (4, 9))
             hcat([reshape(Kav_posts[Kav_posts."IgG" .== igg, Not("IgG")][1, i], :) for i = 1:(size(Kav_posts)[2] - 1)]...),
             names(Kav_posts)[2:end],
         )
-        pls[ii] = plot_distribution_violins(posts, priors; 
-            y_range = y_range, 
+        pls[ii] = plot_distribution_violins(
+            posts,
+            priors;
+            y_range = y_range,
             title = "$pref$igg Affinities Distributions",
             legend = (ii == length(Kav_priors[!, "IgG"])),
         )
