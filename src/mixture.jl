@@ -99,9 +99,7 @@ function averageMixData(df = loadMixData(); combSingle = false)
     end
     return combine(
         groupby(df, Not(combining)),
-        valname => geomean => valname,
-        valname => geocstd => "std",
-        valname => StatsBase.median => "Median",
+        valname => StatsBase.median => valname,
         valname => lower => "xmin",
         valname => upper => "xmax",
     )

@@ -237,20 +237,28 @@ function extractMCMC(c::Union{Chains, StatisticalModel}; dat::Symbol)
 end
 
 """ Validate those fitted affinities with independent (Robinett or mCHO) dataset """
-function validateFittedKav(c::Chains; murine::Bool)
+function validateFittedKav(c::Chains, fname = nothing; murine::Bool, kwargs...)
     dfit, dval = murine ? (:mLeuk, :mCHO) : (:hCHO, :hRob)
-    figname = murine ? "Murine CHO binding prediction\n" : "Robinett"
-    df = murine ? importMurineInVitro() : importRobinett()
 
     Kav_old = importKav(; murine = murine, retdf = true)
-    c_old = rungMCMC(nothing; dat = dval, Kavd = Kav_old)
-
     Kav_new = extractMCMC(c; dat = dfit)["Kav"]
-    c_new = rungMCMC(nothing; dat = dval, Kavd = Kav_new)
 
+    if (fname !== nothing) && isfile(fname)
+        c_old, c_new = deserialize(fname)
+    else
+        c_old = rungMCMC(nothing; dat = dval, Kavd = Kav_old)
+        c_new = rungMCMC(nothing; dat = dval, Kavd = Kav_new)
+        if fname !== nothing
+            f = serialize(fname, [c_old, c_new])
+        end
+    end
+
+    figname = murine ? "Murine CHO binding prediction\n" : "Robinett"
+    df = murine ? importMurineInVitro() : importRobinett()
+    
     R2pos = murine ? (-1.5, 0.2) : (-0.5, -2)
-    pl1 = plotMCMCPredict(c_old, df; dat = dval, Kav = Kav_old, R2pos = R2pos, title = "$figname with documented affinities")
-    pl2 = plotMCMCPredict(c_new, df; dat = dval, Kav = Kav_new, R2pos = R2pos, title = "$figname with updated affinities")
+    pl1 = plotMCMCPredict(c_old, df; dat = dval, Kav = Kav_old, R2pos = R2pos, title = "$figname with documented affinities", kwargs...)
+    pl2 = plotMCMCPredict(c_new, df; dat = dval, Kav = Kav_new, R2pos = R2pos, title = "$figname with updated affinities", kwargs...)
     return pl1, pl2
 end
 
