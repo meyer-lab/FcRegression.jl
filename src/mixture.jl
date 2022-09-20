@@ -97,12 +97,7 @@ function averageMixData(df = loadMixData(); combSingle = false)
     if "Experiment" in names(df)
         append!(combining, ["Experiment"])
     end
-    return combine(
-        groupby(df, Not(combining)),
-        valname => StatsBase.median => valname,
-        valname => lower => "xmin",
-        valname => upper => "xmax",
-    )
+    return combine(groupby(df, Not(combining)), valname => StatsBase.median => valname, valname => lower => "xmin", valname => upper => "xmax")
 end
 
 """ Transform combined single IgG case back to pairs"""

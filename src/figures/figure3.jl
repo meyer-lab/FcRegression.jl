@@ -21,16 +21,15 @@ function figure3()
     df = loadMixData()
     Kav_old = importKavDist(; murine = false, regularKav = true, retdf = true)
     c_noKav = rungMCMC("humanfit_0701_noKav.dat"; dat = :hCHO, Kavd = Kav_old)
-    pl_noKav = plotMCMCPredict(c_noKav, df; dat = :hCHO, 
-        Kav = Kav_old, R2pos = (0, -2), 
-        title = "Predictions with all but affinity fitting",
-        legend = false,
-    )
+    pl_noKav =
+        plotMCMCPredict(c_noKav, df; dat = :hCHO, Kav = Kav_old, R2pos = (0, -2), title = "Predictions with all but affinity fitting", legend = false)
 
     c = rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000)
-    pl1 = plotMCMCPredict(c, df; 
-        dat = :hCHO, 
-        title = "All predictions with affinities\ninferred from single IgG measurements", 
+    pl1 = plotMCMCPredict(
+        c,
+        df;
+        dat = :hCHO,
+        title = "All predictions with affinities\ninferred from single IgG measurements",
         R2pos = (0, -2.5),
         legend = false,
     )
@@ -40,7 +39,7 @@ function figure3()
         dat = :hCHO,
         title = "Mixture predictions with affinities\ninferred from single IgG measurements",
         R2pos = (0, -2.5),
-        legend = false, 
+        legend = false,
     )
     rob1, rob2 = validateFittedKav(c, "robinett_valid_Kavfit_0701.dat"; murine = false, legend = false)
 
