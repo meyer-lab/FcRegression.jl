@@ -24,7 +24,7 @@ function splot_origData(df; match_y = true)
     return plot(
         df,
         x = "%_1",
-        y = "Median",
+        y = "Value",
         ymin = "xmin",
         ymax = "xmax",
         color = "Valency",
