@@ -3,16 +3,20 @@ function plotPredvsMeasured(
     df;
     xx = "Value",
     yy = "Predict",
-    xxlabel = "Actual",
+    xxlabel = "Measured",
     yylabel = "Predicted",
     color = "Receptor",
     shape = "Valency",
     title = "Predicted vs Actual",
     R2pos = (3, 1),
+    legend = true,
 )
     setGadflyTheme()
     df = deepcopy(df)
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
+    df."Receptor" = replace.(df."Receptor", "FcgR" => "FcγR")
+    rename!(df, xx => xxlabel)
+    xx = xxlabel
 
     # Move 0 to a small nonzero only when plotting
     df[(df[!, xx]) .<= 0.0, xx] .= minimum(df[(df[!, xx]) .> 0.0, xx]) / 10
@@ -50,7 +54,7 @@ function plotPredvsMeasured(
                 font("Helvetica-Bold"),
             ),
         ),
-        style(errorbar_cap_length = 0px),
+        style(errorbar_cap_length = 0px, key_position = legend ? :right : :none),
     )
 end
 
