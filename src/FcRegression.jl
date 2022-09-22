@@ -36,7 +36,6 @@ include("figures/figure2.jl")
 include("figures/figure3.jl")
 include("figures/figure4.jl")
 include("figures/figure5.jl")
-include("figures/figure6.jl")
 
 include("figures/extra/figureS.jl")
 include("figures/extra/figureCelltypeSynergy.jl")

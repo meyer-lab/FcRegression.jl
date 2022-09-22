@@ -129,33 +129,6 @@ function combSing2pair(df)
     return sort!(ndf, names(df)[in(["Valency", "Receptor", "subclass_1", "subclass_2", "Experiment", "%_2"]).(names(df))])
 end
 
-
-""" 
-General function to make subplots for every cell types and IgG pairs
-splot() is a function that take dataframe with only a single cell type and IgG pair
-    and output a plot
-"""
-function plotMixSubplots(splot::Function, df = loadMixData(); kwargs...)
-    setGadflyTheme()
-
-    cells = unique(df."Receptor")
-    pairs = unique(df[df."subclass_2" .!= "None", ["subclass_1", "subclass_2"]])
-    lcells = length(cells)
-    lpairs = size(pairs, 1)
-    pls = Vector(undef, lcells * lpairs)
-
-    for (i, pairrow) in enumerate(eachrow(pairs))
-        for (j, cell) in enumerate(cells)
-            IgGXname, IgGYname = pairrow."subclass_1", pairrow."subclass_2"
-            ndf = df[(df."Receptor" .== cell) .& (df."subclass_1" .== IgGXname) .& (df."subclass_2" .== IgGYname), :]
-            pls[(j - 1) * lpairs + (i - 1) + 1] = splot(ndf; kwargs...)
-        end
-    end
-    return plotGrid((lcells, lpairs), pls; sublabels = false)
-
-end
-
-
 function R2(Actual, Predicted; logscale = true)
     if logscale
         return cor(log10.(Actual), log10.(Predicted))^2
@@ -192,20 +165,3 @@ function mixtureDataPCA(; val = 0)
     return score_df, loading_df, vars_expl
 end
 
-#=
-function mixtureANOVA()
-    ## GLM and ANOVA are not included in the package. Results will be saved separately after run
-    using GLM
-    import ANOVA: anova
-    df = loadMixData()
-    df."Measurement" = string.(df."Valency") .* df."Receptor" .* df."subclass_1" .* " " .* 
-            string.(df."%_1") .* ", " .* df."subclass_2" .* " " .* string.(df."%_2")
-    df."logValue" = log.(df."Value")
-
-    model = fit(LinearModel,
-            @formula(logValue ~ Measurement),
-            df,
-            contrasts = Dict(:Measurement => EffectsCoding()))
-    return anova(model)
-end
-=#
