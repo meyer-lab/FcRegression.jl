@@ -15,13 +15,18 @@ tanh(X::Matrix, p::Vector) = tanh.(X * p)
 
 
 mutable struct regParams{T}
-    cellWs::Vector{T}
-    ActIs::Vector{T}
+    cellWs::NamedArray{T}
+    ActIs::NamedArray{T}
     isMurine::Bool
 end
 
+""" Calculate the Activity value, considering different genotype should have the same ActI """
+function assembleActs(ActI::NamedVector, pred::NamedVector)
+    return maximum([sum([ActI[String(split(nn, "-")[1])] * pred[nn] for nn in names(pred)[1]]), 0.0])
+end
 
-function modelPred(dfr::DataFrameRow; f = 4, ActI = murineActI, Kav::DataFrame, Rtot = importRtot(; murine = true, retdf = true))
+
+function modelPred(dfr::DataFrameRow; f = 4, ActI::NamedVector = murineActI, Kav::DataFrame, Rtot = importRtot(; murine = true, retdf = true))
     Kav[Kav."IgG" .== "IgG2c", "IgG"] .= "IgG2a"
 
     IgGs = String[]
@@ -59,6 +64,7 @@ function modelPred(dfr::DataFrameRow; f = 4, ActI = murineActI, Kav::DataFrame, 
         Kav[:, ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]] .= 0.0
     end
     Kav = Matrix(Kav[:, Not("IgG")])
+    pred = NamedArray(repeat([0.0], length(Rtot."Receptor")), Rtot."Receptor", "Receptor")
     Rtot = Matrix(Rtot[:, Not("Receptor")])
 
     cellActs = Vector(undef, size(Rtot)[2])
@@ -67,8 +73,8 @@ function modelPred(dfr::DataFrameRow; f = 4, ActI = murineActI, Kav::DataFrame, 
         return cellActs
     end
     for jj = 1:size(Rtot)[2]
-        pred = polyfc(dfr."Concentration", KxConst, f, Rtot[:, jj], cps, Kav).Rmulti_n
-        cellActs[jj] = maximum([dot(ActI, pred), 0.0])
+        pred[:] = polyfc(dfr."Concentration", KxConst, f, Rtot[:, jj], cps, Kav).Rmulti_n
+        cellActs[jj] = maximum([assembleActs(ActI, pred), 0.0])
     end
     return cellActs
 end
@@ -91,7 +97,7 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool, cellTypes = nothing, 
     ansType = ("Target" in names(df)) ? promote_type(eltype(df."Target"), eltype(ActI)) : eltype(ActI)
     Xfc = Array{ansType}(undef, size(df, 1), length(cellTypes))
     Threads.@threads for k = 1:size(df, 1)
-        genotype = ("Genotype" in names(df)) ? df[k, "Genotype"] : "XXX"
+        genotype = ("Genotype" in names(df)) ? df[k, "Genotype"] : "XIX"    # FcgRIIB has default genotype is 232I
         Xfc[k, :] = modelPred(
             df[k, :];
             ActI = ActI,
@@ -112,11 +118,8 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool, cellTypes = nothing, 
 end
 
 
-function regPred(df, opt::regParams; cellTypes = nothing, link::Function = exponential, kwargs...)
-    if cellTypes === nothing
-        cellTypes = opt.isMurine ? murineCellTypes : humanCellTypes
-    end
-    @assert length(cellTypes) == length(opt.cellWs)
+function regPred(df, opt::regParams; link::Function = exponential, kwargs...)
+    cellTypes = names(opt.cellWs)[1]
     Xdf = modelPred(df; ActI = opt.ActIs, cellTypes = cellTypes, murine = opt.isMurine, kwargs...)
     Xmat = Matrix(Xdf[!, in(cellTypes).(names(Xdf))])
     return link(Xmat * opt.cellWs)
@@ -141,7 +144,7 @@ end
 
 @model function regmodel(df, targets; murine::Bool, L0 = 1e-9, f = 4, cellTypes = nothing, Kav::DataFrame)
     ActI_means = murine ? murineActI : humanActI
-    ActIs = Vector(undef, length(ActI_means))
+    ActIs = NamedArray(repeat([0.0], length(ActI_means)), names(ActI_means)[1], ("Receptor"))
     for ii in eachindex(ActI_means)
         ActIs[ii] ~ Normal(ActI_means[ii], 1.0)
     end
@@ -149,13 +152,13 @@ end
     if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
-    cellWs = Vector(undef, length(cellTypes))
+    cellWs = NamedArray(repeat([0.0], length(cellTypes)), cellTypes, ("CellType"))
     for ii in eachindex(cellTypes)
         cellWs[ii] ~ Exponential(Float64(length(cellTypes)))
     end
 
     Xdf = modelPred(df; L0 = L0, f = f, murine = murine, cellTypes = cellTypes, ActI = ActIs, Kav = Kav)
-    Yfit = regPred(Xdf, regParams(cellWs, ActIs, murine); cellTypes = cellTypes, ActI = ActIs, Kav = Kav)
+    Yfit = regPred(Xdf, regParams(cellWs, ActIs, murine); Kav = Kav)
 
     stdv = std(Yfit - targets) / 10
     targets ~ MvNormal(Yfit, stdv * I)
@@ -191,7 +194,7 @@ function runRegMAP(dataType::Union{DataFrame, String}; kwargs...)
         dataType
     end
     m = regmodel(df, df."Target"; kwargs...)
-    opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
+    opts = Optim.Options(iterations = 500, show_every = 50, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
     cdf = DataFrame(Parameter = String.(names(opt.values)[1]), Value = opt.values.array)
 
@@ -213,14 +216,26 @@ function runRegMAP(dataType::Union{DataFrame, String}; kwargs...)
     return opt, optcv, cdf
 end
 
-function extractRegMCMC(c::Union{Chains, StatisticalModel})
+function extractRegMCMC(c::Union{Chains, StatisticalModel}; cellTypes = nothing, 
+        FcgRs::Union{Nothing, Vector{String}} = nothing)
     pnames = [String(s) for s in (c isa Chains ? c.name_map[1] : names(c.values)[1])]
     ext(s::String) = c isa Chains ? median(c[s].data) : c.values[Symbol(s)]
 
     cellWs = [ext("cellWs[$i]") for i = 1:sum(startswith.(pnames, "cellWs"))]
     ActIs = [ext("ActIs[$i]") for i = 1:sum(startswith.(pnames, "ActIs"))]
     murine = length(ActIs) <= 4  # assume mice have only 4 receptors
-    return regParams(cellWs, ActIs, murine)
+
+    if cellTypes === nothing
+        cellTypes = murine ? murineCellTypes : humanCellTypes
+    end
+    if FcgRs === nothing
+        FcgRs = names(murine ? murineActI : humanActI)[1]
+    end    
+    return regParams(
+        NamedArray(cellWs, cellTypes, "CellType"), 
+        NamedArray(ActIs, FcgRs, "Receptor"), 
+        murine,
+    )
 end
 
 function plotRegMCMC(
@@ -229,8 +244,12 @@ function plotRegMCMC(
     ptitle = "",
     colorL = nothing,
     shapeL = nothing,
+    Kav::DataFrame,
+    cellTypes = nothing,
     kwargs...,
 )
+    extractReg = x -> extractRegMCMC(x; cellTypes = cellTypes, FcgRs = unique([String(split(fcgr, "-")[1]) for fcgr in names(Kav[!, Not("IgG")])]))
+
     if df isa String
         if ptitle === nothing
             ptitle = df
@@ -238,13 +257,14 @@ function plotRegMCMC(
         df = importDepletion(df)
     end
     if c isa Chains
-        fits = hcat([regPred(df, extractRegMCMC(c[ii]); kwargs...) for ii = 1:length(c)]...)
+        fits = hcat([regPred(df, extractReg(c[ii]); kwargs...) 
+            for ii = 1:length(c)]...)
         df."Fitted" .= mapslices(median, fits, dims = 2)
         df."ymax" .= mapslices(xs -> quantile(xs, 0.75), fits, dims = 2)
         df."ymin" .= mapslices(xs -> quantile(xs, 0.25), fits, dims = 2)
     else
         if c isa StatisticalModel
-            c = extractRegMCMC(c)
+            c = extractReg(c)
         end
         df."Fitted" = regPred(df, c; kwargs...)
     end
@@ -289,11 +309,17 @@ function plotRegParams(
     Kav::DataFrame,
     cellTypes = nothing,
 )
-    murine = extractRegMCMC(c[1]).isMurine
-    df = vcat([wildtypeWeights(extractRegMCMC(c[ii]); cellTypes = cellTypes, murine = murine, Kav = Kav) for ii = 1:length(c)]...)
+    extractReg = x -> extractRegMCMC(x; cellTypes = cellTypes, FcgRs = unique([String(split(fcgr, "-")[1]) for fcgr in names(Kav[!, Not("IgG")])]))
+    murine = extractReg(c[1]).isMurine
+    df = vcat([wildtypeWeights(extractReg(c[ii]); 
+            cellTypes = names(extractReg(c[1]).cellWs)[1], 
+            murine = murine, 
+            Kav = Kav) 
+            for ii = 1:length(c)]...)
 
-    receps = murine ? murineFcgR : humanFcgR
-    ActI_df = vcat([DataFrame(:Receptor => receps, :Weight => extractRegMCMC(c[ii]).ActIs) for ii = 1:length(c)]...)
+    ActI_df = vcat([DataFrame(:Receptor => names(extractReg(c[1]).ActIs)[1], 
+                              :Weight => extractReg(c[ii]).ActIs)
+                              for ii = 1:length(c)]...)
 
     df = combine(
         groupby(df, Not("Weight")),
