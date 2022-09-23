@@ -24,7 +24,8 @@ function assembleActs(ActI::NamedVector, pred::NamedVector)
 end
 
 
-function modelPred(dfr::DataFrameRow; f = 4, ActI::NamedVector = murineActI, Kav::DataFrame, Rtot = importRtot(; murine = true, retdf = true))
+function modelPred(dfr::DataFrameRow; 
+        f = 4, ActI::NamedVector = humanActI, Kav::DataFrame, Rtot = importRtot(; murine = false, retdf = true))
     Kav[Kav."IgG" .== "IgG2c", "IgG"] .= "IgG2a"
 
     IgGs = String[]
@@ -96,11 +97,13 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool, cellTypes = nothing, 
     Xfc = Array{ansType}(undef, size(df, 1), length(cellTypes))
     Threads.@threads for k = 1:size(df, 1)
         genotype = ("Genotype" in names(df)) ? df[k, "Genotype"] : "XIX"    # FcgRIIB has default genotype is 232I
+        Rtott = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes, genotype = genotype)
+        Rtott = Rtott[in(names(Kav[!, Not("IgG")])).(Rtott."Receptor"), :]
         Xfc[k, :] = modelPred(
             df[k, :];
             ActI = ActI,
             Kav = Kav,
-            Rtot = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes, genotype = genotype),
+            Rtot = Rtott,
             kwargs...,
         )
     end
@@ -142,6 +145,7 @@ end
 
 @model function regmodel(df, targets; murine::Bool, L0 = 1e-9, f = 4, cellTypes = nothing, Kav::DataFrame)
     ActI_means = murine ? murineActI : humanActI
+    ActI_means = ActI_means[unique([String(split(ss, "-")[1]) for ss in names(Kav[!, Not("IgG")])])]
     ActIs = NamedArray(repeat([0.0], length(ActI_means)), names(ActI_means)[1], ("Receptor"))
     for ii in eachindex(ActI_means)
         ActIs[ii] ~ Normal(ActI_means[ii], 1.0)
@@ -185,16 +189,23 @@ function runRegMCMC(dataType::Union{DataFrame, String}; mcmc_iter = 1_000, kwarg
 end
 
 """ Run a MAP parameter estimation, with LOO/jackknife as errorbar """
-function runRegMAP(dataType::Union{DataFrame, String}; kwargs...)
+function runRegMAP(dataType::Union{DataFrame, String}, fname = nothing; kwargs...)
     df = if (dataType isa String)
         murine ? importDepletion(dataType) : importHumanized(dataType)
     else
         dataType
     end
+    if (fname !== nothing) && isfile(fname)
+        deserial = deserialize(fname)
+        if (df == deserial[4]) && (Dict(kwargs) == deserial[5])
+            println("Loading cached regression MAP results from $fname...")
+            return deserial[1:3]
+        end
+    end
     m = regmodel(df, df."Target"; kwargs...)
     opts = Optim.Options(iterations = 500, show_every = 50, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
-    cdf = DataFrame(Parameter = String.(names(opt.values)[1]), Value = opt.values.array)
+    mapdf = DataFrame(Parameter = String.(names(opt.values)[1]), Value = opt.values.array)
 
     LOOindex = LOOCV(size(df)[1])
     opts = Optim.Options(iterations = 100, show_trace = false)
@@ -202,16 +213,19 @@ function runRegMAP(dataType::Union{DataFrame, String}; kwargs...)
     for (i, idx) in enumerate(LOOindex)
         mv = regmodel(df[idx, :], df[idx, :]."Target"; kwargs...)
         optcv[i] = optimize(mv, MAP(), LBFGS(; m = 20), opts)
-        cdf[!, "CV$i"] = optcv[i].values.array
+        mapdf[!, "CV$i"] = optcv[i].values.array
     end
 
-    cdf = combine(
-        groupby(DataFrames.stack(cdf, Not(["Parameter", "Value"])), ["Parameter", "Value"]),
+    mapdf = combine(
+        groupby(DataFrames.stack(mapdf, Not(["Parameter", "Value"])), ["Parameter", "Value"]),
         "value" => median => "Median",
         "value" => (xs -> quantile(xs, 0.25)) => "xmin",
         "value" => (xs -> quantile(xs, 0.75)) => "xmax",
     )
-    return opt, optcv, cdf
+    if fname !== nothing
+        f = serialize(fname, [opt, optcv, mapdf, df, Dict(kwargs)])
+    end
+    return opt, optcv, mapdf
 end
 
 function extractRegMCMC(c::Union{Chains, StatisticalModel}; cellTypes = nothing, 
@@ -244,6 +258,7 @@ function plotRegMCMC(
     shapeL = nothing,
     Kav::DataFrame,
     cellTypes = nothing,
+    legend = true,
     kwargs...,
 )
     extractReg = x -> extractRegMCMC(x; cellTypes = cellTypes, FcgRs = unique([String(split(fcgr, "-")[1]) for fcgr in names(Kav[!, Not("IgG")])]))
@@ -264,7 +279,7 @@ function plotRegMCMC(
         if c isa StatisticalModel
             c = extractReg(c)
         end
-        df."Fitted" = regPred(df, c; kwargs...)
+        df."Fitted" = regPred(df, c; Kav = Kav, kwargs...)
     end
 
     if shapeL === nothing
@@ -283,7 +298,7 @@ function plotRegMCMC(
         ymin = (c isa Chains ? "ymin" : "Fitted"),
         ymax = (c isa Chains ? "ymax" : "Fitted"),
         Geom.point,
-        "ymin" in names(df) ? Geom.errorbar : Guide.xlabel("Measured"),
+        "ymin" in names(df) ? Geom.errorbar : Geom.point,
         color = colorL,
         shape = shapeL,
         Guide.colorkey(),
@@ -292,9 +307,9 @@ function plotRegMCMC(
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
         Guide.ylabel("Fitted effect"),
-        Guide.title("Actual vs fitted effect ($ptitle)"),
+        Guide.title("Actual vs fitted effect\n($ptitle)"),
         Guide.annotation(compose(context(), text(0.1, 0.8, R2anno), fill("black"), fontsize(10pt), font("Helvetica"))),
-        style(point_size = 5px, key_position = :right),
+        style(point_size = 5px, key_position = legend ? :right : :none),
     )
     return pl
 end

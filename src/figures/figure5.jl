@@ -13,18 +13,26 @@ end
 
 
 function figure5()
-    df = FcRegression.importHumanized("ITP")
+    df = FcRegression.importHumanized("ITP");
 
-    Kav0 = FcRegression.importKav(; murine = false)
-    Kav1 = FcRegression.extractNewHumanKav()
+    Kav0 = FcRegression.importKav(; murine = false);
+    Kav1 = FcRegression.extractNewHumanKav();
+    Kav0 = Kav0[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])];
+    Kav1 = Kav1[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])];
 
-    pls0a = FcRegression.plot_regressions(df; Kav = Kav1, ptitle = "Schwab, old Kav(A)")
-    pls1a = FcRegression.plot_regressions(df; Kav = Kav1, ptitle = "Schwab, new Kav(A)")
-    pls0t = FcRegression.plot_regressions(df; Kav = Kav0, ptitle = "Schwab, old Kav(3)")
-    pls1t = FcRegression.plot_regressions(df; Kav = Kav1, ptitle = "Schwab, new Kav(3)")
+    opt0, optcv0, mapdf0 = FcRegression.runRegMAP(df, "MAP_0923_A0.dat"; murine = false, Kav = Kav0);
+    opt1, optcv1, mapdf1 = FcRegression.runRegMAP(df, "MAP_0923_A1.dat"; murine = false, Kav = Kav1);
 
-    draw(PDF("old Kav, all cells.pdf", 12inch, 8inch), FcRegression.plotGrid((2, 3), pls0a))
-    draw(PDF("new Kav, all cells.pdf", 12inch, 8inch), FcRegression.plotGrid((2, 3), pls1a))
-    draw(PDF("old Kav, three cells.pdf", 12inch, 8inch), FcRegression.plotGrid((2, 3), pls0t))
-    draw(PDF("new Kav, three cells.pdf", 12inch, 8inch), FcRegression.plotGrid((2, 3), pls1t))
+    pl_map0 = FcRegression.plotRegMCMC(opt0, deepcopy(df); ptitle = "documented affinities", 
+        Kav = Kav0, colorL = "Genotype", shapeL = "Condition", legend = false);
+    cell_map0, act_map0 = FcRegression.plotRegParams(optcv0; ptitle = "documented affinities", legend = false, Kav = Kav0);
+
+    pl_map1 = FcRegression.plotRegMCMC(opt1, deepcopy(df); ptitle = "updated affinities", 
+        Kav = Kav1, colorL = "Genotype", shapeL = "Condition", legend = false);
+    cell_map1, act_map1 = FcRegression.plotRegParams(optcv1; ptitle = "updated affinities", legend = false, Kav = Kav1);
+
+
+    pl = FcRegression.plotGrid((2, 4), [nothing, pl_map0, cell_map0, act_map0, nothing, pl_map1, cell_map1, act_map1]; 
+        sublabels = "abdf ceg")
+    return draw(PDF("figure5.pdf", 12inch, 6inch), pl)
 end
