@@ -191,6 +191,7 @@ end
 
 """ Run a MAP parameter estimation, with LOO/jackknife as errorbar """
 function runRegMAP(dataType::Union{DataFrame, String}, fname = nothing; kwargs...)
+    fname = "cached/" * fname
     df = if (dataType isa String)
         murine ? importDepletion(dataType) : importHumanized(dataType)
     else
