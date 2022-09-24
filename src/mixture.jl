@@ -164,4 +164,3 @@ function mixtureDataPCA(; val = 0)
     score_df."Subclass Pair" = score_df."subclass_1" .* "-" .* score_df."subclass_2"
     return score_df, loading_df, vars_expl
 end
-
