@@ -118,6 +118,7 @@ end
 
 function plotActI(ActI_df, ptitle = ""; legend = true)
     setGadflyTheme()
+    ActI_df."Receptor" = replace.(ActI_df."Receptor", "FcgR" => "FcγR")
     pl = plot(
         ActI_df,
         x = "Receptor",

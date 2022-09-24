@@ -3,6 +3,7 @@ import Statistics: mean, quantile, std
 import Distributions: cdf, Exponential
 import StatsBase: sample, mode
 import Base: tanh
+import ProgressMeter: @showprogress
 
 exponential(x::Real) = cdf(Exponential(), x)
 exponential(X::Array) = cdf.(Exponential(), X)
@@ -203,14 +204,14 @@ function runRegMAP(dataType::Union{DataFrame, String}, fname = nothing; kwargs..
         end
     end
     m = regmodel(df, df."Target"; kwargs...)
-    opts = Optim.Options(iterations = 500, show_every = 50, show_trace = true)
+    opts = Optim.Options(iterations = 2000, show_every = 50, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
     mapdf = DataFrame(Parameter = String.(names(opt.values)[1]), Value = opt.values.array)
 
     LOOindex = LOOCV(size(df)[1])
-    opts = Optim.Options(iterations = 100, show_trace = false)
+    opts = Optim.Options(iterations = 2000, show_trace = false)
     optcv = Vector{StatisticalModel}(undef, size(df)[1])
-    for (i, idx) in enumerate(LOOindex)
+    @showprogress for (i, idx) in enumerate(LOOindex)
         mv = regmodel(df[idx, :], df[idx, :]."Target"; kwargs...)
         optcv[i] = optimize(mv, MAP(), LBFGS(; m = 20), opts)
         mapdf[!, "CV$i"] = optcv[i].values.array
@@ -229,7 +230,7 @@ function runRegMAP(dataType::Union{DataFrame, String}, fname = nothing; kwargs..
 end
 
 function extractRegMCMC(c::Union{Chains, StatisticalModel}; cellTypes = nothing, 
-        FcgRs::Union{Nothing, Vector{String}} = nothing)
+        FcgRs::Union{Nothing, Vector{String}, DataFrame} = nothing)
     pnames = [String(s) for s in (c isa Chains ? c.name_map[1] : names(c.values)[1])]
     ext(s::String) = c isa Chains ? median(c[s].data) : c.values[Symbol(s)]
 
@@ -242,6 +243,8 @@ function extractRegMCMC(c::Union{Chains, StatisticalModel}; cellTypes = nothing,
     end
     if FcgRs === nothing
         FcgRs = names(murine ? murineActI : humanActI)[1]
+    elseif FcgRs isa DataFrame
+        FcgRs = unique([String(split(fcgr, "-")[1]) for fcgr in names(FcgRs[!, Not("IgG")])])
     end    
     return regParams(
         NamedArray(cellWs, cellTypes, "CellType"), 
