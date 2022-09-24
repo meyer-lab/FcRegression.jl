@@ -107,7 +107,7 @@ function mixtureANOVA()
             string.(df."%_1") .* ", " .* df."subclass_2" .* " " .* string.(df."%_2")    
     df."Dose" = df."subclass_1" .* " " .* string.(df."%_1") .* ", " .* df."subclass_2" .* 
             " " .* string.(df."%_2")
-    
+
     nullmodel = lm(@formula(Value ~ 1), df)
     model = lm(@formula(Value ~ 1 + Condition), df)
     return ftest(nullmodel.model, model.model)
@@ -126,11 +126,16 @@ function figure1(; kwargs...)
 
     # Specific IgG pair - receptor interaction
     df = averageMixData()
-    igg12_1 = splot_origData(df[(df."Receptor" .== "FcgRI") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG2"), :]; 
-        match_y = false, legend = false)
-    igg14_1 =
-        splot_origData(df[(df."Receptor" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :]; 
-        match_y = false, legend = true)
+    igg12_1 = splot_origData(
+        df[(df."Receptor" .== "FcgRI") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG2"), :];
+        match_y = false,
+        legend = false,
+    )
+    igg14_1 = splot_origData(
+        df[(df."Receptor" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :];
+        match_y = false,
+        legend = true,
+    )
 
     pl = plotGrid((2, 3), [nothing, p1, p2, nothing, igg12_1, igg14_1]; sublabels = "acdbef", widths = [4, 3, 3.8], kwargs...)
     return draw(PDF("figure1.pdf", 10inch, 6inch), pl)
