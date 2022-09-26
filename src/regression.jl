@@ -168,8 +168,18 @@ end
     nothing
 end
 
-function runRegMCMC(dataType::Union{DataFrame, String}; mcmc_iter = 1_000, kwargs...)
-    df = (dataType isa String) ? importDepletion(dataType) : dataType
+function runRegMCMC(df::DataFrame, fname = nothing; mcmc_iter = 1_000, kwargs...)
+    if fname !== nothing
+        fname = "cached/" * fname
+    end
+    if (fname !== nothing) && isfile(fname)
+        deserial = deserialize(fname)
+        if (df == deserial[3]) && (Dict(kwargs) == deserial[4])
+            println("Loading cached regression MCMC results from $fname...")
+            return deserial[1:2]
+        end
+    end
+
     m = regmodel(df, df."Target"; kwargs...)
     opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
@@ -186,16 +196,17 @@ function runRegMCMC(dataType::Union{DataFrame, String}; mcmc_iter = 1_000, kwarg
         "value" => (xs -> quantile(xs, 0.75)) => "xmax",
     )
     cdf."MAP" = opt.values.array
+
+    if fname !== nothing
+        f = serialize(fname, [c, cdf, df, Dict(kwargs)])
+    end
     return c, cdf
 end
 
 """ Run a MAP parameter estimation, with LOO/jackknife as errorbar """
-function runRegMAP(dataType::Union{DataFrame, String}, fname = nothing; kwargs...)
-    fname = "cached/" * fname
-    df = if (dataType isa String)
-        murine ? importDepletion(dataType) : importHumanized(dataType)
-    else
-        dataType
+function runRegMAP(df::DataFrame, fname = nothing; kwargs...)
+    if fname !== nothing
+        fname = "cached/" * fname
     end
     if (fname !== nothing) && isfile(fname)
         deserial = deserialize(fname)

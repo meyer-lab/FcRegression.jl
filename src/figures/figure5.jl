@@ -20,8 +20,8 @@ function figure5()
     Kav0 = Kav0[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])];
     Kav1 = Kav1[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])];
 
-    opt0, optcv0, mapdf0 = FcRegression.runRegMAP(df, "MAP_0923_C0.dat"; murine = false, Kav = Kav0);
-    opt1, optcv1, mapdf1 = FcRegression.runRegMAP(df, "MAP_0923_C1.dat"; murine = false, Kav = Kav1);
+    opt0, optcv0, mapdf0 = FcRegression.runRegMAP(df, "MAP_0923_A0.dat"; murine = false, Kav = Kav0);
+    opt1, optcv1, mapdf1 = FcRegression.runRegMAP(df, "MAP_0923_A1.dat"; murine = false, Kav = Kav1);
 
     pl_map0 = FcRegression.plotRegMCMC(opt0, deepcopy(df); ptitle = "documented affinities", 
         Kav = Kav0, colorL = "Genotype", shapeL = "Condition", legend = false);

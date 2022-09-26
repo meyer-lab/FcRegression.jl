@@ -166,7 +166,9 @@ end
 
 """ Running that general MCMC model """
 function rungMCMC(fname::Union{String, Nothing}; dat::Symbol = :none, mcmc_iter = 1_000, Kavd = nothing)
-    fname = "cached/" * fname
+    if fname !== nothing
+        fname = "cached/" * fname
+    end
     if (fname !== nothing) && isfile(fname)
         return deserialize(fname)
     end
@@ -240,7 +242,9 @@ end
 """ Validate those fitted affinities with independent (Robinett or mCHO) dataset """
 function validateFittedKav(c::Chains, fname = nothing; murine::Bool, kwargs...)
     dfit, dval = murine ? (:mLeuk, :mCHO) : (:hCHO, :hRob)
-    fname = "cached/" * fname
+    if fname !== nothing
+        fname = "cached/" * fname
+    end
 
     Kav_old = importKav(; murine = murine, retdf = true)
     Kav_new = extractMCMC(c; dat = dfit)["Kav"]
