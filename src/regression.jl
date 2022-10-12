@@ -97,7 +97,8 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool, cellTypes = nothing, 
     ansType = ("Target" in names(df)) ? promote_type(eltype(df."Target"), eltype(ActI)) : eltype(ActI)
     Xfc = Array{ansType}(undef, size(df, 1), length(cellTypes))
     Threads.@threads for k = 1:size(df, 1)
-        genotype = ("Genotype" in names(df)) ? df[k, "Genotype"] : "XIX"    # FcgRIIB has default genotype is 232I
+        genotype = ("Genotype" in names(df)) ? df[k, "Genotype"] : "XXX"
+        genotype = genotype[1] * "I" * genotype[3:end]    # FcgRIIB has default genotype is 232I
         Rtott = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes, genotype = genotype)
         Rtott = Rtott[in(names(Kav[!, Not("IgG")])).(Rtott."Receptor"), :]
         Xfc[k, :] = modelPred(
@@ -181,8 +182,7 @@ function runRegMCMC(df::DataFrame, fname = nothing; mcmc_iter = 1_000, kwargs...
     end
 
     m = regmodel(df, df."Target"; kwargs...)
-    opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
-    opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
+    opt = optimizeMAP(df; kwargs...)
     c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
 
     # Put model parameters into a df
@@ -203,8 +203,22 @@ function runRegMCMC(df::DataFrame, fname = nothing; mcmc_iter = 1_000, kwargs...
     return c, cdf
 end
 
+
+function optimizeMAP(df::DataFrame; repeat = 10, kwargs...)
+    m = regmodel(df, df."Target"; kwargs...)
+    opts = Optim.Options(iterations = 200, show_every = 10, show_trace = false)
+    for r = 1:repeat
+        opt = optimize(m, MAP(), LBFGS(; m = 50), opts)
+        if opt.optim_result.ls_success
+            return opt
+        end
+    end
+    @assert opt.optim_result.ls_success "MAP optimization was never successful even after $repeat tries."
+end
+
+
 """ Run a MAP parameter estimation, with LOO/jackknife as errorbar """
-function runRegMAP(df::DataFrame, fname = nothing; kwargs...)
+function runRegMAP(df::DataFrame, fname = nothing; bootstrap = 10, kwargs...)
     if fname !== nothing
         fname = "cached/" * fname
     end
@@ -215,18 +229,15 @@ function runRegMAP(df::DataFrame, fname = nothing; kwargs...)
             return deserial[1:3]
         end
     end
-    m = regmodel(df, df."Target"; kwargs...)
-    opts = Optim.Options(iterations = 2000, show_every = 50, show_trace = true)
-    opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
+
+    opt = optimizeMAP(df; kwargs...)
     mapdf = DataFrame(Parameter = String.(names(opt.values)[1]), Value = opt.values.array)
 
-    LOOindex = LOOCV(size(df)[1])
-    opts = Optim.Options(iterations = 2000, show_trace = false)
-    optcv = Vector{StatisticalModel}(undef, size(df)[1])
-    @showprogress for (i, idx) in enumerate(LOOindex)
-        mv = regmodel(df[idx, :], df[idx, :]."Target"; kwargs...)
-        optcv[i] = optimize(mv, MAP(), LBFGS(; m = 20), opts)
-        mapdf[!, "CV$i"] = optcv[i].values.array
+    optcv = Vector{StatisticalModel}(undef, bootstrap)
+    @showprogress for b = 1:bootstrap
+        idx = rand(1:size(df)[1], size(df)[1])
+        optcv[b] = optimizeMAP(df[idx, :]; kwargs...)
+        mapdf[!, "Boot$b"] = optcv[b].values.array
     end
 
     mapdf = combine(
@@ -285,7 +296,7 @@ function plotRegMCMC(
         df = importDepletion(df)
     end
     if c isa Chains
-        fits = hcat([regPred(df, extractReg(c[ii]); kwargs...) 
+        fits = hcat([regPred(df, extractReg(c[ii]); Kav = Kav, kwargs...) 
             for ii = 1:length(c)]...)
         df."Fitted" .= mapslices(median, fits, dims = 2)
         df."ymax" .= mapslices(xs -> quantile(xs, 0.75), fits, dims = 2)
