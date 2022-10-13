@@ -45,13 +45,15 @@ const murineFcgR = ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]
 const humanFcgR =
     ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"]
 const humanFcgRiv = ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIIA-158F", "FcgRIIIA-158V"]
-const murineActI = [1.0, -1, 1, 1]
-const humanActI = [1.0, 1, 1, -1, -1, 1, 1, 1, 1]
+
+const murineActI = NamedArray([1.0, -1, 1, 1], ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"], "mFcgR")
+const humanActI = NamedArray([1.0, 1, -1, 1, 1, 1], ["FcgRI", "FcgRIIA", "FcgRIIB", "FcgRIIC", "FcgRIIIA", "FcgRIIIB"], "hFcgR")
+
 const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
 const humanActYmax = [5.5e4, 1.5e5, 4.5e4, 3.5e4, 3e3] # ymax for synergy plots
 const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
-@memoize function importRtot_readcsv(; murine::Bool, genotype = "HIV", retdf = true, cellTypes = nothing)
+@memoize function importRtot_readcsv(; murine::Bool, genotype = "HIV", retdf = true, cellTypes::Union{Nothing, Vector, NamedVector} = nothing)
     if murine
         df = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame
     else
@@ -59,6 +61,8 @@ const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
     end
     if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
+    elseif cellTypes isa NamedArray
+        cellTypes = names(cellTypes)[1]
     end
     df = combine(groupby(df, ["Cells", "Receptor"]), names(df, "Count") .=> geocmean)
     df = unstack(df, "Receptor", "Cells", "Count_geocmean")
@@ -92,9 +96,9 @@ const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
     end
     @assert df.Receptor == (murine ? murineFcgR : humanFcgR)
     if retdf
-        return deepcopy(df[!, ["Receptor"; names(df)[in(cellTypes).(names(df))]]])
+        return df[!, ["Receptor"; names(df)[in(cellTypes).(names(df))]]]
     else
-        return deepcopy(Matrix{Float64}(df[!, cellTypes]))
+        return Matrix{Float64}(df[!, cellTypes])
     end
 end
 

@@ -7,6 +7,7 @@ using StatsBase
 using DataFrames
 import Printf: @sprintf
 import Cairo, Fontconfig
+using NamedArrays
 
 
 include("figures/figureCommon.jl")

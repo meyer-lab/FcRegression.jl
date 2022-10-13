@@ -110,7 +110,7 @@ function plotCellTypeEffects(Cell_df, ptitle = ""; legend = true)
         Scale.x_discrete(levels = unique(Cell_df.Condition)),
         Scale.y_continuous(minvalue = 0.0),
         Scale.color_discrete(levels = unique(Cell_df.Component)),
-        Guide.title("Predicted cell type weights ($ptitle)"),
+        Guide.title("Predicted cell type weights\n($ptitle)"),
         style(key_position = legend ? :right : :none, stroke_color = c -> "black", errorbar_cap_length = 4px),
     )
     return pl
@@ -118,6 +118,7 @@ end
 
 function plotActI(ActI_df, ptitle = ""; legend = true)
     setGadflyTheme()
+    ActI_df."Receptor" = replace.(ActI_df."Receptor", "FcgR" => "FcγR")
     pl = plot(
         ActI_df,
         x = "Receptor",
@@ -129,7 +130,7 @@ function plotActI(ActI_df, ptitle = ""; legend = true)
         Geom.bar(position = :dodge),
         Scale.x_discrete(levels = unique(ActI_df.Receptor)),
         Scale.y_continuous(),
-        Guide.title("Predicted receptor weights ($ptitle)"),
+        Guide.title("Predicted receptor weights\n($ptitle)"),
         style(stroke_color = c -> "black", errorbar_cap_length = 4px, bar_spacing = 10px),
     )
     return pl

@@ -1,9 +1,10 @@
 """ Plot in vivo regression results. Return predictions, cell weights, and receptor weights for MAP and MCMC. """
 function plot_regressions(df; Kav::DataFrame, murine = false, cellTypes = nothing, ptitle = "")
     opt, optcv, cdf = runRegMAP(df; murine = murine, Kav = Kav, cellTypes = cellTypes)
-    c, ccdf = runRegMCMC(df; murine = murine, Kav = Kav, mcmc_iter = 200, cellTypes = cellTypes)
+    c0, ccdf0 = FcRegression.runRegMCMC(df; murine = murine, Kav = Kav0, mcmc_iter = 200, cellTypes = cellTypes)
 
-    pl_map = plotRegMCMC(opt, deepcopy(df); ptitle = ptitle * "[MAP]", Kav = Kav, cellTypes = cellTypes, colorL = "Genotype", shapeL = "Condition")
+    pl_map = plotRegMCMC(opt, deepcopy(df); ptitle = ptitle * "[MAP]", Kav = Kav, 
+        cellTypes = cellTypes, colorL = "Genotype", shapeL = "Condition")
     pl_mcmc = plotRegMCMC(c, deepcopy(df); ptitle = ptitle * "[MCMC]", Kav = Kav, cellTypes = cellTypes, colorL = "Genotype", shapeL = "Condition")
     cell_map, act_map = plotRegParams(optcv; ptitle = ptitle * "[MAP]", legend = true, Kav = Kav, cellTypes = cellTypes)
     cell_mcmc, act_mcmc = plotRegParams(c; ptitle = ptitle * "[MCMC]", legend = true, Kav = Kav, cellTypes = cellTypes)
@@ -11,19 +12,85 @@ function plot_regressions(df; Kav::DataFrame, murine = false, cellTypes = nothin
 end
 
 
-function figure5()
-    df = FcRegression.importHumanized("ITP")
+function figure5(ssize=(9inch, 9inch); cellTypes = nothing, mcmc_iter = 500, suffix = "1011_N",
+        kwargs...)
+    df = FcRegression.importHumanized("ITP");
 
-    Kav0 = FcRegression.importKav(; murine = false)
-    Kav1 = FcRegression.extractNewHumanKav()
+    Kav0 = FcRegression.importKav(; murine = false);
+    Kav1 = FcRegression.extractNewHumanKav();
+    Kav0 = Kav0[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])];
+    Kav1 = Kav1[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])];
 
-    pls0a = FcRegression.plot_regressions(df; Kav = Kav1, ptitle = "Schwab, old Kav(A)")
-    pls1a = FcRegression.plot_regressions(df; Kav = Kav1, ptitle = "Schwab, new Kav(A)")
-    pls0t = FcRegression.plot_regressions(df; Kav = Kav0, ptitle = "Schwab, old Kav(3)")
-    pls1t = FcRegression.plot_regressions(df; Kav = Kav1, ptitle = "Schwab, new Kav(3)")
+    c0, ccdf0 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)0.dat"; 
+        murine = false, Kav = Kav0, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
+    c1, ccdf1 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)1.dat"; 
+        murine = false, Kav = Kav1, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
+    
+    c0 = c0[250:end]
+    c1 = c1[250:end]
+    
+    pl_map0 = FcRegression.plotRegMCMC(c0, deepcopy(df); 
+        ptitle = "documented affinities", colorL = "Genotype", shapeL = "Condition", legend = true,
+        Kav = Kav0, cellTypes = cellTypes);
+    cell_map0, act_map0 = FcRegression.plotRegParams(c0; 
+        ptitle = "documented affinities", legend = true, 
+        Kav = Kav0, cellTypes = cellTypes);
+    
+    pl_map1 = FcRegression.plotRegMCMC(c1, deepcopy(df); 
+        ptitle = "updated affinities", colorL = "Genotype", shapeL = "Condition", legend = true,
+        Kav = Kav1, cellTypes = cellTypes);
+    cell_map1, act_map1 = FcRegression.plotRegParams(c1; 
+        ptitle = "updated affinities", legend = true, 
+        Kav = Kav1, cellTypes = cellTypes);
 
-    draw(PDF("old Kav, all cells.pdf", 12inch, 8inch), FcRegression.plotGrid((2, 3), pls0a))
-    draw(PDF("new Kav, all cells.pdf", 12inch, 8inch), FcRegression.plotGrid((2, 3), pls1a))
-    draw(PDF("old Kav, three cells.pdf", 12inch, 8inch), FcRegression.plotGrid((2, 3), pls0t))
-    draw(PDF("new Kav, three cells.pdf", 12inch, 8inch), FcRegression.plotGrid((2, 3), pls1t))
+    pl = FcRegression.plotGrid((3, 3), [nothing, pl_map0, pl_map1, nothing, cell_map0, cell_map1, nothing, act_map0, act_map1]; 
+        sublabels = "abc de fg", kwargs...)
+    return draw(PDF("figure5_$suffix.pdf", ssize[1], ssize[2]), pl)
+end
+
+
+function regLOCellOut(df, Kav)
+    # Leave one cell type out
+    cellTs = FcRegression.humanCellTypes
+    R2s = zeros(length(cellTs))
+    LOOindex = LOOCV(length(cellTs))
+
+    for (i, idx) in enumerate(LOOindex)
+        m = FcRegression.regmodel(df, df."Target"; cellTypes = cellTs[idx], murine = false, Kav = Kav)
+        opts = Optim.Options(iterations = 1000, show_every = 50, show_trace = false)
+        opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
+        param = FcRegression.extractRegMCMC(opt; cellTypes = cellTs[idx], FcgRs = unique([String(split(fcgr, "-")[1]) for fcgr in names(Kav[!, Not("IgG")])]))
+        pred = FcRegression.regPred(df, param; cellTypes = cellTs[idx], murine = false, Kav = Kav)
+        R2s[i] = FcRegression.R2(df."Target", pred; logscale = false)
+    end
+    return DataFrame("Model" => ["No " * c for c in cellTs], "R2" => R2s)
+end
+
+function regOnly1Cell(df, Kav)
+    # Keep only one cell types
+    cellTs = FcRegression.humanCellTypes
+    R2s = zeros(length(cellTs))
+
+    for i = 1:length(cellTs)
+        m = FcRegression.regmodel(df, df."Target"; cellTypes = [cellTs[i]], murine = false, Kav = Kav)
+        opts = Optim.Options(iterations = 1000, show_every = 50, show_trace = false)
+        opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
+        param = FcRegression.extractRegMCMC(opt; cellTypes = [cellTs[i]], FcgRs = unique([String(split(fcgr, "-")[1]) for fcgr in names(Kav[!, Not("IgG")])]))
+        pred = FcRegression.regPred(df, param; cellTypes = [cellTs[i]], murine = false, Kav = Kav)
+        R2s[i] = FcRegression.R2(df."Target", pred; logscale = false)
+    end
+    return DataFrame("Model" => ["Only " * c for c in cellTs], "R2" => R2s)
+end
+
+function regLOReceptorOut(Kav, rcps = ["FcgRI", "FcgRIIA", "FcgRIIB", "FcgRIIIA", "FcgRIIIB"])
+    Rtot = FcRegression.importRtot(; murine = false, retdf = true)
+    Rtot = Rtot[in(rcps).([split(r, "-")[1] for r in Rtot."Receptor"]), :]
+
+    Kav = Kav[!, [true; in(rcps).([split(r, "-")[1] for r in names(Kav[!, 2:end])])]]
+
+    Kav0 = FcRegression.importKav(; murine = false);
+    Kav1 = FcRegression.extractNewHumanKav();
+    Kav0 = Kav0[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])];
+    Kav1 = Kav1[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])];
+
 end
