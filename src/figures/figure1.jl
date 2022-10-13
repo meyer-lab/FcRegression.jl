@@ -42,9 +42,7 @@ function splot_origData(df; match_y = true, legend = true)
     )
 end
 
-function bindVSaff()
-    hKav = importKav(; murine = false, retdf = true)
-
+function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_name = "Documented")
     # Binding data, keep single IgG subclass only
     df = averageMixData(loadMixData())
     df = df[(df."%_1" .== 1.0) .| (df."%_2" .== 1.0), :]
@@ -70,8 +68,8 @@ function bindVSaff()
         Geom.errorbar,
         Scale.x_log10,
         Scale.y_log10,
-        Guide.title("Recorded affinity vs. single IgG binding"),
-        Guide.xlabel("Recorded Affinity (M<sup>-1</sup>)"),
+        Guide.title("$affinity_name affinity vs. single IgG binding"),
+        Guide.xlabel("$affinity_name Affinity (M<sup>-1</sup>)"),
         Guide.ylabel("Binding quantification"),
         style(key_position = :none),
     )
@@ -90,8 +88,8 @@ function bindVSaff()
         Geom.point,
         Scale.x_log10,
         Scale.y_log10,
-        Guide.title("Recorded affinity vs. intervalency ratio"),
-        Guide.xlabel("Recorded Affinity (M<sup>-1</sup>)"),
+        Guide.title("$affinity_name affinity vs. intervalency ratio"),
+        Guide.xlabel("$affinity_name Affinity (M<sup>-1</sup>)"),
         Guide.ylabel("33- to 4-valent binding ratio"),
     )
     return pl1, pl2

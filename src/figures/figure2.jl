@@ -42,7 +42,7 @@ end
 function figure2(ssize=(14inch, 3inch); widths=[3, 3, 3, 3.5])
     setGadflyTheme()
 
-    score, loading, vars_expl = mixtureDataPCA(3
+    score, loading, vars_expl = mixtureDataPCA()
     vars = plot(
         DataFrame(Components = 1:length(vars_expl), R2X = vars_expl),
         x = "Components",
