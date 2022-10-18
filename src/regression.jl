@@ -175,7 +175,7 @@ function runRegMCMC(df::DataFrame, fname = nothing; mcmc_iter = 1_000, kwargs...
     end
     if (fname !== nothing) && isfile(fname)
         deserial = deserialize(fname)
-        if (df == deserial[3]) && (Dict(kwargs) == deserial[4])
+        if all(df."Target" .== deserial[3]."Target") && (Dict(kwargs) == deserial[4])
             println("Loading cached regression MCMC results from $fname...")
             return deserial[1:2]
         end

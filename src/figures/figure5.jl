@@ -12,8 +12,58 @@ function plot_regressions(df; Kav::DataFrame, murine = false, cellTypes = nothin
 end
 
 
-function figure5(ssize=(9inch, 9inch); cellTypes = nothing, mcmc_iter = 500, suffix = "1011_N",
-        kwargs...)
+function predictLbound(
+        Kav = FcRegression.extractNewHumanKav(), 
+        Rtot = FcRegression.importRtot(; murine = false, retdf = true);
+        f = 4,
+        L0 = 1e-9,
+        KxStar = KxConst,
+        longFormat = true,
+    )
+    """ Predict Lbound of each cell type based on Kav """
+    df = DataFrame("IgG" => Kav."IgG", [cn => 0.0 for cn in names(Rtot)[2:end]]...)
+    for (i, igg) in enumerate(df."IgG")
+        kav = Matrix(Kav[Kav."IgG" .== igg, 2:end])
+        for cn in names(Rtot)[2:end]
+            df[i, cn] = polyfc(L0, KxStar, f, Rtot[!, cn], [1.0], kav).Lbound
+        end
+    end
+    return stack(df, Not("IgG"), variable_name = "Cell", value_name = "Lbound")
+end
+
+
+function plotLbound(Rtot = FcRegression.importRtot(; murine = false, retdf = true);
+        title = "")
+
+    Kav0 = FcRegression.importKav(; murine = false);
+    Kav1 = FcRegression.extractNewHumanKav();
+    df0 = FcRegression.predictLbound(Kav0)
+    df0."Affinity" .= "Documented"
+    df1 = FcRegression.predictLbound(Kav1)
+    df1."Affinity" .= "Updated"
+    df = vcat(df0, df1)
+
+    df = df[in(["ncMO", "cMO", "Neu"]).(df."Cell"), :]
+
+    return [plot(
+            df[df."IgG" .== igg, :],
+            x = "Cell",
+            y = "Lbound",
+            color = "Affinity",
+            Geom.bar(position = :dodge),
+            
+            Guide.colorkey(),
+            Guide.title("Predicted bound $igg"),
+            Scale.color_discrete_manual("cyan","teal","slateblue","navy"),
+            style(bar_spacing = 0.1inch, key_position = igg=="IgG4" ? :right : :none),
+            # Stat.dodge(axis = :x),    # don't use if there is no error bar
+        )
+        for igg in unique(df."IgG")]
+end
+
+
+function figure5(ssize=(9inch, 9inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 500, suffix = "1011_N",
+        widths = [1 1 1 1.3; 2 1 3 3; 2 1 3 3; 2 1 3 3], kwargs...)
     df = FcRegression.importHumanized("ITP");
 
     Kav0 = FcRegression.importKav(; murine = false);
@@ -43,8 +93,17 @@ function figure5(ssize=(9inch, 9inch); cellTypes = nothing, mcmc_iter = 500, suf
         ptitle = "updated affinities", legend = true, 
         Kav = Kav1, cellTypes = cellTypes);
 
-    pl = FcRegression.plotGrid((3, 3), [nothing, pl_map0, pl_map1, nothing, cell_map0, cell_map1, nothing, act_map0, act_map1]; 
-        sublabels = "abc de fg", kwargs...)
+    lbounds = plotLbound()
+
+    pl = FcRegression.plotGrid((4, 4), 
+        [lbounds[1], lbounds[2], lbounds[3], lbounds[4],
+        nothing, nothing, pl_map0, pl_map1, 
+        nothing, nothing, cell_map0, cell_map1, 
+        nothing, nothing, act_map0, act_map1,
+        ]; 
+        sublabels = "abcde fg  hi  jk", 
+        widths = widths,
+        kwargs...)
     return draw(PDF("figure5_$suffix.pdf", ssize[1], ssize[2]), pl)
 end
 

@@ -1,10 +1,5 @@
 """ Figure 4: Affinity updates """
 
-"""
-Ideas:
-Fitted affinity vs. measured binding
-
-"""
 
 """ Making one single violin plot. Called by plotAffinityViolin() """
 function plot_distribution_violins(
@@ -56,7 +51,7 @@ function plotAffinityViolin(c::Chains; murine::Bool, y_range = (4, 9))
             posts,
             priors;
             y_range = y_range,
-            title = "$pref$igg Affinities Distributions",
+            title = "$pref$igg Affinity Distributions",
             legend = (ii == length(Kav_priors[!, "IgG"])),
         )
     end
