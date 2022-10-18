@@ -25,8 +25,7 @@ function assembleActs(ActI::NamedVector, pred::NamedVector)
 end
 
 
-function modelPred(dfr::DataFrameRow; 
-        f = 4, ActI::NamedVector = humanActI, Kav::DataFrame, Rtot = importRtot(; murine = false, retdf = true))
+function modelPred(dfr::DataFrameRow; f = 4, ActI::NamedVector = humanActI, Kav::DataFrame, Rtot = importRtot(; murine = false, retdf = true))
     Kav[Kav."IgG" .== "IgG2c", "IgG"] .= "IgG2a"
 
     IgGs = String[]
@@ -101,13 +100,7 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool, cellTypes = nothing, 
         genotype = genotype[1] * "I" * genotype[3:end]    # FcgRIIB has default genotype is 232I
         Rtott = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes, genotype = genotype)
         Rtott = Rtott[in(names(Kav[!, Not("IgG")])).(Rtott."Receptor"), :]
-        Xfc[k, :] = modelPred(
-            df[k, :];
-            ActI = ActI,
-            Kav = Kav,
-            Rtot = Rtott,
-            kwargs...,
-        )
+        Xfc[k, :] = modelPred(df[k, :]; ActI = ActI, Kav = Kav, Rtot = Rtott, kwargs...)
     end
 
     colls = murine ? murineFcgR : humanFcgR
@@ -252,8 +245,7 @@ function runRegMAP(df::DataFrame, fname = nothing; bootstrap = 10, kwargs...)
     return opt, optcv, mapdf
 end
 
-function extractRegMCMC(c::Union{Chains, StatisticalModel}; cellTypes = nothing, 
-        FcgRs::Union{Nothing, Vector{String}, DataFrame} = nothing)
+function extractRegMCMC(c::Union{Chains, StatisticalModel}; cellTypes = nothing, FcgRs::Union{Nothing, Vector{String}, DataFrame} = nothing)
     pnames = [String(s) for s in (c isa Chains ? c.name_map[1] : names(c.values)[1])]
     ext(s::String) = c isa Chains ? median(c[s].data) : c.values[Symbol(s)]
 
@@ -268,12 +260,8 @@ function extractRegMCMC(c::Union{Chains, StatisticalModel}; cellTypes = nothing,
         FcgRs = names(murine ? murineActI : humanActI)[1]
     elseif FcgRs isa DataFrame
         FcgRs = unique([String(split(fcgr, "-")[1]) for fcgr in names(FcgRs[!, Not("IgG")])])
-    end    
-    return regParams(
-        NamedArray(cellWs, cellTypes, "CellType"), 
-        NamedArray(ActIs, FcgRs, "Receptor"), 
-        murine,
-    )
+    end
+    return regParams(NamedArray(cellWs, cellTypes, "CellType"), NamedArray(ActIs, FcgRs, "Receptor"), murine)
 end
 
 function plotRegMCMC(
@@ -296,8 +284,7 @@ function plotRegMCMC(
         df = importDepletion(df)
     end
     if c isa Chains
-        fits = hcat([regPred(df, extractReg(c[ii]); Kav = Kav, kwargs...) 
-            for ii = 1:length(c)]...)
+        fits = hcat([regPred(df, extractReg(c[ii]); Kav = Kav, kwargs...) for ii = 1:length(c)]...)
         df."Fitted" .= mapslices(median, fits, dims = 2)
         df."ymax" .= mapslices(xs -> quantile(xs, 0.75), fits, dims = 2)
         df."ymin" .= mapslices(xs -> quantile(xs, 0.25), fits, dims = 2)
@@ -350,15 +337,9 @@ function plotRegParams(
 )
     extractReg = x -> extractRegMCMC(x; cellTypes = cellTypes, FcgRs = unique([String(split(fcgr, "-")[1]) for fcgr in names(Kav[!, Not("IgG")])]))
     murine = extractReg(c[1]).isMurine
-    df = vcat([wildtypeWeights(extractReg(c[ii]); 
-            cellTypes = names(extractReg(c[1]).cellWs)[1], 
-            murine = murine, 
-            Kav = Kav) 
-            for ii = 1:length(c)]...)
+    df = vcat([wildtypeWeights(extractReg(c[ii]); cellTypes = names(extractReg(c[1]).cellWs)[1], murine = murine, Kav = Kav) for ii = 1:length(c)]...)
 
-    ActI_df = vcat([DataFrame(:Receptor => names(extractReg(c[1]).ActIs)[1], 
-                              :Weight => extractReg(c[ii]).ActIs)
-                              for ii = 1:length(c)]...)
+    ActI_df = vcat([DataFrame(:Receptor => names(extractReg(c[1]).ActIs)[1], :Weight => extractReg(c[ii]).ActIs) for ii = 1:length(c)]...)
 
     df = combine(
         groupby(df, Not("Weight")),
