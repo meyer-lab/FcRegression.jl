@@ -19,6 +19,8 @@ function predictLbound(
         KxStar = KxConst,
         longFormat = true,
     )
+    Rtot = Rtot[in(names(Kav[!, Not("IgG")])).(Rtot."Receptor"), :]
+
     """ Predict Lbound of each cell type based on Kav """
     df = DataFrame("IgG" => Kav."IgG", [cn => 0.0 for cn in names(Rtot)[2:end]]...)
     for (i, igg) in enumerate(df."IgG")
@@ -70,13 +72,38 @@ function figure5(ssize=(9inch, 9inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_
     #Kav0 = Kav0[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])]
     #Kav1 = Kav1[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])]
 
-    c0, ccdf0 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)0.dat"; murine = false, Kav = Kav0, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
     c1, ccdf1 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)1.dat"; murine = false, Kav = Kav1, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
+    c0, ccdf0 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)0.dat"; murine = false, Kav = Kav0, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
+    
 
     c0 = c0[250:end]
     c1 = c1[250:end]
 
     lbounds = plotLbound()
+
+    pl_map0 = FcRegression.plotRegMCMC(
+        c0,
+        deepcopy(df);
+        ptitle = "documented affinities",
+        colorL = "Genotype",
+        shapeL = "Condition",
+        legend = true,
+        Kav = Kav0,
+        cellTypes = cellTypes,
+    )
+    cell_map0, act_map0 = FcRegression.plotRegParams(c0; ptitle = "documented affinities", legend = true, Kav = Kav0, cellTypes = cellTypes)
+
+    pl_map1 = FcRegression.plotRegMCMC(
+        c1,
+        deepcopy(df);
+        ptitle = "updated affinities",
+        colorL = "Genotype",
+        shapeL = "Condition",
+        legend = true,
+        Kav = Kav1,
+        cellTypes = cellTypes,
+    )
+    cell_map1, act_map1 = FcRegression.plotRegParams(c1; ptitle = "updated affinities", legend = true, Kav = Kav1, cellTypes = cellTypes)
 
     pl = FcRegression.plotGrid((4, 4), 
         [lbounds[1], lbounds[2], lbounds[3], lbounds[4],
