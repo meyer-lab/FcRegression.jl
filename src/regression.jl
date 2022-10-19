@@ -183,7 +183,7 @@ function runRegMCMC(df::DataFrame, fname = nothing; mcmc_iter = 1_000, kwargs...
 
     m = regmodel(df, df."Target"; kwargs...)
     opt = optimizeMAP(df; kwargs...)
-    c = sample(m, NUTS(; init_ϵ=0.05), mcmc_iter, init_params = opt.values.array)
+    c = sample(m, NUTS(-1, 0.65; init_ϵ=0.05), mcmc_iter, init_params = opt.values.array)
 
     # Put model parameters into a df
     cdf = DataFrame(c)
