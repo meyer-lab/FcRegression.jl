@@ -183,7 +183,7 @@ function runRegMCMC(df::DataFrame, fname = nothing; mcmc_iter = 1_000, kwargs...
 
     m = regmodel(df, df."Target"; kwargs...)
     opt = optimizeMAP(df; kwargs...)
-    c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
+    c = sample(m, NUTS(; init_ϵ=0.05), mcmc_iter, init_params = opt.values.array)
 
     # Put model parameters into a df
     cdf = DataFrame(c)
@@ -206,14 +206,23 @@ end
 
 function optimizeMAP(df::DataFrame; repeat = 10, kwargs...)
     m = regmodel(df, df."Target"; kwargs...)
-    opts = Optim.Options(iterations = 200, show_every = 10, show_trace = false)
+    success = false 
+    min_val = Inf
+    min_opt = nothing
+    opts = Optim.Options(iterations = 200, show_every = 10, show_trace = false);
     for r = 1:repeat
         opt = optimize(m, MAP(), LBFGS(; m = 50), opts)
+        println(opt.optim_result.minimum, opt.optim_result.ls_success)
+        if opt.optim_result.minimum < min_val
+            min_val = opt.optim_result.minimum
+            min_opt = opt
+        end
         if opt.optim_result.ls_success
-            return opt
+            success = true
         end
     end
-    @assert opt.optim_result.ls_success "MAP optimization was never successful even after $repeat tries."
+    @assert success "MAP optimization was never successful even after $repeat tries."
+    return min_opt
 end
 
 
