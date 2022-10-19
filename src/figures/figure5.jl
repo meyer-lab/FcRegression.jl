@@ -67,8 +67,8 @@ function figure5(ssize=(9inch, 9inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_
 
     Kav0 = FcRegression.importKav(; murine = false)
     Kav1 = FcRegression.extractNewHumanKav()
-    Kav0 = Kav0[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])]
-    Kav1 = Kav1[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])]
+    #Kav0 = Kav0[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])]
+    #Kav1 = Kav1[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])]
 
     c0, ccdf0 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)0.dat"; murine = false, Kav = Kav0, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
     c1, ccdf1 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)1.dat"; murine = false, Kav = Kav1, mcmc_iter = mcmc_iter, cellTypes = cellTypes)

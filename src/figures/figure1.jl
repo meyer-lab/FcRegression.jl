@@ -58,7 +58,6 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         "Value" => upper => "xmax",
     )
     df."Affinity" = [hKav[hKav."IgG" .== r."Subclass", r."Receptor"][1] for r in eachrow(df)]
-    df."Affinity"[df."Affinity" .< 1000] .= 1000
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
     pearson_cor = cor(log.(df."Affinity"), log.(df."Value"))
 
