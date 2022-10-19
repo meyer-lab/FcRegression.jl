@@ -63,14 +63,14 @@ function plotLbound(Rtot = FcRegression.importRtot(; murine = false, retdf = tru
 end
 
 
-function figure5(ssize=(9inch, 9inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 500, suffix = "1011_N",
+function figure5(ssize=(9inch, 9inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 500, suffix = "1019",
         widths = [1 1 1 1.3; 2 1 3 3; 2 1 3 3; 2 1 3 3], kwargs...)
     df = FcRegression.importHumanized("ITP");
 
-    Kav0 = FcRegression.importKav(; murine = false)
-    Kav1 = FcRegression.extractNewHumanKav()
-    #Kav0 = Kav0[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])]
-    #Kav1 = Kav1[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])]
+    Kav0 = FcRegression.extractNewHumanKav(; old = true)
+    Kav1 = FcRegression.extractNewHumanKav(; old = false)
+    Kav0 = Kav0[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])]
+    Kav1 = Kav1[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])]
 
     c1, ccdf1 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)1.dat"; murine = false, Kav = Kav1, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
     c0, ccdf0 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)0.dat"; murine = false, Kav = Kav0, mcmc_iter = mcmc_iter, cellTypes = cellTypes)

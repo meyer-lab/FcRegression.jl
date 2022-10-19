@@ -109,7 +109,6 @@ importRtot(; kwargs...) = deepcopy(importRtot_readcsv(; kwargs...))
     if murine
         df = CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#") |> DataFrame
     else
-        return importKavDist(; murine = murine, regularKav = true, retdf = retdf)
         df = CSV.File(joinpath(dataDir, "human-affinities.csv"), comment = "#") |> DataFrame
     end
 
