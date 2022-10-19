@@ -43,19 +43,25 @@ function splot_origData(df; match_y = true, legend = true)
 end
 
 function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_name = "Documented")
+    setGadflyTheme()
+
     # Binding data, keep single IgG subclass only
-    df = averageMixData(loadMixData())
+    df = loadMixData()
     df = df[(df."%_1" .== 1.0) .| (df."%_2" .== 1.0), :]
     df."Subclass" = [r."%_1" >= 1 ? r."subclass_1" : r."subclass_2" for r in eachrow(df)]
     df = df[!, ["Valency", "Receptor", "Subclass", "Value"]]
     df = combine(
         groupby(df, ["Valency", "Receptor", "Subclass"]),
         "Value" => StatsBase.median => "Value",
+        "Value" => geocmean => "Geomean",
         "Value" => lower => "xmin",
         "Value" => upper => "xmax",
     )
     df."Affinity" = [hKav[hKav."IgG" .== r."Subclass", r."Receptor"][1] for r in eachrow(df)]
+    df."Affinity"[df."Affinity" .< 1000] .= 1000
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
+    pearson_cor = cor(log.(df."Affinity"), log.(df."Value"))
+
     pl1 = plot(
         plotDFwithGreekGamma(df),
         x = "Affinity",
@@ -71,13 +77,25 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         Guide.title("$affinity_name affinity vs. single IgG binding"),
         Guide.xlabel("$affinity_name Affinity (M<sup>-1</sup>)"),
         Guide.ylabel("Binding quantification"),
+        Guide.annotation(
+            compose(
+                context(),
+                text(6, -3, "<i>ρ</i> = " * @sprintf("%.4f", pearson_cor)),
+                stroke("black"),
+                fill("black"),
+                font("Helvetica-Bold"),
+            ),
+        ),
         style(key_position = :none),
     )
 
     val_ratio = combine(groupby(df, ["Receptor", "Subclass"])) do df
         (Ratio = df[df."Valency" .== Symbol("33"), "Value"][1] / df[df."Valency" .== Symbol("4"), "Value"][1],)
     end
+    
     val_ratio."Affinity" = [hKav[hKav."IgG" .== r."Subclass", r."Receptor"][1] for r in eachrow(val_ratio)]
+    val_ratio."Affinity"[val_ratio."Affinity" .< 1000] .= 1000
+    ratio_cor = cor(log.(val_ratio."Affinity"), log.(val_ratio."Ratio"))
 
     pl2 = plot(
         plotDFwithGreekGamma(val_ratio),
@@ -91,6 +109,15 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         Guide.title("$affinity_name affinity vs. intervalency ratio"),
         Guide.xlabel("$affinity_name Affinity (M<sup>-1</sup>)"),
         Guide.ylabel("33- to 4-valent binding ratio"),
+        Guide.annotation(
+            compose(
+                context(),
+                text(6.5, 1.5, "<i>ρ</i> = " * @sprintf("%.4f", ratio_cor)),
+                stroke("black"),
+                fill("black"),
+                font("Helvetica-Bold"),
+            ),
+        ),
     )
     return pl1, pl2
 end
