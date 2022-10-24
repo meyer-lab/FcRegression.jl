@@ -114,7 +114,7 @@ function figure5(ssize=(9inch, 9inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_
         sublabels = "abcde fg  hi  jk", 
         widths = widths,
         kwargs...)
-    return draw(PDF("figure5_$suffix.pdf", ssize[1], ssize[2]), pl)
+    return draw(PDF("output/figure5_$suffix.pdf", ssize[1], ssize[2]), pl)
 end
 
 

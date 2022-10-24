@@ -90,5 +90,5 @@ function figure2(ssize=(14inch, 3inch); widths=[3, 3, 3, 3.5])
     )
 
     pl = plotGrid((1, 4), [vars, SP4, SP33, LP]; sublabels = "abcd", widths=widths)
-    return draw(PDF("figure2.pdf", ssize[1], ssize[2]), pl)
+    return draw(PDF("output/figure2.pdf", ssize[1], ssize[2]), pl)
 end

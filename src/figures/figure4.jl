@@ -66,5 +66,5 @@ function figure4(; kwargs...)
 
     pp = plotGrid((2, 4), [pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], p1, nothing, p2, nothing]; 
             widths = [3 3 3 3.8; 3.8 0.4 5 4.1], sublabels = "abcde f ", kwargs...)
-    draw(PDF("figure4.pdf", 10inch, 6inch), pp)
+    draw(PDF("output/figure4.pdf", 10inch, 6inch), pp)
 end

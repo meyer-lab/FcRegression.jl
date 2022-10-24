@@ -25,7 +25,7 @@ function figureA5()
 
 
     draw(
-        PDF("figure5.pdf", 10inch, 8inch),
+        PDF("output/figure5.pdf", 10inch, 8inch),
         plotGrid((2, 3), [ITP_Kupffer_Bound ITP_Kupffer_Act ITP_Dep ITP_Kupffer_Bound_All ITP_Kupffer_Act_All ITP_Dep_All]),
     )
 end

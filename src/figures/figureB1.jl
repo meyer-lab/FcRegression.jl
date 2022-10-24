@@ -5,7 +5,7 @@ function figureB1()
     p4 = plotSynf(1e-9; murine = true, Cellidx = 2, Rbound = true)
     p5 = plotSynFc(1e-9, 4; murine = true, Cellidx = 2, Rbound = true)
 
-    draw(SVG("figureB1.svg", 1200px, 800px), plotGrid((2, 3), [p1, p2, p3, p4, p5]; widths = [3 3 4; 4 4 2]))
+    draw(SVG("output/figureB1.svg", 1200px, 800px), plotGrid((2, 3), [p1, p2, p3, p4, p5]; widths = [3 3 4; 4 4 2]))
 end
 
 const receptorNamesB1 =

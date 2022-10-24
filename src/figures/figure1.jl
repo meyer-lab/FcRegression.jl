@@ -162,5 +162,5 @@ function figure1(; kwargs...)
     )
 
     pl = plotGrid((2, 3), [nothing, p1, p2, nothing, igg12_1, igg14_1]; sublabels = "acdbef", widths = [4, 3, 3.8], kwargs...)
-    return draw(PDF("figure1.pdf", 10inch, 6inch), pl)
+    return draw(PDF("output/figure1.pdf", 10inch, 6inch), pl)
 end
