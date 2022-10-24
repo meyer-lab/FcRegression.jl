@@ -19,8 +19,6 @@ include("runMCMC.jl")
 include("plotMCMC.jl")
 include("dataDepletion.jl")
 include("regression.jl")
-#include("synergy.jl")
-include("invivo.jl")
 
 include("figures/figureW.jl")
 
