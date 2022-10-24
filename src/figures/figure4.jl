@@ -1,10 +1,5 @@
 """ Figure 4: Affinity updates """
 
-"""
-Ideas:
-Fitted affinity vs. measured binding
-
-"""
 
 """ Making one single violin plot. Called by plotAffinityViolin() """
 function plot_distribution_violins(
@@ -56,7 +51,7 @@ function plotAffinityViolin(c::Chains; murine::Bool, y_range = (4, 9))
             posts,
             priors;
             y_range = y_range,
-            title = "$pref$igg Affinities Distributions",
+            title = "$pref$igg Affinity Distributions",
             legend = (ii == length(Kav_priors[!, "IgG"])),
         )
     end
@@ -67,6 +62,9 @@ function figure4(; kwargs...)
     c = rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000)
     pl_igg = plotAffinityViolin(c; murine = false, y_range = (5, 8))
 
-    pp = plotGrid((1, 4), [pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4]]; widths = [3, 3, 3, 3.8], kwargs...)
-    draw(PDF("figure4.pdf", 10inch, 3inch), pp)
+    p1, p2 = bindVSaff(extractNewHumanKav(); affinity_name = "Updated")
+
+    pp = plotGrid((2, 4), [pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], p1, nothing, p2, nothing]; 
+            widths = [3 3 3 3.8; 3.8 0.4 5 4.1], sublabels = "abcde f ", kwargs...)
+    draw(PDF("figure4.pdf", 10inch, 6inch), pp)
 end

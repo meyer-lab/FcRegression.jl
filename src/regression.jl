@@ -71,6 +71,8 @@ function modelPred(dfr::DataFrameRow; f = 4, ActI::NamedVector = humanActI, Kav:
         cellActs .= 0.0
         return cellActs
     end
+
+    #println("Rtot", Rtot, dfr)
     for jj = 1:size(Rtot)[2]
         pred[:] = polyfc(dfr."Concentration", KxConst, f, Rtot[:, jj], cps, Kav).Rmulti_n
         cellActs[jj] = maximum([assembleActs(ActI, pred), 0.0])
@@ -78,7 +80,7 @@ function modelPred(dfr::DataFrameRow; f = 4, ActI::NamedVector = humanActI, Kav:
     return cellActs
 end
 
-function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool, cellTypes = nothing, ActI = nothing, Kav::DataFrame, kwargs...)
+function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool = false, cellTypes = nothing, ActI = nothing, Kav::DataFrame, kwargs...)
     df = deepcopy(df)
     if ActI === nothing
         ActI = murine ? murineActI : humanActI
@@ -99,7 +101,12 @@ function modelPred(df::DataFrame; L0 = 1e-9, murine::Bool, cellTypes = nothing, 
         genotype = ("Genotype" in names(df)) ? df[k, "Genotype"] : "XXX"
         genotype = genotype[1] * "I" * genotype[3:end]    # FcgRIIB has default genotype is 232I
         Rtott = importRtot(; murine = murine, retdf = true, cellTypes = cellTypes, genotype = genotype)
+        #println("Rtott before", Rtott)
+        #println("Kav", Kav)
+
         Rtott = Rtott[in(names(Kav[!, Not("IgG")])).(Rtott."Receptor"), :]
+
+        #println("Rtott after", Rtott)
         Xfc[k, :] = modelPred(df[k, :]; ActI = ActI, Kav = Kav, Rtot = Rtott, kwargs...)
     end
 
@@ -138,7 +145,7 @@ function wildtypeWeights(opt::regParams; cellTypes = nothing, kwargs...)
 end
 
 
-@model function regmodel(df, targets; murine::Bool, L0 = 1e-9, f = 4, cellTypes = nothing, Kav::DataFrame)
+@model function regmodel(df, targets; murine::Bool = false, L0 = 1e-9, f = 4, cellTypes = nothing, Kav::DataFrame)
     ActI_means = murine ? murineActI : humanActI
     ActI_means = ActI_means[unique([String(split(ss, "-")[1]) for ss in names(Kav[!, Not("IgG")])])]
     ActIs = NamedArray(repeat([0.0], length(ActI_means)), names(ActI_means)[1], ("Receptor"))
@@ -168,7 +175,7 @@ function runRegMCMC(df::DataFrame, fname = nothing; mcmc_iter = 1_000, kwargs...
     end
     if (fname !== nothing) && isfile(fname)
         deserial = deserialize(fname)
-        if (df == deserial[3]) && (Dict(kwargs) == deserial[4])
+        if all(df."Target" .== deserial[3]."Target") && (Dict(kwargs) == deserial[4])
             println("Loading cached regression MCMC results from $fname...")
             return deserial[1:2]
         end
@@ -176,7 +183,7 @@ function runRegMCMC(df::DataFrame, fname = nothing; mcmc_iter = 1_000, kwargs...
 
     m = regmodel(df, df."Target"; kwargs...)
     opt = optimizeMAP(df; kwargs...)
-    c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
+    c = sample(m, NUTS(-1, 0.65; init_ϵ=0.05), mcmc_iter, init_params = opt.values.array)
 
     # Put model parameters into a df
     cdf = DataFrame(c)
@@ -199,14 +206,23 @@ end
 
 function optimizeMAP(df::DataFrame; repeat = 10, kwargs...)
     m = regmodel(df, df."Target"; kwargs...)
-    opts = Optim.Options(iterations = 200, show_every = 10, show_trace = false)
+    success = false 
+    min_val = Inf
+    min_opt = nothing
+    opts = Optim.Options(iterations = 200, show_every = 10, show_trace = false);
     for r = 1:repeat
         opt = optimize(m, MAP(), LBFGS(; m = 50), opts)
+        println(opt.optim_result.minimum, opt.optim_result.ls_success)
+        if opt.optim_result.minimum < min_val
+            min_val = opt.optim_result.minimum
+            min_opt = opt
+        end
         if opt.optim_result.ls_success
-            return opt
+            success = true
         end
     end
-    @assert opt.optim_result.ls_success "MAP optimization was never successful even after $repeat tries."
+    @assert success "MAP optimization was never successful even after $repeat tries."
+    return min_opt
 end
 
 
@@ -252,6 +268,9 @@ function extractRegMCMC(c::Union{Chains, StatisticalModel}; cellTypes = nothing,
     cellWs = [ext("cellWs[$i]") for i = 1:sum(startswith.(pnames, "cellWs"))]
     ActIs = [ext("ActIs[$i]") for i = 1:sum(startswith.(pnames, "ActIs"))]
     murine = length(ActIs) <= 4  # assume mice have only 4 receptors
+    if any(in(FcgRs).(["FcgRIIA", "FcgRIIIA"]))
+        murine = false
+    end
 
     if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
