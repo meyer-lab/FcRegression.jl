@@ -26,31 +26,17 @@ end
 
 const murineCellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO", "Kupffer", "KupfferHi"]
 const humanCellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO"]
-const cellTypeFullName = Dict(
-    "ncMO" => "Non-classical monocyte",
-    "cMO" => "Classical monocyte",
-    "MO" => "Monocyte",
-    "NKs" => "NKs",
-    "Neu" => "Neutrophil",
-    "EO" => "Eosinophil",
-    "Kupffer" => "Kupffer cell",
-    "KupfferHi" => "Kupffer high cell",
-    "Tcell" => "T cell",
-    "Bcell" => "B cell",
-)
 const murineIgG = ["IgG1", "IgG2a", "IgG2b", "IgG3"]
 const murineIgGFucose = ["IgG1", "IgG2a", "IgG2b", "IgG3", "IgG2bFucose"]
 const humanIgG = ["IgG1", "IgG2", "IgG3", "IgG4"]
 const murineFcgR = ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]
 const humanFcgR =
-    ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"]
+    ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"]
 const humanFcgRiv = ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIIA-158F", "FcgRIIIA-158V"]
 
 const murineActI = NamedArray([1.0, -1, 1, 1], ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"], "mFcgR")
 const humanActI = NamedArray([1.0, 1, -1, 1, 1, 1], ["FcgRI", "FcgRIIA", "FcgRIIB", "FcgRIIC", "FcgRIIIA", "FcgRIIIB"], "hFcgR")
 
-const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
-const humanActYmax = [5.5e4, 1.5e5, 4.5e4, 3.5e4, 3e3] # ymax for synergy plots
 const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
 @memoize function importRtot_readcsv(; murine::Bool, genotype = "HIV", retdf = true, cellTypes::Union{Nothing, Vector, NamedVector} = nothing)
@@ -109,7 +95,7 @@ importRtot(; kwargs...) = deepcopy(importRtot_readcsv(; kwargs...))
     if murine
         df = CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#") |> DataFrame
     else
-        df = CSV.File(joinpath(dataDir, "human-affinities.csv"), comment = "#") |> DataFrame
+        df = CSV.File(joinpath(dataDir, "human-affinities-Bruhns.csv"), comment = "#") |> DataFrame
     end
 
     IgGlist = copy(murine ? murineIgG : humanIgG)
