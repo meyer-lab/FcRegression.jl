@@ -41,7 +41,7 @@ function figure3()
         R2pos = (0, -2.5),
         legend = false,
     )
-    rob1, rob2 = validateFittedKav(c, "robinett_valid_Kavfit_0701.dat"; murine = false, legend = false)
+    rob1, rob2 = validateFittedKav(c, "robinett_valid_Kavfit_1025.dat"; murine = false, legend = false)
 
     pl_legend = plotMCMCPredict(c, df; dat = :hCHO, R2pos = (0, -2.5), legend = true)   # just to insert the legend
     pp = plotGrid((3, 3), [nothing, nothing, raw_pred_pl, pl_noKav, pl1, pl2, rob1, rob2, pl_legend])

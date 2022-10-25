@@ -113,29 +113,18 @@ function figure5(
     pl = FcRegression.plotGrid(
         (4, 4),
         [
-            lbounds[1],
-            lbounds[2],
-            lbounds[3],
-            lbounds[4],
-            nothing,
-            nothing,
-            pl_map0,
-            pl_map1,
-            nothing,
-            nothing,
-            cell_map0,
-            cell_map1,
-            nothing,
-            nothing,
-            act_map0,
-            act_map1,
+            lbounds[1], lbounds[2], lbounds[3], lbounds[4],
+            nothing, nothing, pl_map0, pl_map1, 
+            nothing, nothing, cell_map0, cell_map1, 
+            nothing, nothing, act_map0, act_map1,
         ];
         sublabels = "abcde fg  hi  jk",
         widths = widths,
-    return draw(PDF("output/figure5_$suffix.pdf", ssize[1], ssize[2]), pl)
         kwargs...,
     )
+    return draw(PDF("output/figure5_$suffix.pdf", ssize[1], ssize[2]), pl)
 end
+        
 
 
 function regLOCellOut(df, Kav)

@@ -58,6 +58,7 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         "Value" => upper => "xmax",
     )
     df."Affinity" = [hKav[hKav."IgG" .== r."Subclass", r."Receptor"][1] for r in eachrow(df)]
+    df[df."Affinity" .< 1e3, "Affinity"] .= 1e3
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
     pearson_cor = cor(log.(df."Affinity"), log.(df."Value"))
 
@@ -103,7 +104,7 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         Guide.xlabel("$affinity_name Affinity (M<sup>-1</sup>)"),
         Guide.ylabel("33- to 4-valent binding ratio"),
         Guide.annotation(
-            compose(context(), text(6.5, 1.5, "<i>ρ</i> = " * @sprintf("%.4f", ratio_cor)), stroke("black"), fill("black"), font("Helvetica-Bold")),
+            compose(context(), text(6.0, 1.5, "<i>ρ</i> = " * @sprintf("%.4f", ratio_cor)), stroke("black"), fill("black"), font("Helvetica-Bold")),
         ),
     )
     return pl1, pl2
