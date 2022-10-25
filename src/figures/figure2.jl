@@ -39,7 +39,7 @@ function plot_PCA_score(df; title = "Score", xx = "PC 1", yy = "PC 2")
     )
 end
 
-function figure2(ssize=(14inch, 3inch); widths=[3, 3, 3, 3.5])
+function figure2(ssize = (14inch, 3inch); widths = [3, 3, 3, 3.5])
     setGadflyTheme()
 
     score, loading, vars_expl = mixtureDataPCA()

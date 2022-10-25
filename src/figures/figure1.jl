@@ -77,13 +77,7 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         Guide.xlabel("$affinity_name Affinity (M<sup>-1</sup>)"),
         Guide.ylabel("Binding quantification"),
         Guide.annotation(
-            compose(
-                context(),
-                text(6, -3, "<i>ρ</i> = " * @sprintf("%.4f", pearson_cor)),
-                stroke("black"),
-                fill("black"),
-                font("Helvetica-Bold"),
-            ),
+            compose(context(), text(6, -3, "<i>ρ</i> = " * @sprintf("%.4f", pearson_cor)), stroke("black"), fill("black"), font("Helvetica-Bold")),
         ),
         style(key_position = :none),
     )
@@ -91,7 +85,7 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
     val_ratio = combine(groupby(df, ["Receptor", "Subclass"])) do df
         (Ratio = df[df."Valency" .== Symbol("33"), "Value"][1] / df[df."Valency" .== Symbol("4"), "Value"][1],)
     end
-    
+
     val_ratio."Affinity" = [hKav[hKav."IgG" .== r."Subclass", r."Receptor"][1] for r in eachrow(val_ratio)]
     val_ratio."Affinity"[val_ratio."Affinity" .< 1000] .= 1000
     ratio_cor = cor(log.(val_ratio."Affinity"), log.(val_ratio."Ratio"))
@@ -109,13 +103,7 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         Guide.xlabel("$affinity_name Affinity (M<sup>-1</sup>)"),
         Guide.ylabel("33- to 4-valent binding ratio"),
         Guide.annotation(
-            compose(
-                context(),
-                text(6.5, 1.5, "<i>ρ</i> = " * @sprintf("%.4f", ratio_cor)),
-                stroke("black"),
-                fill("black"),
-                font("Helvetica-Bold"),
-            ),
+            compose(context(), text(6.5, 1.5, "<i>ρ</i> = " * @sprintf("%.4f", ratio_cor)), stroke("black"), fill("black"), font("Helvetica-Bold")),
         ),
     )
     return pl1, pl2

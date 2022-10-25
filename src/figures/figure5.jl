@@ -12,13 +12,13 @@ end
 
 
 function predictLbound(
-        Kav = FcRegression.extractNewHumanKav(), 
-        Rtot = FcRegression.importRtot(; murine = false, retdf = true);
-        f = 4,
-        L0 = 1e-9,
-        KxStar = KxConst,
-        longFormat = true,
-    )
+    Kav = FcRegression.extractNewHumanKav(),
+    Rtot = FcRegression.importRtot(; murine = false, retdf = true);
+    f = 4,
+    L0 = 1e-9,
+    KxStar = KxConst,
+    longFormat = true,
+)
     Rtot = Rtot[in(names(Kav[!, Not("IgG")])).(Rtot."Receptor"), :]
 
     """ Predict Lbound of each cell type based on Kav """
@@ -33,11 +33,10 @@ function predictLbound(
 end
 
 
-function plotLbound(Rtot = FcRegression.importRtot(; murine = false, retdf = true);
-        title = "")
+function plotLbound(Rtot = FcRegression.importRtot(; murine = false, retdf = true); title = "")
 
-    Kav0 = FcRegression.importKav(; murine = false);
-    Kav1 = FcRegression.extractNewHumanKav();
+    Kav0 = FcRegression.importKav(; murine = false)
+    Kav1 = FcRegression.extractNewHumanKav()
     df0 = FcRegression.predictLbound(Kav0)
     df0."Affinity" .= "Documented"
     df1 = FcRegression.predictLbound(Kav1)
@@ -46,26 +45,32 @@ function plotLbound(Rtot = FcRegression.importRtot(; murine = false, retdf = tru
 
     df = df[in(["ncMO", "cMO", "Neu"]).(df."Cell"), :]
 
-    return [plot(
+    return [
+        plot(
             df[df."IgG" .== igg, :],
             x = "Cell",
             y = "Lbound",
             color = "Affinity",
             Geom.bar(position = :dodge),
-            
             Guide.colorkey(),
             Guide.title("Predicted bound $igg"),
-            Scale.color_discrete_manual("cyan","teal","slateblue","navy"),
-            style(bar_spacing = 0.1inch, key_position = igg=="IgG4" ? :right : :none),
+            Scale.color_discrete_manual("cyan", "teal", "slateblue", "navy"),
+            style(bar_spacing = 0.1inch, key_position = igg == "IgG4" ? :right : :none),
             # Stat.dodge(axis = :x),    # don't use if there is no error bar
-        )
-        for igg in unique(df."IgG")]
+        ) for igg in unique(df."IgG")
+    ]
 end
 
 
-function figure5(ssize=(9inch, 9inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 500, suffix = "1019",
-        widths = [1 1 1 1.3; 2 1 3 3; 2 1 3 3; 2 1 3 3], kwargs...)
-    df = FcRegression.importHumanized("ITP");
+function figure5(
+    ssize = (9inch, 9inch);
+    cellTypes = ["ncMO", "cMO", "Neu"],
+    mcmc_iter = 500,
+    suffix = "1019",
+    widths = [1 1 1 1.3; 2 1 3 3; 2 1 3 3; 2 1 3 3],
+    kwargs...,
+)
+    df = FcRegression.importHumanized("ITP")
 
     Kav0 = FcRegression.extractNewHumanKav(; old = true)
     Kav1 = FcRegression.extractNewHumanKav(; old = false)
@@ -74,7 +79,7 @@ function figure5(ssize=(9inch, 9inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_
 
     c1, ccdf1 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)1.dat"; murine = false, Kav = Kav1, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
     c0, ccdf0 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)0.dat"; murine = false, Kav = Kav0, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
-    
+
 
     c0 = c0[250:end]
     c1 = c1[250:end]
@@ -105,16 +110,31 @@ function figure5(ssize=(9inch, 9inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_
     )
     cell_map1, act_map1 = FcRegression.plotRegParams(c1; ptitle = "updated affinities", legend = true, Kav = Kav1, cellTypes = cellTypes)
 
-    pl = FcRegression.plotGrid((4, 4), 
-        [lbounds[1], lbounds[2], lbounds[3], lbounds[4],
-        nothing, nothing, pl_map0, pl_map1, 
-        nothing, nothing, cell_map0, cell_map1, 
-        nothing, nothing, act_map0, act_map1,
-        ]; 
-        sublabels = "abcde fg  hi  jk", 
+    pl = FcRegression.plotGrid(
+        (4, 4),
+        [
+            lbounds[1],
+            lbounds[2],
+            lbounds[3],
+            lbounds[4],
+            nothing,
+            nothing,
+            pl_map0,
+            pl_map1,
+            nothing,
+            nothing,
+            cell_map0,
+            cell_map1,
+            nothing,
+            nothing,
+            act_map0,
+            act_map1,
+        ];
+        sublabels = "abcde fg  hi  jk",
         widths = widths,
-        kwargs...)
     return draw(PDF("output/figure5_$suffix.pdf", ssize[1], ssize[2]), pl)
+        kwargs...,
+    )
 end
 
 
