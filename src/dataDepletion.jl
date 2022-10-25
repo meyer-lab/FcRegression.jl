@@ -64,7 +64,7 @@ function importHumanized(dataType)
         df = disallowmissing!(df[completecases(df), :])
         rename!(df, ["variable" => "Condition", "value" => "Target"])
         df[!, "Target"] .= 1.0 .- df.Target ./ 100.0
-        df."Genotype" = [g[1]*"I"*g[3] for g in df."Genotype"]   # FcgRIIB default as 232I
+        df."Genotype" = [g[1] * "I" * g[3] for g in df."Genotype"]   # FcgRIIB default as 232I
     elseif dataType == "bloodFig5c"
         df = CSV.File(joinpath(dataDir, "cell_report_2014_fig5c.csv"), delim = ",", comment = "#") |> DataFrame
         df[!, "Target"] = df."Target" ./ 100.0

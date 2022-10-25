@@ -39,7 +39,7 @@ function plot_PCA_score(df; title = "Score", xx = "PC 1", yy = "PC 2")
     )
 end
 
-function figure2(ssize=(14inch, 3inch); widths=[3, 3, 3, 3.5])
+function figure2(ssize = (14inch, 3inch); widths = [3, 3, 3, 3.5])
     setGadflyTheme()
 
     score, loading, vars_expl = mixtureDataPCA()
@@ -89,6 +89,6 @@ function figure2(ssize=(14inch, 3inch); widths=[3, 3, 3, 3.5])
         Scale.y_continuous(minvalue = -1.0, maxvalue = 1.0),
     )
 
-    pl = plotGrid((1, 4), [vars, SP4, SP33, LP]; sublabels = "abcd", widths=widths)
+    pl = plotGrid((1, 4), [vars, SP4, SP33, LP]; sublabels = "abcd", widths = widths)
     return draw(PDF("figure2.pdf", ssize[1], ssize[2]), pl)
 end
