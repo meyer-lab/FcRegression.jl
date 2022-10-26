@@ -335,6 +335,9 @@ function plotRegMCMC(
         Guide.colorkey(),
         Guide.shapekey(),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
+        Scale.color_discrete_manual(
+            colorant"#4b40de",colorant"#00a8ff",colorant"#00f0ff",colorant"#00c398",colorant"#008f18",
+            colorant"#9fb338",colorant"#fed57a",colorant"#f18c3e",colorant"#de2c2c"),
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
         Guide.ylabel("Fitted effect"),
