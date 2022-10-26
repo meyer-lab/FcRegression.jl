@@ -80,6 +80,7 @@ const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
         end
         sort!(df, ["Receptor"])
     end
+    df = df[in(murine ? murineFcgR : humanFcgR).(df."Receptor"), :]
     @assert df.Receptor == (murine ? murineFcgR : humanFcgR)
     if retdf
         return df[!, ["Receptor"; names(df)[in(cellTypes).(names(df))]]]
