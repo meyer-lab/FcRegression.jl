@@ -63,26 +63,24 @@ end
 
 
 function figure5(
-    ssize = (9inch, 9inch);
+    ssize = (9inch, 11inch);
     cellTypes = ["ncMO", "cMO", "Neu"],
-    mcmc_iter = 500,
-    suffix = "1019",
-    widths = [1 1 1 1.3; 2 1 3 3; 2 1 3 3; 2 1 3 3],
+    mcmc_iter = 1000,
+    suffix = "1025T_05ST",
     kwargs...,
 )
+    setGadflyTheme()
     df = FcRegression.importHumanized("ITP")
 
     Kav0 = FcRegression.extractNewHumanKav(; old = true)
     Kav1 = FcRegression.extractNewHumanKav(; old = false)
-    Kav0 = Kav0[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])]
-    Kav1 = Kav1[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])]
 
     c1, ccdf1 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)1.dat"; murine = false, Kav = Kav1, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
     c0, ccdf0 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)0.dat"; murine = false, Kav = Kav0, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
 
 
-    c0 = c0[250:end]
-    c1 = c1[250:end]
+    c0 = c0[(mcmc_iter÷2):end]
+    c1 = c1[(mcmc_iter÷2):end]
 
     lbounds = plotLbound()
 
@@ -92,11 +90,11 @@ function figure5(
         ptitle = "documented affinities",
         colorL = "Genotype",
         shapeL = "Condition",
-        legend = true,
+        legend = false,
         Kav = Kav0,
         cellTypes = cellTypes,
     )
-    cell_map0, act_map0 = FcRegression.plotRegParams(c0; ptitle = "documented affinities", legend = true, Kav = Kav0, cellTypes = cellTypes)
+    cell_map0, act_map0 = FcRegression.plotRegParams(c0; ptitle = "documented affinities", legend = false, Kav = Kav0, cellTypes = cellTypes)
 
     pl_map1 = FcRegression.plotRegMCMC(
         c1,
@@ -116,10 +114,10 @@ function figure5(
             lbounds[1], lbounds[2], lbounds[3], lbounds[4],
             nothing, nothing, pl_map0, pl_map1, 
             nothing, nothing, cell_map0, cell_map1, 
-            nothing, nothing, act_map0, act_map1,
+            nothing, act_map0, act_map1, nothing,
         ];
         sublabels = "abcde fg  hi  jk",
-        widths = widths,
+        widths = [1 1 1 1.4; 2 1 2.6 3.4; 2 1 2.6 3.4; 3 2.5 2.5 1],
         kwargs...,
     )
     return draw(PDF("output/figure5_$suffix.pdf", ssize[1], ssize[2]), pl)

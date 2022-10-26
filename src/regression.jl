@@ -53,7 +53,7 @@ function regPrepareData(df::DataFrame = importHumanized("ITP");
 
     # create an empty 3D array for storing model predictions
     pred = NamedArray(
-                zeros(eltype(df."Target"), nrow(df), size(Kav)[2]-1, length(cellTypes)), 
+                zeros(eltype(Kav[!, 2]), nrow(df), size(Kav)[2]-1, length(cellTypes)), 
                 (1:nrow(df), names(Kav)[2:end], cellTypes), 
                 ("Row", "Receptor", "Cell")
             )
@@ -115,7 +115,7 @@ end
 
 
 function regPred(Rmulti::NamedArray, opt::regParams; link::Function = exponential)
-    X = deepcopy(Rmulti[:, in(names(opt.ActIs)[1]).(receptorType.(names(Rmulti)[2])), names(opt.cellWs)[1]])
+    X = Rmulti[:, in(names(opt.ActIs)[1]).(receptorType.(names(Rmulti)[2])), names(opt.cellWs)[1]]
     Ys = zeros(promote_type(eltype(X), eltype(opt.cellWs), eltype(opt.ActIs)), size(X)[1])
     for ii = 1:size(X)[1]
         Xws = [assembleActs(opt.ActIs, X[ii, :, kk]) for kk = 1:size(X)[3]]
@@ -130,11 +130,14 @@ function wildtypeWeights(opt::regParams; cellTypes = nothing, kwargs...)
     IgGs = opt.isMurine ? murineIgG[murineIgG .!= "IgG3"] : humanIgG
     df = DataFrame(:Condition => IgGs, :Background .=> "wt")
     if !opt.isMurine
-        df."Genotype" .= "ZZZ"
+        df."Genotype" .= "ZIZ"
     end
-    df = modelPred(df; ActI = opt.ActIs, murine = opt.isMurine, kwargs...)
-    if cellTypes === nothing
-        cellTypes = opt.isMurine ? murineCellTypes : humanCellTypes
+    Rmulti = FcRegression.regPrepareData(df; kwargs...)
+    X = Rmulti[:, in(names(opt.ActIs)[1]).(receptorType.(names(Rmulti)[2])), names(opt.cellWs)[1]]
+
+    cellTypes = names(opt.cellWs)[1]
+    for cell in cellTypes
+        df[!, cell] = [FcRegression.assembleActs(opt.ActIs, X[ii, :, cell]) for ii = 1:size(X)[1]]
     end
     df[!, cellTypes] .*= opt.cellWs'
     df = stack(df, cellTypes, variable_name = "Component", value_name = "Weight")
@@ -148,7 +151,7 @@ end
     ActI_means = ActI_means[unique(receptorType.(names(Rmulti)[2]))]
     ActIs = NamedArray(repeat([0.0], length(ActI_means)), names(ActI_means)[1], ("Receptor"))
     for ii in eachindex(ActI_means)
-        ActIs[ii] ~ Normal(ActI_means[ii], 1.0)
+        ActIs[ii] ~ Normal(ActI_means[ii], 0.5)
     end
 
     cellTypes = names(Rmulti)[3]
@@ -298,7 +301,7 @@ function plotRegMCMC(
         df = importDepletion(df)
     end
     if c isa Chains
-        fits = hcat([regPred(regPrepareData(df), extractReg(c[ii]); Kav = Kav, kwargs...) for ii = 1:length(c)]...)
+        fits = hcat([regPred(regPrepareData(df; Kav = Kav), extractReg(c[ii])) for ii = 1:length(c)]...)
         df."Fitted" .= mapslices(median, fits, dims = 2)
         df."ymax" .= mapslices(xs -> quantile(xs, 0.75), fits, dims = 2)
         df."ymin" .= mapslices(xs -> quantile(xs, 0.25), fits, dims = 2)
@@ -306,7 +309,8 @@ function plotRegMCMC(
         if c isa StatisticalModel
             c = extractReg(c)
         end
-        df."Fitted" = regPred(regPrepareData(df), c; Kav = Kav, kwargs...)
+        # c isa regParams at this point
+        df."Fitted" = regPred(regPrepareData(df;  Kav = Kav), c)
     end
 
     if shapeL === nothing
