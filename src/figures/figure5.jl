@@ -33,7 +33,7 @@ function predictLbound(
 end
 
 
-function plotLbound(Rtot = FcRegression.importRtot(; murine = false, retdf = true); title = "")
+function plotLbound(Rtot = importRtot(; murine = false, retdf = true); title = "", cellTypes = ["ncMO", "cMO", "Neu"])
 
     Kav0 = FcRegression.importKav(; murine = false)
     Kav1 = FcRegression.extractNewHumanKav()
@@ -43,7 +43,7 @@ function plotLbound(Rtot = FcRegression.importRtot(; murine = false, retdf = tru
     df1."Affinity" .= "Updated"
     df = vcat(df0, df1)
 
-    df = df[in(["ncMO", "cMO", "Neu"]).(df."Cell"), :]
+    df = df[in(cellTypes).(df."Cell"), :]
 
     return [
         plot(
@@ -82,7 +82,7 @@ function figure5(
     c0 = c0[(mcmc_iter÷2):end]
     c1 = c1[(mcmc_iter÷2):end]
 
-    lbounds = plotLbound()
+    lbounds = plotLbound(; cellTypes = cellTypes)
 
     pl_map0 = FcRegression.plotRegMCMC(
         c0,
