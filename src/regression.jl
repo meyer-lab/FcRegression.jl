@@ -147,11 +147,14 @@ end
 
 @model function regmodel(Rmulti::NamedArray, targets)
     murine = !any(occursin.("-", names(Rmulti)[2]))      # if any receptor name contains "-", assume this is human
-    ActI_means = murine ? murineActI : humanActI
-    ActI_means = ActI_means[unique(receptorType.(names(Rmulti)[2]))]
-    ActIs = NamedArray(repeat([0.0], length(ActI_means)), names(ActI_means)[1], ("Receptor"))
-    for ii in eachindex(ActI_means)
-        ActIs[ii] ~ Normal(ActI_means[ii], 0.5)
+    rcpNames = unique(receptorType.(names(Rmulti)[2]))
+    ActIs = NamedArray(repeat([0.0], length(rcpNames)), rcpNames, ("Receptor"))
+    for rcp in names(ActIs)[1]
+        if contains(rcp, "RIIB")
+            ActIs[rcp] = -1.0                   # RIIB is set to be always -1.0
+        else
+            ActIs[rcp] ~ Normal(1.0, 0.5)       # only fit activating receptors
+        end
     end
 
     cellTypes = names(Rmulti)[3]
@@ -264,21 +267,32 @@ function extractRegMCMC(c::Union{Chains, StatisticalModel}; cellTypes = nothing,
     ext(s::String) = c isa Chains ? median(c[s].data) : c.values[Symbol(s)]
 
     cellWs = [ext("cellWs[$i]") for i = 1:sum(startswith.(pnames, "cellWs"))]
-    ActIs = [ext("ActIs[$i]") for i = 1:sum(startswith.(pnames, "ActIs"))]
+
+    extRcp(x::String) = split(x, "[")[2][1:(end-1)]
+    rcp_entries = String.(extRcp.(pnames[startswith.(pnames, "ActIs")]))
+    if length(rcp_entries[1]) > 2
+        # only fit activating, FcgRIIB is always -1.0
+        ActIs = NamedArray([[ext("ActIs[$s]") for s in rcp_entries]; -1.0], [rcp_entries; "FcgRIIB"], "Receptor")
+        ActIs = ActIs[sort(names(ActIs)[1])]
+    else
+        if FcgRs === nothing
+            FcgRs = names(murine ? murineActI : humanActI)[1]
+        elseif FcgRs isa DataFrame
+            FcgRs = unique([receptorType(fcgr) for fcgr in names(FcgRs[!, Not("IgG")])])
+        end
+        ActIs = NamedArray([ext("ActIs[$i]") for i = 1:length(rcp_entries)], FcgRs, "Receptor")
+    end
+
+    
     murine = length(ActIs) <= 4  # assume mice have only 4 receptors
-    if any(in(FcgRs).(["FcgRIIA", "FcgRIIIA"]))
+    if any(in(names(ActIs)[1]).(["FcgRIIA", "FcgRIIIA"]))
         murine = false
     end
 
     if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
     end
-    if FcgRs === nothing
-        FcgRs = names(murine ? murineActI : humanActI)[1]
-    elseif FcgRs isa DataFrame
-        FcgRs = unique([receptorType(fcgr) for fcgr in names(FcgRs[!, Not("IgG")])])
-    end
-    return regParams(NamedArray(cellWs, cellTypes, "CellType"), NamedArray(ActIs, FcgRs, "Receptor"), murine)
+    return regParams(NamedArray(cellWs, cellTypes, "CellType"), ActIs, murine)
 end
 
 function plotRegMCMC(

@@ -66,7 +66,7 @@ function figure5(
     ssize = (9inch, 7inch);
     cellTypes = ["ncMO", "cMO", "Neu"],
     mcmc_iter = 1000,
-    suffix = "1025T_05ST",
+    suffix = "1102M_",
     kwargs...,
 )
     setGadflyTheme()
