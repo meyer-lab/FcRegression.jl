@@ -145,32 +145,34 @@ function wildtypeWeights(opt::regParams; cellTypes = nothing, kwargs...)
 end
 
 
-@model function regmodel(Rmulti::NamedArray, targets)
+@model function regmodel(Rmulti::NamedArray, targets; link::Function = exponential, fitActI = true)
     murine = !any(occursin.("-", names(Rmulti)[2]))      # if any receptor name contains "-", assume this is human
     rcpNames = unique(receptorType.(names(Rmulti)[2]))
     ActIs = NamedArray(repeat([0.0], length(rcpNames)), rcpNames, ("Receptor"))
     for rcp in names(ActIs)[1]
         if contains(rcp, "RIIB")
             ActIs[rcp] = -1.0                   # RIIB is set to be always -1.0
-        else
+        elseif fitActI
             ActIs[rcp] ~ Normal(1.0, 0.5)       # only fit activating receptors
+        else
+            ActIs[rcp] = 1.0                    # not fitting ActI then all 1.0
         end
     end
 
     cellTypes = names(Rmulti)[3]
     cellWs = NamedArray(repeat([0.0], length(cellTypes)), cellTypes, ("CellType"))
-    for ii in eachindex(cellTypes)
-        cellWs[ii] ~ Exponential(Float64(length(cellTypes)))
+    for ct in names(cellWs)[1]
+        cellWs[ct] ~ Exponential(Float64(length(cellTypes)))
     end
 
-    Yfit = regPred(Rmulti, regParams(cellWs, ActIs, murine))
+    Yfit = regPred(Rmulti, regParams(cellWs, ActIs, murine); link = link)
     stdv = std(Yfit - targets) / 10
     targets ~ MvNormal(Yfit, stdv * I)
     nothing
 end
 
 
-function runRegMCMC(df::DataFrame, fname = nothing; mcmc_iter = 1_000, kwargs...)
+function runRegMCMC(df::DataFrame, fname = nothing; mcmc_iter = 1_000, link::Function = exponential, kwargs...)
     if fname !== nothing
         fname = "cached/" * fname
     end
@@ -182,8 +184,8 @@ function runRegMCMC(df::DataFrame, fname = nothing; mcmc_iter = 1_000, kwargs...
         end
     end
 
-    m = regmodel(regPrepareData(df; kwargs...), df."Target")
-    opt = optimizeMAP(df; kwargs...)
+    m = regmodel(regPrepareData(df; kwargs...), df."Target"; link = link)
+    opt = optimizeMAP(df; link = link, kwargs...)
     c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
 
     # Put model parameters into a df
@@ -205,8 +207,8 @@ function runRegMCMC(df::DataFrame, fname = nothing; mcmc_iter = 1_000, kwargs...
 end
 
 
-function optimizeMAP(df::DataFrame; repeat = 10, kwargs...)
-    m = regmodel(regPrepareData(df; kwargs...), df."Target")
+function optimizeMAP(df::DataFrame; repeat = 10, link::Function = exponential, kwargs...)
+    m = regmodel(regPrepareData(df; kwargs...), df."Target"; link = link)
     success = false
     min_val = Inf
     min_opt = nothing
@@ -262,37 +264,24 @@ function runRegMAP(df::DataFrame, fname = nothing; bootstrap = 10, kwargs...)
     return opt, optcv, mapdf
 end
 
-function extractRegMCMC(c::Union{Chains, StatisticalModel}; cellTypes = nothing, FcgRs::Union{Nothing, Vector{String}, DataFrame} = nothing)
+function extractRegMCMC(c::Union{Chains, StatisticalModel})
     pnames = [String(s) for s in (c isa Chains ? c.name_map[1] : names(c.values)[1])]
     ext(s::String) = c isa Chains ? median(c[s].data) : c.values[Symbol(s)]
+    extVar(x::String) = split(x, "[")[2][1:(end-1)]
+    splitVar(xs::Vector{String}, pref::String) = String.(extVar.(xs[startswith.(xs, pref)]))
 
-    cellWs = [ext("cellWs[$i]") for i = 1:sum(startswith.(pnames, "cellWs"))]
+    rcp_entries = splitVar(pnames, "ActIs")
+    ActIs = NamedArray([[ext("ActIs[$s]") for s in rcp_entries]; -1.0], [rcp_entries; "FcgRIIB"], "Receptor")
+    ActIs = ActIs[sort(names(ActIs)[1])]
 
-    extRcp(x::String) = split(x, "[")[2][1:(end-1)]
-    rcp_entries = String.(extRcp.(pnames[startswith.(pnames, "ActIs")]))
-    if length(rcp_entries[1]) > 2
-        # only fit activating, FcgRIIB is always -1.0
-        ActIs = NamedArray([[ext("ActIs[$s]") for s in rcp_entries]; -1.0], [rcp_entries; "FcgRIIB"], "Receptor")
-        ActIs = ActIs[sort(names(ActIs)[1])]
-    else
-        if FcgRs === nothing
-            FcgRs = names(murine ? murineActI : humanActI)[1]
-        elseif FcgRs isa DataFrame
-            FcgRs = unique([receptorType(fcgr) for fcgr in names(FcgRs[!, Not("IgG")])])
-        end
-        ActIs = NamedArray([ext("ActIs[$i]") for i = 1:length(rcp_entries)], FcgRs, "Receptor")
-    end
+    cell_entries = splitVar(pnames, "cellWs")
+    cellWs = NamedArray([ext("cellWs[$s]") for s in cell_entries], cell_entries, "Cell")
 
-    
     murine = length(ActIs) <= 4  # assume mice have only 4 receptors
     if any(in(names(ActIs)[1]).(["FcgRIIA", "FcgRIIIA"]))
         murine = false
     end
-
-    if cellTypes === nothing
-        cellTypes = murine ? murineCellTypes : humanCellTypes
-    end
-    return regParams(NamedArray(cellWs, cellTypes, "CellType"), ActIs, murine)
+    return regParams(cellWs, ActIs, murine)
 end
 
 function plotRegMCMC(
@@ -302,12 +291,10 @@ function plotRegMCMC(
     colorL = nothing,
     shapeL = nothing,
     Kav::DataFrame,
-    cellTypes = nothing,
     legend = true,
+    link::Function = exponential,
     kwargs...,
 )
-    extractReg = x -> extractRegMCMC(x; cellTypes = cellTypes, FcgRs = unique([receptorType(fcgr) for fcgr in names(Kav[!, Not("IgG")])]))
-
     if df isa String
         if ptitle === nothing
             ptitle = df
@@ -315,16 +302,17 @@ function plotRegMCMC(
         df = importDepletion(df)
     end
     if c isa Chains
-        fits = hcat([regPred(regPrepareData(df; Kav = Kav), extractReg(c[ii])) for ii = 1:length(c)]...)
+        prep = regPrepareData(df; Kav = Kav, murine = extractRegMCMC(c[1]).isMurine)
+        fits = hcat([regPred(prep, extractRegMCMC(c[ii]); link = link) for ii = 1:length(c)]...)
         df."Fitted" .= mapslices(median, fits, dims = 2)
         df."ymax" .= mapslices(xs -> quantile(xs, 0.75), fits, dims = 2)
         df."ymin" .= mapslices(xs -> quantile(xs, 0.25), fits, dims = 2)
     else
         if c isa StatisticalModel
-            c = extractReg(c)
+            c = extractRegMCMC(c)
         end
         # c isa regParams at this point
-        df."Fitted" = regPred(regPrepareData(df;  Kav = Kav), c)
+        df."Fitted" = regPred(regPrepareData(df; Kav = Kav, c.isMurine), c; link = link)
     end
 
     if shapeL === nothing
@@ -370,11 +358,15 @@ function plotRegParams(
     Kav::DataFrame,
     cellTypes = nothing,
 )
-    extractReg = x -> extractRegMCMC(x; cellTypes = cellTypes, FcgRs = unique([receptorType(fcgr) for fcgr in names(Kav[!, Not("IgG")])]))
-    murine = extractReg(c[1]).isMurine
-    df = vcat([wildtypeWeights(extractReg(c[ii]); cellTypes = names(extractReg(c[1]).cellWs)[1], murine = murine, Kav = Kav) for ii = 1:length(c)]...)
+    murine = extractRegMCMC(c[1]).isMurine
+    df = vcat([wildtypeWeights(
+            extractRegMCMC(c[ii]); 
+            cellTypes = names(extractRegMCMC(c[1]).cellWs)[1], 
+            murine = murine, Kav = Kav) 
+            for ii = 1:length(c)]...)
 
-    ActI_df = vcat([DataFrame(:Receptor => names(extractReg(c[1]).ActIs)[1], :Weight => extractReg(c[ii]).ActIs) for ii = 1:length(c)]...)
+    ActI_df = vcat([DataFrame(:Receptor => names(extractRegMCMC(c[1]).ActIs)[1], 
+        :Weight => extractRegMCMC(c[ii]).ActIs) for ii = 1:length(c)]...)
 
     df = combine(
         groupby(df, Not("Weight")),
