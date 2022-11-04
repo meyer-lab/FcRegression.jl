@@ -13,9 +13,9 @@ tanh(X::Array) = tanh.(X)
 tanh(X::Matrix, p::Vector) = tanh.(X * p)
 
 
-mutable struct regParams{T}
-    cellWs::NamedArray{T}
-    ActIs::NamedArray{T}
+mutable struct regParams
+    cellWs::NamedArray
+    ActIs::NamedArray
     isMurine::Bool
 end
 
@@ -172,7 +172,8 @@ end
 end
 
 
-function runRegMCMC(df::DataFrame, fname = nothing; mcmc_iter = 1_000, link::Function = exponential, kwargs...)
+function runRegMCMC(df::DataFrame, fname = nothing; 
+        mcmc_iter = 1_000, link::Function = exponential, fitActI = true, kwargs...)
     if fname !== nothing
         fname = "cached/" * fname
     end
@@ -184,8 +185,8 @@ function runRegMCMC(df::DataFrame, fname = nothing; mcmc_iter = 1_000, link::Fun
         end
     end
 
-    m = regmodel(regPrepareData(df; kwargs...), df."Target"; link = link)
-    opt = optimizeMAP(df; link = link, kwargs...)
+    m = regmodel(regPrepareData(df; kwargs...), df."Target"; link = link, fitActI = fitActI)
+    opt = optimizeMAP(df; link = link, fitActI = fitActI, kwargs...)
     c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
 
     # Put model parameters into a df
@@ -207,8 +208,8 @@ function runRegMCMC(df::DataFrame, fname = nothing; mcmc_iter = 1_000, link::Fun
 end
 
 
-function optimizeMAP(df::DataFrame; repeat = 10, link::Function = exponential, kwargs...)
-    m = regmodel(regPrepareData(df; kwargs...), df."Target"; link = link)
+function optimizeMAP(df::DataFrame; repeat = 10, link::Function = exponential, fitActI = true, kwargs...)
+    m = regmodel(regPrepareData(df; kwargs...), df."Target"; link = link, fitActI = fitActI)
     success = false
     min_val = Inf
     min_opt = nothing
@@ -230,7 +231,8 @@ end
 
 
 """ Run a MAP parameter estimation, with LOO/jackknife as errorbar """
-function runRegMAP(df::DataFrame, fname = nothing; bootstrap = 10, kwargs...)
+function runRegMAP(df::DataFrame, fname = nothing; 
+        bootstrap = 10, link::Function = exponential, fitActI = true, kwargs...)
     if fname !== nothing
         fname = "cached/" * fname
     end
@@ -242,13 +244,13 @@ function runRegMAP(df::DataFrame, fname = nothing; bootstrap = 10, kwargs...)
         end
     end
 
-    opt = optimizeMAP(df; kwargs...)
+    opt = optimizeMAP(df; link = link, fitActI = fitActI, kwargs...)
     mapdf = DataFrame(Parameter = String.(names(opt.values)[1]), Value = opt.values.array)
 
     optcv = Vector{StatisticalModel}(undef, bootstrap)
     @showprogress for b = 1:bootstrap
         idx = rand(1:size(df)[1], size(df)[1])
-        optcv[b] = optimizeMAP(df[idx, :]; kwargs...)
+        optcv[b] = optimizeMAP(df[idx, :]; link = link, fitActI = fitActI, kwargs...)
         mapdf[!, "Boot$b"] = optcv[b].values.array
     end
 
@@ -270,17 +272,13 @@ function extractRegMCMC(c::Union{Chains, StatisticalModel})
     extVar(x::String) = split(x, "[")[2][1:(end-1)]
     splitVar(xs::Vector{String}, pref::String) = String.(extVar.(xs[startswith.(xs, pref)]))
 
-    rcp_entries = splitVar(pnames, "ActIs")
-    ActIs = NamedArray([[ext("ActIs[$s]") for s in rcp_entries]; -1.0], [rcp_entries; "FcgRIIB"], "Receptor")
-    ActIs = ActIs[sort(names(ActIs)[1])]
-
+    murine = any(contains.(pnames, "RIIA")) || any(contains.(pnames, "RIIIA")) ? false : true
+    ActIs = murine ? murineActI : humanActI
+    for rcp in splitVar(pnames, "ActIs")
+        ActIs[rcp] = ext("ActIs[$rcp]")
+    end
     cell_entries = splitVar(pnames, "cellWs")
     cellWs = NamedArray([ext("cellWs[$s]") for s in cell_entries], cell_entries, "Cell")
-
-    murine = length(ActIs) <= 4  # assume mice have only 4 receptors
-    if any(in(names(ActIs)[1]).(["FcgRIIA", "FcgRIIIA"]))
-        murine = false
-    end
     return regParams(cellWs, ActIs, murine)
 end
 

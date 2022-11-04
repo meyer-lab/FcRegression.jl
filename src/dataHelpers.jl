@@ -35,7 +35,7 @@ const humanFcgR =
 const humanFcgRiv = ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIIA-158F", "FcgRIIIA-158V"]
 
 const murineActI = NamedArray([1.0, -1, 1, 1], ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"], "mFcgR")
-const humanActI = NamedArray([1.0, 1, -1, 1, 1, 1], ["FcgRI", "FcgRIIA", "FcgRIIB", "FcgRIIC", "FcgRIIIA", "FcgRIIIB"], "hFcgR")
+const humanActI = NamedArray([1.0, 1, -1, 1, 1], ["FcgRI", "FcgRIIA", "FcgRIIB", "FcgRIIIA", "FcgRIIIB"], "hFcgR")
 
 const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
