@@ -14,12 +14,12 @@ function splot_origData(df; match_y = true, legend = true)
     cell_name = replace(cell, "FcgR" => "FcγR")
 
     ymax = Dict(
-        "FcgRI" => 8e3,
-        "FcgRIIA-131H" => 2.5e4,
-        "FcgRIIA-131R" => 2.5e4,
-        "FcgRIIB-232I" => 2.5e3,
-        "FcgRIIIA-158F" => 2.5e4,
-        "FcgRIIIA-158V" => 1e4,
+        "FcgRI" => 6,
+        "FcgRIIA-131H" => 20,
+        "FcgRIIA-131R" => 15,
+        "FcgRIIB-232I" => 8,
+        "FcgRIIIA-158F" => 20,
+        "FcgRIIIA-158V" => 15,
     )
     return plot(
         df,
@@ -32,12 +32,12 @@ function splot_origData(df; match_y = true, legend = true)
         Geom.line,
         Geom.errorbar,
         Scale.x_continuous(labels = n -> "$IgGX $(n*100)%\n$IgGY $(100-n*100)%"),
-        Scale.y_continuous(; maxvalue = match_y ? ymax[cell] : maximum(df."xmax")),
+        Scale.y_continuous(; minvalue = 0.0, maxvalue = match_y ? ymax[cell] : maximum(df."xmax")),
         Scale.color_discrete_manual(palette[1], palette[2]),
         Guide.xlabel("", orientation = :horizontal),
         Guide.ylabel("RFU", orientation = :vertical),
         Guide.xticks(orientation = :horizontal),
-        Guide.title("$IgGX-$IgGY mixture bind to $cell_name"),
+        Guide.title("$IgGX-$IgGY bind to $cell_name"),
         style(key_position = legend ? :right : :none),
     )
 end

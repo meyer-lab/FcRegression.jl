@@ -22,6 +22,7 @@ include("regression.jl")
 
 include("figures/figureW.jl")
 
+include("figures/figureA1.jl")
 include("figures/figureA2a.jl")
 include("figures/figureA3.jl")
 include("figures/figureA4.jl")
@@ -29,7 +30,6 @@ include("figures/figureA5.jl")
 include("figures/figureA6.jl")
 include("figures/figureS1.jl")
 include("figures/figureS2.jl")
-include("figures/figureS3.jl")
 
 include("figures/figure1.jl")
 include("figures/figure2.jl")
