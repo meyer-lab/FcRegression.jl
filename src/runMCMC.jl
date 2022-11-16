@@ -97,10 +97,12 @@ function predMix(df::AbstractDataFrame; Kav::AbstractDataFrame, Rtot = nothing, 
 
     # one conversion factor per valency
     dft[dft."Predict" .< 0.0, "Predict"] .= 0.0
-    for val in unique(dft."Valency")
-        if any(dft[dft."Valency" .== val, "Predict"] .> 0.0)
-            rows = (dft."Valency" .== val) .& (dft."Predict" .> 0.0)
-            dft[(dft."Valency" .== val), "Predict"] ./= geomean(dft[rows, "Predict"]) / geomean(dft[rows, "Value"])
+    if "Value" in names(dft)
+        for val in unique(dft."Valency")
+            if any(dft[dft."Valency" .== val, "Predict"] .> 0.0)
+                rows = (dft."Valency" .== val) .& (dft."Predict" .> 0.0)
+                dft[(dft."Valency" .== val), "Predict"] ./= geomean(dft[rows, "Predict"]) / geomean(dft[rows, "Value"])
+            end
         end
     end
     return dft[!, [names(df); "Predict"]]
