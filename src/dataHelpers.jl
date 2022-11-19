@@ -227,3 +227,31 @@ importRtotDist(dat; kwargs...) = deepcopy(importRtotDist_readcsv(dat; kwargs...)
 end
 
 importKavDist(; kwargs...) = deepcopy(importKavDist_readcsv(; kwargs...))
+
+
+function printDocumentedKavSupTable()
+    df = CSV.File(joinpath(dataDir, "FcgR-Ka-Bruhns_with_variance.csv"), delim = ",", comment = "#") |> DataFrame
+    function parstr(x)
+        params = parse.(Float64, split(x, "|"))
+        params .*= 1e5      # Bruhns data is written in 1e5 units
+        params[1] = maximum([params[1], 1e4])   # minimum affinity as 1e4 M-1
+        params[2] = maximum([params[2], 1e5])   # minimum variance as 1e5 M-1
+        dist = inferLogNormal(params[1], params[2])
+        return @sprintf("%.2e ± %.2e\n~lnN(μ=%.2f, σ=%.2f)", params[1], params[2], dist.μ, dist.σ)
+    end
+    CSV.write("documented_Kav.csv", parstr.(df[:, Not("IgG")]))
+end
+
+function printFittedKavSupTable()
+    c = rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000)
+    pnames = [String(s) for s in c.name_map[1]]
+
+    function parchain(s)
+        return @sprintf("%.3e\n%.3e~%.3e", median(c[s].data), quantile(c[s].data[:], 0.25), quantile(c[s].data[:], 0.75))
+    end
+
+    Kavd = importKavDist(; murine = false, regularKav = true, retdf = true)
+    Kav = [parchain("Kav[$i]") for i = 1:sum(startswith.(pnames, "Kav"))]
+    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
+    CSV.write("updated_Kav.csv", Kavd)
+end
