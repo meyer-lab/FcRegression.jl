@@ -93,6 +93,6 @@ function figure2(ssize = (13inch, 3inch); widths = [3, 3, 3, 3.2])
         Scale.color_discrete_manual(colorReceptor...),
     )
 
-    pl = plotGrid((1, 4), [vars, SP4, SP33, LP]; sublabels = "abcd", widths=widths)
+    pl = plotGrid((1, 4), [vars, SP4, SP33, LP]; sublabels = "abcd", widths = widths)
     return draw(PDF("output/figure2.pdf", ssize[1], ssize[2]), pl)
 end

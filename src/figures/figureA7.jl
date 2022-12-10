@@ -6,12 +6,26 @@ function figureA7()
     Kav = FcRegression.importKav(; murine = true, retdf = true, IgG2bFucose = true)
     Kav = Kav[.!(contains.(Kav."IgG", "SA")), :]
 
-    c0, ccdf0 = FcRegression.runRegMCMC(df; 
-        murine = true, Kav = Kav, fitActI = false, mcmc_iter = 100_000, link = FcRegression.exponential, cellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO"])
+    c0, ccdf0 = FcRegression.runRegMCMC(
+        df;
+        murine = true,
+        Kav = Kav,
+        fitActI = false,
+        mcmc_iter = 100_000,
+        link = FcRegression.exponential,
+        cellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO"],
+    )
 
-    c1, ccdf1 = FcRegression.runRegMCMC(df; 
-        murine = true, Kav = Kav, fitActI = false, mcmc_iter = 100_000, link = FcRegression.tanh, cellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO"])
-    
+    c1, ccdf1 = FcRegression.runRegMCMC(
+        df;
+        murine = true,
+        Kav = Kav,
+        fitActI = false,
+        mcmc_iter = 100_000,
+        link = FcRegression.tanh,
+        cellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO"],
+    )
+
     pl_map0 = FcRegression.plotRegMCMC(
         c0,
         deepcopy(df);
