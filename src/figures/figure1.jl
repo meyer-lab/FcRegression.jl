@@ -6,7 +6,8 @@ function plotDFwithGreekGamma(df::DataFrame)
 end
 
 """ Original measurements with middle 50% as error bar """
-function splot_origData(df; match_y = true, legend = true)
+function splot_origData(df; match_y = true, y_label = true, legend = true)
+    # y_label not useful here, just to match format
     cell = unique(df."Receptor")[1]
     IgGX = unique(df."subclass_1")[1]
     IgGY = unique(df."subclass_2")[1]

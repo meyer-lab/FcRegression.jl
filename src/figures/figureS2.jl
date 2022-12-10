@@ -1,6 +1,6 @@
 """ Figure S2/S3: predicted binding with two affinities """
 
-function splot_predData(df; legend = true, ll = 100, match_y = false,
+function splot_predData(df; legend = true, ll = 100, match_y = false, y_label = true,
         Kav::DataFrame,
         Rtot = importRtotDist(:hCHO; retdf = true, regular = true))
     cell = unique(df."Receptor")[1]
@@ -45,14 +45,14 @@ function splot_predData(df; legend = true, ll = 100, match_y = false,
         Scale.y_continuous(; minvalue = 0.0, maxvalue = match_y ? ymax[cell] : maximum(gdf."Predict")),
         Scale.color_discrete_manual(palette[1], palette[2]),
         Guide.xlabel("", orientation = :horizontal),
-        Guide.ylabel("AU", orientation = :vertical),
+        Guide.ylabel(y_label ? "Predicted CHO binding" : nothing, orientation = :vertical),
         Guide.xticks(orientation = :horizontal),
-        Guide.title("$IgGX-$IgGY bind to $cell_name"),
+        Guide.title("$IgGX-$IgGY to $cell_name"),
         style(key_position = legend ? :right : :none),
     )
 end
 
-function figureS2(; figsize = (15inch, 13inch), widths = [3, 3, 3, 3, 3, 3.5], kwargs...)
+function figureS2(; figsize = (14inch, 13inch), widths = [3.4, 3, 3, 3, 3, 3.7], kwargs...)
     setGadflyTheme()
     draw(
         PDF("output/figureS2.pdf", figsize[1], figsize[2]), 
@@ -65,7 +65,7 @@ function figureS2(; figsize = (15inch, 13inch), widths = [3, 3, 3, 3, 3, 3.5], k
     )
 end
 
-function figureS3(; figsize = (15inch, 13inch), widths = [3, 3, 3, 3, 3, 3.5], kwargs...)
+function figureS3(; figsize = (14inch, 13inch), widths = [3.4, 3, 3, 3, 3, 3.7], kwargs...)
     setGadflyTheme()
     draw(
         PDF("output/figureS3.pdf", figsize[1], figsize[2]), 
