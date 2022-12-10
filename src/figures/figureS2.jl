@@ -55,11 +55,11 @@ end
 function figureS2(; figsize = (15inch, 13inch), widths = [3, 3, 3, 3, 3, 3.5], kwargs...)
     setGadflyTheme()
     draw(
-        SVG("output/figureS2.svg", figsize[1], figsize[2]), 
-        FcRegression.plotMixSubplots(FcRegression.splot_predData, FcRegression.averageMixData(); 
+        PDF("output/figureS2.pdf", figsize[1], figsize[2]), 
+        plotMixSubplots(splot_predData, averageMixData(); 
             widths = widths, 
             match_y = true, 
-            Kav = FcRegression.importKav(; murine = false, retdf = true),
+            Kav = importKav(; murine = false, retdf = true),
             kwargs...
         )
     )
@@ -68,11 +68,11 @@ end
 function figureS3(; figsize = (15inch, 13inch), widths = [3, 3, 3, 3, 3, 3.5], kwargs...)
     setGadflyTheme()
     draw(
-        SVG("output/figureS3.svg", figsize[1], figsize[2]), 
-        FcRegression.plotMixSubplots(FcRegression.splot_predData, FcRegression.averageMixData(); 
+        PDF("output/figureS3.pdf", figsize[1], figsize[2]), 
+        plotMixSubplots(splot_predData, averageMixData(); 
             widths = widths, 
             match_y = true, 
-            Kav = FcRegression.extractNewHumanKav(),
+            Kav = extractNewHumanKav(),
             kwargs...)
     )
 end

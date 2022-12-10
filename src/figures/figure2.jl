@@ -55,7 +55,7 @@ function figure2(ssize = (14inch, 3inch); widths = [3, 3, 3, 3.5])
         Scale.y_continuous(minvalue = 0.5),
         Guide.title("Variance Explained by PCA"),
         Guide.xlabel("Number of components"),
-        Guide.ylabel("R2X"),
+        Guide.ylabel("Variance Explained"),
     )
 
     ## TODO: add percent variance explained on each PC

@@ -24,7 +24,7 @@ function plot_distribution_violins(
         layer(odf, x = x_name, y = "Value", Geom.violin, Theme(default_color = colorant"navajowhite2")),
         Coord.cartesian(ymin = y_range[1], ymax = y_range[2]),
         Scale.y_log10,
-        legend ? Guide.manual_color_key("Legend", ["Prior", "Posterior"], ["navajowhite2", "firebrick4"]) : style(key_position = :none),
+        legend ? Guide.manual_color_key("Legend", ["Documented\n(prior)", "Updated\n(posterior)"], ["navajowhite2", "firebrick4"]) : style(key_position = :none),
         Guide.ylabel("<i>K</i><sub>a</sub> (M<sup>-1</sup>)"),
         Guide.title(title),
     )
@@ -51,7 +51,7 @@ function plotAffinityViolin(c::Chains; murine::Bool, y_range = (4, 9))
             posts,
             priors;
             y_range = y_range,
-            title = "$pref$igg Affinity Distributions",
+            title = "$igg Affinity Distributions",
             legend = (ii == length(Kav_priors[!, "IgG"])),
         )
     end
@@ -70,7 +70,7 @@ function figure4(; kwargs...)
             pl_igg[1], pl_igg[2], pl_igg[3], pl_igg[4], 
             p1, nothing, p2, nothing
         ];
-        widths = [3 3 3 3.8; 3.8 0.4 5 4.1],
+        widths = [3 3 3 4.1; 3.8 0.4 5 4.1],
         sublabels = "abcde f ",
         kwargs...,
     )
