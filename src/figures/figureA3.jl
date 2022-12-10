@@ -31,5 +31,5 @@ function figureA3()
     #vpl1, vpl2 = validateFittedKav(c; murine = true)
 
     pp = plotGrid((2, 3), [pl1, pl_noKav, pl2, apls[1], apls[2], apls[3]])
-    draw(PDF("figure3.pdf", 11inch, 6inch), pp)
+    draw(PDF("output/figure3.pdf", 11inch, 6inch), pp)
 end

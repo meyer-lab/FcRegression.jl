@@ -59,5 +59,5 @@ function MCMC_cornerplot(c = runMCMC())
     df = DataFrame(c)
     df = df[!, [contains(n, "[") | contains(n, "f") | contains(n, "Star") for n in names(df)]]
     pl = cornerplot(df; plotsize = 200cm)
-    draw(PDF("figure2a.pdf", 200cm, 200cm), pl)
+    draw(PDF("output/figure2a.pdf", 200cm, 200cm), pl)
 end

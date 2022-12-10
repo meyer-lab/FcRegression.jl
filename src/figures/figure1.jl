@@ -6,20 +6,20 @@ function plotDFwithGreekGamma(df::DataFrame)
 end
 
 """ Original measurements with middle 50% as error bar """
-function splot_origData(df; match_y = true, legend = true)
+function splot_origData(df; match_y = true, y_label = true, legend = true)
+    # y_label not useful here, just to match format
     cell = unique(df."Receptor")[1]
     IgGX = unique(df."subclass_1")[1]
     IgGY = unique(df."subclass_2")[1]
-    palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
     cell_name = replace(cell, "FcgR" => "FcγR")
 
     ymax = Dict(
-        "FcgRI" => 8e3,
-        "FcgRIIA-131H" => 2.5e4,
-        "FcgRIIA-131R" => 2.5e4,
-        "FcgRIIB-232I" => 2.5e3,
-        "FcgRIIIA-158F" => 2.5e4,
-        "FcgRIIIA-158V" => 1e4,
+        "FcgRI" => 6,
+        "FcgRIIA-131H" => 20,
+        "FcgRIIA-131R" => 15,
+        "FcgRIIB-232I" => 8,
+        "FcgRIIIA-158F" => 20,
+        "FcgRIIIA-158V" => 15,
     )
     return plot(
         df,
@@ -31,13 +31,13 @@ function splot_origData(df; match_y = true, legend = true)
         Geom.point,
         Geom.line,
         Geom.errorbar,
-        Scale.x_continuous(labels = n -> "$IgGX $(n*100)%\n$IgGY $(100-n*100)%"),
-        Scale.y_continuous(; maxvalue = match_y ? ymax[cell] : maximum(df."xmax")),
-        Scale.color_discrete_manual(palette[1], palette[2]),
+        Scale.x_continuous(labels = n -> "$IgGX $(trunc(Int, n*100))%\n$IgGY $(trunc(Int, 100-n*100))%"),
+        Scale.y_continuous(; minvalue = 0.0, maxvalue = match_y ? ymax[cell] : maximum(df."xmax")),
+        Scale.color_discrete_manual(colorValency...),
         Guide.xlabel("", orientation = :horizontal),
         Guide.ylabel("RFU", orientation = :vertical),
         Guide.xticks(orientation = :horizontal),
-        Guide.title("$IgGX-$IgGY mixture bind to $cell_name"),
+        Guide.title("$IgGX-$IgGY bind to $cell_name"),
         style(key_position = legend ? :right : :none),
     )
 end
@@ -58,6 +58,7 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         "Value" => upper => "xmax",
     )
     df."Affinity" = [hKav[hKav."IgG" .== r."Subclass", r."Receptor"][1] for r in eachrow(df)]
+    df[df."Affinity" .< 1e3, "Affinity"] .= 1e3
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
     pearson_cor = cor(log.(df."Affinity"), log.(df."Value"))
 
@@ -73,9 +74,10 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         Geom.errorbar,
         Scale.x_log10,
         Scale.y_log10,
+        Scale.color_discrete_manual(colorReceptor...),
         Guide.title("$affinity_name affinity vs. single IgG binding"),
         Guide.xlabel("$affinity_name Affinity (M<sup>-1</sup>)"),
-        Guide.ylabel("Binding quantification"),
+        Guide.ylabel("RFU"),
         Guide.annotation(
             compose(context(), text(6, -3, "<i>ρ</i> = " * @sprintf("%.4f", pearson_cor)), stroke("black"), fill("black"), font("Helvetica-Bold")),
         ),
@@ -99,11 +101,12 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         Geom.point,
         Scale.x_log10,
         Scale.y_log10,
+        Scale.color_discrete_manual(colorReceptor...),
         Guide.title("$affinity_name affinity vs. intervalency ratio"),
         Guide.xlabel("$affinity_name Affinity (M<sup>-1</sup>)"),
         Guide.ylabel("33- to 4-valent binding ratio"),
         Guide.annotation(
-            compose(context(), text(6.5, 1.5, "<i>ρ</i> = " * @sprintf("%.4f", ratio_cor)), stroke("black"), fill("black"), font("Helvetica-Bold")),
+            compose(context(), text(6.0, 1.5, "<i>ρ</i> = " * @sprintf("%.4f", ratio_cor)), stroke("black"), fill("black"), font("Helvetica-Bold")),
         ),
     )
     return pl1, pl2
@@ -149,6 +152,6 @@ function figure1(; kwargs...)
         legend = true,
     )
 
-    pl = plotGrid((2, 3), [nothing, p1, p2, nothing, igg12_1, igg14_1]; sublabels = "acdbef", widths = [4, 3, 3.8], kwargs...)
-    return draw(PDF("figure1.pdf", 10inch, 6inch), pl)
+    pl = plotGrid((2, 3), [nothing, p1, p2, nothing, igg12_1, igg14_1]; sublabels = "abc de", widths = [4 3 4; 4 3 3.6], kwargs...)
+    return draw(PDF("output/figure1.pdf", 10inch, 6inch), pl)
 end

@@ -33,7 +33,7 @@ function predictLbound(
 end
 
 
-function plotLbound(Rtot = FcRegression.importRtot(; murine = false, retdf = true); title = "")
+function plotLbound(Rtot = importRtot(; murine = false, retdf = true); title = "", cellTypes = ["ncMO", "cMO", "Neu"])
 
     Kav0 = FcRegression.importKav(; murine = false)
     Kav1 = FcRegression.extractNewHumanKav()
@@ -43,7 +43,7 @@ function plotLbound(Rtot = FcRegression.importRtot(; murine = false, retdf = tru
     df1."Affinity" .= "Updated"
     df = vcat(df0, df1)
 
-    df = df[in(["ncMO", "cMO", "Neu"]).(df."Cell"), :]
+    df = df[in(cellTypes).(df."Cell"), :]
 
     return [
         plot(
@@ -54,7 +54,7 @@ function plotLbound(Rtot = FcRegression.importRtot(; murine = false, retdf = tru
             Geom.bar(position = :dodge),
             Guide.colorkey(),
             Guide.title("Predicted bound $igg"),
-            Scale.color_discrete_manual("cyan", "teal", "slateblue", "navy"),
+            Scale.color_discrete_manual(colorAffinity...),
             style(bar_spacing = 0.1inch, key_position = igg == "IgG4" ? :right : :none),
             # Stat.dodge(axis = :x),    # don't use if there is no error bar
         ) for igg in unique(df."IgG")
@@ -63,28 +63,25 @@ end
 
 
 function figure5(
-    ssize = (9inch, 9inch);
+    ssize = (9inch, 7inch);
     cellTypes = ["ncMO", "cMO", "Neu"],
-    mcmc_iter = 500,
-    suffix = "1019",
-    widths = [1 1 1 1.3; 2 1 3 3; 2 1 3 3; 2 1 3 3],
+    mcmc_iter = 1000,
+    suffix = "1102M_",
     kwargs...,
 )
+    setGadflyTheme()
     df = FcRegression.importHumanized("ITP")
 
     Kav0 = FcRegression.extractNewHumanKav(; old = true)
     Kav1 = FcRegression.extractNewHumanKav(; old = false)
-    Kav0 = Kav0[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])]
-    Kav1 = Kav1[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])]
 
     c1, ccdf1 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)1.dat"; murine = false, Kav = Kav1, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
     c0, ccdf0 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)0.dat"; murine = false, Kav = Kav0, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
 
+    c0 = c0[(mcmc_iter÷2):end]
+    c1 = c1[(mcmc_iter÷2):end]
 
-    c0 = c0[250:end]
-    c1 = c1[250:end]
-
-    lbounds = plotLbound()
+    lbounds = plotLbound(; cellTypes = cellTypes)
 
     pl_map0 = FcRegression.plotRegMCMC(
         c0,
@@ -92,13 +89,25 @@ function figure5(
         ptitle = "documented affinities",
         colorL = "Genotype",
         shapeL = "Condition",
-        legend = true,
+        legend = false,
         Kav = Kav0,
         cellTypes = cellTypes,
     )
-    cell_map0, act_map0 = FcRegression.plotRegParams(c0; ptitle = "documented affinities", legend = true, Kav = Kav0, cellTypes = cellTypes)
+    cell_map0, act_map0 = FcRegression.plotRegParams(c0; ptitle = "documented affinities", legend = false, Kav = Kav0, cellTypes = cellTypes)
 
     pl_map1 = FcRegression.plotRegMCMC(
+        c1,
+        deepcopy(df);
+        ptitle = "updated affinities",
+        colorL = "Genotype",
+        shapeL = "Condition",
+        legend = false,
+        Kav = Kav1,
+        cellTypes = cellTypes,
+    )
+    cell_map1, act_map1 = FcRegression.plotRegParams(c1; ptitle = "updated affinities", legend = false, Kav = Kav1, cellTypes = cellTypes)
+
+    pl_mapL = FcRegression.plotRegMCMC(
         c1,
         deepcopy(df);
         ptitle = "updated affinities",
@@ -108,34 +117,24 @@ function figure5(
         Kav = Kav1,
         cellTypes = cellTypes,
     )
-    cell_map1, act_map1 = FcRegression.plotRegParams(c1; ptitle = "updated affinities", legend = true, Kav = Kav1, cellTypes = cellTypes)
+    cell_mapL, act_mapL = FcRegression.plotRegParams(c1; ptitle = "updated affinities", legend = true, Kav = Kav1, cellTypes = cellTypes)
 
     pl = FcRegression.plotGrid(
-        (4, 4),
+        (3, 4),
         [
-            lbounds[1],
-            lbounds[2],
-            lbounds[3],
-            lbounds[4],
-            nothing,
-            nothing,
-            pl_map0,
-            pl_map1,
-            nothing,
-            nothing,
-            cell_map0,
-            cell_map1,
-            nothing,
-            nothing,
-            act_map0,
-            act_map1,
+            lbounds[1], lbounds[2], lbounds[3], lbounds[4],
+            nothing, pl_map0, cell_map0, act_map0,
+            nothing, pl_map1, cell_map1, act_map1,
         ];
-        sublabels = "abcde fg  hi  jk",
-        widths = widths,
+        sublabels = "abcdefgh ijk",
+        widths = [1 1 1 1.4; 1 1 1 1; 1 1 1 1],
+        heights = [1.3, 1.5, 1.5],
         kwargs...,
     )
-    return draw(PDF("figure5_$suffix.pdf", ssize[1], ssize[2]), pl)
+    draw(PDF("output/figure5_$suffix.pdf", ssize[1], ssize[2]), pl)
+    draw(PDF("output/figure5_legends.pdf", 9inch, 3inch), plotGrid((1,3), [pl_mapL, cell_mapL, act_mapL]))
 end
+        
 
 
 function regLOCellOut(df, Kav)

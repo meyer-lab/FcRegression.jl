@@ -19,11 +19,10 @@ include("runMCMC.jl")
 include("plotMCMC.jl")
 include("dataDepletion.jl")
 include("regression.jl")
-#include("synergy.jl")
-include("invivo.jl")
 
 include("figures/figureW.jl")
 
+include("figures/figureA1.jl")
 include("figures/figureA2a.jl")
 include("figures/figureA3.jl")
 include("figures/figureA4.jl")
@@ -38,11 +37,6 @@ include("figures/figure3.jl")
 include("figures/figure4.jl")
 include("figures/figure5.jl")
 
-include("figures/extra/figureS.jl")
-include("figures/extra/figureCelltypeSynergy.jl")
-include("figures/extra/figureDiseaseSpecific.jl")
-include("figures/extra/figureDiseaseSynergy.jl")
-
 
 function figureAll()
     setGadflyTheme()
@@ -51,9 +45,11 @@ function figureAll()
     figure2()
     figure3()
     figure4()
+    #figure5()
 
     figureS1()
     figureS2()
+    figureS3()
 end
 
 export polyfc, polyfc_ActV

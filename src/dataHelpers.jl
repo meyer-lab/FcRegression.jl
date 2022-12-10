@@ -26,31 +26,42 @@ end
 
 const murineCellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO", "Kupffer", "KupfferHi"]
 const humanCellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO"]
-const cellTypeFullName = Dict(
-    "ncMO" => "Non-classical monocyte",
-    "cMO" => "Classical monocyte",
-    "MO" => "Monocyte",
-    "NKs" => "NKs",
-    "Neu" => "Neutrophil",
-    "EO" => "Eosinophil",
-    "Kupffer" => "Kupffer cell",
-    "KupfferHi" => "Kupffer high cell",
-    "Tcell" => "T cell",
-    "Bcell" => "B cell",
-)
 const murineIgG = ["IgG1", "IgG2a", "IgG2b", "IgG3"]
 const murineIgGFucose = ["IgG1", "IgG2a", "IgG2b", "IgG3", "IgG2bFucose"]
 const humanIgG = ["IgG1", "IgG2", "IgG3", "IgG4"]
 const murineFcgR = ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]
 const humanFcgR =
-    ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIB-232T", "FcgRIIC-13N", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"]
+    ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"]
 const humanFcgRiv = ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIIA-158F", "FcgRIIIA-158V"]
 
 const murineActI = NamedArray([1.0, -1, 1, 1], ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"], "mFcgR")
-const humanActI = NamedArray([1.0, 1, -1, 1, 1, 1], ["FcgRI", "FcgRIIA", "FcgRIIB", "FcgRIIC", "FcgRIIIA", "FcgRIIIB"], "hFcgR")
+const humanActI = NamedArray([1.0, 1, -1, 1, 1], ["FcgRI", "FcgRIIA", "FcgRIIB", "FcgRIIIA", "FcgRIIIB"], "hFcgR")
 
-const murineActYmax = [8e4, 5e3, 2.5e-1, 7e3, 3] # ymax for synergy plots
-const humanActYmax = [5.5e4, 1.5e5, 4.5e4, 3.5e4, 3e3] # ymax for synergy plots
+
+const colorReceptor = [
+    colorant"hsl(195, 100%, 50%)",    # FcgRI
+    colorant"hsl(56, 64%, 53%)",      # FcgRIIA-131H
+    colorant"hsl(333, 100%, 71%)",    # FcgRIIA-131R
+    colorant"hsl(166, 100%, 36%)",    # FcgRIIB-213I
+    colorant"hsl(255, 100%, 83%)",    # FcgRIIIA-158F
+    colorant"hsl(11, 100%, 58%)",     # FcgRIIIA-158V
+]
+const colorSubclass = [
+    colorant"hsl(115, 100%, 39%)",  # IgG1
+    colorant"hsl(41, 100%, 39%)",   # IgG2
+    colorant"hsl(352, 100%, 40%)",  # IgG3
+    colorant"hsl(220, 100%, 45%)",  # IgG4
+]
+const colorValency = [
+    colorant"#173f5f",    # 4
+    colorant"#eb2200",    # 33
+]
+const colorAffinity = [
+    colorant"navajowhite2",   # documented
+    colorant"firebrick4",     # updated
+]
+# palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
+
 const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
 @memoize function importRtot_readcsv(; murine::Bool, genotype = "HIV", retdf = true, cellTypes::Union{Nothing, Vector, NamedVector} = nothing)
@@ -94,6 +105,7 @@ const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
         end
         sort!(df, ["Receptor"])
     end
+    df = df[in(murine ? murineFcgR : humanFcgR).(df."Receptor"), :]
     @assert df.Receptor == (murine ? murineFcgR : humanFcgR)
     if retdf
         return df[!, ["Receptor"; names(df)[in(cellTypes).(names(df))]]]
@@ -109,7 +121,7 @@ importRtot(; kwargs...) = deepcopy(importRtot_readcsv(; kwargs...))
     if murine
         df = CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#") |> DataFrame
     else
-        df = CSV.File(joinpath(dataDir, "human-affinities.csv"), comment = "#") |> DataFrame
+        df = CSV.File(joinpath(dataDir, "human-affinities-Bruhns.csv"), comment = "#") |> DataFrame
     end
 
     IgGlist = copy(murine ? murineIgG : humanIgG)
@@ -222,11 +234,11 @@ importRtotDist(dat; kwargs...) = deepcopy(importRtotDist_readcsv(dat; kwargs...)
         function parstr(x, regularKav = false)
             params = parse.(Float64, split(x, "|"))
             params .*= 1e5      # Bruhns data is written in 1e5 units
-            params[1] = maximum([params[1], 1e4])   # minimum affinity as 1e4 M-1
-            params[2] = maximum([params[2], 1e5])   # minimum variance as 1e5 M-1
             if regularKav
                 return params[1]
             end
+            params[1] = maximum([params[1], 1e4])   # minimum affinity as 1e4 M-1
+            params[2] = maximum([params[2], 1e5])   # minimum variance as 1e5 M-1
             return inferLogNormal(params[1], params[2])
         end
         Kav = parstr.(df[:, Not("IgG")], regularKav)
@@ -240,3 +252,31 @@ importRtotDist(dat; kwargs...) = deepcopy(importRtotDist_readcsv(dat; kwargs...)
 end
 
 importKavDist(; kwargs...) = deepcopy(importKavDist_readcsv(; kwargs...))
+
+
+function printDocumentedKavSupTable()
+    df = CSV.File(joinpath(dataDir, "FcgR-Ka-Bruhns_with_variance.csv"), delim = ",", comment = "#") |> DataFrame
+    function parstr(x)
+        params = parse.(Float64, split(x, "|"))
+        params .*= 1e5      # Bruhns data is written in 1e5 units
+        params[1] = maximum([params[1], 1e4])   # minimum affinity as 1e4 M-1
+        params[2] = maximum([params[2], 1e5])   # minimum variance as 1e5 M-1
+        dist = inferLogNormal(params[1], params[2])
+        return @sprintf("%.2e ± %.2e\n~lnN(μ=%.2f, σ=%.2f)", params[1], params[2], dist.μ, dist.σ)
+    end
+    CSV.write("documented_Kav.csv", parstr.(df[:, Not("IgG")]))
+end
+
+function printFittedKavSupTable()
+    c = rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000)
+    pnames = [String(s) for s in c.name_map[1]]
+
+    function parchain(s)
+        return @sprintf("%.3e\n%.3e~%.3e", median(c[s].data), quantile(c[s].data[:], 0.25), quantile(c[s].data[:], 0.75))
+    end
+
+    Kavd = importKavDist(; murine = false, regularKav = true, retdf = true)
+    Kav = [parchain("Kav[$i]") for i = 1:sum(startswith.(pnames, "Kav"))]
+    Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
+    CSV.write("updated_Kav.csv", Kavd)
+end

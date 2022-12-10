@@ -32,6 +32,7 @@ function plot_PCA_score(df; title = "Score", xx = "PC 1", yy = "PC 2")
         y = yy,
         color = "Subclass",
         size = [3mm],
+        Scale.color_discrete_manual(colorSubclass...),
         Geom.point,
         Guide.title(title),
         Guide.xticks(ticks = [-15, 0, 15], orientation = :horizontal),
@@ -39,10 +40,11 @@ function plot_PCA_score(df; title = "Score", xx = "PC 1", yy = "PC 2")
     )
 end
 
-function figure2(ssize = (14inch, 3inch); widths = [3, 3, 3, 3.5])
+function figure2(ssize = (13inch, 3inch); widths = [3, 3, 3, 3.2])
     setGadflyTheme()
 
     score, loading, vars_expl = mixtureDataPCA()
+    loading.Receptor = replace.(loading.Receptor, "gR" => "γR")
     vars = plot(
         DataFrame(Components = 1:length(vars_expl), R2X = vars_expl),
         x = "Components",
@@ -55,7 +57,7 @@ function figure2(ssize = (14inch, 3inch); widths = [3, 3, 3, 3.5])
         Scale.y_continuous(minvalue = 0.5),
         Guide.title("Variance Explained by PCA"),
         Guide.xlabel("Number of components"),
-        Guide.ylabel("R2X"),
+        Guide.ylabel("Variance Explained"),
     )
 
     ## TODO: add percent variance explained on each PC
@@ -75,6 +77,7 @@ function figure2(ssize = (14inch, 3inch); widths = [3, 3, 3, 3.5])
         Guide.title("PCA Loadings"),
         Scale.x_continuous(minvalue = -1.0, maxvalue = 1.0),
         Scale.y_continuous(minvalue = -1.0, maxvalue = 1.0),
+        Scale.color_discrete_manual(colorReceptor...),
     )
     LP_13 = plot(
         loading,
@@ -87,8 +90,9 @@ function figure2(ssize = (14inch, 3inch); widths = [3, 3, 3, 3.5])
         Guide.title("PCA Loadings"),
         Scale.x_continuous(minvalue = -1.0, maxvalue = 1.0),
         Scale.y_continuous(minvalue = -1.0, maxvalue = 1.0),
+        Scale.color_discrete_manual(colorReceptor...),
     )
 
-    pl = plotGrid((1, 4), [vars, SP4, SP33, LP]; sublabels = "abcd", widths = widths)
-    return draw(PDF("figure2.pdf", ssize[1], ssize[2]), pl)
+    pl = plotGrid((1, 4), [vars, SP4, SP33, LP]; sublabels = "abcd", widths=widths)
+    return draw(PDF("output/figure2.pdf", ssize[1], ssize[2]), pl)
 end

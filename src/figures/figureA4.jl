@@ -46,7 +46,7 @@ function figureA4()
     ip1, ip2, ip3 = figureW("ITP"; L0 = 1e-8, f = 10, murine = true, legend = true)
     ip4 = oneCellTypeOnlyplot("ITP"; L0 = 1e-8, f = 10, murine = true)
 
-    draw(PDF("figure4.pdf", 1600px, 600px), plotGrid((2, 4), [mp1, mp2, mp3, mp4, ip1, ip2, ip3, ip4]))
+    draw(PDF("output/figure4.pdf", 1600px, 600px), plotGrid((2, 4), [mp1, mp2, mp3, mp4, ip1, ip2, ip3, ip4]))
 end
 
 
