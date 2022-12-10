@@ -38,12 +38,7 @@ function plotPredvsMeasured(
         Guide.title(title),
         Scale.x_log10,
         Scale.y_log10,
-        Scale.color_discrete_manual(
-            Scale.color_discrete().f(10)[1],
-            Scale.color_discrete().f(10)[3],
-            Scale.color_discrete().f(10)[2],
-            Scale.color_discrete().f(10)[4:end]...,
-        ),
+        Scale.color_discrete_manual(colorReceptor...),
         Geom.abline(color = "black"),
         Guide.annotation(
             compose(

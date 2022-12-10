@@ -54,7 +54,7 @@ function plotLbound(Rtot = importRtot(; murine = false, retdf = true); title = "
             Geom.bar(position = :dodge),
             Guide.colorkey(),
             Guide.title("Predicted bound $igg"),
-            Scale.color_discrete_manual("cyan", "teal", "slateblue", "navy"),
+            Scale.color_discrete_manual(colorAffinity...),
             style(bar_spacing = 0.1inch, key_position = igg == "IgG4" ? :right : :none),
             # Stat.dodge(axis = :x),    # don't use if there is no error bar
         ) for igg in unique(df."IgG")

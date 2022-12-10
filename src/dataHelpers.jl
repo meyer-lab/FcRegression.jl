@@ -37,6 +37,31 @@ const humanFcgRiv = ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "F
 const murineActI = NamedArray([1.0, -1, 1, 1], ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"], "mFcgR")
 const humanActI = NamedArray([1.0, 1, -1, 1, 1], ["FcgRI", "FcgRIIA", "FcgRIIB", "FcgRIIIA", "FcgRIIIB"], "hFcgR")
 
+
+const colorReceptor = [
+    colorant"hsl(195, 100%, 50%)",    # FcgRI
+    colorant"hsl(56, 64%, 53%)",      # FcgRIIA-131H
+    colorant"hsl(333, 100%, 71%)",    # FcgRIIA-131R
+    colorant"hsl(166, 100%, 36%)",    # FcgRIIB-213I
+    colorant"hsl(255, 100%, 83%)",    # FcgRIIIA-158F
+    colorant"hsl(11, 100%, 58%)",     # FcgRIIIA-158V
+]
+const colorSubclass = [
+    colorant"hsl(115, 100%, 39%)",  # IgG1
+    colorant"hsl(41, 100%, 39%)",   # IgG2
+    colorant"hsl(352, 100%, 40%)",  # IgG3
+    colorant"hsl(220, 100%, 45%)",  # IgG4
+]
+const colorValency = [
+    colorant"#173f5f",    # 4
+    colorant"#eb2200",    # 33
+]
+const colorAffinity = [
+    colorant"navajowhite2",   # documented
+    colorant"firebrick4",     # updated
+]
+# palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
+
 const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
 @memoize function importRtot_readcsv(; murine::Bool, genotype = "HIV", retdf = true, cellTypes::Union{Nothing, Vector, NamedVector} = nothing)

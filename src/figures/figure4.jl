@@ -20,11 +20,11 @@ function plot_distribution_violins(
     odf."Receptor" = replace.(odf."Receptor", "FcgR" => "FcγR")
 
     return plot(
-        layer(df, x = x_name, y = "Value", Geom.violin, Theme(default_color = colorant"firebrick4")),
-        layer(odf, x = x_name, y = "Value", Geom.violin, Theme(default_color = colorant"navajowhite2")),
+        layer(df, x = x_name, y = "Value", Geom.violin, Theme(default_color = colorAffinity[2])),
+        layer(odf, x = x_name, y = "Value", Geom.violin, Theme(default_color = colorAffinity[1])),
         Coord.cartesian(ymin = y_range[1], ymax = y_range[2]),
         Scale.y_log10,
-        legend ? Guide.manual_color_key("Legend", ["Documented\n(prior)", "Updated\n(posterior)"], ["navajowhite2", "firebrick4"]) : style(key_position = :none),
+        legend ? Guide.manual_color_key("Legend", ["Documented\n(prior)", "Updated\n(posterior)"], colorAffinity) : style(key_position = :none),
         Guide.ylabel("<i>K</i><sub>a</sub> (M<sup>-1</sup>)"),
         Guide.title(title),
     )

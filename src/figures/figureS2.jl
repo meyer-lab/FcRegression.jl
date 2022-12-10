@@ -6,7 +6,6 @@ function splot_predData(df; legend = true, ll = 100, match_y = false, y_label = 
     cell = unique(df."Receptor")[1]
     IgGX = unique(df."subclass_1")[1]
     IgGY = unique(df."subclass_2")[1]
-    palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
     cell_name = replace(cell, "FcgR" => "FcγR")
 
     ymax = Dict(
@@ -41,9 +40,9 @@ function splot_predData(df; legend = true, ll = 100, match_y = false, y_label = 
         y = "Predict",
         color = "Valency",
         Geom.line,
-        Scale.x_continuous(labels = n -> "$IgGX $(n*100)%\n$IgGY $(100-n*100)%"),
+        Scale.x_continuous(labels = n -> "$IgGX $(trunc(Int, n*100))%\n$IgGY $(trunc(Int, 100-n*100))%"),
         Scale.y_continuous(; minvalue = 0.0, maxvalue = match_y ? ymax[cell] : maximum(gdf."Predict")),
-        Scale.color_discrete_manual(palette[1], palette[2]),
+        Scale.color_discrete_manual(colorValency...),
         Guide.xlabel("", orientation = :horizontal),
         Guide.ylabel(y_label ? "Predicted CHO binding" : nothing, orientation = :vertical),
         Guide.xticks(orientation = :horizontal),
