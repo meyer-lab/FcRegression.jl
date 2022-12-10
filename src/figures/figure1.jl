@@ -77,7 +77,7 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         Scale.y_log10,
         Guide.title("$affinity_name affinity vs. single IgG binding"),
         Guide.xlabel("$affinity_name Affinity (M<sup>-1</sup>)"),
-        Guide.ylabel("Binding quantification"),
+        Guide.ylabel("RFU"),
         Guide.annotation(
             compose(context(), text(6, -3, "<i>ρ</i> = " * @sprintf("%.4f", pearson_cor)), stroke("black"), fill("black"), font("Helvetica-Bold")),
         ),
@@ -151,6 +151,6 @@ function figure1(; kwargs...)
         legend = true,
     )
 
-    pl = plotGrid((2, 3), [nothing, p1, p2, nothing, igg12_1, igg14_1]; sublabels = "acdbef", widths = [4, 3, 3.8], kwargs...)
+    pl = plotGrid((2, 3), [nothing, p1, p2, nothing, igg12_1, igg14_1]; sublabels = "abc de", widths = [4, 3, 3.8], kwargs...)
     return draw(PDF("output/figure1.pdf", 10inch, 6inch), pl)
 end
