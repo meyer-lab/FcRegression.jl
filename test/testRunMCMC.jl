@@ -13,7 +13,7 @@ murines = [false, false, true, true]
         Kav = FcRegression.importKavDist(; murine = murines[ii], regularKav = true, retdf = true)   # no 0 affinity
         Rtot = FcRegression.importRtotDist(dats[ii]; regular = true, retdf = true)
         ndf0 = FcRegression.predMix(df; Kav = Kav, Rtot = Rtot)
-        @test all(ndf0."Predict" .> 0.0)
+        @test all(ndf0."Predict" .>= 0.0)
 
         if "Subclass" in names(df)
             # remove one IgG's affinities
@@ -22,7 +22,7 @@ murines = [false, false, true, true]
             Kav1[Kav1."IgG" .== rIgG, Not("IgG")] .= 0.0
             ndf1 = FcRegression.predMix(df; Kav = Kav1, Rtot = Rtot)
             @test all(ndf1[ndf1."Subclass" .== rIgG, "Predict"] .<= 0.0)
-            @test all(ndf1[ndf1."Subclass" .!= rIgG, "Predict"] .> 0.0)
+            @test all(ndf1[ndf1."Subclass" .!= rIgG, "Predict"] .>= 0.0)
         end
 
         if "Receptor" in names(df)
@@ -32,7 +32,7 @@ murines = [false, false, true, true]
             Rtot2[rFcgR] = 0.0
             ndf2 = FcRegression.predMix(df; Kav = Kav, Rtot = Rtot2)
             @assert all(ndf2[ndf2."Receptor" .== rFcgR, "Predict"] .<= 0.0)
-            @assert all(ndf2[ndf2."Receptor" .!= rFcgR, "Predict"] .> 0.0)
+            @assert all(ndf2[ndf2."Receptor" .!= rFcgR, "Predict"] .>= 0.0)
         end
     end
 end
