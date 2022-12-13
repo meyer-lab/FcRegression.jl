@@ -13,14 +13,7 @@ function splot_origData(df; match_y = true, y_label = true, legend = true)
     IgGY = unique(df."subclass_2")[1]
     cell_name = replace(cell, "FcgR" => "FcγR")
 
-    ymax = Dict(
-        "FcgRI" => 6,
-        "FcgRIIA-131H" => 20,
-        "FcgRIIA-131R" => 15,
-        "FcgRIIB-232I" => 8,
-        "FcgRIIIA-158F" => 20,
-        "FcgRIIIA-158V" => 15,
-    )
+    ymax = Dict("FcgRI" => 6, "FcgRIIA-131H" => 20, "FcgRIIA-131R" => 15, "FcgRIIB-232I" => 8, "FcgRIIIA-158F" => 20, "FcgRIIIA-158V" => 15)
     return plot(
         df,
         x = "%_1",

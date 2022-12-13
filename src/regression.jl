@@ -31,13 +31,14 @@ end
 Make a 3D array that include all Rmulti predictions for each sample, each receptor, 
 each cell type prediction (Row x Receptor x Cell).
 """
-function regPrepareData(df::DataFrame = importHumanized("ITP");
-        L0 = 1e-9,
-        f = 4, 
-        murine::Bool = false,
-        cellTypes = nothing,
-        Kav::DataFrame = importKav(; murine = false, retdf = true), 
-    )
+function regPrepareData(
+    df::DataFrame = importHumanized("ITP");
+    L0 = 1e-9,
+    f = 4,
+    murine::Bool = false,
+    cellTypes = nothing,
+    Kav::DataFrame = importKav(; murine = false, retdf = true),
+)
 
     # some initial variable check
     df = deepcopy(df)
@@ -53,10 +54,10 @@ function regPrepareData(df::DataFrame = importHumanized("ITP");
 
     # create an empty 3D array for storing model predictions
     pred = NamedArray(
-                zeros(eltype(Kav[!, 2]), nrow(df), size(Kav)[2]-1, length(cellTypes)), 
-                (1:nrow(df), names(Kav)[2:end], cellTypes), 
-                ("Row", "Receptor", "Cell")
-            )
+        zeros(eltype(Kav[!, 2]), nrow(df), size(Kav)[2] - 1, length(cellTypes)),
+        (1:nrow(df), names(Kav)[2:end], cellTypes),
+        ("Row", "Receptor", "Cell"),
+    )
 
     for ii = 1:nrow(df)
         # import Rtot with the right genotype
@@ -85,7 +86,7 @@ function regPrepareData(df::DataFrame = importHumanized("ITP");
         IgGs[IgGs .== "IgG2c"] .= "IgG2a"
         Kar = Kar[in(IgGs).(Kar."IgG"), :]
         @assert size(Kar)[1] > 0
-    
+
         if ("Background" in names(df)) && (df[ii, "Background"] != "wt")
             rr_names = ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV", ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"], ["FcgRI", "FcgRIII"], ["FcgRI", "FcgRIV"]]
             for (ii, rr) in enumerate(["R1", "R2", "R3", "R4", "gc", "R1/3KO", "R1/4KO"])
@@ -102,7 +103,7 @@ function regPrepareData(df::DataFrame = importHumanized("ITP");
         if ("Condition" in names(df)) && (df[ii, "Condition"] == "IgG1D265A")
             Kar[:, ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]] .= 0.0
         end
-        
+
         # run model and make predictions
         Kar = Matrix(Kar[:, Not("IgG")])
         Rtott = Matrix(Rtott[:, Not("Receptor")])
@@ -172,8 +173,7 @@ end
 end
 
 
-function runRegMCMC(df::DataFrame, fname = nothing; 
-        mcmc_iter = 1_000, link::Function = exponential, fitActI = true, kwargs...)
+function runRegMCMC(df::DataFrame, fname = nothing; mcmc_iter = 1_000, link::Function = exponential, fitActI = true, kwargs...)
     if fname !== nothing
         fname = "cached/" * fname
     end
@@ -231,8 +231,7 @@ end
 
 
 """ Run a MAP parameter estimation, with LOO/jackknife as errorbar """
-function runRegMAP(df::DataFrame, fname = nothing; 
-        bootstrap = 10, link::Function = exponential, fitActI = true, kwargs...)
+function runRegMAP(df::DataFrame, fname = nothing; bootstrap = 10, link::Function = exponential, fitActI = true, kwargs...)
     if fname !== nothing
         fname = "cached/" * fname
     end
@@ -269,7 +268,7 @@ end
 function extractRegMCMC(c::Union{Chains, StatisticalModel})
     pnames = [String(s) for s in (c isa Chains ? c.name_map[1] : names(c.values)[1])]
     ext(s::String) = c isa Chains ? median(c[s].data) : c.values[Symbol(s)]
-    extVar(x::String) = split(x, "[")[2][1:(end-1)]
+    extVar(x::String) = split(x, "[")[2][1:(end - 1)]
     splitVar(xs::Vector{String}, pref::String) = String.(extVar.(xs[startswith.(xs, pref)]))
 
     murine = any(contains.(pnames, "RIIA")) || any(contains.(pnames, "RIIIA")) ? false : true
@@ -336,8 +335,16 @@ function plotRegMCMC(
         Guide.shapekey(),
         Scale.y_continuous(minvalue = 0.0, maxvalue = 1.0),
         Scale.color_discrete_manual(
-            colorant"#4b40de",colorant"#00a8ff",colorant"#00f0ff",colorant"#00c398",colorant"#008f18",
-            colorant"#9fb338",colorant"#fed57a",colorant"#f18c3e",colorant"#de2c2c"),
+            colorant"#4b40de",
+            colorant"#00a8ff",
+            colorant"#00f0ff",
+            colorant"#00c398",
+            colorant"#008f18",
+            colorant"#9fb338",
+            colorant"#fed57a",
+            colorant"#f18c3e",
+            colorant"#de2c2c",
+        ),
         Geom.abline(color = "red"),
         Guide.xlabel("Actual effect"),
         Guide.ylabel("Fitted effect"),
@@ -357,14 +364,13 @@ function plotRegParams(
     cellTypes = nothing,
 )
     murine = extractRegMCMC(c[1]).isMurine
-    df = vcat([wildtypeWeights(
-            extractRegMCMC(c[ii]); 
-            cellTypes = names(extractRegMCMC(c[1]).cellWs)[1], 
-            murine = murine, Kav = Kav) 
-            for ii = 1:length(c)]...)
+    df = vcat(
+        [
+            wildtypeWeights(extractRegMCMC(c[ii]); cellTypes = names(extractRegMCMC(c[1]).cellWs)[1], murine = murine, Kav = Kav) for ii = 1:length(c)
+        ]...,
+    )
 
-    ActI_df = vcat([DataFrame(:Receptor => names(extractRegMCMC(c[1]).ActIs)[1], 
-        :Weight => extractRegMCMC(c[ii]).ActIs) for ii = 1:length(c)]...)
+    ActI_df = vcat([DataFrame(:Receptor => names(extractRegMCMC(c[1]).ActIs)[1], :Weight => extractRegMCMC(c[ii]).ActIs) for ii = 1:length(c)]...)
 
     df = combine(
         groupby(df, Not("Weight")),

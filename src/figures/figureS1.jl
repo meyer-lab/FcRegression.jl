@@ -29,7 +29,7 @@ end
 function figureS1(; figsize = (15inch, 13inch), widths = [3, 3, 3, 3, 3, 3.5], kwargs...)
     setGadflyTheme()
     draw(
-        PDF("output/figureS1.pdf", figsize[1], figsize[2]), 
-        plotMixSubplots(splot_origData, averageMixData(); widths = widths, match_y = false, kwargs...)
+        PDF("output/figureS1.pdf", figsize[1], figsize[2]),
+        plotMixSubplots(splot_origData, averageMixData(); widths = widths, match_y = false, kwargs...),
     )
 end

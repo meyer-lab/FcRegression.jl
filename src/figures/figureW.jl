@@ -109,9 +109,7 @@ function plotCellTypeEffects(Cell_df, ptitle = ""; legend = true)
         Geom.bar(position = :dodge),
         Scale.x_discrete(levels = unique(Cell_df.Condition)),
         Scale.y_continuous(minvalue = 0.0),
-        Scale.color_discrete_manual(
-            colorant"#008f48",colorant"#ffc984",colorant"#de76b8",colorant"#9fae4f",
-            colorant"#ff968f"),
+        Scale.color_discrete_manual(colorant"#008f48", colorant"#ffc984", colorant"#de76b8", colorant"#9fae4f", colorant"#ff968f"),
         #Scale.color_discrete(levels = unique(Cell_df.Component)),
         Guide.title("Predicted cell type weights\n($ptitle)"),
         style(key_position = legend ? :right : :none, stroke_color = c -> "black", errorbar_cap_length = 4px),
