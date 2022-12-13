@@ -30,8 +30,7 @@ const murineIgG = ["IgG1", "IgG2a", "IgG2b", "IgG3"]
 const murineIgGFucose = ["IgG1", "IgG2a", "IgG2b", "IgG3", "IgG2bFucose"]
 const humanIgG = ["IgG1", "IgG2", "IgG3", "IgG4"]
 const murineFcgR = ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"]
-const humanFcgR =
-    ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"]
+const humanFcgR = ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIIA-158F", "FcgRIIIA-158V", "FcgRIIIB"]
 const humanFcgRiv = ["FcgRI", "FcgRIIA-131H", "FcgRIIA-131R", "FcgRIIB-232I", "FcgRIIIA-158F", "FcgRIIIA-158V"]
 
 const murineActI = NamedArray([1.0, -1, 1, 1], ["FcgRI", "FcgRIIB", "FcgRIII", "FcgRIV"], "mFcgR")

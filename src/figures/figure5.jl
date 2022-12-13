@@ -62,13 +62,7 @@ function plotLbound(Rtot = importRtot(; murine = false, retdf = true); title = "
 end
 
 
-function figure5(
-    ssize = (9inch, 7inch);
-    cellTypes = ["ncMO", "cMO", "Neu"],
-    mcmc_iter = 1000,
-    suffix = "1102M_",
-    kwargs...,
-)
+function figure5(ssize = (9inch, 7inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 1000, suffix = "1102M_", kwargs...)
     setGadflyTheme()
     df = FcRegression.importHumanized("ITP")
 
@@ -78,8 +72,8 @@ function figure5(
     c1, ccdf1 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)1.dat"; murine = false, Kav = Kav1, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
     c0, ccdf0 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)0.dat"; murine = false, Kav = Kav0, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
 
-    c0 = c0[(mcmc_iter÷2):end]
-    c1 = c1[(mcmc_iter÷2):end]
+    c0 = c0[(mcmc_iter ÷ 2):end]
+    c1 = c1[(mcmc_iter ÷ 2):end]
 
     lbounds = plotLbound(; cellTypes = cellTypes)
 
@@ -121,20 +115,16 @@ function figure5(
 
     pl = FcRegression.plotGrid(
         (3, 4),
-        [
-            lbounds[1], lbounds[2], lbounds[3], lbounds[4],
-            nothing, pl_map0, cell_map0, act_map0,
-            nothing, pl_map1, cell_map1, act_map1,
-        ];
+        [lbounds[1], lbounds[2], lbounds[3], lbounds[4], nothing, pl_map0, cell_map0, act_map0, nothing, pl_map1, cell_map1, act_map1];
         sublabels = "abcdefgh ijk",
         widths = [1 1 1 1.4; 1 1 1 1; 1 1 1 1],
         heights = [1.3, 1.5, 1.5],
         kwargs...,
     )
     draw(PDF("output/figure5_$suffix.pdf", ssize[1], ssize[2]), pl)
-    draw(PDF("output/figure5_legends.pdf", 9inch, 3inch), plotGrid((1,3), [pl_mapL, cell_mapL, act_mapL]))
+    draw(PDF("output/figure5_legends.pdf", 9inch, 3inch), plotGrid((1, 3), [pl_mapL, cell_mapL, act_mapL]))
 end
-        
+
 
 
 function regLOCellOut(df, Kav)
