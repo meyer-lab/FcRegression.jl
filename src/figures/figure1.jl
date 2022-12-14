@@ -6,12 +6,17 @@ function plotDFwithGreekGamma(df::DataFrame)
 end
 
 """ Original measurements with middle 50% as error bar """
-function splot_origData(df; match_y = true, y_label = true, legend = true)
+function splot_origData(df; match_y = true, y_normalize = false, legend = true)
     # y_label not useful here, just to match format
     cell = unique(df."Receptor")[1]
     IgGX = unique(df."subclass_1")[1]
     IgGY = unique(df."subclass_2")[1]
     cell_name = replace(cell, "FcgR" => "FcγR")
+    if y_normalize != false
+        df."Value" .*= y_normalize
+        df."xmin" .*= y_normalize
+        df."xmax" .*= y_normalize
+    end
 
     ymax = Dict("FcgRI" => 6, "FcgRIIA-131H" => 20, "FcgRIIA-131R" => 15, "FcgRIIB-232I" => 8, "FcgRIIIA-158F" => 20, "FcgRIIIA-158V" => 15)
     return plot(
@@ -28,7 +33,7 @@ function splot_origData(df; match_y = true, y_label = true, legend = true)
         Scale.y_continuous(; minvalue = 0.0, maxvalue = match_y ? ymax[cell] : maximum(df."xmax")),
         Scale.color_discrete_manual(colorValency...),
         Guide.xlabel("", orientation = :horizontal),
-        Guide.ylabel("RFU", orientation = :vertical),
+        Guide.ylabel((y_normalize == false) ? "RFU" : "Normalized RFU", orientation = :vertical),
         Guide.xticks(orientation = :horizontal),
         Guide.title("$IgGX-$IgGY bind to $cell_name"),
         style(key_position = legend ? :right : :none),
@@ -137,11 +142,13 @@ function figure1(; kwargs...)
     igg12_1 = splot_origData(
         df[(df."Receptor" .== "FcgRI") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG2"), :];
         match_y = false,
+        y_normalize = importRtotDist(:hCHO; regular = true)["FcgRIIIA-158F"] / importRtotDist(:hCHO; regular = true)["FcgRI"],
         legend = false,
     )
     igg14_1 = splot_origData(
         df[(df."Receptor" .== "FcgRIIIA-158F") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG4"), :];
         match_y = false,
+        y_normalize = 1.0,
         legend = true,
     )
 
