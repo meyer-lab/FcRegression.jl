@@ -62,7 +62,7 @@ function plotLbound(Rtot = importRtot(; murine = false, retdf = true); title = "
 end
 
 
-function figure5(ssize = (9inch, 7inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 1000, suffix = "1102M_", kwargs...)
+function figure5(ssize = (9inch, 11inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 10000, suffix = "1213C_", kwargs...)
     setGadflyTheme()
     df = FcRegression.importHumanized("ITP")
 
@@ -114,15 +114,17 @@ function figure5(ssize = (9inch, 7inch); cellTypes = ["ncMO", "cMO", "Neu"], mcm
     cell_mapL, act_mapL = FcRegression.plotRegParams(c1; ptitle = "updated affinities", legend = true, Kav = Kav1, cellTypes = cellTypes)
 
     pl = FcRegression.plotGrid(
-        (3, 4),
-        [lbounds[1], lbounds[2], lbounds[3], lbounds[4], nothing, pl_map0, cell_map0, act_map0, nothing, pl_map1, cell_map1, act_map1];
-        sublabels = "abcdefgh ijk",
-        widths = [1 1 1 1.4; 1 1 1 1; 1 1 1 1],
-        heights = [1.3, 1.5, 1.5],
+        (4, 4),
+        [lbounds[1], lbounds[2], lbounds[3], lbounds[4], 
+        nothing, nothing, pl_map0, pl_map1, 
+        pl_mapL, nothing, cell_map0, cell_map1,
+        cell_mapL, nothing, act_map0, act_map1];
+        sublabels = "abcde fg  hi  jk",
+        widths = [1 1 1 1.4; 1 0.3 1 1; 1 0.3 1 1; 1 0.3 1 1],
+        heights = [1.3, 1.5, 1.5, 1.5],
         kwargs...,
     )
     draw(PDF("output/figure5_$suffix.pdf", ssize[1], ssize[2]), pl)
-    draw(PDF("output/figure5_legends.pdf", 9inch, 3inch), plotGrid((1, 3), [pl_mapL, cell_mapL, act_mapL]))
 end
 
 

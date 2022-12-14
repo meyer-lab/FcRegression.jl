@@ -163,7 +163,7 @@ end
     cellTypes = names(Rmulti)[3]
     cellWs = NamedArray(repeat([0.0], length(cellTypes)), cellTypes, ("CellType"))
     for ct in names(cellWs)[1]
-        cellWs[ct] ~ Exponential(Float64(length(cellTypes)))
+        cellWs[ct] ~ Exponential(Float64(length(cellTypes)) * 2.0)
     end
 
     Yfit = regPred(Rmulti, regParams(cellWs, ActIs, murine); link = link)
