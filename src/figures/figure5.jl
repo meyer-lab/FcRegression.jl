@@ -115,10 +115,24 @@ function figure5(ssize = (9inch, 11inch); cellTypes = ["ncMO", "cMO", "Neu"], mc
 
     pl = FcRegression.plotGrid(
         (4, 4),
-        [lbounds[1], lbounds[2], lbounds[3], lbounds[4], 
-        nothing, nothing, pl_map0, pl_map1, 
-        pl_mapL, nothing, cell_map0, cell_map1,
-        cell_mapL, nothing, act_map0, act_map1];
+        [
+            lbounds[1],
+            lbounds[2],
+            lbounds[3],
+            lbounds[4],
+            nothing,
+            nothing,
+            pl_map0,
+            pl_map1,
+            pl_mapL,
+            nothing,
+            cell_map0,
+            cell_map1,
+            cell_mapL,
+            nothing,
+            act_map0,
+            act_map1,
+        ];
         sublabels = "abcde fg  hi  jk",
         widths = [1 1 1 1.4; 1 0.3 1 1; 1 0.3 1 1; 1 0.3 1 1],
         heights = [1.3, 1.5, 1.5, 1.5],
