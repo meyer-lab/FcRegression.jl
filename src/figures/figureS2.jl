@@ -8,6 +8,7 @@ function splot_predData(
     y_label = true,
     Kav::DataFrame,
     Rtot = importRtotDist(:hCHO; retdf = true, regular = true),
+    yticks = :auto,
 )
     cell = unique(df."Receptor")[1]
     IgGX = unique(df."subclass_1")[1]
@@ -52,6 +53,7 @@ function splot_predData(
         Guide.xlabel("", orientation = :horizontal),
         Guide.ylabel(y_label ? "Predicted CHO binding" : nothing, orientation = :vertical),
         Guide.xticks(orientation = :horizontal),
+        Guide.yticks(ticks=yticks, orientation = :horizontal),
         Guide.title("$IgGX-$IgGY to $cell_name"),
         style(key_position = legend ? :right : :none),
     )

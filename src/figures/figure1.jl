@@ -32,7 +32,7 @@ function splot_origData(df; match_y = true, y_normalize = false, legend = true)
         Scale.x_continuous(labels = n -> "$IgGX $(trunc(Int, n*100))%\n$IgGY $(trunc(Int, 100-n*100))%"),
         Scale.y_continuous(; minvalue = 0.0, maxvalue = match_y ? ymax[cell] : maximum(df."xmax")),
         Scale.color_discrete_manual(colorValency...),
-        Guide.xlabel("", orientation = :horizontal),
+        Guide.xlabel(nothing),
         Guide.ylabel((y_normalize == false) ? "RFU" : "Normalized RFU", orientation = :vertical),
         Guide.xticks(orientation = :horizontal),
         Guide.title("$IgGX-$IgGY bind to $cell_name"),
