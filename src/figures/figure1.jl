@@ -6,7 +6,7 @@ function plotDFwithGreekGamma(df::DataFrame)
 end
 
 """ Original measurements with middle 50% as error bar """
-function splot_origData(df; match_y = true, y_normalize = false, legend = true)
+function splot_origData(df; match_y = true, y_label = true, y_normalize = false, legend = true)
     # y_label not useful here, just to match format
     cell = unique(df."Receptor")[1]
     IgGX = unique(df."subclass_1")[1]
@@ -16,6 +16,11 @@ function splot_origData(df; match_y = true, y_normalize = false, legend = true)
         df."Value" .*= y_normalize
         df."xmin" .*= y_normalize
         df."xmax" .*= y_normalize
+    end
+    
+    yylabel = nothing
+    if y_label
+        yylabel = (y_normalize == false) ? "RFU" : "Normalized RFU"
     end
 
     ymax = Dict("FcgRI" => 6, "FcgRIIA-131H" => 20, "FcgRIIA-131R" => 15, "FcgRIIB-232I" => 8, "FcgRIIIA-158F" => 20, "FcgRIIIA-158V" => 15)
@@ -33,7 +38,7 @@ function splot_origData(df; match_y = true, y_normalize = false, legend = true)
         Scale.y_continuous(; minvalue = 0.0, maxvalue = match_y ? ymax[cell] : maximum(df."xmax")),
         Scale.color_discrete_manual(colorValency...),
         Guide.xlabel(nothing),
-        Guide.ylabel((y_normalize == false) ? "RFU" : "Normalized RFU", orientation = :vertical),
+        Guide.ylabel(yylabel, orientation = :vertical),
         Guide.xticks(orientation = :horizontal),
         Guide.title("$IgGX-$IgGY bind to $cell_name"),
         style(key_position = legend ? :right : :none),
