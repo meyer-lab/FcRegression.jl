@@ -14,22 +14,24 @@ end
 function predictLbound(
     Kav = FcRegression.extractNewHumanKav(),
     Rtot = FcRegression.importRtot(; murine = false, retdf = true);
-    f = 4,
     L0 = 1e-9,
     KxStar = KxConst,
-    longFormat = true,
 )
     Rtot = Rtot[in(names(Kav[!, Not("IgG")])).(Rtot."Receptor"), :]
 
     """ Predict Lbound of each cell type based on Kav """
-    df = DataFrame("IgG" => Kav."IgG", [cn => 0.0 for cn in names(Rtot)[2:end]]...)
-    for (i, igg) in enumerate(df."IgG")
+    df = DataFrame((IgG=x, Cell=y, Valency=z) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in [4, 33])
+    df."Lbound" .= 0.0
+
+    for igg in unique(df."IgG")
         kav = Matrix(Kav[Kav."IgG" .== igg, 2:end])
-        for cn in names(Rtot)[2:end]
-            df[i, cn] = polyfc(L0, KxStar, f, Rtot[!, cn], [1.0], kav).Lbound
+        for cn in unique(df."Cell")
+            for f in unique(df."Valency")
+                df[(df."IgG".==igg) .& (df."Cell" .== cn) .& (df."Valency" .== f), "Lbound"] .= polyfc(L0, KxStar, f, Rtot[!, cn], [1.0], kav).Lbound
+            end
         end
     end
-    return stack(df, Not("IgG"), variable_name = "Cell", value_name = "Lbound")
+    return df
 end
 
 
@@ -37,32 +39,42 @@ function plotLbound(Rtot = importRtot(; murine = false, retdf = true); title = "
 
     Kav0 = FcRegression.importKav(; murine = false)
     Kav1 = FcRegression.extractNewHumanKav()
-    df0 = FcRegression.predictLbound(Kav0)
+    df0 = FcRegression.predictLbound(Kav0, Rtot)
     df0."Affinity" .= "Documented"
-    df1 = FcRegression.predictLbound(Kav1)
+    df1 = FcRegression.predictLbound(Kav1, Rtot)
     df1."Affinity" .= "Updated"
     df = vcat(df0, df1)
 
     df = df[in(cellTypes).(df."Cell"), :]
+    df."Valency" .= Symbol.(df."Valency")
 
     return [
-        plot(
-            df[df."IgG" .== igg, :],
-            x = "Cell",
-            y = "Lbound",
-            color = "Affinity",
-            Geom.bar(position = :dodge),
-            Guide.colorkey(),
-            Guide.title("Predicted bound $igg"),
-            Scale.color_discrete_manual(colorAffinity...),
-            style(bar_spacing = 0.1inch, key_position = igg == "IgG4" ? :right : :none),
-            # Stat.dodge(axis = :x),    # don't use if there is no error bar
-        ) for igg in unique(df."IgG")
-    ]
+            plot(
+                df[df."IgG" .== igg, :],
+                x = "Valency",
+                xgroup = "Cell",
+                y = "Lbound",
+                color = "Affinity",
+                Geom.subplot_grid(Geom.bar(position = :dodge)),
+                Guide.title("Predicted bound $igg"),
+                Guide.xlabel(nothing),
+                Guide.ylabel(igg == "IgG1" ? "Predict binding" : nothing),
+                Scale.color_discrete_manual(colorAffinity...),
+                style(
+                    bar_spacing = 0.0pt,
+                    plot_padding = [0.0pt, 0.0pt, 0.0pt, 0.0pt],
+                    key_position = igg == "IgG4" ? :right : :none,
+                    major_label_font_size = 8pt,
+                    minor_label_font_size = 8pt,
+                ),
+            ) for igg in unique(df."IgG")
+        ]
 end
 
 
-function figure5(ssize = (9inch, 11inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 10000, suffix = "1213C_", kwargs...)
+
+
+function figure5(ssize = (8.5inch, 11inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 10000, suffix = "1213C_", kwargs...)
     setGadflyTheme()
     df = FcRegression.importHumanized("ITP")
 
@@ -120,7 +132,7 @@ function figure5(ssize = (9inch, 11inch); cellTypes = ["ncMO", "cMO", "Neu"], mc
         pl_mapL, nothing, cell_map0, cell_map1,
         cell_mapL, nothing, act_map0, act_map1];
         sublabels = "abcde fg  hi  jk",
-        widths = [1 1 1 1.4; 1 0.3 1 1; 1 0.3 1 1; 1 0.3 1 1],
+        widths = [1.1 1 1 1.4; 1 0.3 1 1; 1 0.3 1 1; 1 0.3 1 1],
         heights = [1.3, 1.5, 1.5, 1.5],
         kwargs...,
     )
