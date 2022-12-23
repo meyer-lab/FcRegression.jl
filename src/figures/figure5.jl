@@ -20,14 +20,15 @@ function predictLbound(
     Rtot = Rtot[in(names(Kav[!, Not("IgG")])).(Rtot."Receptor"), :]
 
     """ Predict Lbound of each cell type based on Kav """
-    df = DataFrame((IgG=x, Cell=y, Valency=z) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in [4, 33])
+    df = DataFrame((IgG = x, Cell = y, Valency = z) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in [4, 33])
     df."Lbound" .= 0.0
 
     for igg in unique(df."IgG")
         kav = Matrix(Kav[Kav."IgG" .== igg, 2:end])
         for cn in unique(df."Cell")
             for f in unique(df."Valency")
-                df[(df."IgG".==igg) .& (df."Cell" .== cn) .& (df."Valency" .== f), "Lbound"] .= polyfc(L0, KxStar, f, Rtot[!, cn], [1.0], kav).Lbound
+                df[(df."IgG" .== igg) .& (df."Cell" .== cn) .& (df."Valency" .== f), "Lbound"] .=
+                    polyfc(L0, KxStar, f, Rtot[!, cn], [1.0], kav).Lbound
             end
         end
     end
@@ -49,26 +50,26 @@ function plotLbound(Rtot = importRtot(; murine = false, retdf = true); title = "
     df."Valency" .= Symbol.(df."Valency")
 
     return [
-            plot(
-                df[df."IgG" .== igg, :],
-                x = "Valency",
-                xgroup = "Cell",
-                y = "Lbound",
-                color = "Affinity",
-                Geom.subplot_grid(Geom.bar(position = :dodge)),
-                Guide.title("Predicted bound $igg"),
-                Guide.xlabel(nothing),
-                Guide.ylabel(igg == "IgG1" ? "Predict binding" : nothing),
-                Scale.color_discrete_manual(colorAffinity...),
-                style(
-                    bar_spacing = 0.0pt,
-                    plot_padding = [0.0pt, 0.0pt, 0.0pt, 0.0pt],
-                    key_position = igg == "IgG4" ? :right : :none,
-                    major_label_font_size = 8pt,
-                    minor_label_font_size = 8pt,
-                ),
-            ) for igg in unique(df."IgG")
-        ]
+        plot(
+            df[df."IgG" .== igg, :],
+            x = "Valency",
+            xgroup = "Cell",
+            y = "Lbound",
+            color = "Affinity",
+            Geom.subplot_grid(Geom.bar(position = :dodge)),
+            Guide.title("Predicted bound $igg"),
+            Guide.xlabel(nothing),
+            Guide.ylabel(igg == "IgG1" ? "Predict binding" : nothing),
+            Scale.color_discrete_manual(colorAffinity...),
+            style(
+                bar_spacing = 0.0pt,
+                plot_padding = [0.0pt, 0.0pt, 0.0pt, 0.0pt],
+                key_position = igg == "IgG4" ? :right : :none,
+                major_label_font_size = 8pt,
+                minor_label_font_size = 8pt,
+            ),
+        ) for igg in unique(df."IgG")
+    ]
 end
 
 
@@ -127,10 +128,24 @@ function figure5(ssize = (8.5inch, 11inch); cellTypes = ["ncMO", "cMO", "Neu"], 
 
     pl = FcRegression.plotGrid(
         (4, 4),
-        [lbounds[1], lbounds[2], lbounds[3], lbounds[4], 
-        nothing, nothing, pl_map0, pl_map1, 
-        pl_mapL, nothing, cell_map0, cell_map1,
-        cell_mapL, nothing, act_map0, act_map1];
+        [
+            lbounds[1],
+            lbounds[2],
+            lbounds[3],
+            lbounds[4],
+            nothing,
+            nothing,
+            pl_map0,
+            pl_map1,
+            pl_mapL,
+            nothing,
+            cell_map0,
+            cell_map1,
+            cell_mapL,
+            nothing,
+            act_map0,
+            act_map1,
+        ];
         sublabels = "abcde fg  hi  jk",
         widths = [1.1 1 1 1.4; 1 0.3 1 1; 1 0.3 1 1; 1 0.3 1 1],
         heights = [1.3, 1.5, 1.5, 1.5],
