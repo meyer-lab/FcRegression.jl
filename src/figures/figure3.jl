@@ -77,7 +77,6 @@ function figure3(ssize = (10inch, 8inch); kwargs...)
         plotMCMCPredict(c_noKav, df; dat = :hCHO, Kav = Kav_old, R2pos = (0, -2), 
             title = "Predictions with all but affinity fitting", legend = false)
     
-    # Robinett fitting
     c = rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000)
     pl1 = plotMCMCPredict(
         c,
@@ -95,6 +94,7 @@ function figure3(ssize = (10inch, 8inch); kwargs...)
         R2pos = (0, -2.5),
         legend = false,
     )
+    # Robinett fitting
     rob1, rob2 = validateFittedKav(c, "robinett_valid_Kavfit_1025.dat"; murine = false, legend = false)
     pl_legend = plotMCMCPredict(c, df; dat = :hCHO, R2pos = (0, -2.5), legend = true)   # just to insert the legend
 

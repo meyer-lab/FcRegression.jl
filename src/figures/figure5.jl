@@ -15,12 +15,13 @@ function predictLbound(
     Kav = FcRegression.extractNewHumanKav(),
     Rtot = FcRegression.importRtot(; murine = false, retdf = true);
     L0 = 1e-9,
+    fs = [4, 33],
     KxStar = KxConst,
 )
     Rtot = Rtot[in(names(Kav[!, Not("IgG")])).(Rtot."Receptor"), :]
 
     """ Predict Lbound of each cell type based on Kav """
-    df = DataFrame((IgG=x, Cell=y, Valency=z) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in [4, 33])
+    df = DataFrame((IgG=x, Cell=y, Valency=z) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in fs)
     df."Lbound" .= 0.0
 
     for igg in unique(df."IgG")
@@ -35,13 +36,16 @@ function predictLbound(
 end
 
 
-function plotLbound(Rtot = importRtot(; murine = false, retdf = true); title = "", cellTypes = ["ncMO", "cMO", "Neu"])
+function plotLbound(Rtot = importRtot(; murine = false, retdf = true); 
+        title = "", 
+        cellTypes = ["ncMO", "cMO", "Neu"], 
+        kwargs...)
 
     Kav0 = FcRegression.importKav(; murine = false)
     Kav1 = FcRegression.extractNewHumanKav()
-    df0 = FcRegression.predictLbound(Kav0, Rtot)
+    df0 = FcRegression.predictLbound(Kav0, Rtot; kwargs...)
     df0."Affinity" .= "Documented"
-    df1 = FcRegression.predictLbound(Kav1, Rtot)
+    df1 = FcRegression.predictLbound(Kav1, Rtot; kwargs...)
     df1."Affinity" .= "Updated"
     df = vcat(df0, df1)
 
@@ -74,7 +78,7 @@ end
 
 
 
-function figure5(ssize = (8.5inch, 11inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 10000, suffix = "1213C_", kwargs...)
+function figure5(ssize = (8.5inch, 9.5inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 10000, suffix = "1213C_", kwargs...)
     setGadflyTheme()
     df = FcRegression.importHumanized("ITP")
 
