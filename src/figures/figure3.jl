@@ -77,7 +77,6 @@ function figure3(ssize = (10inch, 8inch); kwargs...)
         plotMCMCPredict(c_noKav, df; dat = :hCHO, Kav = Kav_old, R2pos = (0, -2), 
             title = "Predictions with all but affinity fitting", legend = false)
     
-    # Robinett fitting
     c = rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000)
     pl1 = plotMCMCPredict(
         c,
@@ -95,17 +94,18 @@ function figure3(ssize = (10inch, 8inch); kwargs...)
         R2pos = (0, -2.5),
         legend = false,
     )
+    # Robinett fitting
     rob1, rob2 = validateFittedKav(c, "robinett_valid_Kavfit_1025.dat"; murine = false, legend = false)
     pl_legend = plotMCMCPredict(c, df; dat = :hCHO, R2pos = (0, -2.5), legend = true)   # just to insert the legend
 
 
     # Visually compare a few examples of old and new predictions
     df = averageMixData()
-    df_igg12_1 = df[(df."Receptor" .== "FcgRI") .& (df."subclass_1" .== "IgG1") .& (df."subclass_2" .== "IgG2"), :]
-    igg12_old = splot_predData(df_igg12_1; legend = false, ll = 100, y_label = true,
+    df_igg24_1 = df[(df."Receptor" .== "FcgRI") .& (df."subclass_1" .== "IgG2") .& (df."subclass_2" .== "IgG4"), :]
+    igg24_old = splot_predData(df_igg24_1; legend = false, ll = 100, y_label = true,
         Kav = importKav(; murine = false, retdf = true),
-        yticks=[0, 14000, 28000, 42000, 56000])
-    igg12_new = splot_predVorig(df_igg12_1, 70000; legend = false, ll = 100, 
+        yticks=[0, 10000, 20000, 30000, 40000, 50000])
+    igg24_new = splot_predVorig(df_igg24_1, 20000; legend = false, ll = 100, 
         match_y = false, y_label = true,
         Kav = extractNewHumanKav())
 
@@ -121,8 +121,8 @@ function figure3(ssize = (10inch, 8inch); kwargs...)
     pp = plotGrid(
         (3, 4), 
         [
-            nothing pl1 igg12_old;
-            nothing pl2 igg12_new;
+            nothing pl1 igg24_old;
+            nothing pl2 igg24_new;
             raw_pred_pl rob1 igg34_old;
             pl_noKav rob2 igg34_new
         ];
