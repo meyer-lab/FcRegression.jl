@@ -1,26 +1,3 @@
-function predictLbound(
-    Kav = FcRegression.extractNewHumanKav(),
-    Rtot = FcRegression.importRtot(; murine = false, retdf = true);
-    L0 = 1e-9,
-    fs = [4, 33],
-    KxStar = KxConst,
-)
-    Rtot = Rtot[in(names(Kav[!, Not("IgG")])).(Rtot."Receptor"), :]
-
-    """ Predict Lbound of each cell type based on Kav """
-    df = DataFrame((IgG=x, Cell=y, Valency=z) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in fs)
-    df."Lbound" .= 0.0
-
-    for igg in unique(df."IgG")
-        kav = Matrix(Kav[Kav."IgG" .== igg, 2:end])
-        for cn in unique(df."Cell")
-            for f in unique(df."Valency")
-                df[(df."IgG".==igg) .& (df."Cell" .== cn) .& (df."Valency" .== f), "Lbound"] .= polyfc(L0, KxStar, f, Rtot[!, cn], [1.0], kav).Lbound
-            end
-        end
-    end
-    return df
-end
 
 
 function plotLbound(Rtot = importRtot(; murine = false, retdf = true); 
@@ -62,16 +39,72 @@ function plotLbound(Rtot = importRtot(; murine = false, retdf = true);
         ]
 end
 
-function figure5(ssize = (8.5inch, 2.5inch); cellTypes = ["ncMO", "cMO", "Neu"], kwargs...)
+
+function plotEffectorPred(; Kav = FcRegression.extractNewHumanKav(), title = "", legend = true, kwargs...)
+    df = importEffectorBind(; avg = true)
+    pred = predictLbound(Kav; kwargs...)
+    rename!(pred, "IgG" => "Subclass")
+
+    jdf = innerjoin(df, pred, on = ["Valency", "Subclass", "Cell"])
+    jdf."Valency" .= Symbol.(jdf."Valency")
+    jdf."Lbound" ./= geocmean(jdf."Lbound") / geocmean(jdf."Value")
+    jdf[jdf."xmin" .<= 1.0, "xmin"] .= 10.0
+    jdf[jdf."Value" .<= 1.0, "Value"] .= 10.0
+
+    r2 = R2(jdf."Value", jdf."Lbound"; logscale = true)
+
+    return plot(
+        jdf,
+        x = "Value",
+        y = "Lbound",
+        xmin = "xmin",
+        xmax = "xmax",
+        color = "Subclass",
+        shape = "Cell",
+        Geom.point,
+        Geom.errorbar,
+        Guide.xlabel("Measurements", orientation = :horizontal),
+        Guide.ylabel("Predicted binding", orientation = :vertical),
+        Guide.title(title),
+        Scale.x_log10,
+        Scale.y_log10,
+        Coord.cartesian(xmin = 1),
+        Scale.color_discrete_manual(FcRegression.colorSubclass...),
+        Geom.abline(color = "black"),
+        Guide.annotation(
+            compose(
+                context(),
+                text(3.5, 1, "<i>R</i><sup>2</sup> = " * @sprintf("%.4f", r2)),
+                stroke("black"),
+                fill("black"),
+                font("Helvetica-Bold"),
+            ),
+        ),
+        style(errorbar_cap_length = 1px, key_position = legend ? :right : :none),
+    )
+end
+
+function figure5(ssize = (8.5inch, 5inch); cellTypes = ["ncMO", "cMO", "Neu"], kwargs...)
     setGadflyTheme()
 
     lbounds = plotLbound(; cellTypes = cellTypes)
+    oldPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = true), 
+        title = "Documented Affinity", legend = false)
+    newPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = false), 
+        title = "Updated Affinity", legend = true)
+    
+    c = FcRegression.rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000);
+    pms = FcRegression.extractMCMC(c; dat = :hCHO)
+    newPred2 = plotEffectorPred(; Kav = extractNewHumanKav(; old = false), 
+        title = "Updated Affinity", legend = true, KxConst = pms["KxStar"])
+
     pl = FcRegression.plotGrid(
-        (1, 4),
-        [lbounds[1], lbounds[2], lbounds[3], lbounds[4]];
-        sublabels = "abcd",
-        widths = [1.1 1 1 1.4],
-        heights = [1.3],
+        (2, 4),
+        [lbounds[1], lbounds[2], lbounds[3], lbounds[4],
+        oldPred, newPred, nothing, nothing];
+        sublabels = "abcdef  ",
+        widths = [1.1 1 1 1.4; 1 1 0.1 0.1],
+        heights = [1.3, 1.5],
         kwargs...,
     )
     draw(PDF("output/figure5.pdf", ssize[1], ssize[2]), pl)
