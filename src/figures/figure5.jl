@@ -63,7 +63,7 @@ function plotEffectorPred(; Kav = FcRegression.extractNewHumanKav(), title = "",
         shape = "Cell",
         Geom.point,
         Geom.errorbar,
-        Guide.xlabel("Measurements", orientation = :horizontal),
+        Guide.xlabel("Measurements (MFI)", orientation = :horizontal),
         Guide.ylabel("Predicted binding", orientation = :vertical),
         Guide.title(title),
         Scale.x_log10,
@@ -88,22 +88,21 @@ function figure5(ssize = (8.5inch, 5inch); cellTypes = ["ncMO", "cMO", "Neu"], k
     setGadflyTheme()
 
     lbounds = plotLbound(; cellTypes = cellTypes)
-    oldPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = true), 
-        title = "Documented Affinity", legend = false)
-    newPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = false), 
-        title = "Updated Affinity", legend = true)
-    
+
     c = FcRegression.rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000);
     pms = FcRegression.extractMCMC(c; dat = :hCHO)
-    newPred2 = plotEffectorPred(; Kav = extractNewHumanKav(; old = false), 
-        title = "Updated Affinity", legend = true, KxConst = pms["KxStar"])
+
+    oldPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = true), 
+        title = "Documented Affinity", legend = false, KxStar = pms["KxStar"])  # R2 = 0.6671
+    newPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = false), 
+        title = "Updated Affinity", legend = true, KxStar = pms["KxStar"])  # R2 = 0.6585
 
     pl = FcRegression.plotGrid(
         (2, 4),
         [lbounds[1], lbounds[2], lbounds[3], lbounds[4],
         oldPred, newPred, nothing, nothing];
         sublabels = "abcdef  ",
-        widths = [1.1 1 1 1.4; 1 1 0.1 0.1],
+        widths = [1.1 1 1 1.4; 0.8 1 0.8 0.1],
         heights = [1.3, 1.5],
         kwargs...,
     )
