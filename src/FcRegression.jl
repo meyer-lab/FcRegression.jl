@@ -31,6 +31,7 @@ include("figures/figureA5.jl")
 include("figures/figureA6.jl")
 include("figures/figureS1.jl")
 include("figures/figureS2.jl")
+include("figures/figureS4.jl")
 
 include("figures/figure1.jl")
 include("figures/figure2.jl")

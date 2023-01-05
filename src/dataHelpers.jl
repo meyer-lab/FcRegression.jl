@@ -44,6 +44,7 @@ const colorReceptor = [
     colorant"hsl(166, 100%, 36%)",    # FcgRIIB-213I
     colorant"hsl(255, 100%, 83%)",    # FcgRIIIA-158F
     colorant"hsl(11, 100%, 58%)",     # FcgRIIIA-158V
+    colorant"hsl(117, 90%, 68%)",     # FcgRIIIB
 ]
 const colorSubclass = [
     colorant"hsl(115, 100%, 39%)",  # IgG1
