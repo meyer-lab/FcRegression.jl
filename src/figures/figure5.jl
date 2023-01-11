@@ -1,51 +1,13 @@
-""" Plot in vivo regression results. Return predictions, cell weights, and receptor weights for MAP and MCMC. """
-function plot_regressions(df; Kav::DataFrame, murine = false, cellTypes = nothing, ptitle = "")
-    opt, optcv, cdf = runRegMAP(df; murine = murine, Kav = Kav, cellTypes = cellTypes)
-    c0, ccdf0 = FcRegression.runRegMCMC(df; murine = murine, Kav = Kav0, mcmc_iter = 200, cellTypes = cellTypes)
-
-    pl_map = plotRegMCMC(opt, deepcopy(df); ptitle = ptitle * "[MAP]", Kav = Kav, cellTypes = cellTypes, colorL = "Genotype", shapeL = "Condition")
-    pl_mcmc = plotRegMCMC(c, deepcopy(df); ptitle = ptitle * "[MCMC]", Kav = Kav, cellTypes = cellTypes, colorL = "Genotype", shapeL = "Condition")
-    cell_map, act_map = plotRegParams(optcv; ptitle = ptitle * "[MAP]", legend = true, Kav = Kav, cellTypes = cellTypes)
-    cell_mcmc, act_mcmc = plotRegParams(c; ptitle = ptitle * "[MCMC]", legend = true, Kav = Kav, cellTypes = cellTypes)
-    return [pl_map, cell_map, act_map, pl_mcmc, cell_mcmc, act_mcmc]
-end
-
-
-function predictLbound(
-    Kav = FcRegression.extractNewHumanKav(),
-    Rtot = FcRegression.importRtot(; murine = false, retdf = true);
-    L0 = 1e-9,
-    fs = [4, 33],
-    KxStar = KxConst,
-)
-    Rtot = Rtot[in(names(Kav[!, Not("IgG")])).(Rtot."Receptor"), :]
-
-    """ Predict Lbound of each cell type based on Kav """
-    df = DataFrame((IgG=x, Cell=y, Valency=z) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in fs)
-    df."Lbound" .= 0.0
-
-    for igg in unique(df."IgG")
-        kav = Matrix(Kav[Kav."IgG" .== igg, 2:end])
-        for cn in unique(df."Cell")
-            for f in unique(df."Valency")
-                df[(df."IgG".==igg) .& (df."Cell" .== cn) .& (df."Valency" .== f), "Lbound"] .= polyfc(L0, KxStar, f, Rtot[!, cn], [1.0], kav).Lbound
-            end
-        end
-    end
-    return df
-end
-
-
 function plotLbound(Rtot = importRtot(; murine = false, retdf = true); 
         title = "", 
         cellTypes = ["ncMO", "cMO", "Neu"], 
         kwargs...)
 
-    Kav0 = FcRegression.importKav(; murine = false)
-    Kav1 = FcRegression.extractNewHumanKav()
-    df0 = FcRegression.predictLbound(Kav0, Rtot; kwargs...)
+    Kav0 = importKav(; murine = false)
+    Kav1 = extractNewHumanKav()
+    df0 = predictLbound(Kav0, Rtot; kwargs...)
     df0."Affinity" .= "Documented"
-    df1 = FcRegression.predictLbound(Kav1, Rtot; kwargs...)
+    df1 = predictLbound(Kav1, Rtot; kwargs...)
     df1."Affinity" .= "Updated"
     df = vcat(df0, df1)
 
@@ -67,7 +29,7 @@ function plotLbound(Rtot = importRtot(; murine = false, retdf = true);
                 style(
                     bar_spacing = 0.0pt,
                     plot_padding = [0.0pt, 0.0pt, 0.0pt, 0.0pt],
-                    key_position = igg == "IgG4" ? :right : :none,
+                    key_position = :none,
                     major_label_font_size = 8pt,
                     minor_label_font_size = 8pt,
                 ),
@@ -75,126 +37,108 @@ function plotLbound(Rtot = importRtot(; murine = false, retdf = true);
         ]
 end
 
+function plotEffectorMeasured()
+    df = importEffectorBind(; avg = true)
+    df."Valency" .= Symbol.(df."Valency")
+    df[df."Value" .< 0.0, "Value"] .= 0.0
+    df[df."xmin" .< 0.0, "xmin"] .= 0.0
+
+    return [
+            plot(
+                df[df."Subclass" .== igg, :],
+                x = "Valency",
+                xgroup = "Cell",
+                y = "Value",
+                color = [colorant"hsl(350, 40%, 45%)"], #"Valency",
+                ymin = "xmin",
+                ymax = "xmax",
+                Scale.x_discrete,
+                Geom.subplot_grid(Geom.errorbar, Geom.bar(position = :dodge),),
+                Guide.title("Measured bound $igg"),
+                Guide.xlabel(nothing),
+                Guide.ylabel(igg == "IgG1" ? "ΔMFI" : nothing),
+                style(
+                    bar_spacing = 3px,
+                    plot_padding = [0.0pt, 0.0pt, 0.0pt, 0.0pt],
+                    key_position = igg == "IgG4" ? :right : :none,
+                    major_label_font_size = 8pt,
+                    minor_label_font_size = 8pt,
+                    stroke_color = c -> "black", 
+                    errorbar_cap_length = 6px,
+                ),
+            ) for igg in unique(df."Subclass")
+        ]
+end
 
 
+function plotEffectorPred(; Kav = extractNewHumanKav(), title = "", legend = true, kwargs...)
+    df = importEffectorBind(; avg = true)
+    pred = predictLbound(Kav; kwargs...)
+    rename!(pred, "IgG" => "Subclass")
 
-function figure5(ssize = (8.5inch, 9.5inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 10000, suffix = "1213C_", kwargs...)
+    jdf = innerjoin(df, pred, on = ["Valency", "Subclass", "Cell"])
+    jdf."Valency" .= Symbol.(jdf."Valency")
+    jdf."Lbound" ./= geocmean(jdf."Lbound") / geocmean(jdf."Value")
+    jdf[jdf."xmin" .<= 1.0, "xmin"] .= 10.0
+    jdf[jdf."Value" .<= 1.0, "Value"] .= 10.0
+
+    r2 = R2(jdf."Value", jdf."Lbound"; logscale = true)
+
+    return plot(
+        jdf,
+        x = "Value",
+        y = "Lbound",
+        xmin = "xmin",
+        xmax = "xmax",
+        color = "Subclass",
+        shape = "Cell",
+        Geom.point,
+        Geom.errorbar,
+        Guide.xlabel("Measurements (MFI)", orientation = :horizontal),
+        Guide.ylabel("Predicted binding", orientation = :vertical),
+        Guide.title(title),
+        Scale.x_log10,
+        Scale.y_log10,
+        Coord.cartesian(xmin = 1),
+        Guide.xticks(orientation = :horizontal),
+        Scale.color_discrete_manual(colorSubclass...),
+        Geom.abline(color = "black"),
+        Guide.annotation(
+            compose(
+                context(),
+                text(3.5, 1, "<i>R</i><sup>2</sup> = " * @sprintf("%.4f", r2)),
+                stroke("black"),
+                fill("black"),
+                font("Helvetica-Bold"),
+            ),
+        ),
+        style(errorbar_cap_length = 1px, key_position = legend ? :right : :none),
+    )
+end
+
+function figure5(ssize = (8.5inch, 7inch); cellTypes = ["ncMO", "cMO", "Neu"], kwargs...)
     setGadflyTheme()
-    df = FcRegression.importHumanized("ITP")
 
-    Kav0 = FcRegression.extractNewHumanKav(; old = true)
-    Kav1 = FcRegression.extractNewHumanKav(; old = false)
-
-    c1, ccdf1 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)1.dat"; murine = false, Kav = Kav1, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
-    c0, ccdf0 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)0.dat"; murine = false, Kav = Kav0, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
-
-    c0 = c0[(mcmc_iter ÷ 2):end]
-    c1 = c1[(mcmc_iter ÷ 2):end]
-
+    measured = plotEffectorMeasured()
     lbounds = plotLbound(; cellTypes = cellTypes)
 
-    pl_map0 = FcRegression.plotRegMCMC(
-        c0,
-        deepcopy(df);
-        ptitle = "documented affinities",
-        colorL = "Genotype",
-        shapeL = "Condition",
-        legend = false,
-        Kav = Kav0,
-        cellTypes = cellTypes,
-    )
-    cell_map0, act_map0 = FcRegression.plotRegParams(c0; ptitle = "documented affinities", legend = false, Kav = Kav0, cellTypes = cellTypes)
+    c = FcRegression.rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000);
+    pms = FcRegression.extractMCMC(c; dat = :hCHO)
 
-    pl_map1 = FcRegression.plotRegMCMC(
-        c1,
-        deepcopy(df);
-        ptitle = "updated affinities",
-        colorL = "Genotype",
-        shapeL = "Condition",
-        legend = false,
-        Kav = Kav1,
-        cellTypes = cellTypes,
-    )
-    cell_map1, act_map1 = FcRegression.plotRegParams(c1; ptitle = "updated affinities", legend = false, Kav = Kav1, cellTypes = cellTypes)
-
-    pl_mapL = FcRegression.plotRegMCMC(
-        c1,
-        deepcopy(df);
-        ptitle = "updated affinities",
-        colorL = "Genotype",
-        shapeL = "Condition",
-        legend = true,
-        Kav = Kav1,
-        cellTypes = cellTypes,
-    )
-    cell_mapL, act_mapL = FcRegression.plotRegParams(c1; ptitle = "updated affinities", legend = true, Kav = Kav1, cellTypes = cellTypes)
+    oldPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = true), 
+        title = "Documented Affinity", legend = false, KxStar = pms["KxStar"])  # R2 = 0.6671
+    newPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = false), 
+        title = "Updated Affinity", legend = true, KxStar = pms["KxStar"])  # R2 = 0.6585
 
     pl = FcRegression.plotGrid(
-        (4, 4),
-        [lbounds[1], lbounds[2], lbounds[3], lbounds[4], 
-        nothing, nothing, pl_map0, pl_map1, 
-        pl_mapL, nothing, cell_map0, cell_map1,
-        cell_mapL, nothing, act_map0, act_map1];
-        sublabels = "abcde fg  hi  jk",
-        widths = [1.1 1 1 1.4; 1 0.3 1 1; 1 0.3 1 1; 1 0.3 1 1],
-        heights = [1.3, 1.5, 1.5, 1.5],
+        (3, 4),
+        [measured[1], measured[2], measured[3], measured[4], 
+        lbounds[1], lbounds[2], lbounds[3], lbounds[4],
+        oldPred, newPred, nothing, nothing];
+        sublabels = "abcdefghij  ",
+        widths = [1.1 1 1 1; 1.15 1 1 1; 0.8 1 0.8 0.1],
+        heights = [1.3, 1.3, 1.5],
         kwargs...,
     )
-    draw(PDF("output/figure5_$suffix.pdf", ssize[1], ssize[2]), pl)
-end
-
-
-
-function regLOCellOut(df, Kav)
-    # Leave one cell type out
-    cellTs = FcRegression.humanCellTypes
-    R2s = zeros(length(cellTs))
-    LOOindex = LOOCV(length(cellTs))
-
-    for (i, idx) in enumerate(LOOindex)
-        m = FcRegression.regmodel(df, df."Target"; cellTypes = cellTs[idx], murine = false, Kav = Kav)
-        opts = Optim.Options(iterations = 1000, show_every = 50, show_trace = false)
-        opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
-        param = FcRegression.extractRegMCMC(
-            opt;
-            cellTypes = cellTs[idx],
-            FcgRs = unique([String(split(fcgr, "-")[1]) for fcgr in names(Kav[!, Not("IgG")])]),
-        )
-        pred = FcRegression.regPred(df, param; cellTypes = cellTs[idx], murine = false, Kav = Kav)
-        R2s[i] = FcRegression.R2(df."Target", pred; logscale = false)
-    end
-    return DataFrame("Model" => ["No " * c for c in cellTs], "R2" => R2s)
-end
-
-function regOnly1Cell(df, Kav)
-    # Keep only one cell types
-    cellTs = FcRegression.humanCellTypes
-    R2s = zeros(length(cellTs))
-
-    for i = 1:length(cellTs)
-        m = FcRegression.regmodel(df, df."Target"; cellTypes = [cellTs[i]], murine = false, Kav = Kav)
-        opts = Optim.Options(iterations = 1000, show_every = 50, show_trace = false)
-        opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
-        param = FcRegression.extractRegMCMC(
-            opt;
-            cellTypes = [cellTs[i]],
-            FcgRs = unique([String(split(fcgr, "-")[1]) for fcgr in names(Kav[!, Not("IgG")])]),
-        )
-        pred = FcRegression.regPred(df, param; cellTypes = [cellTs[i]], murine = false, Kav = Kav)
-        R2s[i] = FcRegression.R2(df."Target", pred; logscale = false)
-    end
-    return DataFrame("Model" => ["Only " * c for c in cellTs], "R2" => R2s)
-end
-
-function regLOReceptorOut(Kav, rcps = ["FcgRI", "FcgRIIA", "FcgRIIB", "FcgRIIIA", "FcgRIIIB"])
-    Rtot = FcRegression.importRtot(; murine = false, retdf = true)
-    Rtot = Rtot[in(rcps).([split(r, "-")[1] for r in Rtot."Receptor"]), :]
-
-    Kav = Kav[!, [true; in(rcps).([split(r, "-")[1] for r in names(Kav[!, 2:end])])]]
-
-    Kav0 = FcRegression.importKav(; murine = false)
-    Kav1 = FcRegression.extractNewHumanKav()
-    Kav0 = Kav0[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])]
-    Kav1 = Kav1[!, Not(["FcgRIIB-232T", "FcgRIIC-13N"])]
-
+    draw(PDF("output/figure5.pdf", ssize[1], ssize[2]), pl)
 end
