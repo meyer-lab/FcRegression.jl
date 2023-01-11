@@ -62,9 +62,7 @@ function figure6(ssize = (8.5inch, 7.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
 
     pl = FcRegression.plotGrid(
         (3, 4),
-        [nothing, nothing, pl_map0, pl_map1, 
-        pl_mapL, nothing, cell_map0, cell_map1,
-        cell_mapL, nothing, act_map0, act_map1];
+        [nothing, nothing, pl_map0, pl_map1, pl_mapL, nothing, cell_map0, cell_map1, cell_mapL, nothing, act_map0, act_map1];
         sublabels = "a bc  de  fg",
         widths = [1 0.3 1 1; 1 0.3 1 1; 1 0.3 1 1],
         heights = [1.5, 1.5, 1.5],
@@ -72,4 +70,3 @@ function figure6(ssize = (8.5inch, 7.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
     )
     draw(PDF("output/figure6_$suffix.pdf", ssize[1], ssize[2]), pl)
 end
-
