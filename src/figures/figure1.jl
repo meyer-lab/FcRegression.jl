@@ -17,7 +17,7 @@ function splot_origData(df; match_y = true, y_label = true, y_normalize = false,
         df."xmin" .*= y_normalize
         df."xmax" .*= y_normalize
     end
-    
+
     yylabel = nothing
     if y_label
         yylabel = (y_normalize == false) ? "RFU" : "Normalized RFU"

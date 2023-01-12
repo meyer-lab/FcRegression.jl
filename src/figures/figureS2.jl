@@ -53,7 +53,7 @@ function splot_predData(
         Guide.xlabel("", orientation = :horizontal),
         Guide.ylabel(y_label ? "Predicted CHO binding" : nothing, orientation = :vertical),
         Guide.xticks(orientation = :horizontal),
-        Guide.yticks(ticks=yticks, orientation = :horizontal),
+        Guide.yticks(ticks = yticks, orientation = :horizontal),
         Guide.title("$IgGX-$IgGY to $cell_name"),
         style(key_position = legend ? :right : :none),
     )

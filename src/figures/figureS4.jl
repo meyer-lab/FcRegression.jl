@@ -39,12 +39,6 @@ function figureS4(ssize = (10inch, 5inch); cellTypes = ["ncMO", "cMO", "Neu"], k
         end
     end
 
-    pl = plotGrid(
-        (size(pls)[2], size(pls)[1]),
-        pls;
-        widths = [1.1 1 1 1.4],
-        sublabels = false,
-        kwargs...,
-    )
+    pl = plotGrid((size(pls)[2], size(pls)[1]), pls; widths = [1.1 1 1 1.4], sublabels = false, kwargs...)
     draw(PDF("output/figureS4.pdf", ssize[1], ssize[2]), pl)
 end
