@@ -82,7 +82,11 @@ function plotEffectorPred(; Kav = extractNewHumanKav(), title = "", legend = tru
     jdf[jdf."xmin" .<= 1.0, "xmin"] .= 10.0
     jdf[jdf."Value" .<= 1.0, "Value"] .= 10.0
 
-    r2 = R2(jdf."Value", jdf."Lbound"; logscale = true)
+    # keep only IgG2
+    jdf = jdf[in(["IgG2"]).(jdf."Subclass"), :]
+
+    r2 = R2(jdf."Value", jdf."Lbound"; logscale = false)
+    println("R2: $r2")
 
     return plot(
         jdf,
@@ -90,23 +94,20 @@ function plotEffectorPred(; Kav = extractNewHumanKav(), title = "", legend = tru
         y = "Lbound",
         xmin = "xmin",
         xmax = "xmax",
-        color = "Subclass",
+        color = "Valency",
         shape = "Cell",
         Geom.point,
         Geom.errorbar,
         Guide.xlabel("Measurements (MFI)", orientation = :horizontal),
         Guide.ylabel("Predicted binding", orientation = :vertical),
         Guide.title(title),
-        Scale.x_log10,
-        Scale.y_log10,
-        Coord.cartesian(xmin = 1),
         Guide.xticks(orientation = :horizontal),
-        Scale.color_discrete_manual(colorSubclass...),
+        Scale.color_discrete_manual(colorValency...),
         Geom.abline(color = "black"),
         Guide.annotation(
             compose(
                 context(),
-                text(3.5, 1, "<i>R</i><sup>2</sup> = " * @sprintf("%.4f", r2)),
+                text(3, 1, "<i>R</i><sup>2</sup> = " * @sprintf("%.4f", r2)),
                 stroke("black"),
                 fill("black"),
                 font("Helvetica-Bold"),
@@ -116,7 +117,7 @@ function plotEffectorPred(; Kav = extractNewHumanKav(), title = "", legend = tru
     )
 end
 
-function figure5(ssize = (8.5inch, 7inch); cellTypes = ["ncMO", "cMO", "Neu"], kwargs...)
+function figure5(ssize = (8.5inch, 4.5inch); cellTypes = ["ncMO", "cMO", "Neu"], kwargs...)
     setGadflyTheme()
 
     measured = plotEffectorMeasured()
@@ -125,19 +126,19 @@ function figure5(ssize = (8.5inch, 7inch); cellTypes = ["ncMO", "cMO", "Neu"], k
     c = FcRegression.rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000);
     pms = FcRegression.extractMCMC(c; dat = :hCHO)
 
+    # Not using these
     oldPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = true), 
-        title = "Documented Affinity", legend = false, KxStar = pms["KxStar"])  # R2 = 0.6671
+        title = "Documented Affinity", legend = false, KxStar = pms["KxStar"])
     newPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = false), 
-        title = "Updated Affinity", legend = true, KxStar = pms["KxStar"])  # R2 = 0.6585
+        title = "Updated Affinity", legend = true, KxStar = pms["KxStar"])
 
     pl = FcRegression.plotGrid(
-        (3, 4),
+        (2, 4),
         [measured[1], measured[2], measured[3], measured[4], 
-        lbounds[1], lbounds[2], lbounds[3], lbounds[4],
-        oldPred, newPred, nothing, nothing];
+        lbounds[1], lbounds[2], lbounds[3], lbounds[4]];
         sublabels = "abcdefghij  ",
-        widths = [1.1 1 1 1; 1.15 1 1 1; 0.8 1 0.8 0.1],
-        heights = [1.3, 1.3, 1.5],
+        widths = [1.1 1 1 1; 1.15 1 1 1],
+        heights = [1.3, 1.3],
         kwargs...,
     )
     draw(PDF("output/figure5.pdf", ssize[1], ssize[2]), pl)
