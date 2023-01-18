@@ -25,10 +25,18 @@ function splot_predVorig(
     )
 
     gdf = predMix(
-        DataFrame(Dict("Valency" => repeat([4, 33], ll), "Receptor" => cell, 
-                "subclass_1" => IgGX, "%_1" => range(1.0, 0.0, ll * 2),
-                "subclass_2" => IgGY, "%_2" => range(0.0, 1.0, ll * 2),),);
-        Kav = Kav, Rtot = Rtot,
+        DataFrame(
+            Dict(
+                "Valency" => repeat([4, 33], ll),
+                "Receptor" => cell,
+                "subclass_1" => IgGX,
+                "%_1" => range(1.0, 0.0, ll * 2),
+                "subclass_2" => IgGY,
+                "%_2" => range(0.0, 1.0, ll * 2),
+            ),
+        );
+        Kav = Kav,
+        Rtot = Rtot,
     )
     gdf."Valency" = Symbol.(gdf."Valency")
     df."Valency" = Symbol.(df."Valency")
@@ -37,12 +45,10 @@ function splot_predVorig(
     setGadflyTheme()
 
     return plot(
-        layer(gdf, x = "%_1", y = "Predict", color = "Valency", Geom.line,),
-        layer(df, x = "%_1", y = "Value", ymin = "xmin", ymax = "xmax", color = "Valency", 
-            Geom.line, Geom.errorbar, style(line_style=[:dot])),
+        layer(gdf, x = "%_1", y = "Predict", color = "Valency", Geom.line),
+        layer(df, x = "%_1", y = "Value", ymin = "xmin", ymax = "xmax", color = "Valency", Geom.line, Geom.errorbar, style(line_style = [:dot])),
         Scale.x_continuous(labels = n -> "$IgGX $(trunc(Int, n*100))%\n$IgGY $(trunc(Int, 100-n*100))%"),
-        Scale.y_continuous(; minvalue = 0.0, 
-            labels = n -> "$(round(n, digits=1))\n $(trunc(Int, n*p2o_scale))"),
+        Scale.y_continuous(; minvalue = 0.0, labels = n -> "$(round(n, digits=1))\n $(trunc(Int, n*p2o_scale))"),
         Scale.color_discrete_manual(colorValency..., colorValency...),
         Guide.xlabel(nothing),
         Guide.ylabel(y_label ? "Predicted binding - Normalized RFU" : nothing, orientation = :vertical),
@@ -74,9 +80,8 @@ function figure3(ssize = (10inch, 8inch); kwargs...)
     Kav_old = importKavDist(; murine = false, regularKav = true, retdf = true)
     c_noKav = rungMCMC("humanfit_0701_noKav.dat"; dat = :hCHO, Kavd = Kav_old)
     pl_noKav =
-        plotMCMCPredict(c_noKav, df; dat = :hCHO, Kav = Kav_old, R2pos = (0, -2), 
-            title = "Predictions with all but affinity fitting", legend = false)
-    
+        plotMCMCPredict(c_noKav, df; dat = :hCHO, Kav = Kav_old, R2pos = (0, -2), title = "Predictions with all but affinity fitting", legend = false)
+
     c = rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000)
     pl1 = plotMCMCPredict(
         c,
@@ -102,28 +107,34 @@ function figure3(ssize = (10inch, 8inch); kwargs...)
     # Visually compare a few examples of old and new predictions
     df = averageMixData()
     df_igg24_1 = df[(df."Receptor" .== "FcgRI") .& (df."subclass_1" .== "IgG2") .& (df."subclass_2" .== "IgG4"), :]
-    igg24_old = splot_predData(df_igg24_1; legend = false, ll = 100, y_label = true,
+    igg24_old = splot_predData(
+        df_igg24_1;
+        legend = false,
+        ll = 100,
+        y_label = true,
         Kav = importKav(; murine = false, retdf = true),
-        yticks=[0, 10000, 20000, 30000, 40000, 50000])
-    igg24_new = splot_predVorig(df_igg24_1, 20000; legend = false, ll = 100, 
-        match_y = false, y_label = true,
-        Kav = extractNewHumanKav())
+        yticks = [0, 10000, 20000, 30000, 40000, 50000],
+    )
+    igg24_new = splot_predVorig(df_igg24_1, 20000; legend = false, ll = 100, match_y = false, y_label = true, Kav = extractNewHumanKav())
 
     df_igg34_2b = df[(df."Receptor" .== "FcgRIIB-232I") .& (df."subclass_1" .== "IgG3") .& (df."subclass_2" .== "IgG4"), :]
-    igg34_old = splot_predData(df_igg34_2b; legend = false, ll = 100, y_label = true,
+    igg34_old = splot_predData(
+        df_igg34_2b;
+        legend = false,
+        ll = 100,
+        y_label = true,
         Kav = importKav(; murine = false, retdf = true),
-        yticks=[0, 400, 800, 1200])
-    igg34_new = splot_predVorig(df_igg34_2b, 400.0; legend = false, ll = 100, 
-        match_y = false, y_label = true,
-        Kav = extractNewHumanKav())
+        yticks = [0, 400, 800, 1200],
+    )
+    igg34_new = splot_predVorig(df_igg34_2b, 400.0; legend = false, ll = 100, match_y = false, y_label = true, Kav = extractNewHumanKav())
 
     # Put everything together
     pp = plotGrid(
-        (3, 4), 
+        (3, 4),
         [
-            nothing pl1 igg24_old;
-            nothing pl2 igg24_new;
-            raw_pred_pl rob1 igg34_old;
+            nothing pl1 igg24_old
+            nothing pl2 igg24_new
+            raw_pred_pl rob1 igg34_old
             pl_noKav rob2 igg34_new
         ];
         sublabels = "abcdefghijkl",

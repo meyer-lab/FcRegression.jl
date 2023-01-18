@@ -18,10 +18,24 @@ function figure6(ssize = (8.5inch, 5.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
     Kav0 = FcRegression.extractNewHumanKav(; old = true)
     Kav1 = FcRegression.extractNewHumanKav(; old = false)
 
-    c1, ccdf1 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)1.dat"; murine = false, Kav = Kav1, 
-        fitActI = false, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
-    c0, ccdf0 = FcRegression.runRegMCMC(df, "regMCMC_$(suffix)0.dat"; murine = false, Kav = Kav0, 
-        fitActI = false, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
+    c1, ccdf1 = FcRegression.runRegMCMC(
+        df,
+        "regMCMC_$(suffix)1.dat";
+        murine = false,
+        Kav = Kav1,
+        fitActI = false,
+        mcmc_iter = mcmc_iter,
+        cellTypes = cellTypes,
+    )
+    c0, ccdf0 = FcRegression.runRegMCMC(
+        df,
+        "regMCMC_$(suffix)0.dat";
+        murine = false,
+        Kav = Kav0,
+        fitActI = false,
+        mcmc_iter = mcmc_iter,
+        cellTypes = cellTypes,
+    )
 
     c0 = c0[(mcmc_iter ÷ 10 * 7):end]
     c1 = c1[(mcmc_iter ÷ 10 * 7):end]
@@ -36,8 +50,7 @@ function figure6(ssize = (8.5inch, 5.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
         Kav = Kav0,
         cellTypes = cellTypes,
     )
-    cell_map0, act_map0 = FcRegression.plotRegParams(c0; ptitle = "documented affinities", 
-        legend = false, Kav = Kav0, cellTypes = cellTypes)
+    cell_map0, act_map0 = FcRegression.plotRegParams(c0; ptitle = "documented affinities", legend = false, Kav = Kav0, cellTypes = cellTypes)
 
     pl_map1 = FcRegression.plotRegMCMC(
         c1,
@@ -49,8 +62,7 @@ function figure6(ssize = (8.5inch, 5.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
         Kav = Kav1,
         cellTypes = cellTypes,
     )
-    cell_map1, act_map1 = FcRegression.plotRegParams(c1; ptitle = "updated affinities", 
-        legend = true, Kav = Kav1, cellTypes = cellTypes)
+    cell_map1, act_map1 = FcRegression.plotRegParams(c1; ptitle = "updated affinities", legend = true, Kav = Kav1, cellTypes = cellTypes)
 
     pl_mapL = FcRegression.plotRegMCMC(
         c1,
@@ -66,12 +78,10 @@ function figure6(ssize = (8.5inch, 5.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
 
     pl = FcRegression.plotGrid(
         (2, 3),
-        [nothing, pl_map0, pl_map1, 
-        nothing, cell_map0, cell_map1,];
+        [nothing, pl_map0, pl_map1, nothing, cell_map0, cell_map1];
         sublabels = "abc de",
         widths = [1 1 1.35; 1 1 1.35],
         kwargs...,
     )
     draw(PDF("output/figure6_$suffix.pdf", ssize[1], ssize[2]), pl)
 end
-

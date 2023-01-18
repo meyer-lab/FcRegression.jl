@@ -1,7 +1,4 @@
-function plotLbound(Rtot = importRtot(; murine = false, retdf = true); 
-        title = "", 
-        cellTypes = ["ncMO", "cMO", "Neu"], 
-        kwargs...)
+function plotLbound(Rtot = importRtot(; murine = false, retdf = true); title = "", cellTypes = ["ncMO", "cMO", "Neu"], kwargs...)
 
     Kav0 = importKav(; murine = false)
     Kav1 = extractNewHumanKav()
@@ -15,26 +12,26 @@ function plotLbound(Rtot = importRtot(; murine = false, retdf = true);
     df."Valency" .= Symbol.(df."Valency")
 
     return [
-            plot(
-                df[df."IgG" .== igg, :],
-                x = "Valency",
-                xgroup = "Cell",
-                y = "Lbound",
-                color = "Affinity",
-                Geom.subplot_grid(Geom.bar(position = :dodge)),
-                Guide.title("Predicted bound $igg"),
-                Guide.xlabel(nothing),
-                Guide.ylabel(igg == "IgG1" ? "Predict binding" : nothing),
-                Scale.color_discrete_manual(colorAffinity...),
-                style(
-                    bar_spacing = 0.0pt,
-                    plot_padding = [0.0pt, 0.0pt, 0.0pt, 0.0pt],
-                    key_position = :none,
-                    major_label_font_size = 8pt,
-                    minor_label_font_size = 8pt,
-                ),
-            ) for igg in unique(df."IgG")
-        ]
+        plot(
+            df[df."IgG" .== igg, :],
+            x = "Valency",
+            xgroup = "Cell",
+            y = "Lbound",
+            color = "Affinity",
+            Geom.subplot_grid(Geom.bar(position = :dodge)),
+            Guide.title("Predicted bound $igg"),
+            Guide.xlabel(nothing),
+            Guide.ylabel(igg == "IgG1" ? "Predict binding" : nothing),
+            Scale.color_discrete_manual(colorAffinity...),
+            style(
+                bar_spacing = 0.0pt,
+                plot_padding = [0.0pt, 0.0pt, 0.0pt, 0.0pt],
+                key_position = :none,
+                major_label_font_size = 8pt,
+                minor_label_font_size = 8pt,
+            ),
+        ) for igg in unique(df."IgG")
+    ]
 end
 
 function plotEffectorMeasured()
@@ -44,30 +41,30 @@ function plotEffectorMeasured()
     df[df."xmin" .< 0.0, "xmin"] .= 0.0
 
     return [
-            plot(
-                df[df."Subclass" .== igg, :],
-                x = "Valency",
-                xgroup = "Cell",
-                y = "Value",
-                color = [colorant"hsl(350, 40%, 45%)"], #"Valency",
-                ymin = "xmin",
-                ymax = "xmax",
-                Scale.x_discrete,
-                Geom.subplot_grid(Geom.errorbar, Geom.bar(position = :dodge),),
-                Guide.title("Measured bound $igg"),
-                Guide.xlabel(nothing),
-                Guide.ylabel(igg == "IgG1" ? "ΔMFI" : nothing),
-                style(
-                    bar_spacing = 3px,
-                    plot_padding = [0.0pt, 0.0pt, 0.0pt, 0.0pt],
-                    key_position = igg == "IgG4" ? :right : :none,
-                    major_label_font_size = 8pt,
-                    minor_label_font_size = 8pt,
-                    stroke_color = c -> "black", 
-                    errorbar_cap_length = 6px,
-                ),
-            ) for igg in unique(df."Subclass")
-        ]
+        plot(
+            df[df."Subclass" .== igg, :],
+            x = "Valency",
+            xgroup = "Cell",
+            y = "Value",
+            color = [colorant"hsl(350, 40%, 45%)"], #"Valency",
+            ymin = "xmin",
+            ymax = "xmax",
+            Scale.x_discrete,
+            Geom.subplot_grid(Geom.errorbar, Geom.bar(position = :dodge)),
+            Guide.title("Measured bound $igg"),
+            Guide.xlabel(nothing),
+            Guide.ylabel(igg == "IgG1" ? "ΔMFI" : nothing),
+            style(
+                bar_spacing = 3px,
+                plot_padding = [0.0pt, 0.0pt, 0.0pt, 0.0pt],
+                key_position = igg == "IgG4" ? :right : :none,
+                major_label_font_size = 8pt,
+                minor_label_font_size = 8pt,
+                stroke_color = c -> "black",
+                errorbar_cap_length = 6px,
+            ),
+        ) for igg in unique(df."Subclass")
+    ]
 end
 
 
@@ -105,13 +102,7 @@ function plotEffectorPred(; Kav = extractNewHumanKav(), title = "", legend = tru
         Scale.color_discrete_manual(colorValency...),
         Geom.abline(color = "black"),
         Guide.annotation(
-            compose(
-                context(),
-                text(3, 1, "<i>R</i><sup>2</sup> = " * @sprintf("%.4f", r2)),
-                stroke("black"),
-                fill("black"),
-                font("Helvetica-Bold"),
-            ),
+            compose(context(), text(3, 1, "<i>R</i><sup>2</sup> = " * @sprintf("%.4f", r2)), stroke("black"), fill("black"), font("Helvetica-Bold")),
         ),
         style(errorbar_cap_length = 1px, key_position = legend ? :right : :none),
     )
@@ -123,19 +114,16 @@ function figure5(ssize = (8.5inch, 4.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
     measured = plotEffectorMeasured()
     lbounds = plotLbound(; cellTypes = cellTypes)
 
-    c = FcRegression.rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000);
+    c = FcRegression.rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000)
     pms = FcRegression.extractMCMC(c; dat = :hCHO)
 
     # Not using these
-    oldPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = true), 
-        title = "Documented Affinity", legend = false, KxStar = pms["KxStar"])
-    newPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = false), 
-        title = "Updated Affinity", legend = true, KxStar = pms["KxStar"])
+    oldPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = true), title = "Documented Affinity", legend = false, KxStar = pms["KxStar"])
+    newPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = false), title = "Updated Affinity", legend = true, KxStar = pms["KxStar"])
 
     pl = FcRegression.plotGrid(
         (2, 4),
-        [measured[1], measured[2], measured[3], measured[4], 
-        lbounds[1], lbounds[2], lbounds[3], lbounds[4]];
+        [measured[1], measured[2], measured[3], measured[4], lbounds[1], lbounds[2], lbounds[3], lbounds[4]];
         sublabels = "abcdefghij  ",
         widths = [1.1 1 1 1; 1.15 1 1 1],
         heights = [1.3, 1.3],
