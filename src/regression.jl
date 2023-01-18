@@ -154,7 +154,7 @@ end
         if contains(rcp, "RIIB")
             ActIs[rcp] = -1.0                   # RIIB is set to be always -1.0
         elseif fitActI
-            ActIs[rcp] ~ Normal(1.0, 0.5)       # only fit activating receptors
+            ActIs[rcp] ~ Normal(1.0, 0.1)       # only fit activating receptors
         else
             ActIs[rcp] = 1.0                    # not fitting ActI then all 1.0
         end
@@ -271,7 +271,8 @@ function extractRegMCMC(c::Union{Chains, StatisticalModel})
     extVar(x::String) = split(x, "[")[2][1:(end - 1)]
     splitVar(xs::Vector{String}, pref::String) = String.(extVar.(xs[startswith.(xs, pref)]))
 
-    murine = any(contains.(pnames, "RIIA")) || any(contains.(pnames, "RIIIA")) ? false : true
+    murine = false    # only dealing with humanized mice in this work
+    #murine = any(contains.(pnames, "RIIA")) || any(contains.(pnames, "RIIIA")) ? false : true
     ActIs = murine ? murineActI : humanActI
     for rcp in splitVar(pnames, "ActIs")
         ActIs[rcp] = ext("ActIs[$rcp]")
