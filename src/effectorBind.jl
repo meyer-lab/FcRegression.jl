@@ -7,11 +7,7 @@ function importEffectorBind(; avg = false)
     df = df[!, Not("Experiment")]
 
     if avg
-        df = combine(
-            groupby(df, Not("Value")), 
-            "Value" => StatsBase.median => "Value", 
-            "Value" => lower => "xmin", 
-            "Value" => upper => "xmax")
+        df = combine(groupby(df, Not("Value")), "Value" => StatsBase.median => "Value", "Value" => lower => "xmin", "Value" => upper => "xmax")
     end
     return df
 end
@@ -32,9 +28,9 @@ function predictLbound(
 
     """ Predict Lbound of each cell type based on Kav """
     df = if specificRcp
-        DataFrame((IgG=x, Cell=y, Valency=z, Receptor=w) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in fs for w in Rtot."Receptor")
+        DataFrame((IgG = x, Cell = y, Valency = z, Receptor = w) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in fs for w in Rtot."Receptor")
     else
-        DataFrame((IgG=x, Cell=y, Valency=z) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in fs)
+        DataFrame((IgG = x, Cell = y, Valency = z) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in fs)
     end
     df."Lbound" .= 0.0
 
@@ -44,9 +40,11 @@ function predictLbound(
             for f in unique(df."Valency")
                 if specificRcp
                     # Specific receptor prediction, don't change rcp order before this
-                    df[(df."IgG".==igg) .& (df."Cell" .== cn) .& (df."Valency" .== f), "Lbound"] = polyfc(L0, KxStar, f, Rtot[!, cn], [1.0], kav).Rmulti_n
+                    df[(df."IgG" .== igg) .& (df."Cell" .== cn) .& (df."Valency" .== f), "Lbound"] =
+                        polyfc(L0, KxStar, f, Rtot[!, cn], [1.0], kav).Rmulti_n
                 else
-                    df[(df."IgG".==igg) .& (df."Cell" .== cn) .& (df."Valency" .== f), "Lbound"] .= polyfc(L0, KxStar, f, Rtot[!, cn], [1.0], kav).Lbound
+                    df[(df."IgG" .== igg) .& (df."Cell" .== cn) .& (df."Valency" .== f), "Lbound"] .=
+                        polyfc(L0, KxStar, f, Rtot[!, cn], [1.0], kav).Lbound
                 end
             end
         end
