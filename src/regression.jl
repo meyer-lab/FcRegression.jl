@@ -363,6 +363,7 @@ function plotRegParams(
     retdf = false,
     Kav::DataFrame,
     cellTypes = nothing,
+    cell_max_y = nothing,
 )
     murine = extractRegMCMC(c[1]).isMurine
     df = vcat(
@@ -387,8 +388,8 @@ function plotRegParams(
     )
 
     if retdf
-        return plotCellTypeEffects(df, ptitle; legend = legend), plotActI(ActI_df, ptitle), df, ActI_df
+        return plotCellTypeEffects(df, ptitle; legend = legend, maxy = cell_max_y), plotActI(ActI_df, ptitle), df, ActI_df
     else
-        return plotCellTypeEffects(df, ptitle; legend = legend), plotActI(ActI_df, ptitle)
+        return plotCellTypeEffects(df, ptitle; legend = legend, maxy = cell_max_y), plotActI(ActI_df, ptitle)
     end
 end

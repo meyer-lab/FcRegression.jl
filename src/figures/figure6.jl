@@ -37,7 +37,7 @@ function figure6(ssize = (8.5inch, 5.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
         cellTypes = cellTypes,
     )
     cell_map0, act_map0 = FcRegression.plotRegParams(c0; ptitle = "documented affinities", 
-        legend = false, Kav = Kav0, cellTypes = cellTypes)
+        legend = false, Kav = Kav0, cellTypes = cellTypes, cell_max_y = 1.5)
 
     pl_map1 = FcRegression.plotRegMCMC(
         c1,
@@ -50,7 +50,7 @@ function figure6(ssize = (8.5inch, 5.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
         cellTypes = cellTypes,
     )
     cell_map1, act_map1 = FcRegression.plotRegParams(c1; ptitle = "updated affinities", 
-        legend = true, Kav = Kav1, cellTypes = cellTypes)
+        legend = true, Kav = Kav1, cellTypes = cellTypes, cell_max_y = 1.5)
 
     pl_mapL = FcRegression.plotRegMCMC(
         c1,

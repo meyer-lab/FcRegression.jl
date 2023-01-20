@@ -94,7 +94,7 @@ function plotActualvPredict(odf, colorL::Union{Symbol, String}, shapeL::Union{Sy
 end
 
 
-function plotCellTypeEffects(Cell_df, ptitle = ""; legend = true)
+function plotCellTypeEffects(Cell_df, ptitle = ""; legend = true, maxy = nothing)
     setGadflyTheme()
     pl = plot(
         Cell_df,
@@ -108,7 +108,7 @@ function plotCellTypeEffects(Cell_df, ptitle = ""; legend = true)
         Stat.dodge(axis = :x),
         Geom.bar(position = :dodge),
         Scale.x_discrete(levels = unique(Cell_df.Condition)),
-        Scale.y_continuous(minvalue = 0.0),
+        Scale.y_continuous(minvalue = 0.0, maxvalue = maxy),
         Scale.color_discrete_manual(colorant"#008f48", colorant"#ffc984", colorant"#de76b8", colorant"#9fae4f", colorant"#ff968f"),
         Guide.title("Predicted cell type weights\n($ptitle)"),
         style(key_position = legend ? :right : :none, stroke_color = c -> "black", errorbar_cap_length = 4px),
