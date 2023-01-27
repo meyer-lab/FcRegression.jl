@@ -114,14 +114,14 @@ function figure5(ssize = (8.5inch, 4.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
     measured = plotEffectorMeasured()
     lbounds = plotLbound(; cellTypes = cellTypes)
 
-    c = FcRegression.rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000)
-    pms = FcRegression.extractMCMC(c; dat = :hCHO)
+    c = rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000)
+    pms = extractMCMC(c; dat = :hCHO)
 
     # Not using these
     oldPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = true), title = "Documented Affinity", legend = false, KxStar = pms["KxStar"])
     newPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = false), title = "Updated Affinity", legend = true, KxStar = pms["KxStar"])
 
-    pl = FcRegression.plotGrid(
+    pl = plotGrid(
         (2, 4),
         [measured[1], measured[2], measured[3], measured[4], lbounds[1], lbounds[2], lbounds[3], lbounds[4]];
         sublabels = "abcdefghij  ",
