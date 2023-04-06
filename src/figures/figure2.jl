@@ -40,7 +40,39 @@ function plot_PCA_score(df; title = "Score", xx = "PC 1", yy = "PC 2")
     )
 end
 
-function figure2(ssize = (13inch, 3inch); widths = [3, 3, 3, 3.2])
+function plot_PCA_line(score)
+    pc_line_style = Dict("PC 1" => :solid, "PC 2" => :dot)
+    pc_point_style = Dict("PC 1" => Shape.circle, "PC 2" => Shape.square)
+    score."Valency" = Symbol.(score."Valency")
+
+    pls = Vector{Union{Gadfly.Plot, Context}}(undef, length(unique(score."Subclass Pair")))
+    for (ip, pair) in enumerate(unique(score."Subclass Pair"))
+        pcs = stack(score[score."Subclass Pair" .== pair, :], 6:8, variable_name="PC", value_name="Value")
+        IgGX, IgGY = split(pair, "-")
+        pls[ip] = plot(
+            [layer(
+                pcs[(pcs."Valency" .== val) .& (pcs."PC" .== pc), :], 
+                x="%_2", 
+                y="Value", 
+                color=[colorValency[iv]], 
+                shape=[pc_point_style[pc]],
+                Geom.point, 
+                Geom.line,
+                style(line_style = [pc_line_style[pc]]))
+            for (iv, val) in enumerate([Symbol("4"), Symbol("33")]) for pc in ["PC 1", "PC 2"]]...,
+            Scale.x_continuous(labels = n -> "$IgGX $(trunc(Int, n*100))%\n$IgGY $(trunc(Int, 100-n*100))%"),
+            Scale.y_continuous(minvalue = -15, maxvalue = 15),
+            Guide.xlabel(nothing),
+            Guide.ylabel("Scores"),
+            Guide.title("$pair mixtures"),
+            Guide.manual_color_key("Valency", ["4", "33"], colorValency),
+            Guide.manual_color_key("Component", ["PC 1", "PC 2"], [colorant"black", colorant"black"], shape=[Shape.circle, Shape.square]),
+        )
+    end
+    return pls
+end
+
+function figure2(ssize = (13inch, 6inch); widths = [3, 3, 3, 3.2])
     setGadflyTheme()
 
     score, loading, vars_expl = mixtureDataPCA()
@@ -93,6 +125,10 @@ function figure2(ssize = (13inch, 3inch); widths = [3, 3, 3, 3.2])
         Scale.color_discrete_manual(colorReceptor...),
     )
 
-    pl = plotGrid((1, 4), [vars, SP4, SP33, LP]; sublabels = "abcd", widths = widths)
-    return draw(PDF("output/figure2.pdf", ssize[1], ssize[2]), pl)
+    spls = plot_PCA_line(score)
+
+    pl = plotGrid((2, 4), [vars, spls..., LP]; sublabels = true, widths = widths)
+    #pl = plotGrid((1, 4), [vars, SP4, SP33, LP]; sublabels = "abcd", widths = widths)
+    draw(PDF("output/figure2.pdf", ssize[1], ssize[2]), pl)
+    return spls
 end
