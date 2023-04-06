@@ -87,7 +87,7 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         Guide.annotation(
             compose(
                 context(), 
-                text(6, -3, "<i>ρ</i> = " * @sprintf("%.4f", pearson_cor) * " (<i>p</i> = " * @sprintf("%.4f", pearson_pval) * ")"), 
+                text(6, -3, "<i>ρ</i> = " * @sprintf("%.4f", pearson_cor) * "\n(<i>p</i> = " * @sprintf("%.4f", pearson_pval) * ")"), 
                 stroke("black"), fill("black"), font("Helvetica-Bold")
             ),
         ),

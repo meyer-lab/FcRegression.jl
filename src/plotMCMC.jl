@@ -3,8 +3,8 @@ function plotPredvsMeasured(
     df;
     xx = "Value",
     yy = "Predict",
-    xxlabel = "Measured",
-    yylabel = "Predicted",
+    xxlabel = "Measured RFU",
+    yylabel = "Predicted RFU",
     color = "Receptor",
     shape = "Valency",
     title = "Predicted vs Actual",
