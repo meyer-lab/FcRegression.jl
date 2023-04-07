@@ -15,8 +15,11 @@ function plot_PCA_score(df; title = "Score", xx = "PC 1", yy = "PC 2")
             for ii = 1:(nrow(ddf) - 1)
                 push!(arrdf, [ddf[ii, xx], ddf[ii, yy], ddf[ii + 1, xx], ddf[ii + 1, yy], "Mixed"])
             end
-            append!(layers, layer(arrdf, x = :xstart, y = :ystart, xend = :xend, yend = :yend, color = [colorant"black"], Geom.segment))
-            #color=igg_pair_color(ddf."subclass_1"[1], ddf."subclass_2"[1]; tot=nrow(arrdf))
+            append!(
+                layers, 
+                layer(arrdf, x = :xstart, y = :ystart, xend = :xend, yend = :yend, color = [colorant"black"], Geom.segment, 
+                style(line_style=[(val == Symbol("4")) ? :solid : :dot]))
+            )
         end
     end
 
@@ -25,14 +28,16 @@ function plot_PCA_score(df; title = "Score", xx = "PC 1", yy = "PC 2")
     df[(df."%_1" .< 1.0) .& (df."%_2" .< 1.0), "Subclass"] .= "Mixed"
     sdf = df[df."Subclass" .!= "Mixed", :]
     append!(layers, layer(df, x = xx, y = yy, color = [colorant"black"], size = [1mm], Geom.point))
+    all_subclass = unique(vcat(df."subclass_1", df."subclass_2"))
     return plot(
         sdf,
         layers...,
         x = xx,
         y = yy,
         color = "Subclass",
-        size = [3mm],
-        Scale.color_discrete_manual(colorSubclass...),
+        size = [2.5mm],
+        shape = "Valency",
+        Scale.color_discrete_manual(colorSubclass[[in("IgG" * string(i), all_subclass) for i in range(1,4)]]...),
         Geom.point,
         Guide.title(title),
         Guide.xticks(ticks = [-15, 0, 15], orientation = :horizontal),
@@ -98,6 +103,8 @@ function figure2(ssize = (13inch, 6inch); widths = [3, 3, 3, 3.2])
     SP33 = plot_PCA_score(score[score."Valency" .== 33, :]; title = "PCA Score, 33-valent ICs", xx = "PC 1", yy = "PC 2")
     SP4_13 = plot_PCA_score(score[score."Valency" .== 4, :]; title = "PCA Score, 4-valent ICs", xx = "PC 1", yy = "PC 3")
     SP33_13 = plot_PCA_score(score[score."Valency" .== 33, :]; title = "PCA Score, 33-valent ICs", xx = "PC 1", yy = "PC 3")
+    
+    SPs = [plot_PCA_score(score[score."Subclass Pair" .== pair, :]; title = "PCA Score, $pair") for pair in unique(score."Subclass Pair")]
     LP = plot(
         loading,
         x = "PC 1",
@@ -125,10 +132,8 @@ function figure2(ssize = (13inch, 6inch); widths = [3, 3, 3, 3.2])
         Scale.color_discrete_manual(colorReceptor...),
     )
 
-    spls = plot_PCA_line(score)
-
-    pl = plotGrid((2, 4), [vars, spls..., LP]; sublabels = true, widths = widths)
+    pl = plotGrid((2, 4), [vars, SPs..., LP]; sublabels = true, widths = widths)
     #pl = plotGrid((1, 4), [vars, SP4, SP33, LP]; sublabels = "abcd", widths = widths)
     draw(PDF("output/figure2.pdf", ssize[1], ssize[2]), pl)
-    return spls
+    return SPs
 end
