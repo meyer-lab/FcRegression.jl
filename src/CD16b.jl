@@ -54,6 +54,7 @@ function inferCD16b(; mcmc_iter = 1000)
     opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
     opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
     c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
+    return c
 
     Kavd = FcRegression.importKavDist(; murine = false, regularKav = true, retdf = true)[:, [1,8,9]]
     Kav = [median(c["Kav[$i]"].data) for i = 1:8]
@@ -68,3 +69,30 @@ end
    3 │ IgG3         9.80651e5      8.82411e5
    4 │ IgG4      9481.83       21827.7
 """
+
+
+function plotCD16bCHOaff(c)
+    # extract
+    Kav_priors = importKavDist(; murine = false, retdf = true)[:, [1,8,9]]
+    len = length(Matrix(Kav_priors[!, Not("IgG")]))
+    Kav_posts = deepcopy(Kav_priors)
+    Kav = [c["Kav[$i]"].data for i = 1:len]
+    Kav_posts[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kav_posts)[1], :))
+
+    pls = Vector{Union{Gadfly.Plot, Context}}(undef, size(Kav_priors)[2]-1)
+    for (ii, fcr) in enumerate(names(Kav_priors)[2:end])
+        priors = reshape(Matrix(Kav_priors[!, [fcr]]), :)
+        posts = DataFrame(
+            hcat([reshape(Kav_posts[i, fcr], :) for i = 1:(size(Kav_posts)[1])]...),
+            Kav_posts."IgG",
+        )
+        pls[ii] = FcRegression.plot_distribution_violins(
+            posts, 
+            priors; 
+            y_range = (4, 7),
+            title = "$fcr Affinity Distributions",
+            legend = (ii == length(names(Kav_priors))-1),
+        )
+    end
+    return pls
+end
