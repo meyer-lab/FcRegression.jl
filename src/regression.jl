@@ -154,7 +154,7 @@ end
         if contains(rcp, "RIIB")
             ActIs[rcp] = -1.0                   # RIIB is set to be always -1.0
         elseif fitActI
-            ActIs[rcp] ~ Normal(1.0, 0.5)       # only fit activating receptors
+            ActIs[rcp] ~ Normal(1.0, 0.1)       # only fit activating receptors
         else
             ActIs[rcp] = 1.0                    # not fitting ActI then all 1.0
         end
@@ -271,7 +271,8 @@ function extractRegMCMC(c::Union{Chains, StatisticalModel})
     extVar(x::String) = split(x, "[")[2][1:(end - 1)]
     splitVar(xs::Vector{String}, pref::String) = String.(extVar.(xs[startswith.(xs, pref)]))
 
-    murine = any(contains.(pnames, "RIIA")) || any(contains.(pnames, "RIIIA")) ? false : true
+    murine = false    # only dealing with humanized mice in this work
+    #murine = any(contains.(pnames, "RIIA")) || any(contains.(pnames, "RIIIA")) ? false : true
     ActIs = murine ? murineActI : humanActI
     for rcp in splitVar(pnames, "ActIs")
         ActIs[rcp] = ext("ActIs[$rcp]")
@@ -362,6 +363,7 @@ function plotRegParams(
     retdf = false,
     Kav::DataFrame,
     cellTypes = nothing,
+    cell_max_y = nothing,
 )
     murine = extractRegMCMC(c[1]).isMurine
     df = vcat(
@@ -386,8 +388,8 @@ function plotRegParams(
     )
 
     if retdf
-        return plotCellTypeEffects(df, ptitle; legend = legend), plotActI(ActI_df, ptitle), df, ActI_df
+        return plotCellTypeEffects(df, ptitle; legend = legend, maxy = cell_max_y), plotActI(ActI_df, ptitle), df, ActI_df
     else
-        return plotCellTypeEffects(df, ptitle; legend = legend), plotActI(ActI_df, ptitle)
+        return plotCellTypeEffects(df, ptitle; legend = legend, maxy = cell_max_y), plotActI(ActI_df, ptitle)
     end
 end

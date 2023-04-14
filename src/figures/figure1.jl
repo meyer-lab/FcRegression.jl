@@ -1,3 +1,5 @@
+import HypothesisTests: pvalue, CorrelationTest
+
 """ Figure 1: Explain mixture binding experiment and explore data """
 function plotDFwithGreekGamma(df::DataFrame)
     df = deepcopy(df)
@@ -17,7 +19,7 @@ function splot_origData(df; match_y = true, y_label = true, y_normalize = false,
         df."xmin" .*= y_normalize
         df."xmax" .*= y_normalize
     end
-    
+
     yylabel = nothing
     if y_label
         yylabel = (y_normalize == false) ? "RFU" : "Normalized RFU"
@@ -64,6 +66,7 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
     df[df."Affinity" .< 1e3, "Affinity"] .= 1e3
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
     pearson_cor = cor(log.(df."Affinity"), log.(df."Value"))
+    pearson_pval = pvalue(CorrelationTest(log.(df."Affinity"), log.(df."Value")))
 
     pl1 = plot(
         plotDFwithGreekGamma(df),
@@ -82,7 +85,11 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         Guide.xlabel("$affinity_name Affinity (M<sup>-1</sup>)"),
         Guide.ylabel("RFU"),
         Guide.annotation(
-            compose(context(), text(6, -3, "<i>ρ</i> = " * @sprintf("%.4f", pearson_cor)), stroke("black"), fill("black"), font("Helvetica-Bold")),
+            compose(
+                context(), 
+                text(6, -3, "<i>ρ</i> = " * @sprintf("%.4f", pearson_cor) * "\n(<i>p</i> = " * @sprintf("%.4f", pearson_pval) * ")"), 
+                stroke("black"), fill("black"), font("Helvetica-Bold")
+            ),
         ),
         style(key_position = :none),
     )
@@ -94,6 +101,7 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
     val_ratio."Affinity" = [hKav[hKav."IgG" .== r."Subclass", r."Receptor"][1] for r in eachrow(val_ratio)]
     val_ratio."Affinity"[val_ratio."Affinity" .< 1000] .= 1000
     ratio_cor = cor(log.(val_ratio."Affinity"), log.(val_ratio."Ratio"))
+    ratio_pval = pvalue(CorrelationTest(log.(val_ratio."Affinity"), log.(val_ratio."Ratio")))
 
     pl2 = plot(
         plotDFwithGreekGamma(val_ratio),
@@ -109,7 +117,11 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         Guide.xlabel("$affinity_name Affinity (M<sup>-1</sup>)"),
         Guide.ylabel("33- to 4-valent binding ratio"),
         Guide.annotation(
-            compose(context(), text(6.0, 1.5, "<i>ρ</i> = " * @sprintf("%.4f", ratio_cor)), stroke("black"), fill("black"), font("Helvetica-Bold")),
+            compose(
+                context(), 
+                text(6.0, 1.5, "<i>ρ</i> = " * @sprintf("%.4f", ratio_cor) * "(<i>p</i> = " * @sprintf("%.4f", ratio_pval) * ")"), 
+                stroke("black"), fill("black"), font("Helvetica-Bold")
+            ),
         ),
     )
     return pl1, pl2
