@@ -96,3 +96,62 @@ function plotCD16bCHOaff(c)
     end
     return pls
 end
+
+
+@model function gmodelCD16bNeu(df, values; 
+        Kav = extractNewHumanKav(), 
+        Rtot = importRtot(; murine = false, retdf = true)[!, ["Receptor", "Neu"]],
+    )
+
+    CD16bdist = importKavDist(; murine = false, regularKav = false, retdf = true)[!, "FcgRIIIB-NA1"]
+    CD16bKav = Vector(undef, length(CD16bdist))
+    for ii in eachindex(CD16bKav)
+        CD16bKav[ii] ~ CD16bdist[ii]
+    end
+    Kav[!, "FcgRIIIB"] .= CD16bKav
+
+    #f4 ~ f4Dist
+    #f33 ~ f33Dist
+    #KxStar ~ KxStarDist
+
+    pred = predictLbound(Kav, Rtot; specificRcp = false, L0 = 1e-9, fs = [4, 33], KxStar = KxConst,)
+    dft = innerjoin(df, pred, on = ["Valency" => "Valency", "Subclass" => "IgG", "Cell" => "Cell"], makeunique=true)
+
+    stdv = std(log.(dft."Lbound") - log.(values))
+    values ~ MvLogNormal(log.(dft."Lbound"), stdv * I)
+    nothing
+end
+
+
+function CD16bHumanBlood(; mcmc_iter = 1000)
+    # Only fit FcgRIIIB affinity using Neutrophils, with no allotype (NA1/NA2) distinction.
+    df = FcRegression.importEffectorBind(; avg = false)
+    df = df[df."Cell" .== "Neu", :]
+    df[df."Value" .<= 1.0, "Value"] .= 1.0
+
+    m = gmodelCD16bNeu(df, df."Value")
+    opts = Optim.Options(iterations = 500, show_every = 10, show_trace = true)
+    opt = optimize(m, MAP(), LBFGS(; m = 20), opts)
+    c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
+    return c
+
+    
+    affs = [median(c["CD16bKav[$i]"].data) for i = 1:4]
+    Kav = FcRegression.extractNewHumanKav()
+    Kav."FcgRIIIB" = [median(c["CD16bKav[$i]"].data) for i = 1:4]
+
+
+    Kav1 = FcRegression.extractNewHumanKav()
+    Rtot = FcRegression.importRtot(; murine = false, retdf = true)[!, ["Receptor", "Neu"]]
+    df1 = FcRegression.predictLbound(Kav1, Rtot)
+
+    f4 = median(c["f4"].data)
+    f33 = median(c["f33"].data)
+    KxStar = median(c["KxStar"].data)
+
+
+    predictLbound(Kav, Rtot; specificRcp = false, L0 = 1e-9, fs = [f4, f33], KxStar = KxStar,)
+
+
+    gmodelCD16bNeu(df, values)
+end
