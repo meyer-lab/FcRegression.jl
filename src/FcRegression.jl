@@ -23,17 +23,6 @@ include("effectorBind.jl")
 include("regression.jl")
 
 include("figures/figureW.jl")
-
-include("figures/figureA1.jl")
-include("figures/figureA2a.jl")
-include("figures/figureA3.jl")
-include("figures/figureA4.jl")
-include("figures/figureA5.jl")
-include("figures/figureA6.jl")
-include("figures/figureS1.jl")
-include("figures/figureS2.jl")
-include("figures/figureS4.jl")
-
 include("figures/figure1.jl")
 include("figures/figure2.jl")
 include("figures/figure3.jl")
@@ -41,6 +30,9 @@ include("figures/figure4.jl")
 include("figures/figure5.jl")
 include("figures/figure6.jl")
 
+include("figures/figureS1.jl")
+include("figures/figureS2.jl")
+include("figures/figureS4.jl")
 
 function figureAll()
     setGadflyTheme()
@@ -57,5 +49,5 @@ function figureAll()
     figureS3()
 end
 
-export importKav, importRtot
+export importKav, importRtot, importKavDist
 end # module
