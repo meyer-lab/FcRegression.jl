@@ -57,6 +57,5 @@ function figureAll()
     figureS3()
 end
 
-export polyfc, polyfc_ActV
-
+export importKav, importRtot
 end # module

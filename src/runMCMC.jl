@@ -225,6 +225,9 @@ function extractMCMC(c::Union{Chains, StatisticalModel}; dat::Symbol)
     end
     if "Kav[1]" in pnames
         Kavd = importKavDist(; murine = (dat in [:mCHO, :mLeuk]), regularKav = true, retdf = true)
+        if !(dat in [:mCHO, :mLeuk])
+            Kavd = Kavd[!, 1:7]
+        end
         Kav = [ext("Kav[$i]") for i = 1:sum(startswith.(pnames, "Kav"))]
         Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
         out["Kav"] = Kavd
@@ -270,12 +273,9 @@ function validateFittedKav(c::Chains, fname = nothing; murine::Bool, kwargs...)
     return pl1, pl2
 end
 
-function extractNewHumanKav(; replace = true, old = false)
+function extractNewHumanKav(; replace = true)
     c = rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000)
     Kav = extractMCMC(c; dat = :hCHO)["Kav"]
-    if old
-        Kav = importKavDist(; murine = false, regularKav = true, retdf = true)
-    end
     if replace
         oldKav = importKav(; murine = false, retdf = true, IgG2bFucose = true)
         oldKav[:, names(Kav)[2:end]] = Kav[:, Not("IgG")]

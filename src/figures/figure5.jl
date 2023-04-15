@@ -1,4 +1,4 @@
-function plotLbound(Rtot = importRtot(; murine = false, retdf = true); title = "", cellTypes = ["ncMO", "cMO", "Neu"], kwargs...)
+function plotLbound(Rtot = importRtot(; murine = false, retdf = true, genotype = "ZIZ"); title = "", cellTypes = ["ncMO", "cMO", "Neu"], kwargs...)
 
     Kav0 = importKav(; murine = false)
     Kav1 = extractNewHumanKav()
@@ -113,14 +113,7 @@ function figure5(ssize = (8.5inch, 4.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
 
     measured = plotEffectorMeasured()
     lbounds = plotLbound(; cellTypes = cellTypes)
-
-    c = rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000)
-    pms = extractMCMC(c; dat = :hCHO)
-
-    # Not using these
-    oldPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = true), title = "Documented Affinity", legend = false, KxStar = pms["KxStar"])
-    newPred = plotEffectorPred(; Kav = extractNewHumanKav(; old = false), title = "Updated Affinity", legend = true, KxStar = pms["KxStar"])
-
+    
     pl = plotGrid(
         (2, 4),
         [measured[1], measured[2], measured[3], measured[4], lbounds[1], lbounds[2], lbounds[3], lbounds[4]];

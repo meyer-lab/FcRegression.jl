@@ -15,36 +15,32 @@ end
 
 function predictLbound(
     Kav = extractNewHumanKav(),
-    Rtot = importRtot(; murine = false, retdf = true);
+    Rtot = importRtot(; murine = false, retdf = true, genotype = "ZIZ");
     specificRcp = false,
     L0 = 1e-9,
     fs = [4, 33],
     KxStar = KxConst,
 )
-    Rtot = Rtot[in(names(Kav[!, Not("IgG")])).(Rtot."Receptor"), :]
-    existRcp = all(Matrix(Rtot[!, 2:end]) .> 0.0, dims = 2)
-    Kav = Kav[!, BitVector([1; existRcp...])]
-    Rtot = Rtot[BitVector([existRcp...]), :]
+    @assert size(Kav[!, Not("IgG")])[2] == size(Rtot)[1]
+    vals = [(f > 11) ? 33 : 4 for f in fs]
 
     """ Predict Lbound of each cell type based on Kav """
     df = if specificRcp
-        DataFrame((IgG = x, Cell = y, Valency = z, Receptor = w) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in fs for w in Rtot."Receptor")
+        DataFrame((IgG = x, Cell = y, Valency = z, Receptor = w) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in vals for w in Rtot."Receptor")
     else
-        DataFrame((IgG = x, Cell = y, Valency = z) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in fs)
+        DataFrame((IgG = x, Cell = y, Valency = z) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in vals)
     end
-    df."Lbound" .= 0.0
 
     for igg in unique(df."IgG")
         kav = Matrix(Kav[Kav."IgG" .== igg, 2:end])
         for cn in unique(df."Cell")
-            for f in unique(df."Valency")
-                if specificRcp
-                    # Specific receptor prediction, don't change rcp order before this
-                    df[(df."IgG" .== igg) .& (df."Cell" .== cn) .& (df."Valency" .== f), "Lbound"] =
-                        polyfc(L0, KxStar, f, Rtot[!, cn], [1.0], kav).Rmulti_n
+            for fi = 1:length(fs)
+                res = polyfc(L0, KxStar, fs[fi], Rtot[!, cn], [1.0], kav)
+                res = specificRcp ? res.Rmulti_n : res.Lbound
+                if "Lbound" in names(df)
+                    df[(df."IgG" .== igg) .& (df."Cell" .== cn) .& (df."Valency" .== vals[fi]), "Lbound"] .= res
                 else
-                    df[(df."IgG" .== igg) .& (df."Cell" .== cn) .& (df."Valency" .== f), "Lbound"] .=
-                        polyfc(L0, KxStar, f, Rtot[!, cn], [1.0], kav).Lbound
+                    df[!, "Lbound"] .= res
                 end
             end
         end
