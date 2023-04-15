@@ -47,3 +47,54 @@ function predictLbound(
     end
     return df
 end
+
+
+function plotEffectorPredict(
+        measured = importEffectorBind(; avg = false),
+        pred = predictLbound(); 
+        title = nothing,
+    )
+    setGadflyTheme()
+
+    df = innerjoin(measured, pred, on = ["Valency" => "Valency", "Subclass" => "IgG", "Cell" => "Cell"])
+    df[df."Lbound" .< 10.0, "Lbound"] .= 10.0
+    df[df."Value" .< 10.0, "Value"] .= 10.0
+    if "xmin" in names(df)
+        df[df."xmin" .< 10.0, "xmin"] .= 10.0
+        df[df."xmax" .< 10.0, "xmax"] .= 10.0
+    end
+
+    r2 = R2((df[!, "Value"]), (df[!, "Lbound"]); logscale = true)
+    println("R2 = $r2") 
+    linek, lineb = bestfitline(df."Value", df."Lbound"; logscale = true)
+
+    return plot(
+        df,
+        x = "Value",
+        y = "Lbound",
+        color = "Subclass",
+        shape = "Cell",
+        Geom.point,
+        intercept = [10 ^ lineb],
+        slope = [linek],
+        Geom.abline(color = "black"),
+        Scale.x_log10,
+        Scale.y_log10,
+        Scale.color_discrete_manual(colorSubclass...),
+        xmin = ("xmin" in names(df) ? "xmin" : "Value"),
+        xmax = ("xmax" in names(df) ? "xmax" : "Value"),
+        "xmin" in names(df) ? Geom.errorbar : Guide.xlabel(nothing),
+        Guide.xlabel("Measured binding"),
+        Guide.ylabel("Predicted binding"),
+        Guide.title(title),
+        Guide.annotation(
+            compose(
+                context(),
+                text(2, 5, "<i>R</i><sup>2</sup> = " * @sprintf("%.4f", r2)),
+                stroke("black"),
+                fill("black"),
+                font("Helvetica-Bold"),
+            ),
+        ),
+    )
+end
