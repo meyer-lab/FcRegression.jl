@@ -100,7 +100,7 @@ end
 
 @model function gmodelCD16bNeu(df, values; 
         Kav = extractNewHumanKav(), 
-        Rtot = importRtot(; murine = false, retdf = true)[!, ["Receptor", "Neu"]],
+        Rtot = importRtot(; murine = false, retdf = true),
     )
 
     CD16bdist = importKavDist(; murine = false, regularKav = false, retdf = true)[!, "FcgRIIIB-NA1"]
