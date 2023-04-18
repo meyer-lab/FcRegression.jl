@@ -78,7 +78,7 @@ function plotEffectorPredict(
         intercept = [10 ^ lineb],
         slope = [linek],
         Geom.abline(color = "black"),
-        Scale.x_log10,
+        Scale.x_log10(; minvalue = 10),
         Scale.y_log10,
         Scale.color_discrete_manual(colorSubclass...),
         xmin = ("xmin" in names(df) ? "xmin" : "Value"),
@@ -90,7 +90,7 @@ function plotEffectorPredict(
         Guide.annotation(
             compose(
                 context(),
-                text(2, 5, "<i>R</i><sup>2</sup> = " * @sprintf("%.4f", r2)),
+                text(1, 5, "<i>R</i><sup>2</sup> = " * @sprintf("%.4f", r2)),
                 stroke("black"),
                 fill("black"),
                 font("Helvetica-Bold"),

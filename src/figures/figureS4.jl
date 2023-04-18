@@ -2,29 +2,27 @@
 
 
 function figureS4()
+    setGadflyTheme()
 
-    df = FcRegression.importEffectorBind(; avg = true)
-
-    # TODO: why no errorbar?
-
-    
-    Kav0 = FcRegression.importKav(; murine = false);
-
-    Kav1 = FcRegression.extractNewHumanKav();
-
-    plotEffectorPredict(df, predictLbound(Kav0); title = nothing)
-    
-    plotEffectorPredict(df, predictLbound(Kav1); title = nothing)
-
-
-    FcRegression.plotEffectorPredict(
+    p0 = FcRegression.plotEffectorPredict(
         FcRegression.importEffectorBind(; avg = true),
-        FcRegression.predictLbound(); 
+        FcRegression.predictLbound(FcRegression.importKav(; murine = false)); 
+        title = nothing
+    )
+
+    p1 = FcRegression.plotEffectorPredict(
+        FcRegression.importEffectorBind(; avg = true),
+        FcRegression.predictLbound(FcRegression.extractNewHumanKav()); 
         title = nothing
     )
 
     # FcgRIIIB: IgG2 ~= 60000, IgG4 ~= 80000
 
-
-
+    draw(
+        PDF("output/figureS4.pdf", 7inch, 3inch),
+        plotGrid(
+            (1, 2),
+            [p0, p1];
+        )
+    )
 end
