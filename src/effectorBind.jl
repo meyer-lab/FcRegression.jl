@@ -1,9 +1,17 @@
 function importEffectorBind(; avg = false)
     df = CSV.File(joinpath(dataDir, "dec2022_h7B4-IC_hPBL_binding.csv"), comment = "#") |> DataFrame
+    # remove days with many negative values
+    exp_cols = Vector{Bool}([1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1])
+    df = df[!, exp_cols]
     df = stack(df, Not(["Valency", "Subclass", "Cell"]), variable_name = "Experiment", value_name = "Value")
     df = dropmissing(df)
     df[!, "Value"] = convert.(Float64, df[!, "Value"])
 
+    df[(df[!, "Value"]) .< 1.0, "Value"] .= 1.0
+    baseline = combine(groupby(df, "Experiment"), "Value" => geomean => "Baseline")
+    df = innerjoin(df, baseline, on = "Experiment")
+    df[!, "Value"] ./= df[!, "Baseline"]    # normalize fluorescence by daily geomean
+    df = df[!, Not("Baseline")]
     df = df[!, Not("Experiment")]
 
     if avg
@@ -53,15 +61,16 @@ function plotEffectorPredict(
         measured = importEffectorBind(; avg = false),
         pred = predictLbound(); 
         title = nothing,
+        minvalues = 1e-2,
     )
     setGadflyTheme()
 
     df = innerjoin(measured, pred, on = ["Valency" => "Valency", "Subclass" => "IgG", "Cell" => "Cell"])
-    df[df."Lbound" .< 10.0, "Lbound"] .= 10.0
-    df[df."Value" .< 10.0, "Value"] .= 10.0
+    df[df."Lbound" .< minvalues, "Lbound"] .= minvalues
+    df[df."Value" .< minvalues, "Value"] .= minvalues
     if "xmin" in names(df)
-        df[df."xmin" .< 10.0, "xmin"] .= 10.0
-        df[df."xmax" .< 10.0, "xmax"] .= 10.0
+        df[df."xmin" .< minvalues, "xmin"] .= minvalues
+        df[df."xmax" .< minvalues, "xmax"] .= minvalues
     end
 
     r2 = R2((df[!, "Value"]), (df[!, "Lbound"]); logscale = true)
@@ -78,7 +87,7 @@ function plotEffectorPredict(
         intercept = [10 ^ lineb],
         slope = [linek],
         Geom.abline(color = "black"),
-        Scale.x_log10(; minvalue = 10),
+        Scale.x_log10,
         Scale.y_log10,
         Scale.color_discrete_manual(colorSubclass...),
         xmin = ("xmin" in names(df) ? "xmin" : "Value"),
@@ -90,7 +99,7 @@ function plotEffectorPredict(
         Guide.annotation(
             compose(
                 context(),
-                text(1, 5, "<i>R</i><sup>2</sup> = " * @sprintf("%.4f", r2)),
+                text(-2, 5, "<i>R</i><sup>2</sup> = " * @sprintf("%.4f", r2)),
                 stroke("black"),
                 fill("black"),
                 font("Helvetica-Bold"),

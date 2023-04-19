@@ -34,8 +34,7 @@ function plotLbound(Rtot = importRtot(; murine = false, retdf = true, genotype =
     ]
 end
 
-function plotEffectorMeasured()
-    df = importEffectorBind(; avg = true)
+function plotEffectorMeasured(df = importEffectorBind(; avg = true))
     df."Valency" .= Symbol.(df."Valency")
     df[df."Value" .< 0.0, "Value"] .= 0.0
     df[df."xmin" .< 0.0, "xmin"] .= 0.0
@@ -108,18 +107,31 @@ function plotEffectorPred(; Kav = extractNewHumanKav(), title = "", legend = tru
     )
 end
 
-function figure5(ssize = (8.5inch, 4.5inch); cellTypes = ["ncMO", "cMO", "Neu"], kwargs...)
+function figure5(ssize = (8.5inch, 7.5inch); cellTypes = ["ncMO", "cMO", "Neu"], kwargs...)
     setGadflyTheme()
 
     measured = plotEffectorMeasured()
     lbounds = plotLbound(; cellTypes = cellTypes)
+
+    p0 = plotEffectorPredict(
+        importEffectorBind(; avg = true),
+        predictLbound(importKav(; murine = false)); 
+        title = "Leukocyte binding with documented affinities"
+    )
+    p1 = plotEffectorPredict(
+        importEffectorBind(; avg = true),
+        predictLbound(extractNewHumanKav()); 
+        title = "Leukocyte binding with updated affinities"
+    )
     
     pl = plotGrid(
-        (2, 4),
-        [measured[1], measured[2], measured[3], measured[4], lbounds[1], lbounds[2], lbounds[3], lbounds[4]];
+        (3, 4),
+        [measured[1], measured[2], measured[3], measured[4], 
+        lbounds[1], lbounds[2], lbounds[3], lbounds[4], 
+        p0, p1, nothing, nothing];
         sublabels = "abcdefghij  ",
-        widths = [1.1 1 1 1; 1.15 1 1 1],
-        heights = [1.3, 1.3],
+        widths = [1.1 1 1 1; 1.15 1 1 1; 1 1 .3 .3],
+        heights = [2.25, 2.25, 3],
         kwargs...,
     )
     draw(PDF("output/figure5.pdf", ssize[1], ssize[2]), pl)
