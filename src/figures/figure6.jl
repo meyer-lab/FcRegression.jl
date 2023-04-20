@@ -15,8 +15,8 @@ function figure6(ssize = (8.5inch, 5.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
     setGadflyTheme()
     df = importHumanized("ITP")
 
-    Kav0 = extractNewHumanKav(; old = true)
-    Kav1 = extractNewHumanKav(; old = false)
+    Kav0 = importKavDist(; murine = false, regularKav = true, retdf = true)
+    Kav1 = extractNewHumanKav()
 
     c1, ccdf1 = runRegMCMC(
         df,
