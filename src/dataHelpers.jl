@@ -236,7 +236,7 @@ end
 
 importRtotDist(dat; kwargs...) = deepcopy(importRtotDist_readcsv(dat; kwargs...))
 
-@memoize function importKavDist_readcsv(; murine::Bool, regularKav = false, retdf = true)
+@memoize function importKavDist_readcsv(; murine::Bool, regularKav = false, retdf = true, CD16b = false)
     local Kav
     if murine
         Kav = importKav(; murine = true, retdf = true)
@@ -265,6 +265,9 @@ importRtotDist(dat; kwargs...) = deepcopy(importRtotDist_readcsv(dat; kwargs...)
         end
         Kav = parstr.(df[:, Not("IgG")], regularKav)
         insertcols!(Kav, 1, "IgG" => df[:, "IgG"])
+        if any(startswith.(names(Kav), "FcgRIIIB")) && !CD16b
+            Kav = Kav[!, Not(startswith.(names(Kav), "FcgRIIIB"))]
+        end
     end
     if retdf
         return Kav
