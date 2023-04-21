@@ -22,8 +22,8 @@ end
     CD16bRtot = Dict("FcgRIIIB-NA1" => 100_000.0, "FcgRIIIB-NA2" => 100_000.0)
 
     # sample Kav
-    Kavd = FcRegression.importKavDist(; murine = false, regularKav = true, retdf = true)[:, [1,8,9]]
-    Kav_dist = FcRegression.importKavDist(; murine = false, regularKav = false, retdf=false)[:, [7,8]]
+    Kavd = importKavDist(; murine = false, regularKav = true, retdf = true, CD16b = true)[:, [1,8,9]]
+    Kav_dist = importKavDist(; murine = false, regularKav = false, retdf=false, CD16b = true)[:, [7,8]]
     Kav = Matrix(undef, size(Kav_dist)...)
     for ii in eachindex(Kav)
         Kav[ii] ~ Kav_dist[ii]
@@ -56,7 +56,7 @@ function inferCD16b(; mcmc_iter = 1000)
     c = sample(m, NUTS(), mcmc_iter, init_params = opt.values.array)
     return c
 
-    Kavd = FcRegression.importKavDist(; murine = false, regularKav = true, retdf = true)[:, [1,8,9]]
+    Kavd = importKavDist(; murine = false, regularKav = true, retdf = true, CD16b = true)[:, [1,8,9]]
     Kav = [median(c["Kav[$i]"].data) for i = 1:8]
     Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
 end
@@ -73,7 +73,7 @@ end
 
 function plotCD16bCHOaff(c)
     # extract
-    Kav_priors = importKavDist(; murine = false, retdf = true)[:, [1,8,9]]
+    Kav_priors = importKavDist(; murine = false, retdf = true, CD16b = true)[:, [1,8,9]]
     len = length(Matrix(Kav_priors[!, Not("IgG")]))
     Kav_posts = deepcopy(Kav_priors)
     Kav = [c["Kav[$i]"].data for i = 1:len]
@@ -86,7 +86,8 @@ function plotCD16bCHOaff(c)
             hcat([reshape(Kav_posts[i, fcr], :) for i = 1:(size(Kav_posts)[1])]...),
             Kav_posts."IgG",
         )
-        pls[ii] = FcRegression.plot_distribution_violins(
+        fcr = replace(fcr, "FcgRIIIB" => "FcγRIIIB")
+        pls[ii] = plot_distribution_violins(
             posts, 
             priors; 
             y_range = (4, 7),
@@ -103,19 +104,25 @@ end
         Rtot = importRtot(; murine = false, retdf = true),
     )
 
-    CD16bdist = importKavDist(; murine = false, regularKav = false, retdf = true)[!, "FcgRIIIB-NA1"]
+    CD16bdist = importKavDist(; murine = false, regularKav = false, retdf = true, CD16b = true)[!, "FcgRIIIB-NA1"]
     CD16bKav = Vector(undef, length(CD16bdist))
     for ii in eachindex(CD16bKav)
         CD16bKav[ii] ~ CD16bdist[ii]
     end
     Kav[!, "FcgRIIIB"] .= CD16bKav
 
-    #f4 ~ f4Dist
-    #f33 ~ f33Dist
-    #KxStar ~ KxStarDist
+    f4 ~ f4Dist
+    f33 ~ f33Dist
+    KxStar ~ KxStarDist
 
-    pred = predictLbound(Kav, Rtot; specificRcp = false, L0 = 1e-9, fs = [4, 33], KxStar = KxConst,)
-    dft = innerjoin(df, pred, on = ["Valency" => "Valency", "Subclass" => "IgG", "Cell" => "Cell"], makeunique=true)
+    # fit predictions
+    if all(0.0 .<= CD16bKav .< Inf) && all(0.0 .< [f4, f33, KxStar] .< Inf) && (f4 < f33)
+        pred = predictLbound(Kav, Rtot; specificRcp = false, L0 = 1e-9, fs = [f4, f33], KxStar = KxStar,)
+        dft = innerjoin(df, pred, on = ["Valency" => "Valency", "Subclass" => "IgG", "Cell" => "Cell"], makeunique=true)
+    else
+        dft = deepcopy(df)
+        dft."Lbound" .= Inf
+    end 
 
     stdv = std(log.(dft."Lbound") - log.(values))
     values ~ MvLogNormal(log.(dft."Lbound"), stdv * I)
@@ -125,7 +132,7 @@ end
 
 function CD16bHumanBlood(; mcmc_iter = 1000)
     # Only fit FcgRIIIB affinity using Neutrophils, with no allotype (NA1/NA2) distinction.
-    df = FcRegression.importEffectorBind(; avg = false)
+    df = importEffectorBind(; avg = false)
     df = df[df."Cell" .== "Neu", :]
     df[df."Value" .<= 1.0, "Value"] .= 1.0
 
@@ -137,13 +144,13 @@ function CD16bHumanBlood(; mcmc_iter = 1000)
 
     
     affs = [median(c["CD16bKav[$i]"].data) for i = 1:4]
-    Kav = FcRegression.extractNewHumanKav()
+    Kav = extractNewHumanKav()
     Kav."FcgRIIIB" = [median(c["CD16bKav[$i]"].data) for i = 1:4]
 
 
-    Kav1 = FcRegression.extractNewHumanKav()
-    Rtot = FcRegression.importRtot(; murine = false, retdf = true)[!, ["Receptor", "Neu"]]
-    df1 = FcRegression.predictLbound(Kav1, Rtot)
+    Kav1 = extractNewHumanKav()
+    Rtot = importRtot(; murine = false, retdf = true)[!, ["Receptor", "Neu"]]
+    df1 = predictLbound(Kav1, Rtot)
 
     f4 = median(c["f4"].data)
     f33 = median(c["f33"].data)
