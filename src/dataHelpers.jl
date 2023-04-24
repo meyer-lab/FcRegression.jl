@@ -88,9 +88,9 @@ const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
 @memoize function importRtot_readcsv(; murine::Bool, genotype = "HIV", retdf = true, cellTypes::Union{Nothing, Vector, NamedVector} = nothing)
     if murine
-        df = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame
+        df = CSV.File(joinpath(dataDir, "murine-leukocyte-FcgR-abundance.csv"), comment = "#") |> DataFrame
     else
-        df = CSV.File(joinpath(dataDir, "human-FcgR-abundance.csv"), comment = "#") |> DataFrame
+        df = CSV.File(joinpath(dataDir, "human-leukocyte-FcgR-abundance.csv"), comment = "#") |> DataFrame
     end
     if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
@@ -143,7 +143,7 @@ importRtot(; kwargs...) = deepcopy(importRtot_readcsv(; kwargs...))
     if murine
         df = CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#") |> DataFrame
     else
-        df = CSV.File(joinpath(dataDir, "human-affinities-Bruhns.csv"), comment = "#") |> DataFrame
+        df = CSV.File(joinpath(dataDir, "human-affinities.csv"), comment = "#") |> DataFrame
     end
 
     IgGlist = copy(murine ? murineIgG : humanIgG)
@@ -184,9 +184,9 @@ end
     @assert dat in [:hCHO, :hRob, :mCHO, :mLeuk]
     if dat in [:hCHO, :hRob]
         df = if dat == :hRob
-            CSV.File(joinpath(dataDir, "robinett-FcgRquant.csv"), delim = ",", comment = "#") |> DataFrame
+            CSV.File(joinpath(dataDir, "robinett_FcgR_quant.csv"), delim = ",", comment = "#") |> DataFrame
         else
-            CSV.File(joinpath(dataDir, "receptor_amount_mar2021.csv"), delim = ",", comment = "#") |> DataFrame
+            CSV.File(joinpath(dataDir, "CHO_FcgR_quant.csv"), delim = ",", comment = "#") |> DataFrame
         end
         res = if regular
             [geomean(df[df."Receptor" .== rcp, "Measurements"]) for rcp in unique(df."Receptor")]
@@ -252,7 +252,7 @@ importRtotDist(dat; kwargs...) = deepcopy(importRtotDist_readcsv(dat; kwargs...)
         Kav[!, Not("IgG")] = retDist.(Kav[!, Not("IgG")], regularKav = regularKav)
         sort!(Kav, "IgG")
     else # human
-        df = CSV.File(joinpath(dataDir, "FcgR-Ka-Bruhns_with_variance.csv"), delim = ",", comment = "#") |> DataFrame
+        df = CSV.File(joinpath(dataDir, "human_affinities_variance.csv"), delim = ",", comment = "#") |> DataFrame
         function parstr(x, regularKav = false)
             params = parse.(Float64, split(x, "|"))
             params .*= 1e5      # Bruhns data is written in 1e5 units

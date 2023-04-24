@@ -1,5 +1,5 @@
 function importCD16b()
-    df = CSV.File(joinpath(dataDir, "dec2022-FcgR3b-binding.csv"), delim = ",", comment = "#") |> DataFrame
+    df = CSV.File(joinpath(dataDir, "CHO_FcgR3b_binding.csv"), delim = ",", comment = "#") |> DataFrame
     df = stack(df, Not(["Valency", "Cell", "Subclass"]), variable_name = "Experiment", value_name = "Value")
     df = dropmissing(df)
     df[!, "Value"] = convert.(Float64, df[!, "Value"])

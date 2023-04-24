@@ -2,7 +2,7 @@ using MultivariateStats
 using StatsBase
 
 """ Load mixture in vitro binding data """
-function loadMixData(fn = "lux_mixture_mar2021.csv")
+function loadMixData(fn = "CHO_IgG_mixture_binding.csv")
     df = CSV.File(joinpath(dataDir, fn), comment = "#") |> DataFrame
 
     df = stack(df, Not(["Valency", "Cell", "subclass_1", "%_1", "subclass_2", "%_2"]), variable_name = "Experiment", value_name = "Value")
@@ -30,7 +30,7 @@ function loadMixData(fn = "lux_mixture_mar2021.csv")
 end
 
 function importRobinett()
-    df = CSV.File(joinpath(dataDir, "Luxetal2013-Fig2Bmod.csv"), delim = ",", comment = "#") |> DataFrame
+    df = CSV.File(joinpath(dataDir, "robinett_binding.csv"), delim = ",", comment = "#") |> DataFrame
     for i = 1:4
         cn = "Replicate $i"
         df[!, cn] ./= geomean(df[Not(ismissing.(df[!, cn])), cn])

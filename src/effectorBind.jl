@@ -1,5 +1,5 @@
 function importEffectorBind(; avg = false)
-    df = CSV.File(joinpath(dataDir, "dec2022_h7B4-IC_hPBL_binding.csv"), comment = "#") |> DataFrame
+    df = CSV.File(joinpath(dataDir, "human_donor_leukocyte_binding.csv"), comment = "#") |> DataFrame
     # remove days with many negative values
     exp_cols = Vector{Bool}([1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1])
     df = df[!, exp_cols]
