@@ -90,31 +90,3 @@ function combSing2pair(df)
     end
     return sort!(ndf, names(df)[in(["Valency", "Receptor", "subclass_1", "subclass_2", "Experiment", "%_2"]).(names(df))])
 end
-
-""" PCA of isotype/combination x receptor matrix """
-function mixtureDataPCA(; val = 0)
-    df = averageMixData(loadMixData(); combSingle = true)
-    if val > 0
-        df = df[df."Valency" .== val, :]
-    end
-    id_cols = ["Valency", "subclass_1", "subclass_2", "%_1", "%_2"]
-    wide = unstack(df, id_cols, "Receptor", "Value")
-    mat = Matrix(wide[!, Not(id_cols)])
-    mat = coalesce.(mat, 0)
-    M = MultivariateStats.fit(PCA, mat'; maxoutdim = 4)
-    vars = principalvars(M)
-    vars_expl = [sum(vars[1:i]) for i = 1:length(vars)] ./ tvar(M)
-
-    score = MultivariateStats.transform(M, mat')'
-    wide[!, "PC 1"] = score[:, 1]
-    wide[!, "PC 2"] = score[:, 2]
-    wide[!, "PC 3"] = score[:, 3]
-    loading = projection(M)
-    score_df = wide[!, vcat(id_cols, ["PC 1", "PC 2", "PC 3"])]
-    loading_df = DataFrame("Receptor" => unique(df."Receptor"), "PC 1" => loading[:, 1], "PC 2" => loading[:, 2], "PC 3" => loading[:, 3])
-    if "None" in df."subclass_2"
-        score_df = combSing2pair(score_df)
-    end
-    score_df."Subclass Pair" = score_df."subclass_1" .* "-" .* score_df."subclass_2"
-    return score_df, loading_df, vars_expl
-end

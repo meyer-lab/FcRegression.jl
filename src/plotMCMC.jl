@@ -99,7 +99,6 @@ function plotMCMCdists(c::Chains, fname::String = ""; murine::Bool)
     end
 
     # Plot Rtot's
-    ## TODO: simplify this
     if murine
         cellTypes = unique(importMurineLeukocyte(; average = true)."ImCell")
         lcell = length(cellTypes)
