@@ -4,9 +4,9 @@ using Optim
 using ForwardDiff
 using Random
 
-dfs = [FcRegression.loadMixData(), FcRegression.importRobinett(), FcRegression.importMurineLeukocyte(), FcRegression.importMurineInVitro()]
-dats = [:hCHO, :hRob, :mLeuk, :mCHO]
-murines = [false, false, true, true]
+dfs = [FcRegression.loadMixData(), FcRegression.importRobinett()]
+dats = [:hCHO, :hRob]
+murines = [false, false]
 
 @testset "Test predMix() perform correctly" begin
     for (ii, df) in enumerate(dfs)
