@@ -16,14 +16,6 @@ function geocmean(x)
     return geomean(x)
 end
 
-function geocstd(x)
-    x = convert(Vector, x)
-    x[x .<= 1.0] .= 1.0
-    if length(x) <= 1
-        return 0.0
-    end
-    return exp(std(log.(x)))
-end
 
 function R2(Actual, Predicted; logscale = true)
     if logscale

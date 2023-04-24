@@ -5,7 +5,6 @@ function splot_predVorig(
     p2o_scale = 1.0;
     legend = true,
     ll = 100,
-    match_y = false,
     y_label = true,
     Kav::DataFrame,
     Rtot = importRtotDist(:hCHO; retdf = true, regular = true),
@@ -100,7 +99,7 @@ function figure3(ssize = (10inch, 8inch); kwargs...)
         legend = false,
     )
     # Robinett fitting
-    rob1, rob2 = validateFittedKav(c, "robinett_valid_Kavfit_1025.dat"; murine = false, legend = false)
+    rob1, rob2 = validateFittedKav(c, "fit_robinett.dat"; murine = false, legend = false)
     pl_legend = plotMCMCPredict(c, df; dat = :hCHO, R2pos = (0, -2.5), legend = true)   # just to insert the legend
 
 
@@ -115,7 +114,7 @@ function figure3(ssize = (10inch, 8inch); kwargs...)
         Kav = importKav(; murine = false, retdf = true),
         yticks = [0, 10000, 20000, 30000, 40000, 50000],
     )
-    igg24_new = splot_predVorig(df_igg24_1, 20000; legend = false, ll = 100, match_y = false, y_label = true, Kav = extractNewHumanKav())
+    igg24_new = splot_predVorig(df_igg24_1, 20000; legend = false, ll = 100, y_label = true, Kav = extractNewHumanKav())
 
     df_igg34_2b = df[(df."Receptor" .== "FcgRIIB-232I") .& (df."subclass_1" .== "IgG3") .& (df."subclass_2" .== "IgG4"), :]
     igg34_old = splot_predData(
@@ -126,7 +125,7 @@ function figure3(ssize = (10inch, 8inch); kwargs...)
         Kav = importKav(; murine = false, retdf = true),
         yticks = [0, 400, 800, 1200],
     )
-    igg34_new = splot_predVorig(df_igg34_2b, 400.0; legend = false, ll = 100, match_y = false, y_label = true, Kav = extractNewHumanKav())
+    igg34_new = splot_predVorig(df_igg34_2b, 400.0; legend = false, ll = 100, y_label = true, Kav = extractNewHumanKav())
 
     # Put everything together
     pp = plotGrid(
