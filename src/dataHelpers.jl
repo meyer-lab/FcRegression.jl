@@ -82,7 +82,6 @@ const colorAffinity = [
     colorant"navajowhite2",   # documented
     colorant"firebrick4",     # updated
 ]
-# palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
 
 const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
@@ -260,7 +259,7 @@ importRtotDist(dat; kwargs...) = deepcopy(importRtotDist_readcsv(dat; kwargs...)
                 return params[1]
             end
             params[1] = maximum([params[1], 1e4])   # minimum affinity as 1e4 M-1
-            params[2] = maximum([params[2], 1e5])   # minimum variance as 1e5 M-1
+            params[2] = maximum([params[2], 1e5])   # minimum IQR as 1e5 M-1
             return inferLogNormal(params[1], params[2])
         end
         Kav = parstr.(df[:, Not("IgG")], regularKav)

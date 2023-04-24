@@ -17,7 +17,6 @@ include("mixture.jl")
 include("runMCMC.jl")
 include("plotMCMC.jl")
 include("effectorBind.jl")
-include("CD16b.jl")
 include("regression.jl")
 
 include("figures/figureW.jl")

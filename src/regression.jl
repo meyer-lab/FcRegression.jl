@@ -133,12 +133,12 @@ function wildtypeWeights(opt::regParams; cellTypes = nothing, kwargs...)
     if !opt.isMurine
         df."Genotype" .= "ZIZ"
     end
-    Rmulti = FcRegression.regPrepareData(df; kwargs...)
+    Rmulti = regPrepareData(df; kwargs...)
     X = Rmulti[:, in(names(opt.ActIs)[1]).(receptorType.(names(Rmulti)[2])), names(opt.cellWs)[1]]
 
     cellTypes = names(opt.cellWs)[1]
     for cell in cellTypes
-        df[!, cell] = [FcRegression.assembleActs(opt.ActIs, X[ii, :, cell]) for ii = 1:size(X)[1]]
+        df[!, cell] = [assembleActs(opt.ActIs, X[ii, :, cell]) for ii = 1:size(X)[1]]
     end
     df[!, cellTypes] .*= opt.cellWs'
     df = stack(df, cellTypes, variable_name = "Component", value_name = "Weight")
