@@ -11,9 +11,9 @@ function plot_regressions(df; Kav::DataFrame, murine = false, cellTypes = nothin
 end
 
 
-function figure6(ssize = (8.5inch, 5.5inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 50000, suffix = "0117_", kwargs...)
+function figure6(ssize = (8.5inch, 5.5inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 5000, suffix = "0117_", kwargs...)
     setGadflyTheme()
-    df = importHumanized("ITP")
+    df = importHumanized()
 
     Kav0 = importKavDist(; murine = false, regularKav = true, retdf = true)
     Kav1 = extractNewHumanKav()
@@ -37,8 +37,8 @@ function figure6(ssize = (8.5inch, 5.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
         cellTypes = cellTypes,
     )
 
-    c0 = c0[(mcmc_iter ÷ 10 * 7):end]
-    c1 = c1[(mcmc_iter ÷ 10 * 7):end]
+    c0 = c0[(mcmc_iter ÷ 2):end]
+    c1 = c1[(mcmc_iter ÷ 2):end]
 
     pl_map0 = plotRegMCMC(
         c0,

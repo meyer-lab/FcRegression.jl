@@ -12,17 +12,14 @@ using NamedArrays
 
 include("figures/figureCommon.jl")
 
-include("fcBindingModel.jl")
 include("dataHelpers.jl")
 include("mixture.jl")
 include("runMCMC.jl")
-include("CD16b.jl")
 include("plotMCMC.jl")
-include("dataDepletion.jl")
 include("effectorBind.jl")
 include("regression.jl")
+include("plotReg.jl")
 
-include("figures/figureW.jl")
 include("figures/figure1.jl")
 include("figures/figure2.jl")
 include("figures/figure3.jl")
@@ -47,6 +44,7 @@ function figureAll()
     figureS1()
     figureS2()
     figureS3()
+    figureS4()
 end
 
 export importKav, importRtot, importKavDist

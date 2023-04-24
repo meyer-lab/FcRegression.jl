@@ -1,4 +1,4 @@
-function plotLbound(Rtot = importRtot(; murine = false, retdf = true, genotype = "ZIZ"); title = "", cellTypes = ["ncMO", "cMO", "Neu"], kwargs...)
+function plotLbound(Rtot = importRtot(; murine = false, retdf = true, genotype = "ZIZ"); cellTypes = ["ncMO", "cMO", "Neu"], kwargs...)
 
     Kav0 = importKav(; murine = false)
     Kav1 = extractNewHumanKav()
