@@ -225,9 +225,6 @@ function extractMCMC(c::Union{Chains, StatisticalModel}; dat::Symbol)
     end
     if "Kav[1]" in pnames
         Kavd = importKavDist(; murine = (dat in [:mCHO, :mLeuk]), regularKav = true, retdf = true)
-        if !(dat in [:mCHO, :mLeuk])
-            Kavd = Kavd[!, 1:7]
-        end
         Kav = [ext("Kav[$i]") for i = 1:sum(startswith.(pnames, "Kav"))]
         Kavd[!, Not("IgG")] = typeof(Kav[1, 1]).(reshape(Kav, size(Kavd)[1], :))
         out["Kav"] = Kavd
