@@ -1,9 +1,9 @@
-function figureS4(ssize = (10inch, 5inch); cellTypes = ["ncMO", "cMO", "Neu"], kwargs...)
+function figureS5(ssize = (10inch, 5inch); cellTypes = ["ncMO", "cMO", "Neu"], kwargs...)
     setGadflyTheme()
 
-    df0 = predictLbound(extractNewHumanKav(; old = true); specificRcp = true)
+    df0 = predictLbound(importKav(; murine = false); specificRcp = true)
     df0."Affinity" .= :Documented
-    df1 = predictLbound(extractNewHumanKav(; old = false); specificRcp = true)
+    df1 = predictLbound(extractNewHumanKav(); specificRcp = true)
     df1."Affinity" .= :Updated
     df = vcat(df0, df1)
     df."Valency" .= Symbol.(df."Valency")
@@ -21,7 +21,7 @@ function figureS4(ssize = (10inch, 5inch); cellTypes = ["ncMO", "cMO", "Neu"], k
                 df[(df."Cell" .== cell) .& (df."IgG" .== igg), :],
                 x = "Valency",
                 xgroup = "Affinity",
-                y = "Lbound",
+                y = "Rmulti",
                 color = "Receptor",
                 Geom.subplot_grid(Geom.bar(position = :dodge)),
                 Guide.title("Predicted bound of $igg to..."),
@@ -40,5 +40,5 @@ function figureS4(ssize = (10inch, 5inch); cellTypes = ["ncMO", "cMO", "Neu"], k
     end
 
     pl = plotGrid((size(pls)[2], size(pls)[1]), pls; widths = [1.1 1 1 1.4], sublabels = false, kwargs...)
-    draw(PDF("output/figureS4.pdf", ssize[1], ssize[2]), pl)
+    draw(PDF("output/figureS5.pdf", ssize[1], ssize[2]), pl)
 end

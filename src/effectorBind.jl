@@ -38,18 +38,18 @@ function predictLbound(
     else
         DataFrame((IgG = x, Cell = y, Valency = z) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in vals)
     end
-
+    
+    colname = specificRcp ? "Rmulti" : "Lbound"
     for igg in unique(df."IgG")
         kav = Matrix(Kav[Kav."IgG" .== igg, 2:end])
         for cn in unique(df."Cell")
             for fi = 1:length(fs)
                 res = polyfc(L0, KxStar, fs[fi], Rtot[!, cn], [1.0], kav)
                 res = specificRcp ? res.Rmulti_n : res.Lbound
-                if "Lbound" in names(df)
-                    df[(df."IgG" .== igg) .& (df."Cell" .== cn) .& (df."Valency" .== vals[fi]), "Lbound"] .= res
-                else
-                    df[!, "Lbound"] .= res
+                if !(colname in names(df))
+                    df[!, colname] .= specificRcp ? res[1] : res
                 end
+                df[(df."IgG" .== igg) .& (df."Cell" .== cn) .& (df."Valency" .== vals[fi]), colname] .= res
             end
         end
     end
