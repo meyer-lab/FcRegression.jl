@@ -3,6 +3,7 @@ using Memoize
 import CSV
 using Distributions
 using NLsolve
+import Statistics: cor
 
 const KxConst = 6.31e-13 # 10^(-12.2)
 
@@ -22,6 +23,27 @@ function geocstd(x)
         return 0.0
     end
     return exp(std(log.(x)))
+end
+
+function R2(Actual, Predicted; logscale = true)
+    if logscale
+        return cor(log10.(Actual), log10.(Predicted))^2
+    else
+        return cor(Actual, Predicted)^2
+    end
+end
+
+function bestfitline(xs, ys; logscale = false)
+    if logscale
+        xs = log10.(xs)
+        ys = log10.(ys)
+    end
+    mx = mean(xs)
+    my = mean(ys)
+    dx = (xs .- mx)
+    k = dx' * (ys .- my) / (dx' * dx)
+    b = my - k * mx
+    return k, b
 end
 
 const murineCellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO", "Kupffer", "KupfferHi"]
@@ -214,7 +236,7 @@ end
 
 importRtotDist(dat; kwargs...) = deepcopy(importRtotDist_readcsv(dat; kwargs...))
 
-@memoize function importKavDist_readcsv(; murine::Bool, regularKav = false, retdf = true)
+@memoize function importKavDist_readcsv(; murine::Bool, regularKav = false, retdf = true, CD16b = false)
     local Kav
     if murine
         Kav = importKav(; murine = true, retdf = true)
@@ -243,6 +265,9 @@ importRtotDist(dat; kwargs...) = deepcopy(importRtotDist_readcsv(dat; kwargs...)
         end
         Kav = parstr.(df[:, Not("IgG")], regularKav)
         insertcols!(Kav, 1, "IgG" => df[:, "IgG"])
+        if any(startswith.(names(Kav), "FcgRIIIB")) && !CD16b
+            Kav = Kav[!, Not(startswith.(names(Kav), "FcgRIIIB"))]
+        end
     end
     if retdf
         return Kav

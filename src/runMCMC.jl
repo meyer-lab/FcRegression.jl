@@ -270,12 +270,9 @@ function validateFittedKav(c::Chains, fname = nothing; murine::Bool, kwargs...)
     return pl1, pl2
 end
 
-function extractNewHumanKav(; replace = true, old = false)
+function extractNewHumanKav(; replace = true)
     c = rungMCMC("humanKavfit_0701.dat"; dat = :hCHO, mcmc_iter = 1_000)
     Kav = extractMCMC(c; dat = :hCHO)["Kav"]
-    if old
-        Kav = importKavDist(; murine = false, regularKav = true, retdf = true)
-    end
     if replace
         oldKav = importKav(; murine = false, retdf = true, IgG2bFucose = true)
         oldKav[:, names(Kav)[2:end]] = Kav[:, Not("IgG")]

@@ -1,6 +1,5 @@
 using MultivariateStats
 using StatsBase
-import Statistics: cor
 
 """ Load mixture in vitro binding data """
 function loadMixData(fn = "lux_mixture_mar2021.csv")
@@ -127,14 +126,6 @@ function combSing2pair(df)
         end
     end
     return sort!(ndf, names(df)[in(["Valency", "Receptor", "subclass_1", "subclass_2", "Experiment", "%_2"]).(names(df))])
-end
-
-function R2(Actual, Predicted; logscale = true)
-    if logscale
-        return cor(log10.(Actual), log10.(Predicted))^2
-    else
-        return cor(Actual, Predicted)^2
-    end
 end
 
 """ PCA of isotype/combination x receptor matrix """
