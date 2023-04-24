@@ -32,7 +32,7 @@ Make a 3D array that include all Rmulti predictions for each sample, each recept
 each cell type prediction (Row x Receptor x Cell).
 """
 function regPrepareData(
-    df::DataFrame = importHumanized("ITP");
+    df::DataFrame = importHumanized();
     L0 = 1e-9,
     f = 4,
     murine::Bool = false,

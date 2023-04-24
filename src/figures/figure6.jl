@@ -13,7 +13,7 @@ end
 
 function figure6(ssize = (8.5inch, 5.5inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 50000, suffix = "0117_", kwargs...)
     setGadflyTheme()
-    df = importHumanized("ITP")
+    df = importHumanized()
 
     Kav0 = importKavDist(; murine = false, regularKav = true, retdf = true)
     Kav1 = extractNewHumanKav()
