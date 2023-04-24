@@ -12,14 +12,12 @@ using NamedArrays
 
 include("figures/figureCommon.jl")
 
-include("fcBindingModel.jl")
 include("dataHelpers.jl")
 include("mixture.jl")
 include("runMCMC.jl")
-include("CD16b.jl")
 include("plotMCMC.jl")
-include("dataDepletion.jl")
 include("effectorBind.jl")
+include("CD16b.jl")
 include("regression.jl")
 
 include("figures/figureW.jl")

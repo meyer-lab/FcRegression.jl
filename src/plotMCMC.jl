@@ -126,7 +126,6 @@ function plotMCMCdists(c::Chains, fname::String = ""; murine::Bool)
     end
 
     # Plot f4, f33, KxStar
-    ## TODO: add case where not all three parameters appear
     other_pls = Vector{Plot}(undef, 3)
     other_pls[1] = plot_dist_histogram(c["f4"].data, f4Dist, "f = 4 effective valency")
     other_pls[2] = plot_dist_histogram(c["f33"].data, f33Dist, "f = 33 effective valency")
