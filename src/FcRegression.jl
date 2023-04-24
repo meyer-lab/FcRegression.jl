@@ -47,6 +47,7 @@ function figureAll()
     figureS1()
     figureS2()
     figureS3()
+    figureS4()
 end
 
 export importKav, importRtot, importKavDist
