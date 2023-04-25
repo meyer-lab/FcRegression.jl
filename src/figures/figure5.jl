@@ -115,22 +115,20 @@ function figure5(ssize = (8.5inch, 7.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
 
     p0 = plotEffectorPredict(
         importEffectorBind(; avg = true),
-        predictLbound(importKav(; murine = false)); 
-        title = "Leukocyte binding with documented affinities"
+        predictLbound(importKav(; murine = false));
+        title = "Leukocyte binding with documented affinities",
     )
     p1 = plotEffectorPredict(
         importEffectorBind(; avg = true),
-        predictLbound(extractNewHumanKav()); 
-        title = "Leukocyte binding with updated affinities"
+        predictLbound(extractNewHumanKav());
+        title = "Leukocyte binding with updated affinities",
     )
-    
+
     pl = plotGrid(
         (3, 4),
-        [measured[1], measured[2], measured[3], measured[4], 
-        lbounds[1], lbounds[2], lbounds[3], lbounds[4], 
-        p0, p1, nothing, nothing];
+        [measured[1], measured[2], measured[3], measured[4], lbounds[1], lbounds[2], lbounds[3], lbounds[4], p0, p1, nothing, nothing];
         sublabels = "abcdefghij  ",
-        widths = [1.1 1 1 1; 1.15 1 1 1; 1 1 .3 .3],
+        widths = [1.1 1 1 1; 1.15 1 1 1; 1 1 0.3 0.3],
         heights = [2.25, 2.25, 3],
         kwargs...,
     )

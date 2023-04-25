@@ -86,9 +86,11 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         Guide.ylabel("RFU"),
         Guide.annotation(
             compose(
-                context(), 
-                text(6, -3, "<i>ρ</i> = " * @sprintf("%.4f", pearson_cor) * "\n(<i>p</i> = " * @sprintf("%.4f", pearson_pval) * ")"), 
-                stroke("black"), fill("black"), font("Helvetica-Bold")
+                context(),
+                text(6, -3, "<i>ρ</i> = " * @sprintf("%.4f", pearson_cor) * "\n(<i>p</i> = " * @sprintf("%.4f", pearson_pval) * ")"),
+                stroke("black"),
+                fill("black"),
+                font("Helvetica-Bold"),
             ),
         ),
         style(key_position = :none),
@@ -118,9 +120,11 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         Guide.ylabel("33- to 4-valent binding ratio"),
         Guide.annotation(
             compose(
-                context(), 
-                text(6.0, 1.5, "<i>ρ</i> = " * @sprintf("%.4f", ratio_cor) * "\n(<i>p</i> = " * @sprintf("%.4f", ratio_pval) * ")"), 
-                stroke("black"), fill("black"), font("Helvetica-Bold")
+                context(),
+                text(6.0, 1.5, "<i>ρ</i> = " * @sprintf("%.4f", ratio_cor) * "\n(<i>p</i> = " * @sprintf("%.4f", ratio_pval) * ")"),
+                stroke("black"),
+                fill("black"),
+                font("Helvetica-Bold"),
             ),
         ),
     )
