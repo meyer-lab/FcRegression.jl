@@ -1,8 +1,34 @@
 """ Figure 2: Explore mixture binding data with PCA """
 
-using ColorSchemes
-igg_color_designation = Dict([humanIgG[i] => Scale.color_discrete().f(4)[i] for i = 1:length(humanIgG)])
-igg_pair_color(iggA, iggB; tot = 5) = reverse([i for i in ColorScheme(range(igg_color_designation[iggA], igg_color_designation[iggB], length = tot))])
+
+""" PCA of isotype/combination x receptor matrix """
+function mixtureDataPCA(; val = 0)
+    df = averageMixData(loadMixData(); combSingle = true)
+    if val > 0
+        df = df[df."Valency" .== val, :]
+    end
+    id_cols = ["Valency", "subclass_1", "subclass_2", "%_1", "%_2"]
+    wide = unstack(df, id_cols, "Receptor", "Value")
+    mat = Matrix(wide[!, Not(id_cols)])
+    mat = coalesce.(mat, 0)
+    M = MultivariateStats.fit(PCA, mat'; maxoutdim = 4)
+    vars = principalvars(M)
+    vars_expl = [sum(vars[1:i]) for i = 1:length(vars)] ./ tvar(M)
+
+    score = MultivariateStats.transform(M, mat')'
+    wide[!, "PC 1"] = score[:, 1]
+    wide[!, "PC 2"] = score[:, 2]
+    wide[!, "PC 3"] = score[:, 3]
+    loading = projection(M)
+    score_df = wide[!, vcat(id_cols, ["PC 1", "PC 2", "PC 3"])]
+    loading_df = DataFrame("Receptor" => unique(df."Receptor"), "PC 1" => loading[:, 1], "PC 2" => loading[:, 2], "PC 3" => loading[:, 3])
+    if "None" in df."subclass_2"
+        score_df = combSing2pair(score_df)
+    end
+    score_df."Subclass Pair" = score_df."subclass_1" .* "-" .* score_df."subclass_2"
+    return score_df, loading_df, vars_expl
+end
+
 
 function plot_PCA_score(df; title = "Score", xx = "PC 1", yy = "PC 2")
     df[!, "Valency"] .= Symbol.(df[!, "Valency"])
@@ -16,9 +42,17 @@ function plot_PCA_score(df; title = "Score", xx = "PC 1", yy = "PC 2")
                 push!(arrdf, [ddf[ii, xx], ddf[ii, yy], ddf[ii + 1, xx], ddf[ii + 1, yy], "Mixed"])
             end
             append!(
-                layers, 
-                layer(arrdf, x = :xstart, y = :ystart, xend = :xend, yend = :yend, color = [colorant"black"], Geom.segment, 
-                style(line_style=[(val == Symbol("4")) ? :solid : :dot]))
+                layers,
+                layer(
+                    arrdf,
+                    x = :xstart,
+                    y = :ystart,
+                    xend = :xend,
+                    yend = :yend,
+                    color = [colorant"black"],
+                    Geom.segment,
+                    style(line_style = [(val == Symbol("4")) ? :solid : :dot]),
+                ),
             )
         end
     end
@@ -37,7 +71,7 @@ function plot_PCA_score(df; title = "Score", xx = "PC 1", yy = "PC 2")
         color = "Subclass",
         size = [2.5mm],
         shape = "Valency",
-        Scale.color_discrete_manual(colorSubclass[[in("IgG" * string(i), all_subclass) for i in range(1,4)]]...),
+        Scale.color_discrete_manual(colorSubclass[[in("IgG" * string(i), all_subclass) for i in range(1, 4)]]...),
         Geom.point,
         Guide.title(title),
         Guide.xticks(ticks = [-15, 0, 15], orientation = :horizontal),
@@ -52,26 +86,28 @@ function plot_PCA_line(score)
 
     pls = Vector{Union{Gadfly.Plot, Context}}(undef, length(unique(score."Subclass Pair")))
     for (ip, pair) in enumerate(unique(score."Subclass Pair"))
-        pcs = stack(score[score."Subclass Pair" .== pair, :], 6:8, variable_name="PC", value_name="Value")
+        pcs = stack(score[score."Subclass Pair" .== pair, :], 6:8, variable_name = "PC", value_name = "Value")
         IgGX, IgGY = split(pair, "-")
         pls[ip] = plot(
-            [layer(
-                pcs[(pcs."Valency" .== val) .& (pcs."PC" .== pc), :], 
-                x="%_2", 
-                y="Value", 
-                color=[colorValency[iv]], 
-                shape=[pc_point_style[pc]],
-                Geom.point, 
-                Geom.line,
-                style(line_style = [pc_line_style[pc]]))
-            for (iv, val) in enumerate([Symbol("4"), Symbol("33")]) for pc in ["PC 1", "PC 2"]]...,
+            [
+                layer(
+                    pcs[(pcs."Valency" .== val) .& (pcs."PC" .== pc), :],
+                    x = "%_2",
+                    y = "Value",
+                    color = [colorValency[iv]],
+                    shape = [pc_point_style[pc]],
+                    Geom.point,
+                    Geom.line,
+                    style(line_style = [pc_line_style[pc]]),
+                ) for (iv, val) in enumerate([Symbol("4"), Symbol("33")]) for pc in ["PC 1", "PC 2"]
+            ]...,
             Scale.x_continuous(labels = n -> "$IgGX $(trunc(Int, n*100))%\n$IgGY $(trunc(Int, 100-n*100))%"),
             Scale.y_continuous(minvalue = -15, maxvalue = 15),
             Guide.xlabel(nothing),
             Guide.ylabel("Scores"),
             Guide.title("$pair mixtures"),
             Guide.manual_color_key("Valency", ["4", "33"], colorValency),
-            Guide.manual_color_key("Component", ["PC 1", "PC 2"], [colorant"black", colorant"black"], shape=[Shape.circle, Shape.square]),
+            Guide.manual_color_key("Component", ["PC 1", "PC 2"], [colorant"black", colorant"black"], shape = [Shape.circle, Shape.square]),
         )
     end
     return pls
@@ -97,13 +133,11 @@ function figure2(ssize = (13inch, 6inch); widths = [3, 3, 3, 3.2])
         Guide.ylabel("Variance Explained"),
     )
 
-    ## TODO: add percent variance explained on each PC
-
     SP4 = plot_PCA_score(score[score."Valency" .== 4, :]; title = "PCA Score, 4-valent ICs", xx = "PC 1", yy = "PC 2")
     SP33 = plot_PCA_score(score[score."Valency" .== 33, :]; title = "PCA Score, 33-valent ICs", xx = "PC 1", yy = "PC 2")
     SP4_13 = plot_PCA_score(score[score."Valency" .== 4, :]; title = "PCA Score, 4-valent ICs", xx = "PC 1", yy = "PC 3")
     SP33_13 = plot_PCA_score(score[score."Valency" .== 33, :]; title = "PCA Score, 33-valent ICs", xx = "PC 1", yy = "PC 3")
-    
+
     SPs = [plot_PCA_score(score[score."Subclass Pair" .== pair, :]; title = "PCA Score, $pair") for pair in unique(score."Subclass Pair")]
     LP = plot(
         loading,
@@ -133,7 +167,6 @@ function figure2(ssize = (13inch, 6inch); widths = [3, 3, 3, 3.2])
     )
 
     pl = plotGrid((2, 4), [vars, SPs..., LP]; sublabels = true, widths = widths)
-    #pl = plotGrid((1, 4), [vars, SP4, SP33, LP]; sublabels = "abcd", widths = widths)
     draw(PDF("output/figure2.pdf", ssize[1], ssize[2]), pl)
     return SPs
 end

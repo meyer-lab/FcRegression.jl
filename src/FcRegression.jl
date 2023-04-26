@@ -12,26 +12,13 @@ using NamedArrays
 
 include("figures/figureCommon.jl")
 
-include("fcBindingModel.jl")
 include("dataHelpers.jl")
 include("mixture.jl")
 include("runMCMC.jl")
 include("plotMCMC.jl")
-include("dataDepletion.jl")
 include("effectorBind.jl")
 include("regression.jl")
-
-include("figures/figureW.jl")
-
-include("figures/figureA1.jl")
-include("figures/figureA2a.jl")
-include("figures/figureA3.jl")
-include("figures/figureA4.jl")
-include("figures/figureA5.jl")
-include("figures/figureA6.jl")
-include("figures/figureS1.jl")
-include("figures/figureS2.jl")
-include("figures/figureS4.jl")
+include("plotReg.jl")
 
 include("figures/figure1.jl")
 include("figures/figure2.jl")
@@ -40,6 +27,9 @@ include("figures/figure4.jl")
 include("figures/figure5.jl")
 include("figures/figure6.jl")
 
+include("figures/figureS1.jl")
+include("figures/figureS2.jl")
+include("figures/figureS4.jl")
 
 function figureAll()
     setGadflyTheme()
@@ -54,8 +44,8 @@ function figureAll()
     figureS1()
     figureS2()
     figureS3()
+    figureS4()
 end
 
-export polyfc, polyfc_ActV
-
+export importKav, importRtot, importKavDist
 end # module

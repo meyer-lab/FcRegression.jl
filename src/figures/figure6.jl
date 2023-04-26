@@ -11,34 +11,18 @@ function plot_regressions(df; Kav::DataFrame, murine = false, cellTypes = nothin
 end
 
 
-function figure6(ssize = (8.5inch, 5.5inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 50000, suffix = "0117_", kwargs...)
+function figure6(ssize = (8.5inch, 5.5inch); cellTypes = ["ncMO", "cMO", "Neu"], mcmc_iter = 5000, suffix = "0117_", kwargs...)
     setGadflyTheme()
-    df = importHumanized("ITP")
+    df = importHumanized()
 
-    Kav0 = extractNewHumanKav(; old = true)
-    Kav1 = extractNewHumanKav(; old = false)
+    Kav0 = importKavDist(; murine = false, regularKav = true, retdf = true)
+    Kav1 = extractNewHumanKav()
 
-    c1, ccdf1 = runRegMCMC(
-        df,
-        "regMCMC_$(suffix)1.dat";
-        murine = false,
-        Kav = Kav1,
-        fitActI = false,
-        mcmc_iter = mcmc_iter,
-        cellTypes = cellTypes,
-    )
-    c0, ccdf0 = runRegMCMC(
-        df,
-        "regMCMC_$(suffix)0.dat";
-        murine = false,
-        Kav = Kav0,
-        fitActI = false,
-        mcmc_iter = mcmc_iter,
-        cellTypes = cellTypes,
-    )
+    c1, ccdf1 = runRegMCMC(df, "regMCMC_$(suffix)1.dat"; murine = false, Kav = Kav1, fitActI = false, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
+    c0, ccdf0 = runRegMCMC(df, "regMCMC_$(suffix)0.dat"; murine = false, Kav = Kav0, fitActI = false, mcmc_iter = mcmc_iter, cellTypes = cellTypes)
 
-    c0 = c0[(mcmc_iter ÷ 10 * 7):end]
-    c1 = c1[(mcmc_iter ÷ 10 * 7):end]
+    c0 = c0[(mcmc_iter ÷ 2):end]
+    c1 = c1[(mcmc_iter ÷ 2):end]
 
     pl_map0 = plotRegMCMC(
         c0,
@@ -50,8 +34,7 @@ function figure6(ssize = (8.5inch, 5.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
         Kav = Kav0,
         cellTypes = cellTypes,
     )
-    cell_map0, act_map0 =
-        plotRegParams(c0; ptitle = "documented affinities", legend = false, Kav = Kav0, cellTypes = cellTypes, cell_max_y = 1.5)
+    cell_map0, act_map0 = plotRegParams(c0; ptitle = "documented affinities", legend = false, Kav = Kav0, cellTypes = cellTypes, cell_max_y = 1.5)
 
     pl_map1 = plotRegMCMC(
         c1,
@@ -63,8 +46,7 @@ function figure6(ssize = (8.5inch, 5.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
         Kav = Kav1,
         cellTypes = cellTypes,
     )
-    cell_map1, act_map1 =
-        plotRegParams(c1; ptitle = "updated affinities", legend = true, Kav = Kav1, cellTypes = cellTypes, cell_max_y = 1.5)
+    cell_map1, act_map1 = plotRegParams(c1; ptitle = "updated affinities", legend = true, Kav = Kav1, cellTypes = cellTypes, cell_max_y = 1.5)
 
     pl_mapL = plotRegMCMC(
         c1,
@@ -78,12 +60,6 @@ function figure6(ssize = (8.5inch, 5.5inch); cellTypes = ["ncMO", "cMO", "Neu"],
     )
     cell_mapL, act_mapL = plotRegParams(c1; ptitle = "updated affinities", legend = true, Kav = Kav1, cellTypes = cellTypes)
 
-    pl = plotGrid(
-        (2, 3),
-        [nothing, pl_map0, pl_map1, nothing, cell_map0, cell_map1];
-        sublabels = "abc de",
-        widths = [1 1 1.35; 1 1 1.35],
-        kwargs...,
-    )
+    pl = plotGrid((2, 3), [nothing, pl_map0, pl_map1, nothing, cell_map0, cell_map1]; sublabels = "abc de", widths = [1 1 1.35; 1 1 1.35], kwargs...)
     draw(PDF("output/figure6_$suffix.pdf", ssize[1], ssize[2]), pl)
 end

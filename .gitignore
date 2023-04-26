@@ -9,3 +9,5 @@ cache/requests-cache.sqlite
 *.pdf
 
 *.xls
+
+deprecated/

@@ -3,6 +3,7 @@ using Memoize
 import CSV
 using Distributions
 using NLsolve
+import Statistics: cor
 
 const KxConst = 6.31e-13 # 10^(-12.2)
 
@@ -15,13 +16,26 @@ function geocmean(x)
     return geomean(x)
 end
 
-function geocstd(x)
-    x = convert(Vector, x)
-    x[x .<= 1.0] .= 1.0
-    if length(x) <= 1
-        return 0.0
+
+function R2(Actual, Predicted; logscale = true)
+    if logscale
+        return cor(log10.(Actual), log10.(Predicted))^2
+    else
+        return cor(Actual, Predicted)^2
     end
-    return exp(std(log.(x)))
+end
+
+function bestfitline(xs, ys; logscale = false)
+    if logscale
+        xs = log10.(xs)
+        ys = log10.(ys)
+    end
+    mx = mean(xs)
+    my = mean(ys)
+    dx = (xs .- mx)
+    k = dx' * (ys .- my) / (dx' * dx)
+    b = my - k * mx
+    return k, b
 end
 
 const murineCellTypes = ["ncMO", "cMO", "NKs", "Neu", "EO", "Kupffer", "KupfferHi"]
@@ -60,15 +74,14 @@ const colorAffinity = [
     colorant"navajowhite2",   # documented
     colorant"firebrick4",     # updated
 ]
-# palette = [Scale.color_discrete().f(3)[1], Scale.color_discrete().f(3)[3]]
 
 const dataDir = joinpath(dirname(pathof(FcRegression)), "..", "data")
 
 @memoize function importRtot_readcsv(; murine::Bool, genotype = "HIV", retdf = true, cellTypes::Union{Nothing, Vector, NamedVector} = nothing)
     if murine
-        df = CSV.File(joinpath(dataDir, "murine-FcgR-abundance.csv"), comment = "#") |> DataFrame
+        df = CSV.File(joinpath(dataDir, "murine-leukocyte-FcgR-abundance.csv"), comment = "#") |> DataFrame
     else
-        df = CSV.File(joinpath(dataDir, "human-FcgR-abundance.csv"), comment = "#") |> DataFrame
+        df = CSV.File(joinpath(dataDir, "human-leukocyte-FcgR-abundance.csv"), comment = "#") |> DataFrame
     end
     if cellTypes === nothing
         cellTypes = murine ? murineCellTypes : humanCellTypes
@@ -121,7 +134,7 @@ importRtot(; kwargs...) = deepcopy(importRtot_readcsv(; kwargs...))
     if murine
         df = CSV.File(joinpath(dataDir, "murine-affinities.csv"), comment = "#") |> DataFrame
     else
-        df = CSV.File(joinpath(dataDir, "human-affinities-Bruhns.csv"), comment = "#") |> DataFrame
+        df = CSV.File(joinpath(dataDir, "human-affinities.csv"), comment = "#") |> DataFrame
     end
 
     IgGlist = copy(murine ? murineIgG : humanIgG)
@@ -162,9 +175,9 @@ end
     @assert dat in [:hCHO, :hRob, :mCHO, :mLeuk]
     if dat in [:hCHO, :hRob]
         df = if dat == :hRob
-            CSV.File(joinpath(dataDir, "robinett/FcgRquant.csv"), delim = ",", comment = "#") |> DataFrame
+            CSV.File(joinpath(dataDir, "robinett_FcgR_quant.csv"), delim = ",", comment = "#") |> DataFrame
         else
-            CSV.File(joinpath(dataDir, "receptor_amount_mar2021.csv"), delim = ",", comment = "#") |> DataFrame
+            CSV.File(joinpath(dataDir, "CHO_FcgR_quant.csv"), delim = ",", comment = "#") |> DataFrame
         end
         res = if regular
             [geomean(df[df."Receptor" .== rcp, "Measurements"]) for rcp in unique(df."Receptor")]
@@ -214,7 +227,7 @@ end
 
 importRtotDist(dat; kwargs...) = deepcopy(importRtotDist_readcsv(dat; kwargs...))
 
-@memoize function importKavDist_readcsv(; murine::Bool, regularKav = false, retdf = true)
+@memoize function importKavDist_readcsv(; murine::Bool, regularKav = false, retdf = true, CD16b = false)
     local Kav
     if murine
         Kav = importKav(; murine = true, retdf = true)
@@ -230,7 +243,7 @@ importRtotDist(dat; kwargs...) = deepcopy(importRtotDist_readcsv(dat; kwargs...)
         Kav[!, Not("IgG")] = retDist.(Kav[!, Not("IgG")], regularKav = regularKav)
         sort!(Kav, "IgG")
     else # human
-        df = CSV.File(joinpath(dataDir, "FcgR-Ka-Bruhns_with_variance.csv"), delim = ",", comment = "#") |> DataFrame
+        df = CSV.File(joinpath(dataDir, "human_affinities_variance.csv"), delim = ",", comment = "#") |> DataFrame
         function parstr(x, regularKav = false)
             params = parse.(Float64, split(x, "|"))
             params .*= 1e5      # Bruhns data is written in 1e5 units
@@ -238,11 +251,14 @@ importRtotDist(dat; kwargs...) = deepcopy(importRtotDist_readcsv(dat; kwargs...)
                 return params[1]
             end
             params[1] = maximum([params[1], 1e4])   # minimum affinity as 1e4 M-1
-            params[2] = maximum([params[2], 1e5])   # minimum variance as 1e5 M-1
+            params[2] = maximum([params[2], 1e5])   # minimum IQR as 1e5 M-1
             return inferLogNormal(params[1], params[2])
         end
         Kav = parstr.(df[:, Not("IgG")], regularKav)
         insertcols!(Kav, 1, "IgG" => df[:, "IgG"])
+        if any(startswith.(names(Kav), "FcgRIIIB")) && !CD16b
+            Kav = Kav[!, Not(startswith.(names(Kav), "FcgRIIIB"))]
+        end
     end
     if retdf
         return Kav
@@ -252,6 +268,18 @@ importRtotDist(dat; kwargs...) = deepcopy(importRtotDist_readcsv(dat; kwargs...)
 end
 
 importKavDist(; kwargs...) = deepcopy(importKavDist_readcsv(; kwargs...))
+
+""" Humanized mice data from Lux 2014, Schwab 2015 """
+function importHumanized()
+    df = CSV.File(joinpath(dataDir, "humanized_mice_ITP.csv"), delim = ",", comment = "#") |> DataFrame
+    df = stack(df, ["IgG1", "IgG2", "IgG3", "IgG4"])
+    df = disallowmissing!(df[completecases(df), :])
+    rename!(df, ["variable" => "Condition", "value" => "Target"])
+    df[!, "Target"] .= 1.0 .- df.Target ./ 100.0
+    df."Genotype" = [g[1] * "I" * g[3] for g in df."Genotype"]   # FcgRIIB default as 232I
+    @assert maximum(df."Target") <= 1.0
+    return df
+end
 
 
 function printDocumentedKavSupTable()
