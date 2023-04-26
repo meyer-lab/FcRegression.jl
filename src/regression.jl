@@ -281,4 +281,3 @@ function extractRegMCMC(c::Union{Chains, StatisticalModel})
     cellWs = NamedArray([ext("cellWs[$s]") for s in cell_entries], cell_entries, "Cell")
     return regParams(cellWs, ActIs, murine)
 end
-

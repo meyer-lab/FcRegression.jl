@@ -38,7 +38,7 @@ function predictLbound(
     else
         DataFrame((IgG = x, Cell = y, Valency = z) for x in Kav."IgG" for y in names(Rtot)[2:end] for z in vals)
     end
-    
+
     colname = specificRcp ? "Rmulti" : "Lbound"
     for igg in unique(df."IgG")
         kav = Matrix(Kav[Kav."IgG" .== igg, 2:end])
@@ -57,12 +57,7 @@ function predictLbound(
 end
 
 
-function plotEffectorPredict(
-        measured = importEffectorBind(; avg = false),
-        pred = predictLbound(); 
-        title = nothing,
-        minvalues = 1e-2,
-    )
+function plotEffectorPredict(measured = importEffectorBind(; avg = false), pred = predictLbound(); title = nothing, minvalues = 1e-2)
     setGadflyTheme()
 
     df = innerjoin(measured, pred, on = ["Valency" => "Valency", "Subclass" => "IgG", "Cell" => "Cell"])
@@ -74,7 +69,7 @@ function plotEffectorPredict(
     end
 
     r2 = R2((df[!, "Value"]), (df[!, "Lbound"]); logscale = true)
-    println("R2 = $r2") 
+    println("R2 = $r2")
     linek, lineb = bestfitline(df."Value", df."Lbound"; logscale = true)
 
     return plot(
@@ -84,7 +79,7 @@ function plotEffectorPredict(
         color = "Subclass",
         shape = "Cell",
         Geom.point,
-        intercept = [10 ^ lineb],
+        intercept = [10^lineb],
         slope = [linek],
         Geom.abline(color = "black"),
         Scale.x_log10,
@@ -97,13 +92,7 @@ function plotEffectorPredict(
         Guide.ylabel("Predicted binding"),
         Guide.title(title),
         Guide.annotation(
-            compose(
-                context(),
-                text(-2, 5, "<i>R</i><sup>2</sup> = " * @sprintf("%.4f", r2)),
-                stroke("black"),
-                fill("black"),
-                font("Helvetica-Bold"),
-            ),
+            compose(context(), text(-2, 5, "<i>R</i><sup>2</sup> = " * @sprintf("%.4f", r2)), stroke("black"), fill("black"), font("Helvetica-Bold")),
         ),
     )
 end

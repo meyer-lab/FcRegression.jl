@@ -78,8 +78,8 @@ function figure3(ssize = (10inch, 8inch); kwargs...)
     df = loadMixData()
     Kav_old = importKavDist(; murine = false, regularKav = true, retdf = true)
     c_noKav = rungMCMC("fit_mixture_no_Kav.dat"; dat = :hCHO, Kavd = Kav_old)
-    pl_noKav = plotMCMCPredict(c_noKav, df; dat = :hCHO, Kav = Kav_old, R2pos = (0, -2), 
-        title = "Predictions with all but affinity fitting", legend = false)
+    pl_noKav =
+        plotMCMCPredict(c_noKav, df; dat = :hCHO, Kav = Kav_old, R2pos = (0, -2), title = "Predictions with all but affinity fitting", legend = false)
 
     c = rungMCMC("fit_mixture.dat"; dat = :hCHO, mcmc_iter = 1_000)
     pl1 = plotMCMCPredict(
