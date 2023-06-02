@@ -68,6 +68,10 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
     pearson_cor = cor(log.(df."Affinity"), log.(df."Value"))
     pearson_pval = pvalue(CorrelationTest(log.(df."Affinity"), log.(df."Value")))
 
+    spearman_cor = corspearman(log.(df."Affinity"), log.(df."Value"))
+    spearman_pval = pvalue(CorrelationTest(tiedrank(log.(df."Affinity")), tiedrank(log.(df."Value"))))
+    println("Pearson: $pearson_cor($pearson_pval), Spearman: $spearman_cor($spearman_pval)")
+
     pl1 = plot(
         plotDFwithGreekGamma(df),
         x = "Affinity",
@@ -87,7 +91,7 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         Guide.annotation(
             compose(
                 context(),
-                text(6, -3, "<i>ρ</i> = " * @sprintf("%.4f", pearson_cor) * "\n(<i>p</i> = " * @sprintf("%.4f", pearson_pval) * ")"),
+                text(6, -3, "<i>ρ</i> = " * @sprintf("%.4f", spearman_cor) * "\n(<i>p</i> = " * @sprintf("%.4f", spearman_pval) * ")"),
                 stroke("black"),
                 fill("black"),
                 font("Helvetica-Bold"),
@@ -105,6 +109,10 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
     ratio_cor = cor(log.(val_ratio."Affinity"), log.(val_ratio."Ratio"))
     ratio_pval = pvalue(CorrelationTest(log.(val_ratio."Affinity"), log.(val_ratio."Ratio")))
 
+    ratio_scor = corspearman(log.(val_ratio."Affinity"), log.(val_ratio."Ratio"))
+    ratio_spval = pvalue(CorrelationTest(tiedrank(log.(val_ratio."Affinity")), tiedrank(log.(val_ratio."Ratio"))))
+    println("Pearson: $ratio_cor($ratio_pval), Spearman: $ratio_scor($ratio_spval)")
+
     pl2 = plot(
         plotDFwithGreekGamma(val_ratio),
         x = "Affinity",
@@ -121,7 +129,7 @@ function bindVSaff(hKav = importKav(; murine = false, retdf = true); affinity_na
         Guide.annotation(
             compose(
                 context(),
-                text(6.0, 1.5, "<i>ρ</i> = " * @sprintf("%.4f", ratio_cor) * "\n(<i>p</i> = " * @sprintf("%.4f", ratio_pval) * ")"),
+                text(6.0, 1.5, "<i>ρ</i> = " * @sprintf("%.4f", ratio_scor) * "\n(<i>p</i> = " * @sprintf("%.4f", ratio_spval) * ")"),
                 stroke("black"),
                 fill("black"),
                 font("Helvetica-Bold"),
